@@ -7,6 +7,8 @@ import math
 import re
 import time
 import uuid
+import sys
+import traceback
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from urllib.parse import urljoin, urlsplit, urlencode, unquote
@@ -15,6 +17,7 @@ from bs4 import BeautifulSoup
 from crawler_rules import check_public_image, validate_gallery_image, gallery_slots, clean_product_name
 
 ORIGIN = 'https://www.crocs.co.kr'
+ADAPTER_REVISION = '2026-11-09-worker-compat-2'
 POLICY = {'checked_on': '2026-11-09', 'source': 'https://marketplace.coupang.com/mba/listing',
           'route': 'WING 웹/엑셀', 'min_side': 500, 'max_bytes': 10000000,
           'formats': ['JPEG', 'PNG', 'WEBP'], 'max_aspect': 1.8}
@@ -181,7 +184,7 @@ def find_product(ctx, page, base):
     if urlsplit(page.url).path.endswith('/' + base + '.html'):
         wait_product(ctx, page, base)
         return page.url
-    raise ValueError('公式検索に該当品番なし: ' + base)
+    raise ValueError('공식 검색에서 해당 품번을 찾지 못했습니다: ' + base)
 
 
 def size_table(ctx, page):
@@ -280,13 +283,20 @@ def gallery(ctx, product, color, cache, doc=None):
     # Bounded parallel public checks. Emit/checkpoint only on the main thread;
     # worker threads never call Hub's stream API or use browser session cookies.
     missing = [url for url in prepared if url not in cache]
-    with ThreadPoolExecutor(max_workers=4) as pool:
-        pending = {url: pool.submit(check_public_image, url, timeout=6, retries=1) for url in missing}
-        for url, future in pending.items():
-            while not future.done():
-                ctx.checkpoint()
-                time.sleep(.1)
-            cache[url] = future.result()
+    # A pasted adapter can run on an older Hub whose urllib hook prints events
+    # without a lock. Never start background network calls on that runtime.
+    worker = sys.modules.get('__main__')
+    if getattr(worker,'EMIT_LOCK',None) is None:
+        for url in missing:
+            cache[url]=check_public_image(url,timeout=6,retries=1,checkpoint=ctx.checkpoint)
+    else:
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            pending = {url: pool.submit(check_public_image, url, timeout=6, retries=1) for url in missing}
+            for url, future in pending.items():
+                while not future.done():
+                    ctx.checkpoint()
+                    time.sleep(.1)
+                cache[url] = future.result()
     candidates, seen = [], set()
     for group in product.get('imageGroups', []):
         mapped = any(a.get('id') == 'color' and any(v.get('value') == color for v in a.get('values', [])) for a in group.get('variationAttributes', []))
@@ -344,6 +354,8 @@ def detail(ctx, product, images, chart):
 
 def crawl(ctx):
     from playwright.sync_api import sync_playwright
+    locked=getattr(sys.modules.get('__main__'),'EMIT_LOCK',None) is not None
+    ctx.log('크록스 코드 버전: '+ADAPTER_REVISION+' / 이미지 요청: '+('병렬(실행부 잠금 확인)' if locked else '순차(구버전 실행부 호환)'), 'INFO')
     match = re.fullmatch(r'(\d{5,8})(?:[_-]([A-Za-z0-9]{3}))?', str(ctx.product_code).strip())
     if not match:
         ctx.fail_item('품번 형식: 10126 또는 10126_100 / 10126-100')
@@ -429,6 +441,7 @@ def crawl(ctx):
             finally:
                 browser.close()
     except Exception as exc:
+        ctx.log('크록스 오류 위치:\n'+traceback.format_exc(),'ERROR')
         if not failures:
             ctx.fail_item(str(exc))
         raise

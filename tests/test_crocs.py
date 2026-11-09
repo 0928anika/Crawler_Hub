@@ -1,6 +1,7 @@
 """Offline contract regressions; run: python -m unittest discover -s tests -p test_crocs.py."""
 import json
 import io
+import threading
 import sys
 import tempfile
 import unittest
@@ -28,6 +29,19 @@ class Context:
 
 
 class CrocsTests(unittest.TestCase):
+    def test_legacy_worker_network_stays_on_main_thread(self):
+        url='https://media.crocs.com/images/f_auto%2Cw_900/products/11016_001_ALT100/crocs'
+        doc=BeautifulSoup('<figure data-slot="pdp-gallery"><img src="'+url+'"></figure>','html.parser')
+        product={'id':'11016','imageGroups':[{'viewType':'standard','variationAttributes':[{'id':'color','values':[{'value':'001'}]}], 'images':[{'link':url}]}]}
+        calls=[]
+        def check(*args,**kwargs):
+            calls.append(threading.get_ident())
+            return {'status':'inaccessible','reasons':['test']}
+        with patch.object(sys.modules['__main__'],'EMIT_LOCK',None,create=True), patch.object(c,'check_public_image',side_effect=check):
+            c.gallery(Context('.'),product,'001',{},doc)
+        self.assertTrue(calls)
+        self.assertEqual(set(calls),{threading.get_ident()})
+
     def test_official_sku_includes_hidden_colors_but_rejects_wrong_base(self):
         product={'variationAttributes':[{'id':'color','values':[{'value':'001','name':'블랙'}, {'value':'6MB','name':'펄핑크'}]}]}
         text='"variants":'+json.dumps([{'productId':'11016-'+cid+'-M4W6','variationValues':{'color':cid,'size':'M4W6'}} for cid in ('001','6MB')])
