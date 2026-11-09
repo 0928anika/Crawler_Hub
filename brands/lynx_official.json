@@ -1,0 +1,158 @@
+{
+  "id": "lynx_official",
+  "name": "링스골프",
+  "category": "골프웨어",
+  "crawl_source": "공식 홈페이지",
+  "script": "lynx_official.py",
+  "execution_level": 1,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "가격",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "verified",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품의 별도 사이즈 및 색상:사이즈 통합 select 옵션 전체 수집. 품절 여부로 제외하지 않음"
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 Product offers의 KRW 판매가. 옵션 추가금이 있으면 경고 후 빈 값"
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 Product 구조화 데이터의 category"
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품명의 품번_색상코드로 확인한 색상별 상품 페이지 갤러리. 공개 접근 및 실제 파일 검사 통과 시 제공"
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "통과한 개별 갤러리 컷으로 5슬롯. 1장뿐이면 경고 후 재사용"
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품명의 품번_색상코드와 파일명이 일치하는 긴 이미지와 #productWrap 고시 2열 표. 공통 판매처/공지/세탁 이미지 제외, 별도 사이즈표 미수집"
+    }
+  },
+  "guide": {
+    "example": "L21F3JP152",
+    "examples": [
+      "L21F3JP152",
+      "L21F3JP152_IV",
+      "L21F3JP152-IV"
+    ],
+    "pattern": "^[A-Za-z0-9]+(?:[_-][A-Za-z0-9]+)*$",
+    "format": "기본 품번은 전체 색상, 품번_IV 또는 품번-IV는 공식 색상코드 IV만 수집",
+    "notes": "상품명의 품번_색상코드로 입력을 확인합니다. 색상과 색상코드 칼럼은 상품명의 코드로 채우며 색상명은 추측하지 않습니다. MPN 및 옵션 색상과 비교하지 않습니다.",
+    "method": "공식 shopbrand 검색에서 실제 상품 링크 조회. 각 상세페이지의 상품명에서 품번_색상코드를 추출하고 동일 상품 페이지의 갤러리를 연결",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "L21F3JP152_",
+      "L21F3JP152 IV"
+    ],
+    "validation_note": "형식 검사만 수행하며 실제 품번/색상 존재는 실행 시 확인"
+  },
+  "mapping_mode": "automatic",
+  "notes": "",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품의 별도 사이즈 및 색상:사이즈 통합 select 옵션 전체 수집. 품절 여부로 제외하지 않음"
+    },
+    "price": {
+      "label": "가격",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 Product offers의 KRW 판매가. 옵션 추가금이 있으면 경고 후 빈 값"
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 Product 구조화 데이터의 category"
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품명의 품번_색상코드로 확인한 색상별 상품 페이지 갤러리. 공개 접근 및 실제 파일 검사 통과 시 제공"
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "통과한 개별 갤러리 컷으로 5슬롯. 1장뿐이면 경고 후 재사용"
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품명의 품번_색상코드와 파일명이 일치하는 긴 이미지와 #productWrap 고시 2열 표. 공통 판매처/공지/세탁 이미지 제외, 별도 사이즈표 미수집"
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "가격": "price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page"
+  },
+  "code_hash": "6eee10cd96c0050ccfb0038a27e1a1fa551ffc2eff6c1521bd1a1468e8afa663"
+}

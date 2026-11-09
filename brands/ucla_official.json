@@ -1,0 +1,162 @@
+{
+  "id": "ucla_official",
+  "name": "UCLA",
+  "category": "캐주얼",
+  "script": "ucla_official.py",
+  "execution_level": 1,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "가격",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "verified",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품명 색상코드와 일치하는 공식 option_stock_data의 option_value_orginal 사이즈. 색상/사이즈 통합 옵션과 disabled·품절 사이즈 포함."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "해당 색상 공식 옵션 option_price의 현재 KRW 판매가. 사이즈별 가격 차이는 첫 옵션 가격 선택과 경고."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 xans-product-headcategory의 경로. 기획전 경로도 사이트 표기 그대로 출력."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품명에 명시된 품번/색상과 해당 색상별 상품 링크의 실제 갤러리로 연결. 옵션 드롭다운의 누락·다중 색상 표시 여부로 거부하지 않음. 실제 이미지 규격 검사 유지."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "해당 색상 페이지의 실제 갤러리 중 대표와 동일 내용을 제외한 통과 컷을 5슬롯 구성. 부족하면 통과 추가 컷만 반복."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "실제 #detail1 .cont의 images.dcollect.co.kr/GdsImages 상품·INFO 원본 이미지 유지. 고시·사이즈 표 별도 생성 없음."
+    }
+  },
+  "guide": {
+    "example": "UA3DP83",
+    "examples": [
+      "UA3DP83",
+      "UA3DP83_04",
+      "UA3DP83-04",
+      "UA3DP88",
+      "UA4SP90",
+      "UA5ST82",
+      "UA6SP55"
+    ],
+    "pattern": "^[A-Za-z0-9]{7}(?:[_-][A-Za-z0-9]+)?$",
+    "format": "기본 품번 7자리. 색상 지정은 기본품번_공식색상코드 또는 기본품번-공식색상코드",
+    "notes": "기본 품번 검색 결과의 모든 색상별 상품 링크를 조회합니다. 각 결과 행은 해당 색상 상품 링크를 유지합니다. 품절 상품과 disabled 사이즈도 포함합니다.",
+    "method": "공식 품번 검색의 전체 색상별 링크 조회 후 상품명의 [색상명](기본품번_색상코드)로 품번/색상을 식별합니다. 페이지 갤러리는 상품명 색상으로 연결하고 사이즈/가격은 같은 색상코드의 공식 옵션만 사용합니다.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "UA3DP83_",
+      "UA3DP8304"
+    ],
+    "validation_note": "입력 문법 검사이며 상품/색상 존재는 실행 시 확인."
+  },
+  "crawl_source": "공식 홈페이지",
+  "notes": "상품명 [색상명](품번_색상코드)을 색상 식별 기준으로 사용합니다. 드롭다운에 다른 색상들이 함께 표시되거나 색상-사이즈 통합 옵션이어도 사진은 해당 상품명 색상에만 배정합니다. 사이즈와 가격은 해당 색상코드의 공식 재고 옵션으로 확인합니다. 원본 상품 상세와 INFO 이미지만 사용하며 고시·사이즈 표를 별도로 만들지 않습니다. 배너/출고 안내는 제외합니다.",
+  "mapping_mode": "automatic",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품명 색상코드와 일치하는 공식 option_stock_data의 option_value_orginal 사이즈. 색상/사이즈 통합 옵션과 disabled·품절 사이즈 포함."
+    },
+    "price": {
+      "label": "가격",
+      "supported": true,
+      "status": "conditional",
+      "reason": "해당 색상 공식 옵션 option_price의 현재 KRW 판매가. 사이즈별 가격 차이는 첫 옵션 가격 선택과 경고."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 xans-product-headcategory의 경로. 기획전 경로도 사이트 표기 그대로 출력."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품명에 명시된 품번/색상과 해당 색상별 상품 링크의 실제 갤러리로 연결. 옵션 드롭다운의 누락·다중 색상 표시 여부로 거부하지 않음. 실제 이미지 규격 검사 유지."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "해당 색상 페이지의 실제 갤러리 중 대표와 동일 내용을 제외한 통과 컷을 5슬롯 구성. 부족하면 통과 추가 컷만 반복."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "실제 #detail1 .cont의 images.dcollect.co.kr/GdsImages 상품·INFO 원본 이미지 유지. 고시·사이즈 표 별도 생성 없음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "가격": "price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page"
+  },
+  "code_hash": "164d9db0265b087cabd3b1899ea75e51ba9bd1b3e36e7978b1ab06999e642e45"
+}

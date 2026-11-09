@@ -1,0 +1,156 @@
+{
+  "id": "lanzi_eland",
+  "name": "란찌",
+  "category": "캐주얼/남성 의류",
+  "crawl_source": "이랜드몰",
+  "script": "lanzi_eland.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_color_mapping": "manual",
+  "official_color_codes": true,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "가격",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 API의 품절 포함 사이즈. 모든 색상·상품 링크의 옵션이 같을 때만 공통 사이즈 출력, 다르면 빈 값과 경고."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "옵션 API sellPrice의 쿠폰 전 KRW 판매가. 가격이 다르면 첫 지정 상품/옵션 가격 하나를 선택하고 경고만 기록하며 성공 처리."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "itemMain.depth4StandardCategoryName. 정확히 일치하는 상품 링크의 분류가 같을 때 출력."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "셀러 제한 없이 대표이미지의 밝고 균일한 배경을 판정한 링크의 갤러리. 사진별 파일 규격 검사는 유지하며 배경 판정은 대표에만 수행. 색상은 허브에서 수동 매핑."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "배경 판정을 통과한 링크의 전체 갤러리 후보를 수집하고 내용 해시로 중복 제거. 매핑 후 슬롯 구성은 허브 담당."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "배경 판정 통과 링크에서 공식 Winstudio의 해당 품번 이미지와 LA/MA SIZE 이미지만 사용. 셀러 UUID 배너가 섞일 수 있는 기타 상세 이미지는 보수적으로 제외. 별도 표 생성 없음."
+    }
+  },
+  "guide": {
+    "example": "LALA25S01",
+    "examples": [
+      "LALA25S01"
+    ],
+    "pattern": "^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$",
+    "format": "색상 접미사가 없는 기본 품번",
+    "notes": "기본 품번으로 모든 검색 일치 상품과 품절 색상 후보를 수집한 뒤 허브에서 색상을 매핑합니다. 품번_색상코드 지정은 지원하지 않습니다. 대표 또는 추가이미지를 선택하세요.",
+    "method": "전체 셀러 품번 검색 후 란찌 brandNo=1690000175와 modelNo 정확히 대조. 대표 imageDcode=010의 밝고 균일한 배경으로 링크 승인. 승인된 링크의 실제 옵션/갤러리만 수집.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "",
+      "LALA25S01_03"
+    ],
+    "validation_note": "입력 문법 검사이며 실제 품번과 공식 판매자는 실행 시 확인합니다. 하이픈은 품번의 일부로 대조합니다."
+  },
+  "notes": "특정 셀러 제한 없음. 대표이미지 테두리·모서리의 밝고 균일한 색 배경을 링크 수집 기준으로 사용합니다. 사용자 승인으로 옅은 회색/밝은 균일색도 허용합니다. RGB 각 채널 210 이상·평균 230 이상, 기준색 대비 채널 차이 12 이내인 테두리 97%/모서리 각 95% 이상. 실제 스튜디오 촬영 출처를 증명하는 기준은 아니며 배경 모양으로 판정합니다. 나머지 사진에는 배경 검사를 반복하지 않고 실제 파일/규격/제외 신호 검사만 수행합니다. 상세는 해당 품번 Winstudio 원본 및 공식 사이즈 이미지만 허용하여 셀러 배너를 제외합니다. 경로로 상품 설명임을 확인하지 못하는 상세 이미지도 제외되므로 일부 상세가 생략될 수 있습니다.",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 API의 품절 포함 사이즈. 모든 색상·상품 링크의 옵션이 같을 때만 공통 사이즈 출력, 다르면 빈 값과 경고."
+    },
+    "price": {
+      "label": "가격",
+      "supported": true,
+      "status": "conditional",
+      "reason": "옵션 API sellPrice의 쿠폰 전 KRW 판매가. 가격이 다르면 첫 지정 상품/옵션 가격 하나를 선택하고 경고만 기록하며 성공 처리."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "itemMain.depth4StandardCategoryName. 정확히 일치하는 상품 링크의 분류가 같을 때 출력."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "셀러 제한 없이 대표이미지의 밝고 균일한 배경을 판정한 링크의 갤러리. 사진별 파일 규격 검사는 유지하며 배경 판정은 대표에만 수행. 색상은 허브에서 수동 매핑."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "배경 판정을 통과한 링크의 전체 갤러리 후보를 수집하고 내용 해시로 중복 제거. 매핑 후 슬롯 구성은 허브 담당."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "배경 판정 통과 링크에서 공식 Winstudio의 해당 품번 이미지와 LA/MA SIZE 이미지만 사용. 셀러 UUID 배너가 섞일 수 있는 기타 상세 이미지는 보수적으로 제외. 별도 표 생성 없음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "가격": "price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page"
+  },
+  "code_hash": "eef09d0ca03dad7a7da700af9e0f61854d47b69d14baeb6924d95f43716b00a4"
+}

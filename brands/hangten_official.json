@@ -1,0 +1,163 @@
+{
+  "id": "hangten_official",
+  "name": "행텐틴즈",
+  "category": "아동복",
+  "crawl_source": "공식 홈페이지",
+  "script": "hangten_official.py",
+  "execution_level": 1,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "가격",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "verified",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "supported",
+      "reason": "색상별 상품의 공식 색상-사이즈 옵션을 수집합니다. 품절 옵션을 포함하며 공식 표시 순서와 앞자리 0을 보존합니다."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 HTML의 option_stock_data에서 옵션별 현재 판매가를 확인합니다. KRW 가격을 사용하며 사이즈별 가격이 다르면 빈 값과 경고를 남깁니다."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 canonical 상품 페이지의 카테고리 경로에서 마지막 분류를 수집합니다. 사이트가 배정한 프로모션 분류일 수 있습니다."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 품번·색상코드·옵션·상품 ID를 대조한 색상별 갤러리에서 수집합니다. 공개 접근, 실제 파일 형식·용량·해상도 및 제외 신호 검사를 통과한 컷만 제공합니다."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "해당 색상 공식 갤러리의 검사 통과 컷으로 5슬롯을 구성합니다. 확인 가능한 동일 컷을 제거하고 부족하면 유효한 추가 컷을 반복합니다. 유효 컷이 1장뿐이면 경고 후 재사용합니다."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "사용자 지시에 따라 상품고시·실측표를 포함한 공식 상세 원본 이미지를 그대로 보존합니다. 해당 품번·색상의 상세 이미지와 페이지에 있는 공식 틴즈 사이즈가이드만 선택합니다. 소개 배너·관리·배송 안내는 요청부터 제외하며 공개 접근과 Excel HTML 셀 32767자 제한을 확인합니다."
+    }
+  },
+  "guide": {
+    "example": "14590-010-801-41",
+    "examples": [
+      "14590-010-801-41",
+      "1459001080141",
+      "14590-010-801-41_044",
+      "14590-010-801-41-044",
+      "1459001080141_044",
+      "14590-155-808-10",
+      "10590-010-801-69"
+    ],
+    "pattern": "^(?:\\d{5}-\\d{3}-\\d{3}-\\d{2}|\\d{13})(?:[_-]\\d{3})?$",
+    "format": "기본 품번은 5-3-3-2자리 또는 구분자 없는 13자리입니다. 특정 색상은 끝에 _044 또는 -044처럼 공식 3자리 색상코드를 붙입니다. 색상코드 앞자리 0을 유지하세요.",
+    "notes": "기본 품번은 공식 검색에 공개된 모든 일치 색상을 수집합니다. 색상을 지정하면 해당 색상만 출력합니다. 자체상품코드 마지막의 -c는 입력하지 않습니다. 품절 상품·색상·사이즈를 재고 때문에 제외하지 않습니다. 같은 공식몰의 행텐 상품도 공식 품번과 옵션이 일치하면 수집합니다.",
+    "method": "공식 /search.html?keyword=정규화품번의 검색 결과와 페이지 링크를 수집합니다. 각 상품의 자체상품코드와 공식 색상-사이즈 옵션을 대조하여 해당 상품 ID의 갤러리와 상세 이미지만 사용합니다. 상품명에 행텐틴즈라는 문구가 없다는 이유로 제외하지 않습니다. URL 변조·색감 추측·사전 해시 허용목록은 사용하지 않습니다.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "14590-010-801",
+      "14590-010-801-41_44",
+      "14590-010-801-41_그레이",
+      "14590-010-801-41-044-c"
+    ],
+    "validation_note": "입력 형식 검사이며 실제 상품·색상 존재 여부는 실행 시 공식 응답으로 확인합니다. 상세페이지는 고시·실측표를 원본 이미지로 보존합니다. 실제 Crawler Hub Excel·검수 렌더링과 WING 등록 승인은 별도 확인이 필요합니다."
+  },
+  "notes": "",
+  "mapping_mode": "automatic",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "supported",
+      "reason": "색상별 상품의 공식 색상-사이즈 옵션을 수집합니다. 품절 옵션을 포함하며 공식 표시 순서와 앞자리 0을 보존합니다."
+    },
+    "price": {
+      "label": "가격",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 HTML의 option_stock_data에서 옵션별 현재 판매가를 확인합니다. KRW 가격을 사용하며 사이즈별 가격이 다르면 빈 값과 경고를 남깁니다."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 canonical 상품 페이지의 카테고리 경로에서 마지막 분류를 수집합니다. 사이트가 배정한 프로모션 분류일 수 있습니다."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 품번·색상코드·옵션·상품 ID를 대조한 색상별 갤러리에서 수집합니다. 공개 접근, 실제 파일 형식·용량·해상도 및 제외 신호 검사를 통과한 컷만 제공합니다."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "해당 색상 공식 갤러리의 검사 통과 컷으로 5슬롯을 구성합니다. 확인 가능한 동일 컷을 제거하고 부족하면 유효한 추가 컷을 반복합니다. 유효 컷이 1장뿐이면 경고 후 재사용합니다."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "사용자 지시에 따라 상품고시·실측표를 포함한 공식 상세 원본 이미지를 그대로 보존합니다. 해당 품번·색상의 상세 이미지와 페이지에 있는 공식 틴즈 사이즈가이드만 선택합니다. 소개 배너·관리·배송 안내는 요청부터 제외하며 공개 접근과 Excel HTML 셀 32767자 제한을 확인합니다."
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "supported",
+      "reason": "실제 수집한 상품 상세페이지 링크. 수동 매핑은 첫 번째 확인 링크 공통 적용"
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "가격": "price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page"
+  },
+  "code_hash": "47840fc91cc8a5144581e3aadaa2da1a74a4bf3caae9e795fe9ebeaa9081d730"
+}

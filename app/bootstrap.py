@@ -9,6 +9,7 @@ import venv
 import shutil
 
 from local_paths import validate_local
+from brand_catalog import verify_published
 
 ROOT = Path(__file__).resolve().parent
 from local_paths import user_home
@@ -26,14 +27,6 @@ if not stamp.exists() or stamp.read_text() != digest:
 if '--install-browser' in sys.argv:
     subprocess.run([str(PY), '-m', 'playwright', 'install', 'chromium'], check=True)
 else:
-    def verify_published(folder):
-        manifest=folder/'brands'/'brands.json'
-        if not manifest.exists():return
-        for brand in json.loads(manifest.read_text(encoding='utf-8')).get('brands',[]):
-            file=(folder/'brands'/brand['script']).resolve()
-            if file.parent!=(folder/'brands').resolve():raise RuntimeError('공용 소스의 크롤러 경로가 올바르지 않습니다.')
-            if brand.get('code_hash') and (not file.is_file() or hashlib.sha256(file.read_bytes()).hexdigest()!=brand['code_hash']):
-                raise RuntimeError('브랜드 코드 동기화가 완료되지 않았습니다. 동기화 완료 후 다시 실행하세요.')
     verify_published(ROOT.parent)
     # Launch an immutable local snapshot; OneDrive updates cannot change a running job.
     code_hash = hashlib.sha256()

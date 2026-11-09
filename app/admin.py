@@ -13,6 +13,7 @@ from pathlib import Path
 from registry import ROOT,brands,brand_root
 from schema import FIELDS,field_for
 from local_paths import sync_roots
+from brand_catalog import definition_path, definitions, registry_hash, script_path as catalog_script_path
 
 SOURCE=Path(os.environ.get('CRAWLER_HUB_SOURCE_ROOT') or ROOT).resolve()
 ADMIN_LOCK=threading.RLock()
@@ -48,38 +49,33 @@ def edit_lock():
 def source_status():
     synced=any(SOURCE==p or p in SOURCE.parents for p in sync_roots()) or any('onedrive' in p.lower() or 'sharepoint' in p.lower() for p in SOURCE.parts)
     return dict(source_root=str(SOURCE),synced=synced,writable=os.access(SOURCE,os.W_OK),
-        message='동기화 소스에 저장합니다. 다른 PC에는 동기화 완료 후 다음 실행부터 적용됩니다.' if synced else '현재 소스는 등록된 동기화 폴더로 확인되지 않습니다. SharePoint 동기화 폴더의 실행 파일로 시작해주세요.')
+        message='이 PC의 소스 폴더에 저장합니다. 다른 PC에 전달하려면 변경 파일을 커밋하고 GitHub에 올린 뒤 해당 버전을 받으세요.')
 
 def metadata_template():
     return json.loads((ROOT/'brand_definition.json').read_text(encoding='utf-8'))
 
 
 def listing():
-    manifest=brand_root(SOURCE)/'brands.json'
     return dict(source_status(),brands=brands(SOURCE),template=TEMPLATE,metadata_template=metadata_template(),
-        registry_hash=hashlib.sha256(manifest.read_bytes()).hexdigest() if manifest.exists() else '')
+        registry_hash=registry_hash(brand_root(SOURCE)))
 
 def script_path(b):
-    spec=Path(b['script'])
-    if spec.is_absolute() or spec.drive or '..' in spec.parts:raise ValueError('크롤러 경로는 brands 폴더의 파일명여야 합니다.')
-    path=(brand_root(SOURCE)/b['script']).resolve()
-    if path.parent!=brand_root(SOURCE).resolve() or path.suffix!='.py':raise ValueError('허용된 크롤러 파일이 아닙니다.')
-    return path
+    return catalog_script_path(brand_root(SOURCE),b)
 
 def read_brand(key):
     b=next((x for x in brands(SOURCE) if x['id']==key),None)
     if not b:raise ValueError('브랜드를 찾을 수 없습니다.')
     code=script_path(b).read_text(encoding='utf-8')
-    manifest=brand_root(SOURCE)/'brands.json'
     return dict(metadata=b,code=code,hash=hashlib.sha256(script_path(b).read_bytes()).hexdigest(),
-        registry_hash=hashlib.sha256(manifest.read_bytes()).hexdigest() if manifest.exists() else '')
+        registry_hash=registry_hash(brand_root(SOURCE),key))
 
 def validate_definition(data):
     meta=dict(data['metadata']);code=data['code']
     if not isinstance(code,str) or len(code.encode())>1024*1024:raise ValueError('코드는 1MB 이하의 텍스트여야 합니다.')
     key=meta.get('id','')
     if not re.fullmatch(r'[a-z][a-z0-9_]{1,39}',key):raise ValueError('브랜드 ID는 소문자 영문으로 시작하는 영문·숫자·밑줄 2~40자입니다.')
-    if key in ('schema','crawler_sdk','worker','registry','tasks','storage','admin','bootstrap','local_paths','local_images','color_mapping','color_palette','detail_store'):raise ValueError('Crawler Hub 공통 모듈 이름은 브랜드 ID로 사용할 수 없습니다.')
+    definition_path(brand_root(SOURCE),key)
+    if key in ('schema','crawler_sdk','worker','registry','tasks','storage','admin','bootstrap','local_paths','local_images','color_mapping','color_palette','detail_store','brand_catalog'):raise ValueError('Crawler Hub 공통 모듈 이름은 브랜드 ID로 사용할 수 없습니다.')
     if not str(meta.get('name','')).strip():raise ValueError('브랜드명을 입력하세요.')
     # Validate supplied paths, then retain the registered destination on edits.
     # Generated definitions commonly contain custom/<id>.py even for a legacy
@@ -139,52 +135,71 @@ def validate_notes(notes):
 
 def save_notes(data):
     notes=data.get('notes','');validate_notes(notes)
-    if not source_status()['synced']:raise ValueError('SharePoint/OneDrive 동기화 소스에서 실행해야 공용 메모를 저장할 수 있습니다.')
     with ADMIN_LOCK,edit_lock():
-        current=next((b for b in brands(SOURCE) if b['id']==data.get('id')),None)
-        if not current:raise ValueError('기존 브랜드를 먼저 선택하세요. 새 브랜드는 공유 소스 저장 후 메모를 저장할 수 있습니다.')
-        config=brand_root(SOURCE)/'brands.json';previous=config.read_bytes() if config.exists() else b''
-        digest=hashlib.sha256(previous).hexdigest() if previous else ''
-        if data.get('registry_hash','')!=digest:raise ValueError('브랜드 정보가 변경되었습니다. 브랜드를 다시 선택한 뒤 메모를 저장하세요.')
-        backup=HOME/'admin-backups'/(datetime.now().strftime('%Y%m%d-%H%M%S')+'-'+uuid.uuid4().hex[:8])
-        backup.mkdir(parents=True,exist_ok=True)
-        if previous:(backup/'brands.json').write_bytes(previous)
-        definitions=json.loads(previous).get('brands',[]) if previous else []
-        updated=dict(current,notes=notes);updated.pop('available',None);updated.pop('display_name',None)
-        definitions=[b for b in definitions if b['id']!=current['id']]+[updated]
-        content=json.dumps(dict(brands=definitions),ensure_ascii=False,indent=2)
-        temporary=config.with_name(config.name+'.'+uuid.uuid4().hex+'.tmp')
-        temporary.write_bytes(content.encode('utf-8'));os.replace(temporary,config)
-    return dict(ok=True,notes=notes,registry_hash=hashlib.sha256(content.encode('utf-8')).hexdigest())
+        folder=editable_folder()
+        current=next((b for b in definitions(folder) if b['id']==data.get('id')),None)
+        if not current:raise ValueError('기존 브랜드를 먼저 선택하세요. 새 브랜드는 소스 저장 후 메모를 저장할 수 있습니다.')
+        if data.get('registry_hash','')!=registry_hash(folder,current['id']):
+            raise ValueError('브랜드 정보가 변경되었습니다. 브랜드를 다시 선택한 뒤 메모를 저장하세요.')
+        config=definition_path(folder,current['id']);previous=config.read_bytes()
+        backup=backup_folder();(backup/config.name).write_bytes(previous)
+        atomic_bytes(config,json_bytes(dict(current,notes=notes)))
+        token=registry_hash(folder,current['id'])
+    return dict(ok=True,notes=notes,registry_hash=token)
+
+
+def editable_folder():
+    folder=brand_root(SOURCE)
+    if not os.access(SOURCE,os.W_OK):raise ValueError('소스 폴더에 쓰기 권한이 없습니다.')
+    if (folder/'brands.json').exists():raise ValueError('먼저 python tools/manage_brands.py migrate 명령으로 브랜드 JSON을 분리하세요.')
+    folder.mkdir(parents=True,exist_ok=True)
+    return folder
+
+
+def backup_folder():
+    folder=HOME/'admin-backups'/(datetime.now().strftime('%Y%m%d-%H%M%S')+'-'+uuid.uuid4().hex[:8])
+    folder.mkdir(parents=True,exist_ok=True)
+    return folder
+
+
+def json_bytes(value):
+    return (json.dumps(value,ensure_ascii=False,indent=2)+'\n').encode('utf-8')
+
+
+def atomic_bytes(path,value):
+    temporary=path.with_name(path.name+'.'+uuid.uuid4().hex+'.tmp')
+    try:
+        temporary.write_bytes(value)
+        os.replace(temporary,path)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 def save_brand(data):
-    meta,code=validate_definition(data)
-    if not source_status()['synced']:raise ValueError('SharePoint/OneDrive 동기화 소스에서 실행해야 공용 소스를 저장할 수 있습니다.')
-    meta['code_hash']=hashlib.sha256(code.encode()).hexdigest()
     with ADMIN_LOCK,edit_lock():
-        current=next((b for b in brands(SOURCE) if b['id']==meta['id']),None)
+        folder=editable_folder()
+        meta,code=validate_definition(data)
+        meta['code_hash']=hashlib.sha256(code.encode('utf-8')).hexdigest()
+        current=next((b for b in definitions(folder) if b['id']==meta['id']),None)
         if current and current['script']!=meta['script']:raise ValueError('기존 브랜드의 파일 경로는 바꿀 수 없습니다.')
         path=script_path(meta);existing=path.read_bytes() if path.exists() else b''
+        if not current and path.exists():raise ValueError('등록되지 않은 동일 이름의 Python 파일이 있습니다. 파일을 확인한 뒤 등록하세요.')
+        if any(b['id']!=meta['id'] and b['script'].casefold()==meta['script'].casefold() for b in definitions(folder)):
+            raise ValueError('다른 브랜드가 사용하는 Python 파일입니다.')
         expected=hashlib.sha256(existing).hexdigest() if existing else ''
         if data.get('expected_hash','')!=expected:raise ValueError('다른 수정이 감지되었습니다. 다시 불러온 뒤 저장하세요.')
-        config=brand_root(SOURCE)/'brands.json';old_config=config.read_bytes() if config.exists() else b''
-        if data.get('registry_hash','')!=(hashlib.sha256(old_config).hexdigest() if old_config else ''):
-            raise ValueError('브랜드 목록이 변경되었습니다. 다시 불러오세요.')
+        config=definition_path(folder,meta['id']);old_config=config.read_bytes() if config.exists() else b''
+        if data.get('registry_hash','')!=registry_hash(folder,meta['id'] if current else None):
+            raise ValueError('브랜드 정보가 변경되었습니다. 다시 불러오세요.')
         if path.exists() and path.read_bytes()!=existing:raise ValueError('저장 직전 파일 변경이 감지되었습니다.')
-        backup=HOME/'admin-backups'/(datetime.now().strftime('%Y%m%d-%H%M%S')+'-'+uuid.uuid4().hex[:8])
-        backup.mkdir(parents=True,exist_ok=True)
+        backup=backup_folder()
         if existing:(backup/'crawler.py').write_bytes(existing)
-        if old_config:(backup/'brands.json').write_bytes(old_config)
-        definitions=json.loads(old_config).get('brands',[]) if old_config else []
-        definitions=[b for b in definitions if b['id']!=meta['id']]+[meta]
+        if old_config:(backup/config.name).write_bytes(old_config)
         path.parent.mkdir(parents=True,exist_ok=True)
-        temp=path.with_name(path.name+'.'+uuid.uuid4().hex+'.tmp');temp.write_bytes(code.encode('utf-8'));os.replace(temp,path)
+        atomic_bytes(path,code.encode('utf-8'))
         try:
-            temp_config=config.with_name(config.name+'.'+uuid.uuid4().hex+'.tmp')
-            temp_config.write_text(json.dumps(dict(brands=definitions),ensure_ascii=False,indent=2),encoding='utf-8')
-            os.replace(temp_config,config)
+            atomic_bytes(config,json_bytes(meta))
         except Exception:
-            if existing:path.write_bytes(existing)
+            if existing:atomic_bytes(path,existing)
             else:path.unlink(missing_ok=True)
             raise
     return dict(ok=True,source_root=str(SOURCE),path=str(path),hash=hashlib.sha256(code.encode()).hexdigest(),backup=str(backup),restart_required=True)

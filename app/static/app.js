@@ -89,13 +89,13 @@ async function refreshCurrentMonitor(){
   renderHeader();renderMonitor();
  }catch(e){if(!S.pollError)toast('로컬 서버 연결을 확인 중입니다.',true);S.pollError=true;}
 }
-async function loadAdmin(){S.admin=await api('/api/admin');$('adminSource').replaceChildren(el('b','공유 소스 · '+S.admin.source_root),el('div',S.admin.message));$('adminSource').className=S.admin.synced?'info-box':'warning-box';$('adminSave').disabled=!S.admin.synced||!S.admin.writable;renderAdminList()}
+async function loadAdmin(){S.admin=await api('/api/admin');$('adminSource').replaceChildren(el('b','소스 폴더 · '+S.admin.source_root),el('div',S.admin.message));$('adminSource').className=S.admin.writable?'info-box':'warning-box';$('adminSave').disabled=!S.admin.writable;renderAdminList()}
 function renderAdminList(){const q=$('adminSearch').value.toLowerCase();$('adminBrands').replaceChildren();for(const b of S.admin.brands.filter(b=>brandLabel(b).toLowerCase().includes(q))){const btn=button('',async()=>{const d=await api('/api/admin/brands/'+b.id);fillAdmin(d.metadata,d.code,d.hash,d.registry_hash)},'admin-brand');if(b.image_mode==='local')btn.append(el('span','이미지 저장','image-save-badge'));if(b.mapping_mode==='manual')btn.append(el('span','색상 매핑 필요','mapping-required-badge'));btn.append(el('b',brandLabel(b)),el('small',(b.interface==='portal_v1'?'Level 1':'기존 샘플')+' · '+b.script));$('adminBrands').append(btn)}}
 function fillAdmin(meta,code,hash='',registryHash=''){
  S.adminEditing=structuredClone(meta);S.adminHash=hash;S.adminRegistryHash=registryHash;
- $('adminId').value=meta.id;$('adminId').disabled=!!hash;$('adminName').value=meta.name;$('adminCategory').value=meta.category;$('adminCrawlSource').value=meta.crawl_source||'';$('adminCode').value=code;$('adminNotes').value=meta.notes||'';$('adminNotesSave').disabled=!hash||!S.admin?.synced||!S.admin?.writable;
+ $('adminId').value=meta.id;$('adminId').disabled=!!hash;$('adminName').value=meta.name;$('adminCategory').value=meta.category;$('adminCrawlSource').value=meta.crawl_source||'';$('adminCode').value=code;$('adminNotes').value=meta.notes||'';$('adminNotesSave').disabled=!hash||!S.admin?.writable;
  $('adminMetadata').value=JSON.stringify({script:meta.script,execution_level:meta.execution_level,output_headers:meta.output_headers,extensions:meta.extensions||[],mapping_mode:meta.mapping_mode||'automatic',image_mode:meta.image_mode||'url',additional_image_count:meta.additional_image_count||9,capabilities:meta.capabilities||{},official_color_codes:meta.official_color_codes||false,image_color_mapping:meta.image_color_mapping||"unverified",guide:meta.guide},null,2);
- $('adminStatus').textContent=hash?'공유 소스에서 불러왔습니다.':'새 브랜드 · 실제 사이트 수집 코드를 구현한 뒤 저장하세요.';
+ $('adminStatus').textContent=hash?'소스 폴더에서 불러왔습니다.':'새 브랜드 · 실제 사이트 수집 코드를 구현한 뒤 저장하세요.';
 }
 function adminData(){if(!S.adminEditing)throw Error('브랜드를 선택하거나 새 브랜드를 만드세요.');const metadata={...JSON.parse($('adminMetadata').value),id:$('adminId').value.trim(),name:$('adminName').value.trim(),category:$('adminCategory').value.trim(),crawl_source:$('adminCrawlSource').value.trim(),notes:$('adminNotes').value};metadata.script=S.adminHash?S.adminEditing.script:metadata.id+'.py';return {metadata,code:$('adminCode').value,expected_hash:S.adminHash,registry_hash:S.adminRegistryHash}}
 function bindV03(){
@@ -105,11 +105,11 @@ function bindV03(){
  $('monitorJobOpen').onclick=run(async()=>{const id=$('monitorJobSelect').value;if(!id)throw Error('확인할 작업을 선택해주세요.');await openJob(id,'monitor')});
  $('monitorCurrent').onclick=run(()=>{S.monitorRequestedId=null;return openMonitorPage()});
  $('adminSearch').oninput=()=>{if(S.admin)renderAdminList()};
- $('adminNew').onclick=run(async()=>{if(!S.admin)await loadAdmin();fillAdmin(S.admin.metadata_template,S.admin.template,'',S.admin.registry_hash||'')});
+ $('adminNew').onclick=run(async()=>{await loadAdmin();fillAdmin(S.admin.metadata_template,S.admin.template,'',S.admin.registry_hash||'')});
  $('adminTemplate').onclick=()=>{if(!S.admin)return;if(!S.adminEditing)fillAdmin(S.admin.metadata_template,S.admin.template);else{$('adminCode').value=S.admin.template;const d=JSON.parse($('adminMetadata').value);d.execution_level=1;$('adminMetadata').value=JSON.stringify(d,null,2)}};
  $('adminValidate').onclick=run(async()=>{await api('/api/admin/validate',adminData());$('adminStatus').textContent='문법·인터페이스 검사 통과 · 실사이트 수집 검증은 별도입니다.';toast('문법·인터페이스 검사 통과')});
- $('adminNotesSave').onclick=run(async()=>{if(!S.adminHash)throw Error('브랜드를 먼저 공유 소스에 저장하세요.');const d=await api('/api/admin/notes',{id:S.adminEditing.id,notes:$('adminNotes').value,registry_hash:S.adminRegistryHash});S.adminRegistryHash=d.registry_hash;S.admin.registry_hash=d.registry_hash;S.adminEditing.notes=d.notes;$('adminStatus').textContent='공유 메모 저장 완료 · 다른 PC는 동기화 후 브랜드를 다시 선택하면 확인할 수 있습니다.';toast('브랜드 메모를 공유폴더에 저장했습니다.');});
- $('adminSave').onclick=run(async()=>{const result=await api('/api/admin/save',adminData());S.adminHash=result.hash;$('adminStatus').textContent='공유 소스 저장 완료 · 다른 PC는 동기화 완료 후 다음 실행부터 적용';toast('공유 소스에 저장했습니다. 새 크롤링에서 바로 선택할 수 있습니다.');await loadAdmin();await refreshBrands();const d=await api('/api/admin/brands/'+$('adminId').value);fillAdmin(d.metadata,d.code,d.hash,d.registry_hash);$('adminStatus').textContent='공유 소스 저장 완료 · 새 작업에 즉시 적용됩니다. 다른 PC는 동기화 후 새 크롤링을 여세요.'});
+ $('adminNotesSave').onclick=run(async()=>{if(!S.adminHash)throw Error('브랜드를 먼저 소스 폴더에 저장하세요.');const d=await api('/api/admin/notes',{id:S.adminEditing.id,notes:$('adminNotes').value,registry_hash:S.adminRegistryHash});S.adminRegistryHash=d.registry_hash;S.adminEditing.notes=d.notes;$('adminStatus').textContent='메모 저장 완료 · GitHub에 변경 내용을 올려 공유하세요.';toast('브랜드 JSON에 메모를 저장했습니다.');});
+ $('adminSave').onclick=run(async()=>{const result=await api('/api/admin/save',adminData());S.adminHash=result.hash;toast('브랜드 JSON과 Python을 저장했습니다.');await loadAdmin();await refreshBrands();const d=await api('/api/admin/brands/'+$('adminId').value);fillAdmin(d.metadata,d.code,d.hash,d.registry_hash);$('adminStatus').textContent='소스 저장 완료 · 새 작업에 적용됩니다. 다른 PC에 전달하려면 GitHub에 변경 내용을 올리세요.'});
 }
 
 

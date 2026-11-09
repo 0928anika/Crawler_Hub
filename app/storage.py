@@ -12,7 +12,7 @@ from openpyxl import load_workbook
 from registry import ROOT
 from schema import selection, DEFAULT_SELECTION, output_headers
 
-VERSION='0.8.3'
+VERSION='0.9.0'
 SETTINGS_LOCK=threading.RLock()
 
 from local_paths import validate_local

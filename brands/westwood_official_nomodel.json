@@ -1,0 +1,174 @@
+{
+  "id": "westwood_official_nomodel",
+  "name": "웨스트우드",
+  "category": "아웃도어",
+  "crawl_source": "공식 홈페이지 모델컷 제외",
+  "script": "westwood_official_nomodel.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_mode": "local",
+  "additional_image_count": 5,
+  "image_color_mapping": "manual",
+  "official_color_codes": true,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "가격",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지",
+    "원본 상품명",
+    "OCR 텍스트",
+    "크롭 원본 이미지",
+    "크롭 좌표",
+    "상세 원본 이미지",
+    "상세 영역 좌표",
+    "원본 권리안내"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 option_stock_data의 공식 색상-사이즈 조합. 품절/비노출 옵션도 포함하고 앞자리 0을 유지합니다. 전 색상의 사이즈가 동일한 경우 쉼표 구분으로 수집하며 서로 다른 경우 임의 통합하지 않습니다."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션의 현재 option_price가 모든 색상·사이즈에서 동일한 경우 KRW 숫자로 수집합니다. 옵션별 차이가 있으면 빈 값과 경고로 구분합니다."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지의 카테고리 경로를 수집합니다. 사이트가 배정한 기획전/프로모션 분류일 수 있으며 관리자 분류 아웃도어와는 별개입니다."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "제품 전용 통이미지 상단에서 개별 컷을 잘라 로컬 JPEG 저장. OCR 매핑은 웹에서 확인/수정합니다."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "대표 외 선택 컷으로 정확히 5칸을 쉼표 구분. 부족하면 반복하고 대표 외 컷이 없으면 대표 컷 재사용."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상명·상품사진 → 제품 세부이미지 → PRODUCT INFO·SIZE를 원본 순서대로 합친 공통 JPEG. 품번.jpg로 저장하며 모든 색상 행에 동일한 파일명을 출력합니다."
+    }
+  },
+  "guide": {
+    "example": "WO3MTJW211",
+    "examples": [
+      "WQ1MCJP211",
+      "WQ1MCJW203",
+      "WO3MTJW211",
+      "WO1MTJW229"
+    ],
+    "pattern": "^[A-Za-z0-9]{7,20}$",
+    "format": "색상코드가 없는 기본 품번",
+    "required_columns": [
+      "품번"
+    ],
+    "notes": "Windows OCR의 색상 인식 결과를 웹에서 확인·수정하세요. OCR 사용 불가/인식 불확실 시 수동 매핑으로 유지합니다.",
+    "method": "공식 품번 검색 → 실제 선언된 상세 파일명 확인 → -D 제품 전용 원본/구형 원본 구조 검사 → 모델컷 -SP/-SS/-S 제외 → 색상 제목 OCR 및 개별 컷 저장",
+    "invalid_examples": [
+      "공백",
+      "WO3MTJW211_1B"
+    ],
+    "validation_note": "형식 검사이며 상품 존재 및 모델 미포함 제품 전용 원본 구조는 실행 시 확인합니다."
+  },
+  "notes": "v0.8.2: 색상명·상품사진 → 제품 세부이미지 → PRODUCT INFO·SIZE 세 영역을 합친 상세이미지/품번.jpg를 모든 색상 행에 공통 출력합니다. 원본 출처·권리정보는 JPEG 메타데이터와 추가 열에 보존합니다.",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 option_stock_data의 공식 색상-사이즈 조합. 품절/비노출 옵션도 포함하고 앞자리 0을 유지합니다. 전 색상의 사이즈가 동일한 경우 쉼표 구분으로 수집하며 서로 다른 경우 임의 통합하지 않습니다."
+    },
+    "price": {
+      "label": "가격",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션의 현재 option_price가 모든 색상·사이즈에서 동일한 경우 KRW 숫자로 수집합니다. 옵션별 차이가 있으면 빈 값과 경고로 구분합니다."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지의 카테고리 경로를 수집합니다. 사이트가 배정한 기획전/프로모션 분류일 수 있으며 관리자 분류 아웃도어와는 별개입니다."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "제품 전용 통이미지 상단에서 개별 컷을 잘라 로컬 JPEG 저장. OCR 매핑은 웹에서 확인/수정합니다."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "대표 외 선택 컷으로 정확히 5칸을 쉼표 구분. 부족하면 반복하고 대표 외 컷이 없으면 대표 컷 재사용."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상명·상품사진 → 제품 세부이미지 → PRODUCT INFO·SIZE를 원본 순서대로 합친 공통 JPEG. 품번.jpg로 저장하며 모든 색상 행에 동일한 파일명을 출력합니다."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "가격": "price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지": "detail_page",
+    "원본 상품명": null,
+    "OCR 텍스트": null,
+    "크롭 원본 이미지": null,
+    "크롭 좌표": null,
+    "상세 원본 이미지": null,
+    "상세 영역 좌표": null,
+    "원본 권리안내": null
+  },
+  "code_hash": "c1b61e65657ebafafea3c03203956d666170cb26c0af62dbed9cbbea5357dde2"
+}

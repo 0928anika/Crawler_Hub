@@ -1,0 +1,161 @@
+{
+  "id": "benjefe_official",
+  "name": "벤제프",
+  "category": "골프웨어",
+  "script": "benjefe_official.py",
+  "execution_level": 1,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "가격",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "정상가"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "verified",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data의 색상별 option_value_orginal 사이즈. 품절/disabled 옵션 포함."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "해당 색상 공식 옵션 option_price의 현재 KRW 판매가. 사이즈별 가격 차이는 첫 옵션 가격 선택과 경고."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 xans-product-headcategory의 경로. 기획전 경로도 사이트 표기 그대로 출력."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "COLOR 옵션 li의 link_image로 공식 연결된 색상 원본. 공개 접근·파일·픽셀·내용 보조 검사 통과 시 출력."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 색상 연결 사진만 사용. 시험 상품은 색상당 1장이므로 같은 컷을 5슬롯에 재사용하고 경고."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "#prdDetail의 원본 상품 상세 이미지 순서 유지. 사용자 요청으로 고시·사이즈 표를 별도로 만들지 않음."
+    }
+  },
+  "guide": {
+    "example": "BR5MMDV301",
+    "examples": [
+      "BR5MMDV301",
+      "BR5MMDV301_DR",
+      "BR5MMDV301-DR",
+      "BR5MWTS805"
+    ],
+    "pattern": "^[A-Za-z0-9]{10}(?:[_-][A-Za-z0-9]+)?$",
+    "format": "기본 품번 10자리. 특정 색상은 기본품번_색상코드 또는 기본품번-색상코드",
+    "notes": "기본 품번은 모든 공식 색상, 색상 지정은 해당 색상만 수집. 사이즈와 추가이미지는 쉼표 한 줄로 출력.",
+    "method": "공식 /product/search.html?keyword=품번 검색 후 .infoArea .model_no 정확히 대조. COLOR 옵션 link_image로 색상 사진 확인.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "BR5MMDV301DR",
+      "BR5MMDV301_"
+    ],
+    "validation_note": "입력 문법 검사이며 상품/색상 존재는 실행 시 확인."
+  },
+  "crawl_source": "벤제프",
+  "notes": "상세 이미지는 원본 그대로 사용하며 상품고시·사이즈 표를 별도로 생성하지 않습니다. 시험 상품의 공식 색상 연결 사진은 색상당 한 장이므로 추가 5슬롯에 같은 컷이 반복됩니다. 임의의 다른 색상 사진이나 상세 통짜 이미지를 추가 컷에 사용하지 않습니다. 이미지 내용 보조 검사는 OCR·의미 인식이 아니므로 모든 콜라주를 완벽히 판정하지는 못합니다.",
+  "mapping_mode": "automatic",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data의 색상별 option_value_orginal 사이즈. 품절/disabled 옵션 포함."
+    },
+    "price": {
+      "label": "가격",
+      "supported": true,
+      "status": "conditional",
+      "reason": "해당 색상 공식 옵션 option_price의 현재 KRW 판매가. 사이즈별 가격 차이는 첫 옵션 가격 선택과 경고."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 xans-product-headcategory의 경로. 기획전 경로도 사이트 표기 그대로 출력."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "COLOR 옵션 li의 link_image로 공식 연결된 색상 원본. 공개 접근·파일·픽셀·내용 보조 검사 통과 시 출력."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 색상 연결 사진만 사용. 시험 상품은 색상당 1장이므로 같은 컷을 5슬롯에 재사용하고 경고."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "#prdDetail의 원본 상품 상세 이미지 순서 유지. 사용자 요청으로 고시·사이즈 표를 별도로 만들지 않음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "가격": "price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "정상가": null
+  },
+  "code_hash": "5c48d0acf34f9c3e4fc11dd9a30e2bf816b680ddc18616b312ba3305049d181e"
+}

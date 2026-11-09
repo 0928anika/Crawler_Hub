@@ -1,0 +1,151 @@
+{
+  "imported_on": "2026-11-09",
+  "sources": [
+    {
+      "id": "allforyou_official",
+      "name": "올포유",
+      "action": "add",
+      "source_json": "allforyou_official.json",
+      "source_python": "allforyou_official.py",
+      "sha256": "00013da95aa06aa671fe9a76284239a5629f2d88c8a4fce0696c4d83ad029039"
+    },
+    {
+      "id": "beentrill_official",
+      "name": "빈트릴",
+      "action": "add",
+      "source_json": "beentrill_official.json",
+      "source_python": "beentrill_official.py",
+      "sha256": "f6058a0e09c616882f330da7668070413593f80531ed12b91c3bb0bba514e896"
+    },
+    {
+      "id": "benjefe_official",
+      "name": "벤제프",
+      "action": "add",
+      "source_json": "benjefe_official.json",
+      "source_python": "benjefe_official.py",
+      "sha256": "5c48d0acf34f9c3e4fc11dd9a30e2bf816b680ddc18616b312ba3305049d181e"
+    },
+    {
+      "id": "indigobank_kids_eland",
+      "name": "인디고뱅크키즈",
+      "action": "add",
+      "source_json": "indigobank_kids_eland.json",
+      "source_python": "indigobank_kids_eland.py",
+      "sha256": "4af1546afed64a58b826c0fcaf0287534768c38d60dba69e25125c1a4d0eab1d"
+    },
+    {
+      "id": "lanzi_eland",
+      "name": "란찌",
+      "action": "add",
+      "source_json": "lanzi_eland.json",
+      "source_python": "lanzi_eland.py",
+      "sha256": "eef09d0ca03dad7a7da700af9e0f61854d47b69d14baeb6924d95f43716b00a4"
+    },
+    {
+      "id": "lynx_official",
+      "name": "링스골프",
+      "action": "add",
+      "source_json": "lynx_official.json",
+      "source_python": "lynx_official.py",
+      "sha256": "6eee10cd96c0050ccfb0038a27e1a1fa551ffc2eff6c1521bd1a1468e8afa663"
+    },
+    {
+      "id": "milibam_eland",
+      "name": "밀리밤",
+      "action": "add",
+      "source_json": "milibam_eland.json",
+      "source_python": "milibam_eland.py",
+      "sha256": "59e91a1de29efa0a1f7d30407c5ef9207743cafd4524c592c82efc663d8fe805"
+    },
+    {
+      "id": "nbakids_official",
+      "name": "NBA키즈",
+      "action": "add",
+      "source_json": "nbakids_official.json",
+      "source_python": "nbakids_official.py",
+      "sha256": "0042674e1c339a207e8801cc1e18a3679968dec680f0ef8e9fdbafc383cce720"
+    },
+    {
+      "id": "nepa_official",
+      "name": "네파",
+      "action": "add",
+      "source_json": "nepa_official.json",
+      "source_python": "nepa_official.py",
+      "sha256": "460f835427e47e19e66e4ed7e5a4d3f8677ada2fd245f2b565246ad4fbde4786"
+    },
+    {
+      "id": "renomagolf_official",
+      "name": "레노마골프",
+      "action": "add",
+      "source_json": "renomagolf_official.json",
+      "source_python": "renomagolf_official.py",
+      "sha256": "8398d098c390a3295c90745d0ccd9b2fd70e685e31c289deb92a945c2a69c888"
+    },
+    {
+      "id": "the_izzat_google",
+      "name": "더아이잗",
+      "action": "add",
+      "source_json": "the_izzat_google.json",
+      "source_python": "the_izzat_google.py",
+      "sha256": "11e78144ee9cf4b45d8136e2c5050a0d8dc513e8bcbb220660551dced62e1caa"
+    },
+    {
+      "id": "the_izzat_official",
+      "name": "더아이잗",
+      "action": "replace",
+      "source_json": "the_izzat_official.json",
+      "source_python": "the_izzat_official.py",
+      "sha256": "1228d042ae21245c8510af4734c481f186e09b54706a904ccb769a57b33da4a1"
+    },
+    {
+      "id": "ucla_manual",
+      "name": "UCLA",
+      "action": "add",
+      "source_json": "ucla_manual.json",
+      "source_python": "ucla_manual.py",
+      "sha256": "a900b1390e40469723d7e73d6bbdd863609021425c6f53483d04eb8760486938"
+    },
+    {
+      "id": "ucla_official",
+      "name": "UCLA",
+      "action": "add",
+      "source_json": "ucla_official.json",
+      "source_python": "ucla_official.py",
+      "sha256": "164d9db0265b087cabd3b1899ea75e51ba9bd1b3e36e7978b1ab06999e642e45"
+    },
+    {
+      "id": "usall_eland",
+      "name": "유솔",
+      "action": "add",
+      "source_json": "usall_eland.json",
+      "source_python": "usall_eland.py",
+      "sha256": "3004868756ab869d75f09c898cb15b832b24bde2b031620e4500bc950d470a4b"
+    },
+    {
+      "id": "volvik_official",
+      "name": "볼빅",
+      "action": "add",
+      "source_json": "volvik_official.json",
+      "source_python": "volvik_official.py",
+      "sha256": "a1d9f57c0b8fee76f349ca692371c8d3c31c16830411b5ccc93bc3bb250053d9"
+    },
+    {
+      "id": "zooc_official",
+      "name": "주크",
+      "action": "add",
+      "source_json": "zooc_official.json",
+      "source_python": "zooc_official.py",
+      "sha256": "ccf68214895eaf2c30eae228aacb004c8a18292ff65e3e8976d8b6177c5790f4"
+    }
+  ],
+  "excluded": [],
+  "retained_original_ids": [
+    "egoist_naver_ncys",
+    "hangten_official",
+    "jessi_official",
+    "roem_official",
+    "tdg_eland_ncys",
+    "westwood_official_nomodel"
+  ],
+  "verification": "파일 일치·등록 정보·코드 해시·인터페이스·문법 검사. 전체 브랜드 실사이트 검증은 별도."
+}

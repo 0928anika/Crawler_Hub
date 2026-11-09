@@ -1,0 +1,158 @@
+{
+  "id": "usall_eland",
+  "name": "유솔",
+  "category": "주니어복",
+  "crawl_source": "이랜드몰",
+  "script": "usall_eland.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_color_mapping": "manual",
+  "official_color_codes": true,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "가격",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 API의 품절 포함 사이즈. 모든 색상·상품 링크의 옵션이 같을 때만 공통 사이즈 출력, 다르면 빈 값과 경고."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "옵션 API sellPrice의 쿠폰 전 KRW 판매가. 가격이 다르면 첫 지정 상품/옵션 가격 하나를 선택하고 경고만 기록하며 성공 처리."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "itemMain.depth4StandardCategoryName. 정확히 일치하는 상품 링크의 분류가 같을 때 출력."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "itemMain.itemImage의 상품 갤러리. 공개 접근·실제 파일·픽셀·비율·합성/글자 위주 이미지 보조 검사 후 수동 색상 매핑."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "통과한 개별 갤러리 전체 후보를 전달. 사진 선택과 최종 슬롯 구성은 허브에서 처리."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemDesc의 상품·사이즈 이미지를 원래 순서로 사용. 상단 이미지 추가 없음. 사용자 요청으로 상품고시/사이즈 표를 별도로 생성하지 않음."
+    }
+  },
+  "guide": {
+    "example": "ULJP24W01",
+    "examples": [
+      "ULJP24W01",
+      "ULMH24W51",
+      "ULUS25W01"
+    ],
+    "pattern": "^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$",
+    "format": "색상 접미사가 없는 기본 품번",
+    "notes": "기본 품번으로 모든 검색 일치 상품과 품절 색상 후보를 수집한 뒤 허브에서 색상을 매핑합니다. 품번_색상코드 지정은 지원하지 않습니다. 대표 또는 추가이미지를 선택하세요.",
+    "method": "이랜드몰 /s/srch?q=품번 검색 후 상품 JSON itemMain.modelNo 정확히 대조. itemMain.lowerVendNo가 LV17008492인 상품만 허용. 브랜드명 포함 여부는 검사하지 않습니다.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "",
+      "ULJP24W01_01"
+    ],
+    "validation_note": "입력 문법 검사이며 실제 품번과 공식 판매자는 실행 시 확인합니다. 하이픈은 품번의 일부로 대조합니다."
+  },
+  "notes": "지정 판매자 LV17008492 전용 수동 색상 매핑. 상품명에 유솔이 없어도 공식 modelNo와 판매자로 확인합니다. 상품고시·사이즈정보는 원본 이미지에 있는 내용을 유지하고 별도 표는 생성하지 않습니다. 상단 이미지를 추가하지 않습니다. 원본 상세의 별도 브랜드 배너/배송/혜택 이미지는 제외합니다. 가격 차이는 첫 지정 상품/옵션 가격 선택+경고로 성공 처리합니다. 사진 내용 보조 검사는 OCR·의미 인식이 아니므로 임의 합성 사진을 완벽히 판정하지는 못합니다.",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 API의 품절 포함 사이즈. 모든 색상·상품 링크의 옵션이 같을 때만 공통 사이즈 출력, 다르면 빈 값과 경고."
+    },
+    "price": {
+      "label": "가격",
+      "supported": true,
+      "status": "conditional",
+      "reason": "옵션 API sellPrice의 쿠폰 전 KRW 판매가. 가격이 다르면 첫 지정 상품/옵션 가격 하나를 선택하고 경고만 기록하며 성공 처리."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "itemMain.depth4StandardCategoryName. 정확히 일치하는 상품 링크의 분류가 같을 때 출력."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "itemMain.itemImage의 상품 갤러리. 공개 접근·실제 파일·픽셀·비율·합성/글자 위주 이미지 보조 검사 후 수동 색상 매핑."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "통과한 개별 갤러리 전체 후보를 전달. 사진 선택과 최종 슬롯 구성은 허브에서 처리."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemDesc의 상품·사이즈 이미지를 원래 순서로 사용. 상단 이미지 추가 없음. 사용자 요청으로 상품고시/사이즈 표를 별도로 생성하지 않음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "가격": "price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page"
+  },
+  "code_hash": "3004868756ab869d75f09c898cb15b832b24bde2b031620e4500bc950d470a4b"
+}

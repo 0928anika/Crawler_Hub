@@ -1,0 +1,159 @@
+{
+  "id": "volvik_official",
+  "name": "볼빅",
+  "category": "골프웨어",
+  "crawl_source": "공식 홈페이지",
+  "script": "volvik_official.py",
+  "execution_level": 1,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "가격",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "verified",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "supported",
+      "reason": "공식 option_stock_data의 색상별 option_value_orginal 사이즈. 품절 포함"
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data.option_price의 일반 KRW 판매가. 옵션별 가격이 다르면 생략"
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상세페이지 .xans-product-headcategory.path 경로"
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 색상별 페이지의 품번 명시 CDN 갤러리 또는 페이지가 직접 지정한 bigImage 고해상도 원본. 공개 파일·규격·내용 신호 검사 통과 시 제공"
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상별 검사 통과 개별컷을 내용 해시로 중복 제거 후 5슬롯 구성"
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "#wivis_detail의 상품별 SellerCanvas 또는 goods/S004 사진, .prodSize 실측 표/그림, .procEssInfo 실제 고시 항목·값. 없는 자료는 경고 후 생략"
+    }
+  },
+  "guide": {
+    "example": "VMBSQ991",
+    "examples": [
+      "VMBSQ991",
+      "VMBSQ991_OW",
+      "VMBSQ991-OW",
+      "VMMSP991_MG"
+    ],
+    "pattern": "^[A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)*$",
+    "format": "기본 품번 또는 기본품번_색상코드. 색상 구분자는 하이픈도 허용",
+    "notes": "VMBSQ991은 OW/BK 전체, VMBSQ991_OW 또는 VMBSQ991-OW는 오프화이트만. 공식 자체상품코드와 Color 옵션으로 확인하며 품절도 포함",
+    "method": "/product/search.html?keyword=품번 검색. #detail_ma_product_code의 공식 품번_색상과 해당 페이지 CDN 갤러리를 대조. 공통 JSON-LD image는 사용하지 않음",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "VMBSQ991/OW",
+      "VMBSQ991__OW"
+    ],
+    "validation_note": "입력 문법만 검사하며 상품 존재와 색상 연결은 실행 시 검증"
+  },
+  "notes": "2026-11-08 확인. 정지 WebP는 사용자 WING 등록 환경의 허용 형식. VMBSQ991 OW/BK는 고시 11항목, 실측 사이즈표 없음. VMMSP991_MG는 측정 그림 및 HTML 실측 표 확인. 상품정보고시 내 취급주의 텍스트는 유지하고 care 아이콘/공통 배너/배송 안내는 제외. Hub 최종 정제·재실행 및 WING 업로드는 사용자 환경에서 확인 필요. VMKTQA02: 해시 파일명 갤러리는 색상별 공식 bigImage 원본으로 처리. ul형 및 select형 색상 옵션 모두 지원. r3: VMBSQA92 BK/OW/CG 전체 항목 실사이트 수집 확인. 실행 버전/요청 URL/실패 단계 진단 로그 추가. 옵션의 미확인 색상은 기존 실패 기준 유지.",
+  "mapping_mode": "automatic",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "supported",
+      "reason": "공식 option_stock_data의 색상별 option_value_orginal 사이즈. 품절 포함"
+    },
+    "price": {
+      "label": "가격",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data.option_price의 일반 KRW 판매가. 옵션별 가격이 다르면 생략"
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상세페이지 .xans-product-headcategory.path 경로"
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 색상별 페이지의 품번 명시 CDN 갤러리 또는 페이지가 직접 지정한 bigImage 고해상도 원본. 공개 파일·규격·내용 신호 검사 통과 시 제공"
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상별 검사 통과 개별컷을 내용 해시로 중복 제거 후 5슬롯 구성"
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "#wivis_detail의 상품별 SellerCanvas 또는 goods/S004 사진, .prodSize 실측 표/그림, .procEssInfo 실제 고시 항목·값. 없는 자료는 경고 후 생략"
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "가격": "price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page"
+  },
+  "code_hash": "a1d9f57c0b8fee76f349ca692371c8d3c31c16830411b5ccc93bc3bb250053d9"
+}

@@ -5,13 +5,12 @@
 ## 최초 기준본
 
 - 원본: Crawler_Hub_웨스트우드최신_2026-11-05.zip
-- 사용자가 제공한 운영본 기준 버전입니다.
-- 원본 ZIP에 포함된 브랜드 7개를 유지합니다. 이후 운영본에 추가된 브랜드는 아직 포함하지 않습니다.
-- 최초 업로드 준비 과정에서 원본 실행 코드와 브랜드 정의는 수정하지 않았습니다.
+- `main`은 운영 기준본을 보관합니다. `develop`에서는 브랜드 추가와 구조 변경을 준비합니다.
+- 운영 적용을 확인한 뒤 배포한 코드만 `main`에 반영합니다.
 
 ## 실행
 
-Python이 설치된 Windows PC에서 `Crawler_Hub.bat`를 실행합니다.
+Python 3.10 이상이 설치된 Windows PC에서 `Crawler_Hub.bat`를 실행합니다.
 자세한 내용은 `사용방법.txt`를 참고하세요.
 작업 이력과 설정은 기본적으로 `%LOCALAPPDATA%\CrawlerHub`에 저장됩니다.
 
@@ -21,18 +20,62 @@ Python이 설치된 Windows PC에서 `Crawler_Hub.bat`를 실행합니다.
 - `develop`: 다음 교체본을 준비하는 브랜치입니다.
 - 작업별 브랜치에서 수정하고 PR의 대상을 `develop`으로 지정합니다.
 - 운영본 배포 시 정확한 커밋을 고정하고, 적용 확인 후 해당 코드만 `main`에 반영합니다.
-- 최초 기준본에 없는 운영본 추가 브랜드는 별도 작업으로 반영하고 검증합니다.
+- 일반 로컬 개발 폴더에서도 관리자 저장이 가능합니다. 저장은 이 PC의 파일만 변경하므로 공유하려면 커밋과 Push가 필요합니다.
 
 ## 현재 구조
 
 - `app/`: 허브 본체와 의존성 목록
-- `brands/brands.json`: 브랜드 등록 목록
+- `brands/<브랜드ID>.json`: 해당 브랜드의 등록 정보와 메모
 - `brands/*.py`: 브랜드 실행 코드
 
-브랜드별 JSON 분리는 아직 적용하지 않았습니다.
+JSON 파일명은 브랜드 ID와 같아야 하고 `script`는 같은 폴더의 Python 파일명입니다.
+**등록과 업데이트의 기준은 브랜드 ID입니다. 이름이 같아도 ID가 다르면 별도 버전이며, 같은 ID만 교체합니다.**
+예를 들어 `ucla_official`과 `ucla_manual`, `the_izzat_official`과 `the_izzat_google`은 각각 유지합니다.
+신규 추가나 기존 수정은 관리자에서 JSON과 Python을 함께 저장하세요. 코드 해시와 백업을 자동 갱신합니다.
+다른 브랜드의 메모 편집은 저장을 막지 않으며 같은 브랜드의 오래된 편집은 차단합니다.
 등록 항목의 `code_hash`가 있으면 Python 파일의 SHA-256과 일치해야 합니다.
 `.gitattributes`는 Git의 자동 줄바꿈 변환으로 코드 해시가 달라지는 것을 방지합니다.
-현재 관리자 저장은 OneDrive/SharePoint 경로를 전제로 하므로 일반 로컬 개발 경로 지원은 후속 작업입니다.
+등록 정보와 Python 파일이 맞지 않으면 실행 단계에서 오류를 표시합니다.
+
+현재 등록 항목은 23개입니다. 최초 목록 7개와 추가 폴더의 ID 17개 중 같은 ID 1개를 교체했습니다.
+반영 파일명과 Python 해시는 `docs/brand-import.json`에 기록했습니다.
+이 기록은 최초 취합 시점의 출처이며, 이후 수정본의 실행 검사는 각 브랜드 JSON의 `code_hash`를 사용합니다.
+
+## 명령행 등록과 검사
+
+프로젝트 최상위 폴더에서 실행합니다. `import`는 허브 패키지가 설치된 Python 환경을 사용하세요.
+허브를 한 번 실행했다면 기본 환경의 Python은 `%LOCALAPPDATA%\CrawlerHub\venv\Scripts\python.exe`입니다.
+
+```text
+python tools/manage_brands.py migrate
+python tools/manage_brands.py check
+python tools/manage_brands.py import "C:\incoming\my_brand.json"
+python tools/manage_brands.py import "C:\incoming\my_brand.json" --replace
+```
+
+`migrate`는 기존 `brands.json`을 브랜드별 JSON으로 분리합니다. 새 구조에는 다시 실행할 필요가 없습니다.
+이전 목록 형식도 읽을 수 있지만 관리자 편집 전에 분리가 필요합니다. 두 형식을 함께 두면 오류를 표시합니다.
+`import`는 JSON의 `script`에 지정된 Python을 같은 입력 폴더에서 읽고 관리자와 동일하게 검증·저장합니다.
+Python이 다른 위치라면 `--script "C:\incoming\crawler.py"`를 추가하세요. 기존 브랜드 교체에는 `--replace`가 필요합니다.
+Python 파일만 덮어쓰지 말고 관리자나 등록 도구로 JSON과 함께 갱신하세요.
+`check`는 등록 정보, 파일, 해시와 Python 문법을 확인합니다. 실제 사이트 수집 성공을 보장하지 않습니다.
+
+## 데이터 보존과 배포
+
+- 작업 이력, 설정, 실행 환경과 관리자 백업은 GitHub에 올리지 않습니다.
+- 시험 실행은 `CRAWLER_HUB_HOME`을 별도 로컬 경로로 지정해 운영 데이터와 분리하세요.
+- 진행 중인 작업을 마무리하고 허브를 종료한 뒤 새 버전을 별도 폴더에 풀어 실행합니다.
+- 브랜드 목록, 대표 품번 수집, 매핑과 최종 엑셀을 확인한 뒤 실행 경로를 새 버전으로 바꿉니다.
+- 문제가 있으면 이전 코드 폴더로 돌아갑니다. 데이터·라이브러리 형식을 바꾸는 배포는 별도 복구 준비가 필요합니다.
+
+## 검증
+
+허브 패키지가 설치된 환경에서 실행합니다. 테스트는 임시 데이터만 사용합니다.
+
+```text
+python -B -m unittest discover -s tests -v
+python -B tools/manage_brands.py check
+```
 
 ## 공개 저장소
 

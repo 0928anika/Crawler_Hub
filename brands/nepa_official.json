@@ -1,0 +1,159 @@
+{
+  "id": "nepa_official",
+  "name": "네파",
+  "category": "아웃도어",
+  "script": "nepa_official.py",
+  "execution_level": 1,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "가격",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "verified",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상별 상품 HTML의 optSize/data-size. disabled·재고 0 옵션도 포함하며 원래 옵션이 없으면 경고"
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 HTML .goods-info .price .sale의 일반 원화 판매가. 쿠폰·최대혜택가는 사용하지 않음. 가격 부재는 빈 값"
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 HTML gaCategory의 계층 문자열. 부재 시 빈 값과 경고"
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "ProductStyle·ProductColorCode가 일치하는 공식 색상별 갤러리에서 규격·제외 신호 검사. 사용자 승인으로 실제 JPEG/PNG/WebP 허용"
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "통과한 개별 상품컷을 내용 해시로 중복 제거해 5슬롯 구성. 부족하면 통과한 컷만 반복, 0장이면 빈 목록과 경고"
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 이미지, 상품정보고시 항목·값 표, 상품번호별 사이즈가이드 실측표를 통합. 원본 자료가 없는 항목은 생략."
+    }
+  },
+  "guide": {
+    "example": "7M76103",
+    "examples": [
+      "7M76103",
+      "7M76103_B64",
+      "7M76103-B64"
+    ],
+    "pattern": "^[A-Za-z0-9]{7}(?:[_-][A-Za-z0-9]{3})?$",
+    "format": "영문·숫자 기본 품번 7자리. 특정 색상은 기본품번_공식색상코드 3자리 또는 기본품번-공식색상코드 3자리. 대소문자 허용",
+    "notes": "기본 품번은 공식 검색 및 색상 링크에서 발견한 전체 색상. 지정 색상은 해당 색상만 출력. 품번 자체에 하이픈이 있는 형식은 이 네파 어댑터에서 지원하지 않음. JPEG/PNG/WebP 허용은 사용자의 실제 WING 등록 경험을 반영한 프로젝트 정책이며 WebP가 쿠팡 공식 JPG/PNG 안내에 포함된다는 뜻은 아님",
+    "method": "공식 /search/search.asp?sWord=품번 검색의 data-no/data-code와 상품 페이지 ProductStyle/ProductColorCode 및 _color 링크를 대조. 해당 색상 상품 페이지의 .photo-slider-box .photo__slider .slide img 사용",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "7M61860J53",
+      "7M61860_J",
+      "7M6-1860"
+    ],
+    "validation_note": "형식만 검사하며 상품·색상 존재 여부는 실행 시 공식 응답과 대조합니다."
+  },
+  "crawl_source": "공식 홈페이지",
+  "mapping_mode": "automatic",
+  "notes": "",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상별 상품 HTML의 optSize/data-size. disabled·재고 0 옵션도 포함하며 원래 옵션이 없으면 경고"
+    },
+    "price": {
+      "label": "가격",
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 HTML .goods-info .price .sale의 일반 원화 판매가. 쿠폰·최대혜택가는 사용하지 않음. 가격 부재는 빈 값"
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 HTML gaCategory의 계층 문자열. 부재 시 빈 값과 경고"
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "ProductStyle·ProductColorCode가 일치하는 공식 색상별 갤러리에서 규격·제외 신호 검사. 사용자 승인으로 실제 JPEG/PNG/WebP 허용"
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "통과한 개별 상품컷을 내용 해시로 중복 제거해 5슬롯 구성. 부족하면 통과한 컷만 반복, 0장이면 빈 목록과 경고"
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 이미지, 상품정보고시 항목·값 표, 상품번호별 사이즈가이드 실측표를 통합. 원본 자료가 없는 항목은 생략."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "가격": "price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page"
+  },
+  "code_hash": "460f835427e47e19e66e4ed7e5a4d3f8677ada2fd245f2b565246ad4fbde4786"
+}

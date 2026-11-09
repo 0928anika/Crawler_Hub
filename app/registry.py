@@ -3,6 +3,7 @@ import json
 import os
 import hashlib
 from schema import FIELDS, field_for
+from brand_catalog import definitions, script_path
 
 ROOT=Path(__file__).resolve().parent
 
@@ -14,12 +15,10 @@ def brand_root(source_root=None):
     return Path(source_root or os.environ.get('CRAWLER_HUB_SOURCE_ROOT') or ROOT).resolve().parent/'brands'
 
 def brands(source_root=None):
-    folder=brand_root(source_root);manifest=folder/'brands.json'
-    definitions=json.loads(manifest.read_text(encoding='utf-8')).get('brands',[]) if manifest.exists() else []
+    folder=brand_root(source_root)
     result=[]
-    for definition in definitions:
-        b=dict(definition);path=(folder/b['script']).resolve()
-        if path.parent!=folder.resolve() or path.suffix!='.py':raise ValueError('브랜드 코드는 brands 폴더의 Python 파일이어야 합니다.')
+    for definition in definitions(folder):
+        b=dict(definition);path=script_path(folder,b)
         b['available']=path.is_file();b['column_fields']={h:field_for(h) for h in b['output_headers']}
         if b['available'] and b.get('code_hash'):
             b['available']=hashlib.sha256(path.read_bytes()).hexdigest()==b['code_hash']

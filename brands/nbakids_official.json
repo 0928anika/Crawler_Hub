@@ -1,0 +1,163 @@
+{
+  "id": "nbakids_official",
+  "name": "NBA키즈",
+  "category": "아동복",
+  "script": "nbakids_official.py",
+  "execution_level": 1,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "가격",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "한글명"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "verified",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상별 공식 상품 페이지 input[name=opt]의 optCd2. disabled·품절 옵션도 원래 순서로 포함."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상별 price_blk sale_price 일반 KRW 판매가. 사이즈별 추가금액이 있으면 빈 값과 경고."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 BreadcrumbList의 브랜드·카테고리 경로. 상품명 단계 제외."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 goodsCd/colorCd 페이지와 goodsDetailImageWeb 갤러리의 연결 확인. 파일·픽셀·비율·내용 보조 검사 통과 컷만 사용."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상별 갤러리 통과 컷을 내용 해시로 중복 제거 후 대표 제외·추가 5슬롯. 부족하면 통과 컷 반복."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 사진 다음 사이즈정보 그림→해당 품목 표, 상품고시정보의 항목·값 2열 표. 사이즈정보는 공식 POST 팝업에서 가져오고 표준/실측 구분은 원문 기준."
+    }
+  },
+  "guide": {
+    "example": "K224TP070P",
+    "examples": [
+      "K224TP070P",
+      "K224TP070P_LA",
+      "K224TP070P-LA",
+      "K225TO011P",
+      "K225TO011P_RE",
+      "K235Z1996P"
+    ],
+    "pattern": "^[A-Za-z0-9]+(?:[_-][A-Za-z0-9]+)*$",
+    "format": "공식 기본 품번. 특정 색상은 기본품번_공식색상코드 또는 기본품번-공식색상코드",
+    "notes": "기본 품번은 공식 색상 링크 전체 수집. 하이픈 포함 기본 품번 자체의 공식 상품 ID를 먼저 조회하고, 색상 접미사는 공식 색상 목록과 대조합니다.",
+    "method": "공식 goods/detail/form?goodsCd=품번 공개 조회 후 ProductGroup.productGroupID 및 NBA KIDS 브랜드관 2143으로 확인. 색상별 opt_color 링크와 현재 params.colorCd 대조.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "",
+      "K224TP070P_"
+    ],
+    "validation_note": "입력 문법 검사이며 실제 상품·색상은 실행 시 공식 응답과 대조합니다."
+  },
+  "crawl_source": "공식 홈페이지",
+  "notes": "사이즈정보의 그림을 표 앞에 배치합니다. 화면용 분리 표는 항목명/값을 합쳐 하나의 표로 만듭니다. K224TP070P는 실측표 대신 NBA KIDS 표준 사이즈표와 측정 가이드 그림이 제공되며 표준 가이드 안내문을 유지합니다. 상품고시정보는 실제 항목/값 순서대로 표로 재구성합니다. 별도 소재/케어/배송/혜택 영역은 수집하지 않습니다. 이미지 내용 보조 검사는 OCR·의미 인식이 아니므로 모든 합성 컷을 완벽히 판정하지는 못합니다. 2026-11-09 수정: 우주복/바디수트의 상품별 실측표를 분류 오류 없이 유지. 전용 측정 그림이 없으면 다른 품목 그림으로 대체하지 않음. 미분류 상품도 직접 연결된 실측표는 보존하며 식별 불가한 공통 표준표는 경고 후 생략. 색상/색상명은 공식 컬러 안내의 영문 원문으로 출력. 한글명은 마지막 추가 열 한글명에 보존. 색상코드는 STYLE24의 영문 코드(GN/LY/NA 등)이며 바코드 숫자 코드가 아님. K235Z1996P 공식 페이지 및 공개 option2/list 응답에서 숫자 색상코드 확인되지 않음. 숫자 대응 추정/전역 매핑 없음.",
+  "mapping_mode": "automatic",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상별 공식 상품 페이지 input[name=opt]의 optCd2. disabled·품절 옵션도 원래 순서로 포함."
+    },
+    "price": {
+      "label": "가격",
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상별 price_blk sale_price 일반 KRW 판매가. 사이즈별 추가금액이 있으면 빈 값과 경고."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 BreadcrumbList의 브랜드·카테고리 경로. 상품명 단계 제외."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 goodsCd/colorCd 페이지와 goodsDetailImageWeb 갤러리의 연결 확인. 파일·픽셀·비율·내용 보조 검사 통과 컷만 사용."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상별 갤러리 통과 컷을 내용 해시로 중복 제거 후 대표 제외·추가 5슬롯. 부족하면 통과 컷 반복."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 사진 다음 사이즈정보 그림→해당 품목 표, 상품고시정보의 항목·값 2열 표. 사이즈정보는 공식 POST 팝업에서 가져오고 표준/실측 구분은 원문 기준."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "가격": "price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "한글명": null
+  },
+  "code_hash": "0042674e1c339a207e8801cc1e18a3679968dec680f0ef8e9fdbafc383cce720"
+}

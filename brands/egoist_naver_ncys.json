@@ -1,0 +1,154 @@
+{
+  "id": "egoist_naver_ncys",
+  "name": "에고이스트",
+  "category": "여성복",
+  "crawl_source": "네이버 NC_YS",
+  "script": "egoist_naver_ncys.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_color_mapping": "manual",
+  "official_color_codes": false,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "가격",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 simpleProductForDetailPage.optionStandards에 단일 사이즈만 있는 상품 지원. 첨부 ES4OKL55의 공식 옵션은 Free, 상세에는 FF(프리사이즈). 여러 사이즈 또는 색상별 조합은 미확인이므로 그 경우 미완료 처리."
+    },
+    "price": {
+      "supported": false,
+      "status": "unsupported",
+      "reason": "첨부 원문에 판매가·할인가 요약은 있으나 색상별 옵션 가격/추가금 조합 데이터가 없어 전 색상 공통 가격을 확인할 수 없음. 가격 파싱과 전용 요청을 수행하지 않음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 상품 category.wholeCategoryName 사용. 첨부 ES4OKL55에서 패션의류>여성의류>니트>풀오버 확인. 값 누락/링크 간 차이는 미완료 처리."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 representativeImageUrl 및 optionalImageUrls의 전체 갤러리 원본 URL 수집. ES4OKL55 4장은 실제 공개 GET·Pillow 해독 성공, JPEG 3000x4000. 정지 JPEG/PNG/WebP·양변 500px·10000000바이트·비율 1.8·부정 신호·분할 여백 검사. 상품 HTML이 429/로그인 제한이면 실패 처리. 색상은 수동 매핑."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "매핑 전 전체 갤러리를 개수 제한 없이 전달. 최종 대표/추가 선택은 허브 담당. 무여백 콜라주의 완전 판별과 등록 승인을 보장하지 않음. 상품 접근 제한은 우회하지 않음."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "사용자 제공 실제 렌더링 HTML의 .se-main-container 이미지 14개, 소재 단락, 단면 CM 실측표와 짧은 주석 확인. 상세 이미지 전체와 소재/사이즈 단락·표를 공통 HTML로 구성하며 갤러리로 대체하지 않음. 별도 상품정보고시 팝업 내용은 미확인으로 포함하지 않음. 동적 로딩 시 playwright와 Chromium 필요. 브라우저 자동 로딩은 현 환경에서 미검증이며 429/로그인 제한은 명시적 실패."
+    }
+  },
+  "guide": {
+    "example": "ES4OKL55",
+    "examples": [
+      "ES4OKL55"
+    ],
+    "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{4,29}$",
+    "format": "색상코드 없는 기본 품번. 대소문자는 대문자로 정규화하고 원래 하이픈 보존.",
+    "notes": "ncdjys164 스토어만 수집. 수집 후 색상을 수동 매핑합니다. 가격은 미지원. 상세 미선택이면 Playwright와 상세 이미지 요청을 실행하지 않습니다. 접속 제한 또는 로그인 화면에서는 중단합니다.",
+    "method": "확인된 /ncdjys164/search?q=기본품번의 __PRELOADED_STATE__.keywordSearch.simpleProducts를 읽고 naverShoppingSearchInfo.modelName 정확히 일치하는 모든 상품 ID 수집. 상품 페이지에서도 동일 modelName과 channel.url=ncdjys164 재확인. 특정 브랜드명이 상품명에 있어야 한다는 검사는 없음. 검색 page/totalCount로 반복·누락을 검사하되 실제 다중 페이지는 미검증.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "",
+      "ES4OKL55_01",
+      "https://smartstore.naver.com/"
+    ],
+    "validation_note": "형식 검사이며 실제 상품 존재는 실행 시 확인. 최초 요청서의 ER3CL862는 미검증. 사용자 제공 검색·상품·상세 HTML로 ES4OKL55를 검증했으며 스마트스토어 자동 접속 성공을 의미하지 않음."
+  },
+  "notes": "",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": false,
+      "status": "unsupported",
+      "reason": "독립 결과 컬럼 없음"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 simpleProductForDetailPage.optionStandards에 단일 사이즈만 있는 상품 지원. 첨부 ES4OKL55의 공식 옵션은 Free, 상세에는 FF(프리사이즈). 여러 사이즈 또는 색상별 조합은 미확인이므로 그 경우 미완료 처리."
+    },
+    "price": {
+      "label": "가격",
+      "supported": false,
+      "status": "unsupported",
+      "reason": "첨부 원문에 판매가·할인가 요약은 있으나 색상별 옵션 가격/추가금 조합 데이터가 없어 전 색상 공통 가격을 확인할 수 없음. 가격 파싱과 전용 요청을 수행하지 않음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 상품 category.wholeCategoryName 사용. 첨부 ES4OKL55에서 패션의류>여성의류>니트>풀오버 확인. 값 누락/링크 간 차이는 미완료 처리."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 representativeImageUrl 및 optionalImageUrls의 전체 갤러리 원본 URL 수집. ES4OKL55 4장은 실제 공개 GET·Pillow 해독 성공, JPEG 3000x4000. 정지 JPEG/PNG/WebP·양변 500px·10000000바이트·비율 1.8·부정 신호·분할 여백 검사. 상품 HTML이 429/로그인 제한이면 실패 처리. 색상은 수동 매핑."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "매핑 전 전체 갤러리를 개수 제한 없이 전달. 최종 대표/추가 선택은 허브 담당. 무여백 콜라주의 완전 판별과 등록 승인을 보장하지 않음. 상품 접근 제한은 우회하지 않음."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "사용자 제공 실제 렌더링 HTML의 .se-main-container 이미지 14개, 소재 단락, 단면 CM 실측표와 짧은 주석 확인. 상세 이미지 전체와 소재/사이즈 단락·표를 공통 HTML로 구성하며 갤러리로 대체하지 않음. 별도 상품정보고시 팝업 내용은 미확인으로 포함하지 않음. 동적 로딩 시 playwright와 Chromium 필요. 브라우저 자동 로딩은 현 환경에서 미검증이며 429/로그인 제한은 명시적 실패."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "가격": "price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page"
+  },
+  "code_hash": "4f1ba9645cbf5f6e268cf4c0679dc0aeaf6fcee09b3afb35e3c7e75f0da570cb"
+}

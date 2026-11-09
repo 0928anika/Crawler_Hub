@@ -1,0 +1,155 @@
+{
+  "id": "ucla_manual",
+  "name": "UCLA",
+  "category": "캐주얼",
+  "script": "ucla_manual.py",
+  "execution_level": 1,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "가격",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "manual",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "모든 공식 색상의 사이즈 목록이 동일할 때만 공통 사이즈 출력. 다르면 빈칸 및 경고."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 판매가 중 첫 가격 사용. 옵션별 차이가 있으면 경고."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 xans-product-headcategory의 경로. 기획전 경로도 사이트 표기 그대로 출력."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 갤러리에서 규격 검사한 모든 후보 사진 수집. 색상은 Hub에서 사용자가 수동 지정."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 갤러리에서 규격 검사한 모든 후보 사진 수집. 색상은 Hub에서 사용자가 수동 지정."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "실제 #detail1 .cont의 images.dcollect.co.kr/GdsImages 상품·INFO 원본 이미지 유지. 고시·사이즈 표 별도 생성 없음."
+    }
+  },
+  "guide": {
+    "example": "UBALS53",
+    "examples": [
+      "UBALS53"
+    ],
+    "pattern": "^[A-Za-z0-9]{7}$",
+    "format": "색상코드를 제외한 기본 품번 7자리",
+    "notes": "색상 매핑이 필요한 상품 전용. 대표 또는 추가이미지 선택 후 수집하고 색상 매핑하기에서 사진을 분류합니다.",
+    "method": "상품명에서 정확한 기본 품번 확인 후 공식 재고 옵션의 색상 후보와 전체 갤러리 수집. 고유 품번_색상 상품명 페이지는 제외.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "UBALS53_55"
+    ],
+    "validation_note": "입력 문법 검사이며 상품/색상 존재는 실행 시 확인."
+  },
+  "crawl_source": "공식 홈페이지",
+  "notes": "수동 색상 매핑 전용 별도 크롤러. 기존 UCLA 자동 크롤러 및 Hub 수정 불필요. 사진 색감으로 색상을 추측하지 않음. 고시와 사이즈표는 상세 원본 이미지 유지. 옵션 가격 차이는 첫 가격 선택 후 경고. 색상별 사이즈가 다르면 공통 사이즈는 빈칸.",
+  "mapping_mode": "manual",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "모든 공식 색상의 사이즈 목록이 동일할 때만 공통 사이즈 출력. 다르면 빈칸 및 경고."
+    },
+    "price": {
+      "label": "가격",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 판매가 중 첫 가격 사용. 옵션별 차이가 있으면 경고."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 xans-product-headcategory의 경로. 기획전 경로도 사이트 표기 그대로 출력."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 갤러리에서 규격 검사한 모든 후보 사진 수집. 색상은 Hub에서 사용자가 수동 지정."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 갤러리에서 규격 검사한 모든 후보 사진 수집. 색상은 Hub에서 사용자가 수동 지정."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "실제 #detail1 .cont의 images.dcollect.co.kr/GdsImages 상품·INFO 원본 이미지 유지. 고시·사이즈 표 별도 생성 없음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "가격": "price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page"
+  },
+  "code_hash": "a900b1390e40469723d7e73d6bbdd863609021425c6f53483d04eb8760486938"
+}

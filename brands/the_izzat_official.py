@@ -23,6 +23,7 @@ from PIL import Image
 # 실제 갤러리 JPEG 1500x2000 확인. 0재고/손상/WebP/콜라주 신호 등은 오프라인 검증.
 # Crawler Hub 최종 Excel/재시작 교체/검수 정제기와 WING 등록은 별도 확인 필요.
 ORIGIN = "https://pc.babathe.com"
+CRAWLER_REVISION = "2026-11-09-skip-unsupported-size"
 IMAGE_ORIGIN = "https://image.babathe.com"
 MAX_HTML = 3_000_000
 MAX_IMAGE = 10_000_000
@@ -450,6 +451,25 @@ def safe_size_table(table):
     return '<table border="1" cellpadding="6"><tbody>' + "".join(output) + '</tbody></table>'
 
 
+def parsed_size_tables(section):
+    tables = section.select(".info table")
+    if tables:
+        return [safe_size_table(table) for table in tables]
+    columns = section.select(".tb-colCustom > li")
+    if not columns:
+        if section.select_one(".info"):
+            raise ValueError("실측 정보 영역은 있으나 표 구조 파싱 실패")
+        return []
+    rows = [[text(cell) for cell in column.find_all("span", recursive=False)] for column in columns]
+    if not rows[0] or any(len(row) != len(rows[0]) for row in rows):
+        raise ValueError("실측 치수 행/열 대응 파싱 실패")
+    built = '<table border="1" cellpadding="6"><tbody>'
+    for i, row in enumerate(rows):
+        tag = "th" if i == 0 else "td"
+        built += "<tr>" + "".join("<" + tag + ">" + html.escape(v) + "</" + tag + ">" for v in row) + "</tr>"
+    return [built + '</tbody></table>']
+
+
 def detail_html(ctx, soup, gid, base, info, cache):
     ctx.stage("색상 " + info["color"] + " 상세/고시/실측표")
     parts, used, cut_ids = [], set(), set()
@@ -475,13 +495,20 @@ def detail_html(ctx, soup, gid, base, info, cache):
         ctx.log("선택한 공식 상품 상세 이미지 없음/공개 접근 불가", "WARNING")
     parts.append(notice_table(ctx, info["notice"], base))
     sizes = soup.select(".prd-size")
-    if sizes:
-        parts.append("<h3>실측 사이즈</h3>")
-    else:
+    if not sizes:
         ctx.log("공식 실측 사이즈표 없음", "WARNING")
     table_seen = set()
+    size_heading_added = False
     for section in sizes:
         ctx.checkpoint()
+        try:
+            built_tables = parsed_size_tables(section)
+        except ValueError as exc:
+            ctx.log("실측 사이즈 구역 제외(상품 수집은 계속): " + str(exc) + " / " + base + " / " + gid, "WARNING")
+            continue
+        if not size_heading_added:
+            parts.append("<h3>실측 사이즈</h3>")
+            size_heading_added = True
         # 실측 구역은 측정 그림 → 단위/치수표 → 측정 주석 순서로 출력한다.
         for node in section.select(".img img[src]"):
             ctx.checkpoint()
@@ -499,28 +526,10 @@ def detail_html(ctx, soup, gid, base, info, cache):
         unit = section.select_one(".tb-top")
         if unit:
             parts.append("<p>" + escaped(str(unit)) + "</p>")
-        tables = section.select(".info table")
-        for table in tables:
-            built = safe_size_table(table)
+        for built in built_tables:
             if built not in table_seen:
                 parts.append(built)
                 table_seen.add(built)
-        columns = section.select(".tb-colCustom > li")
-        if not tables and columns:
-            rows = [[text(cell) for cell in column.find_all("span", recursive=False)] for column in columns]
-            if not rows[0] or any(len(row) != len(rows[0]) for row in rows):
-                raise ValueError("실측 치수 행/열 대응 파싱 실패")
-            built = '<table border="1" cellpadding="6"><tbody>'
-            for i, row in enumerate(rows):
-                tag = "th" if i == 0 else "td"
-                built += "<tr>" + "".join("<" + tag + ">" + html.escape(v) + "</" + tag + ">" for v in row) + "</tr>"
-            built += '</tbody></table>'
-            if built not in table_seen:
-                parts.append(built)
-                table_seen.add(built)
-        if not tables and not columns:
-            if section.select_one(".info"):
-                raise ValueError("실측 정보 영역은 있으나 표 구조 파싱 실패")
         parent = section.find_parent(class_="detail-unit")
         if parent:
             for node in parent.select("ul.list-group > li"):
@@ -534,6 +543,7 @@ def detail_html(ctx, soup, gid, base, info, cache):
 
 
 def crawl(ctx):
+    ctx.log("더아이잗 기본 공홈 크롤러 " + CRAWLER_REVISION, "INFO")
     failures, matched, emitted = [], set(), set()
     try:
         base, requested = split_input(ctx.product_code)
