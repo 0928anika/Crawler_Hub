@@ -1,0 +1,1137 @@
+{
+  "brands": [
+    {
+      "id": "hangten_official",
+      "name": "행텐틴즈",
+      "category": "아동복",
+      "crawl_source": "공식 홈페이지",
+      "script": "hangten_official.py",
+      "execution_level": 1,
+      "output_headers": [
+        "품번",
+        "상품명",
+        "색상",
+        "상품 링크",
+        "색상명",
+        "색상코드",
+        "사이즈",
+        "가격",
+        "카테고리",
+        "대표이미지",
+        "추가이미지",
+        "상세페이지 HTML"
+      ],
+      "extensions": [],
+      "official_color_codes": true,
+      "image_color_mapping": "verified",
+      "capabilities": {
+        "size": {
+          "supported": true,
+          "status": "supported",
+          "reason": "색상별 상품의 공식 색상-사이즈 옵션을 수집합니다. 품절 옵션을 포함하며 공식 표시 순서와 앞자리 0을 보존합니다."
+        },
+        "price": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "공개 HTML의 option_stock_data에서 옵션별 현재 판매가를 확인합니다. KRW 가격을 사용하며 사이즈별 가격이 다르면 빈 값과 경고를 남깁니다."
+        },
+        "category": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "공식 canonical 상품 페이지의 카테고리 경로에서 마지막 분류를 수집합니다. 사이트가 배정한 프로모션 분류일 수 있습니다."
+        },
+        "main_image": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "공식 품번·색상코드·옵션·상품 ID를 대조한 색상별 갤러리에서 수집합니다. 공개 접근, 실제 파일 형식·용량·해상도 및 제외 신호 검사를 통과한 컷만 제공합니다."
+        },
+        "additional_images": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "해당 색상 공식 갤러리의 검사 통과 컷으로 5슬롯을 구성합니다. 확인 가능한 동일 컷을 제거하고 부족하면 유효한 추가 컷을 반복합니다. 유효 컷이 1장뿐이면 경고 후 재사용합니다."
+        },
+        "detail_page": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "사용자 지시에 따라 상품고시·실측표를 포함한 공식 상세 원본 이미지를 그대로 보존합니다. 해당 품번·색상의 상세 이미지와 페이지에 있는 공식 틴즈 사이즈가이드만 선택합니다. 소개 배너·관리·배송 안내는 요청부터 제외하며 공개 접근과 Excel HTML 셀 32767자 제한을 확인합니다."
+        }
+      },
+      "guide": {
+        "example": "14590-010-801-41",
+        "examples": [
+          "14590-010-801-41",
+          "1459001080141",
+          "14590-010-801-41_044",
+          "14590-010-801-41-044",
+          "1459001080141_044",
+          "14590-155-808-10",
+          "10590-010-801-69"
+        ],
+        "pattern": "^(?:\\d{5}-\\d{3}-\\d{3}-\\d{2}|\\d{13})(?:[_-]\\d{3})?$",
+        "format": "기본 품번은 5-3-3-2자리 또는 구분자 없는 13자리입니다. 특정 색상은 끝에 _044 또는 -044처럼 공식 3자리 색상코드를 붙입니다. 색상코드 앞자리 0을 유지하세요.",
+        "notes": "기본 품번은 공식 검색에 공개된 모든 일치 색상을 수집합니다. 색상을 지정하면 해당 색상만 출력합니다. 자체상품코드 마지막의 -c는 입력하지 않습니다. 품절 상품·색상·사이즈를 재고 때문에 제외하지 않습니다. 같은 공식몰의 행텐 상품도 공식 품번과 옵션이 일치하면 수집합니다.",
+        "method": "공식 /search.html?keyword=정규화품번의 검색 결과와 페이지 링크를 수집합니다. 각 상품의 자체상품코드와 공식 색상-사이즈 옵션을 대조하여 해당 상품 ID의 갤러리와 상세 이미지만 사용합니다. 상품명에 행텐틴즈라는 문구가 없다는 이유로 제외하지 않습니다. URL 변조·색감 추측·사전 해시 허용목록은 사용하지 않습니다.",
+        "required_columns": [
+          "품번"
+        ],
+        "invalid_examples": [
+          "14590-010-801",
+          "14590-010-801-41_44",
+          "14590-010-801-41_그레이",
+          "14590-010-801-41-044-c"
+        ],
+        "validation_note": "입력 형식 검사이며 실제 상품·색상 존재 여부는 실행 시 공식 응답으로 확인합니다. 상세페이지는 고시·실측표를 원본 이미지로 보존합니다. 실제 Crawler Hub Excel·검수 렌더링과 WING 등록 승인은 별도 확인이 필요합니다."
+      },
+      "notes": "",
+      "mapping_mode": "automatic",
+      "interface": "portal_v1",
+      "fields": {
+        "product_code": {
+          "label": "품번",
+          "supported": true,
+          "status": "conditional",
+          "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+        },
+        "product_name": {
+          "label": "상품명",
+          "supported": true,
+          "status": "conditional",
+          "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+        },
+        "color": {
+          "label": "색상",
+          "supported": true,
+          "status": "conditional",
+          "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+        },
+        "size": {
+          "label": "사이즈",
+          "supported": true,
+          "status": "supported",
+          "reason": "색상별 상품의 공식 색상-사이즈 옵션을 수집합니다. 품절 옵션을 포함하며 공식 표시 순서와 앞자리 0을 보존합니다."
+        },
+        "price": {
+          "label": "가격",
+          "supported": true,
+          "status": "conditional",
+          "reason": "공개 HTML의 option_stock_data에서 옵션별 현재 판매가를 확인합니다. KRW 가격을 사용하며 사이즈별 가격이 다르면 빈 값과 경고를 남깁니다."
+        },
+        "category": {
+          "label": "카테고리",
+          "supported": true,
+          "status": "conditional",
+          "reason": "공식 canonical 상품 페이지의 카테고리 경로에서 마지막 분류를 수집합니다. 사이트가 배정한 프로모션 분류일 수 있습니다."
+        },
+        "main_image": {
+          "label": "대표이미지",
+          "supported": true,
+          "status": "conditional",
+          "reason": "공식 품번·색상코드·옵션·상품 ID를 대조한 색상별 갤러리에서 수집합니다. 공개 접근, 실제 파일 형식·용량·해상도 및 제외 신호 검사를 통과한 컷만 제공합니다."
+        },
+        "additional_images": {
+          "label": "추가이미지",
+          "supported": true,
+          "status": "conditional",
+          "reason": "해당 색상 공식 갤러리의 검사 통과 컷으로 5슬롯을 구성합니다. 확인 가능한 동일 컷을 제거하고 부족하면 유효한 추가 컷을 반복합니다. 유효 컷이 1장뿐이면 경고 후 재사용합니다."
+        },
+        "detail_page": {
+          "label": "상세페이지",
+          "supported": true,
+          "status": "conditional",
+          "reason": "사용자 지시에 따라 상품고시·실측표를 포함한 공식 상세 원본 이미지를 그대로 보존합니다. 해당 품번·색상의 상세 이미지와 페이지에 있는 공식 틴즈 사이즈가이드만 선택합니다. 소개 배너·관리·배송 안내는 요청부터 제외하며 공개 접근과 Excel HTML 셀 32767자 제한을 확인합니다."
+        },
+        "product_url": {
+          "label": "상품 링크",
+          "supported": true,
+          "status": "supported",
+          "reason": "실제 수집한 상품 상세페이지 링크. 수동 매핑은 첫 번째 확인 링크 공통 적용"
+        }
+      },
+      "column_fields": {
+        "품번": "product_code",
+        "상품명": "product_name",
+        "색상": "color",
+        "상품 링크": "product_url",
+        "색상명": "color",
+        "색상코드": "color",
+        "사이즈": "size",
+        "가격": "price",
+        "카테고리": "category",
+        "대표이미지": "main_image",
+        "추가이미지": "additional_images",
+        "상세페이지 HTML": "detail_page"
+      },
+      "code_hash": "47840fc91cc8a5144581e3aadaa2da1a74a4bf3caae9e795fe9ebeaa9081d730"
+    },
+    {
+      "script": "the_izzat_official.py",
+      "execution_level": 1,
+      "output_headers": [
+        "품번",
+        "상품명",
+        "색상",
+        "상품 링크",
+        "색상명",
+        "색상코드",
+        "사이즈",
+        "가격",
+        "카테고리",
+        "대표이미지",
+        "추가이미지",
+        "상세페이지 HTML"
+      ],
+      "extensions": [],
+      "mapping_mode": "automatic",
+      "capabilities": {
+        "size": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "공개 includeGoodsDtlOption의 goodsAttrList 중 사이즈 속성. 공식 순서·문자열·품절 옵션 보존. 사이즈 속성이 없는 상품은 경고 후 빈 값"
+        },
+        "price": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "공식 상품 기본정보 saleAmt와 옵션별 addSaleAmt를 사용. 쿠폰·회원·임직원 가격 제외. KRW 확인, 사이즈별 가격이 다르면 빈 값과 경고"
+        },
+        "category": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "공식 HTML의 contentGoodsDtlCateNavigationBox 분류 경로. 현재 응답에서는 주석 처리된 공식 breadcrumb를 파싱하며 경로가 없으면 경고 후 빈 값"
+        },
+        "main_image": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "공식 mdlNo → goodsId → 고시 색상 → 해당 상품 gallery-top 연결을 대조. 실제 공개 파일·양변 500px·10MB·정지 JPEG/PNG/WebP·개별 컷 규칙 통과 시 제공"
+        },
+        "additional_images": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "같은 색상 공식 갤러리의 검사 통과 컷으로 5슬롯 구성. 공식 이미지 ID/내용 해시로 중복 확인하며 유효 추가 컷 부족 시 반복"
+        },
+        "detail_page": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "해당 goodsId의 상품 이미지, 공개 goodsNotifyList의 실제 고시 항목·값 2열 표, prd-size의 공식 실측표·단위·측정 도식만 포함. 공통 배너·관리·배송 안내 전용 요청 제외. 공개 URL 및 32767자 제한 검사"
+        }
+      },
+      "official_color_codes": true,
+      "image_color_mapping": "verified",
+      "guide": {
+        "example": "ISRM0BL851",
+        "examples": [
+          "ISRM0BL851",
+          "ISRM0BL851_BLL0",
+          "ISRM0BL851-BLL0",
+          "ISRM0BL851_IV10",
+          "ISRM0BL851_BK10",
+          "ISBA3LT081"
+        ],
+        "pattern": "^[A-Z0-9]{10}(?:[_-][A-Z0-9]{2,8})?$",
+        "format": "공식 품번은 영문 대문자·숫자 10자리입니다. 기본 품번은 전체 색상, 끝에 _BLL0 또는 -BLL0처럼 실제 공식 색상코드를 붙이면 해당 색상만 수집합니다.",
+        "notes": "공식 색상 예: BLL0=LIGHT BLUE, IV10=IVORY, BK10=BLACK. 색상명이나 상품 ID를 색상코드로 입력하지 마세요. 사용자 허용에 따라 상세페이지 미선택이어도 필수 색상코드 확인용 고시 JSON은 조회합니다. 고시 HTML 생성·실측표 파싱·상세 이미지 검사는 상세페이지 선택 시에만 수행합니다.",
+        "method": "공식 검색은 /search/searchResult?searchQuery=품번이며, 크롤러는 상품 페이지가 사용하는 /goods/includeGoodsDtlModelNoList?mdlNo=품번으로 공개된 동일 품번 전체 goodsId를 조회합니다. 각 상품 페이지의 mdlNo·goodsId·더아이잗 브랜드 링크와 고시 색상을 대조하고 해당 goodsId 갤러리만 사용합니다.",
+        "required_columns": [
+          "품번"
+        ],
+        "invalid_examples": [
+          "ISRM0BL85",
+          "ISRM0-BL851",
+          "ISRM0BL851_LIGHT BLUE",
+          "ISRM0BL851_"
+        ],
+        "validation_note": "형식 검사는 상품 존재 확인이 아닙니다. 실제 품번·색상·공개 이미지 연결은 실행 시 확인합니다. 원본에 없는 고시·사이즈표는 만들지 않습니다. 실제 Crawler Hub 최종 Excel·검수 정제기·재실행 교체와 WING 등록 승인은 별도 확인이 필요합니다."
+      },
+      "id": "the_izzat_official",
+      "name": "더아이잗",
+      "category": "여성복",
+      "crawl_source": "공식 홈페이지",
+      "notes": "",
+      "interface": "portal_v1",
+      "fields": {
+        "product_code": {
+          "label": "품번",
+          "supported": true,
+          "status": "conditional",
+          "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+        },
+        "product_name": {
+          "label": "상품명",
+          "supported": true,
+          "status": "conditional",
+          "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+        },
+        "color": {
+          "label": "색상",
+          "supported": true,
+          "status": "conditional",
+          "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+        },
+        "size": {
+          "label": "사이즈",
+          "supported": true,
+          "status": "conditional",
+          "reason": "공개 includeGoodsDtlOption의 goodsAttrList 중 사이즈 속성. 공식 순서·문자열·품절 옵션 보존. 사이즈 속성이 없는 상품은 경고 후 빈 값"
+        },
+        "price": {
+          "label": "가격",
+          "supported": true,
+          "status": "conditional",
+          "reason": "공식 상품 기본정보 saleAmt와 옵션별 addSaleAmt를 사용. 쿠폰·회원·임직원 가격 제외. KRW 확인, 사이즈별 가격이 다르면 빈 값과 경고"
+        },
+        "category": {
+          "label": "카테고리",
+          "supported": true,
+          "status": "conditional",
+          "reason": "공식 HTML의 contentGoodsDtlCateNavigationBox 분류 경로. 현재 응답에서는 주석 처리된 공식 breadcrumb를 파싱하며 경로가 없으면 경고 후 빈 값"
+        },
+        "main_image": {
+          "label": "대표이미지",
+          "supported": true,
+          "status": "conditional",
+          "reason": "공식 mdlNo → goodsId → 고시 색상 → 해당 상품 gallery-top 연결을 대조. 실제 공개 파일·양변 500px·10MB·정지 JPEG/PNG/WebP·개별 컷 규칙 통과 시 제공"
+        },
+        "additional_images": {
+          "label": "추가이미지",
+          "supported": true,
+          "status": "conditional",
+          "reason": "같은 색상 공식 갤러리의 검사 통과 컷으로 5슬롯 구성. 공식 이미지 ID/내용 해시로 중복 확인하며 유효 추가 컷 부족 시 반복"
+        },
+        "detail_page": {
+          "label": "상세페이지",
+          "supported": true,
+          "status": "conditional",
+          "reason": "해당 goodsId의 상품 이미지, 공개 goodsNotifyList의 실제 고시 항목·값 2열 표, prd-size의 공식 실측표·단위·측정 도식만 포함. 공통 배너·관리·배송 안내 전용 요청 제외. 공개 URL 및 32767자 제한 검사"
+        },
+        "product_url": {
+          "label": "상품 링크",
+          "supported": true,
+          "status": "supported",
+          "reason": "실제 수집한 상품 상세페이지 링크. 수동 매핑은 첫 번째 확인 링크 공통 적용"
+        }
+      },
+      "column_fields": {
+        "품번": "product_code",
+        "상품명": "product_name",
+        "색상": "color",
+        "상품 링크": "product_url",
+        "색상명": "color",
+        "색상코드": "color",
+        "사이즈": "size",
+        "가격": "price",
+        "카테고리": "category",
+        "대표이미지": "main_image",
+        "추가이미지": "additional_images",
+        "상세페이지 HTML": "detail_page"
+      },
+      "code_hash": "b4593fcef5cd9151c87d19ce66b95cdfab8dbf89d314ea81f08494724c79d636"
+    },
+    {
+      "id": "roem_official",
+      "name": "로엠",
+      "category": "여성복",
+      "crawl_source": "공식 홈페이지",
+      "script": "roem_official.py",
+      "execution_level": 1,
+      "mapping_mode": "manual",
+      "image_color_mapping": "manual",
+      "official_color_codes": true,
+      "output_headers": [
+        "품번",
+        "상품명",
+        "원본 상품명",
+        "상품 링크",
+        "색상",
+        "색상명",
+        "색상코드",
+        "사이즈",
+        "가격",
+        "카테고리",
+        "대표이미지",
+        "추가이미지",
+        "상세페이지 HTML"
+      ],
+      "extensions": [],
+      "capabilities": {
+        "size": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "공개 /v1/item/option/api의 색상별 하위 사이즈 옵션 itemOptionName 수집. 한 링크 내 전 색상 집합이 같아야 지원. 여러 링크 사이즈가 다르면 첫 번째 사이즈 수집 성공 링크 값으로 통일하며 처리로그에 모든 링크의 사이즈·기준 링크·적용 값을 기록. 품절 옵션 포함. 색상별 차이 또는 요청/파싱 실패는 미완료 처리."
+        },
+        "price": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "공개 옵션 API의 모든 색상·사이즈 sellPrice가 같은 경우에만 출력. 쿠폰가를 임의 적용하지 않음. 두 시험 품번은 39900원. 옵션/링크별 가격 차이는 미완료 처리."
+        },
+        "category": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "공식 상품 페이지 .cp-loct-depth__inner .location a.lnk의 분류 경로 수집. 두 시험 품번의 유아동패션 > 주니어(9세~) > 레깅스/트레이닝팬츠 확인. 분류 누락/링크 간 차이는 미완료 처리."
+        },
+        "main_image": {
+          "supported": true,
+          "status": "supported",
+          "reason": "공식 [data-itemview-slidewrap] img의 data-src 고해상도 URL 전체 수집. 실제 공개 다운로드·Pillow 해독·정지 JPEG/PNG/WebP·양변 500px·10000000바이트 이하·비율 1.8 이하·명시적 부정 신호·내부 분할 여백 검사. 두 품번 각 7장 개별컷 시각 확인. 색상은 사용자 매핑."
+        },
+        "additional_images": {
+          "supported": true,
+          "status": "supported",
+          "reason": "대표/추가 중 하나 이상 선택 시 전체 갤러리를 제한 없이 emit_unmapped로 전달. 최종 개수 제한은 허브 담당. 무여백 콜라주 완전 자동 판별과 등록 승인을 보장하지 않음."
+        },
+        "detail_page": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "사용자 요청에 따라 itemDesc.itemDescdocumentCon의 판매자 원본 상세 통이미지·사이즈 이미지·표를 원래 순서대로 보존. 갤러리 개별컷으로 대체하지 않음. script/iframe/이벤트 등 제거 후 itemProvideMntList의 실제 2열 고시 표 추가. 사이트 별도 공지·배송 영역 미수집. 32767자 초과/이미지 요청 실패는 미완료."
+        }
+      },
+      "guide": {
+        "example": "TGTM26T01",
+        "examples": [
+          "TGTM26T01",
+          "TGTM26T02"
+        ],
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{4,29}$",
+        "format": "색상 접미사 없는 기본 품번. 대소문자는 대문자로 정규화하고 원래 하이픈은 보존.",
+        "notes": "NC 유성점 표기가 있는 원본 상품명만 수집합니다. 상품명은 브랜드·품번·지점 표기를 제거하고 원본 상품명은 별도 열과 로그에 보존합니다. 대표 또는 추가이미지를 선택하고 수집 후 색상을 수동 매핑하세요.",
+        "method": "공개 /s/srch?q=품번 검색 결과를 page/from으로 모두 순회. NC대전유성점·NC유성점·NC 유성 표기를 검색과 상품 상세 itemMain.itemName에서 재확인하고 itemMain.modelNo가 기본 품번과 정확히 일치해야 수집. 브랜드명 포함 여부는 통과 조건이 아님. 색상 itemOptionTcode=10, 사이즈=20의 2단 옵션 지원.",
+        "required_columns": [
+          "품번"
+        ],
+        "invalid_examples": [
+          "",
+          "TGTM26T01_05",
+          "https://www.elandmall.co.kr/"
+        ],
+        "validation_note": "입력 형식 검사이며 실제 상품 존재·modelNo·NC 유성점 표기는 실행 시 확인. 상품명 표기에 따른 지점 필터이며 판매자 소유권 인증을 대신하지 않음."
+      },
+      "notes": "",
+      "interface": "portal_v1",
+      "fields": {
+        "product_code": {
+          "label": "품번",
+          "supported": true,
+          "status": "conditional",
+          "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+        },
+        "product_name": {
+          "label": "상품명",
+          "supported": true,
+          "status": "conditional",
+          "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+        },
+        "color": {
+          "label": "색상",
+          "supported": true,
+          "status": "conditional",
+          "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+        },
+        "size": {
+          "label": "사이즈",
+          "supported": true,
+          "status": "conditional",
+          "reason": "공개 /v1/item/option/api의 색상별 하위 사이즈 옵션 itemOptionName 수집. 한 링크 내 전 색상 집합이 같아야 지원. 여러 링크 사이즈가 다르면 첫 번째 사이즈 수집 성공 링크 값으로 통일하며 처리로그에 모든 링크의 사이즈·기준 링크·적용 값을 기록. 품절 옵션 포함. 색상별 차이 또는 요청/파싱 실패는 미완료 처리."
+        },
+        "price": {
+          "label": "가격",
+          "supported": true,
+          "status": "conditional",
+          "reason": "공개 옵션 API의 모든 색상·사이즈 sellPrice가 같은 경우에만 출력. 쿠폰가를 임의 적용하지 않음. 두 시험 품번은 39900원. 옵션/링크별 가격 차이는 미완료 처리."
+        },
+        "category": {
+          "label": "카테고리",
+          "supported": true,
+          "status": "conditional",
+          "reason": "공식 상품 페이지 .cp-loct-depth__inner .location a.lnk의 분류 경로 수집. 두 시험 품번의 유아동패션 > 주니어(9세~) > 레깅스/트레이닝팬츠 확인. 분류 누락/링크 간 차이는 미완료 처리."
+        },
+        "main_image": {
+          "label": "대표이미지",
+          "supported": true,
+          "status": "supported",
+          "reason": "공식 [data-itemview-slidewrap] img의 data-src 고해상도 URL 전체 수집. 실제 공개 다운로드·Pillow 해독·정지 JPEG/PNG/WebP·양변 500px·10000000바이트 이하·비율 1.8 이하·명시적 부정 신호·내부 분할 여백 검사. 두 품번 각 7장 개별컷 시각 확인. 색상은 사용자 매핑."
+        },
+        "additional_images": {
+          "label": "추가이미지",
+          "supported": true,
+          "status": "supported",
+          "reason": "대표/추가 중 하나 이상 선택 시 전체 갤러리를 제한 없이 emit_unmapped로 전달. 최종 개수 제한은 허브 담당. 무여백 콜라주 완전 자동 판별과 등록 승인을 보장하지 않음."
+        },
+        "detail_page": {
+          "label": "상세페이지",
+          "supported": true,
+          "status": "conditional",
+          "reason": "사용자 요청에 따라 itemDesc.itemDescdocumentCon의 판매자 원본 상세 통이미지·사이즈 이미지·표를 원래 순서대로 보존. 갤러리 개별컷으로 대체하지 않음. script/iframe/이벤트 등 제거 후 itemProvideMntList의 실제 2열 고시 표 추가. 사이트 별도 공지·배송 영역 미수집. 32767자 초과/이미지 요청 실패는 미완료."
+        },
+        "product_url": {
+          "label": "상품 링크",
+          "supported": true,
+          "status": "supported",
+          "reason": "실제 수집한 상품 상세페이지 링크. 수동 매핑은 첫 번째 확인 링크 공통 적용"
+        }
+      },
+      "column_fields": {
+        "품번": "product_code",
+        "상품명": "product_name",
+        "원본 상품명": null,
+        "상품 링크": "product_url",
+        "색상": "color",
+        "색상명": "color",
+        "색상코드": "color",
+        "사이즈": "size",
+        "가격": "price",
+        "카테고리": "category",
+        "대표이미지": "main_image",
+        "추가이미지": "additional_images",
+        "상세페이지 HTML": "detail_page"
+      },
+      "code_hash": "313c04d21c7f01661b0b40274e02f9140dad2c657fe85e57d2811472cadd2a18"
+    },
+    {
+      "id": "tdg_eland_ncys",
+      "name": "더데이걸",
+      "category": "아동복",
+      "crawl_source": "이랜드몰 NC_YS",
+      "script": "tdg_eland_ncys.py",
+      "execution_level": 1,
+      "mapping_mode": "manual",
+      "image_color_mapping": "manual",
+      "official_color_codes": true,
+      "output_headers": [
+        "품번",
+        "상품명",
+        "원본 상품명",
+        "상품 링크",
+        "색상",
+        "색상명",
+        "색상코드",
+        "사이즈",
+        "가격",
+        "카테고리",
+        "대표이미지",
+        "추가이미지",
+        "상세페이지 HTML"
+      ],
+      "extensions": [],
+      "capabilities": {
+        "size": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "공개 /v1/item/option/api의 색상별 하위 사이즈 옵션 itemOptionName 수집. 사용자 지정 통일 규칙: 링크 안에서 색상별 사이즈가 다르면 첫 번째 색상 기준, 여러 링크 사이즈가 다르면 첫 번째 사이즈 수집 성공 링크 기준으로 출력. 각 색상·링크의 실제 사이즈와 적용 기준을 처리로그에 기록. 전 색상 공통 사이즈라는 의미는 아님. 품절 옵션 포함. 요청/파싱 실패는 미완료 처리."
+        },
+        "price": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "공개 옵션 API의 모든 색상·사이즈 sellPrice가 같은 경우에만 출력. 쿠폰가를 임의 적용하지 않음. 두 시험 품번은 39900원. 옵션/링크별 가격 차이는 미완료 처리."
+        },
+        "category": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "공식 상품 페이지 .cp-loct-depth__inner .location a.lnk의 분류 경로 수집. 두 시험 품번의 유아동패션 > 주니어(9세~) > 레깅스/트레이닝팬츠 확인. 분류 누락/링크 간 차이는 미완료 처리."
+        },
+        "main_image": {
+          "supported": true,
+          "status": "supported",
+          "reason": "공식 [data-itemview-slidewrap] img의 data-src 고해상도 URL 전체 수집. 실제 공개 다운로드·Pillow 해독·정지 JPEG/PNG/WebP·양변 500px·10000000바이트 이하·비율 1.8 이하·명시적 부정 신호·내부 분할 여백 검사. 두 품번 각 7장 개별컷 시각 확인. 색상은 사용자 매핑."
+        },
+        "additional_images": {
+          "supported": true,
+          "status": "supported",
+          "reason": "대표/추가 중 하나 이상 선택 시 전체 갤러리를 제한 없이 emit_unmapped로 전달. 최종 개수 제한은 허브 담당. 무여백 콜라주 완전 자동 판별과 등록 승인을 보장하지 않음."
+        },
+        "detail_page": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "사용자 요청에 따라 itemDesc.itemDescdocumentCon의 판매자 원본 상세 통이미지·사이즈 이미지·표를 원래 순서대로 보존. 갤러리 개별컷으로 대체하지 않음. script/iframe/이벤트 등 제거 후 itemProvideMntList의 실제 2열 고시 표 추가. 사이트 별도 공지·배송 영역 미수집. 32767자 초과/이미지 요청 실패는 미완료."
+        }
+      },
+      "guide": {
+        "example": "TGTM26T01",
+        "examples": [
+          "TGTM26T01",
+          "TGTM26T02"
+        ],
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{4,29}$",
+        "format": "색상 접미사 없는 기본 품번. 대소문자는 대문자로 정규화하고 원래 하이픈은 보존.",
+        "notes": "NC 유성점 표기가 있는 원본 상품명만 수집합니다. 상품명은 브랜드·품번·지점 표기를 제거하고 원본 상품명은 별도 열과 로그에 보존합니다. 대표 또는 추가이미지를 선택하고 수집 후 색상을 수동 매핑하세요.",
+        "method": "공개 /s/srch?q=품번 검색 결과를 page/from으로 모두 순회. NC대전유성점·NC유성점·NC 유성 표기를 검색과 상품 상세 itemMain.itemName에서 재확인하고 itemMain.modelNo가 기본 품번과 정확히 일치해야 수집. 브랜드명 포함 여부는 통과 조건이 아님. 색상 itemOptionTcode=10, 사이즈=20의 2단 옵션 지원.",
+        "required_columns": [
+          "품번"
+        ],
+        "invalid_examples": [
+          "",
+          "TGTM26T01_05",
+          "https://www.elandmall.co.kr/"
+        ],
+        "validation_note": "입력 형식 검사이며 실제 상품 존재·modelNo·NC 유성점 표기는 실행 시 확인. 상품명 표기에 따른 지점 필터이며 판매자 소유권 인증을 대신하지 않음."
+      },
+      "notes": "",
+      "interface": "portal_v1",
+      "fields": {
+        "product_code": {
+          "label": "품번",
+          "supported": true,
+          "status": "conditional",
+          "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+        },
+        "product_name": {
+          "label": "상품명",
+          "supported": true,
+          "status": "conditional",
+          "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+        },
+        "color": {
+          "label": "색상",
+          "supported": true,
+          "status": "conditional",
+          "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+        },
+        "size": {
+          "label": "사이즈",
+          "supported": true,
+          "status": "conditional",
+          "reason": "공개 /v1/item/option/api의 색상별 하위 사이즈 옵션 itemOptionName 수집. 사용자 지정 통일 규칙: 링크 안에서 색상별 사이즈가 다르면 첫 번째 색상 기준, 여러 링크 사이즈가 다르면 첫 번째 사이즈 수집 성공 링크 기준으로 출력. 각 색상·링크의 실제 사이즈와 적용 기준을 처리로그에 기록. 전 색상 공통 사이즈라는 의미는 아님. 품절 옵션 포함. 요청/파싱 실패는 미완료 처리."
+        },
+        "price": {
+          "label": "가격",
+          "supported": true,
+          "status": "conditional",
+          "reason": "공개 옵션 API의 모든 색상·사이즈 sellPrice가 같은 경우에만 출력. 쿠폰가를 임의 적용하지 않음. 두 시험 품번은 39900원. 옵션/링크별 가격 차이는 미완료 처리."
+        },
+        "category": {
+          "label": "카테고리",
+          "supported": true,
+          "status": "conditional",
+          "reason": "공식 상품 페이지 .cp-loct-depth__inner .location a.lnk의 분류 경로 수집. 두 시험 품번의 유아동패션 > 주니어(9세~) > 레깅스/트레이닝팬츠 확인. 분류 누락/링크 간 차이는 미완료 처리."
+        },
+        "main_image": {
+          "label": "대표이미지",
+          "supported": true,
+          "status": "supported",
+          "reason": "공식 [data-itemview-slidewrap] img의 data-src 고해상도 URL 전체 수집. 실제 공개 다운로드·Pillow 해독·정지 JPEG/PNG/WebP·양변 500px·10000000바이트 이하·비율 1.8 이하·명시적 부정 신호·내부 분할 여백 검사. 두 품번 각 7장 개별컷 시각 확인. 색상은 사용자 매핑."
+        },
+        "additional_images": {
+          "label": "추가이미지",
+          "supported": true,
+          "status": "supported",
+          "reason": "대표/추가 중 하나 이상 선택 시 전체 갤러리를 제한 없이 emit_unmapped로 전달. 최종 개수 제한은 허브 담당. 무여백 콜라주 완전 자동 판별과 등록 승인을 보장하지 않음."
+        },
+        "detail_page": {
+          "label": "상세페이지",
+          "supported": true,
+          "status": "conditional",
+          "reason": "사용자 요청에 따라 itemDesc.itemDescdocumentCon의 판매자 원본 상세 통이미지·사이즈 이미지·표를 원래 순서대로 보존. 갤러리 개별컷으로 대체하지 않음. script/iframe/이벤트 등 제거 후 itemProvideMntList의 실제 2열 고시 표 추가. 사이트 별도 공지·배송 영역 미수집. 32767자 초과/이미지 요청 실패는 미완료."
+        },
+        "product_url": {
+          "label": "상품 링크",
+          "supported": true,
+          "status": "supported",
+          "reason": "실제 수집한 상품 상세페이지 링크. 수동 매핑은 첫 번째 확인 링크 공통 적용"
+        }
+      },
+      "column_fields": {
+        "품번": "product_code",
+        "상품명": "product_name",
+        "원본 상품명": null,
+        "상품 링크": "product_url",
+        "색상": "color",
+        "색상명": "color",
+        "색상코드": "color",
+        "사이즈": "size",
+        "가격": "price",
+        "카테고리": "category",
+        "대표이미지": "main_image",
+        "추가이미지": "additional_images",
+        "상세페이지 HTML": "detail_page"
+      },
+      "code_hash": "f811973bc0906e9cce6b2db01466b51939b059f8d0daa2d56f4e462cef1cbb4b"
+    },
+    {
+      "id": "egoist_naver_ncys",
+      "name": "에고이스트",
+      "category": "여성복",
+      "crawl_source": "네이버 NC_YS",
+      "script": "egoist_naver_ncys.py",
+      "execution_level": 1,
+      "mapping_mode": "manual",
+      "image_color_mapping": "manual",
+      "official_color_codes": false,
+      "output_headers": [
+        "품번",
+        "상품명",
+        "색상",
+        "색상명",
+        "색상코드",
+        "사이즈",
+        "가격",
+        "카테고리",
+        "대표이미지",
+        "추가이미지",
+        "상세페이지 HTML"
+      ],
+      "extensions": [],
+      "capabilities": {
+        "size": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "공개 simpleProductForDetailPage.optionStandards에 단일 사이즈만 있는 상품 지원. 첨부 ES4OKL55의 공식 옵션은 Free, 상세에는 FF(프리사이즈). 여러 사이즈 또는 색상별 조합은 미확인이므로 그 경우 미완료 처리."
+        },
+        "price": {
+          "supported": false,
+          "status": "unsupported",
+          "reason": "첨부 원문에 판매가·할인가 요약은 있으나 색상별 옵션 가격/추가금 조합 데이터가 없어 전 색상 공통 가격을 확인할 수 없음. 가격 파싱과 전용 요청을 수행하지 않음."
+        },
+        "category": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "공개 상품 category.wholeCategoryName 사용. 첨부 ES4OKL55에서 패션의류>여성의류>니트>풀오버 확인. 값 누락/링크 간 차이는 미완료 처리."
+        },
+        "main_image": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "공식 representativeImageUrl 및 optionalImageUrls의 전체 갤러리 원본 URL 수집. ES4OKL55 4장은 실제 공개 GET·Pillow 해독 성공, JPEG 3000x4000. 정지 JPEG/PNG/WebP·양변 500px·10000000바이트·비율 1.8·부정 신호·분할 여백 검사. 상품 HTML이 429/로그인 제한이면 실패 처리. 색상은 수동 매핑."
+        },
+        "additional_images": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "매핑 전 전체 갤러리를 개수 제한 없이 전달. 최종 대표/추가 선택은 허브 담당. 무여백 콜라주의 완전 판별과 등록 승인을 보장하지 않음. 상품 접근 제한은 우회하지 않음."
+        },
+        "detail_page": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "사용자 제공 실제 렌더링 HTML의 .se-main-container 이미지 14개, 소재 단락, 단면 CM 실측표와 짧은 주석 확인. 상세 이미지 전체와 소재/사이즈 단락·표를 공통 HTML로 구성하며 갤러리로 대체하지 않음. 별도 상품정보고시 팝업 내용은 미확인으로 포함하지 않음. 동적 로딩 시 playwright와 Chromium 필요. 브라우저 자동 로딩은 현 환경에서 미검증이며 429/로그인 제한은 명시적 실패."
+        }
+      },
+      "guide": {
+        "example": "ES4OKL55",
+        "examples": [
+          "ES4OKL55"
+        ],
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{4,29}$",
+        "format": "색상코드 없는 기본 품번. 대소문자는 대문자로 정규화하고 원래 하이픈 보존.",
+        "notes": "ncdjys164 스토어만 수집. 수집 후 색상을 수동 매핑합니다. 가격은 미지원. 상세 미선택이면 Playwright와 상세 이미지 요청을 실행하지 않습니다. 접속 제한 또는 로그인 화면에서는 중단합니다.",
+        "method": "확인된 /ncdjys164/search?q=기본품번의 __PRELOADED_STATE__.keywordSearch.simpleProducts를 읽고 naverShoppingSearchInfo.modelName 정확히 일치하는 모든 상품 ID 수집. 상품 페이지에서도 동일 modelName과 channel.url=ncdjys164 재확인. 특정 브랜드명이 상품명에 있어야 한다는 검사는 없음. 검색 page/totalCount로 반복·누락을 검사하되 실제 다중 페이지는 미검증.",
+        "required_columns": [
+          "품번"
+        ],
+        "invalid_examples": [
+          "",
+          "ES4OKL55_01",
+          "https://smartstore.naver.com/"
+        ],
+        "validation_note": "형식 검사이며 실제 상품 존재는 실행 시 확인. 최초 요청서의 ER3CL862는 미검증. 사용자 제공 검색·상품·상세 HTML로 ES4OKL55를 검증했으며 스마트스토어 자동 접속 성공을 의미하지 않음."
+      },
+      "notes": "",
+      "interface": "portal_v1",
+      "fields": {
+        "product_code": {
+          "label": "품번",
+          "supported": true,
+          "status": "conditional",
+          "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+        },
+        "product_name": {
+          "label": "상품명",
+          "supported": true,
+          "status": "conditional",
+          "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+        },
+        "color": {
+          "label": "색상",
+          "supported": true,
+          "status": "conditional",
+          "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+        },
+        "product_url": {
+          "label": "상품 링크",
+          "supported": false,
+          "status": "unsupported",
+          "reason": "독립 결과 컬럼 없음"
+        },
+        "size": {
+          "label": "사이즈",
+          "supported": true,
+          "status": "conditional",
+          "reason": "공개 simpleProductForDetailPage.optionStandards에 단일 사이즈만 있는 상품 지원. 첨부 ES4OKL55의 공식 옵션은 Free, 상세에는 FF(프리사이즈). 여러 사이즈 또는 색상별 조합은 미확인이므로 그 경우 미완료 처리."
+        },
+        "price": {
+          "label": "가격",
+          "supported": false,
+          "status": "unsupported",
+          "reason": "첨부 원문에 판매가·할인가 요약은 있으나 색상별 옵션 가격/추가금 조합 데이터가 없어 전 색상 공통 가격을 확인할 수 없음. 가격 파싱과 전용 요청을 수행하지 않음."
+        },
+        "category": {
+          "label": "카테고리",
+          "supported": true,
+          "status": "conditional",
+          "reason": "공개 상품 category.wholeCategoryName 사용. 첨부 ES4OKL55에서 패션의류>여성의류>니트>풀오버 확인. 값 누락/링크 간 차이는 미완료 처리."
+        },
+        "main_image": {
+          "label": "대표이미지",
+          "supported": true,
+          "status": "conditional",
+          "reason": "공식 representativeImageUrl 및 optionalImageUrls의 전체 갤러리 원본 URL 수집. ES4OKL55 4장은 실제 공개 GET·Pillow 해독 성공, JPEG 3000x4000. 정지 JPEG/PNG/WebP·양변 500px·10000000바이트·비율 1.8·부정 신호·분할 여백 검사. 상품 HTML이 429/로그인 제한이면 실패 처리. 색상은 수동 매핑."
+        },
+        "additional_images": {
+          "label": "추가이미지",
+          "supported": true,
+          "status": "conditional",
+          "reason": "매핑 전 전체 갤러리를 개수 제한 없이 전달. 최종 대표/추가 선택은 허브 담당. 무여백 콜라주의 완전 판별과 등록 승인을 보장하지 않음. 상품 접근 제한은 우회하지 않음."
+        },
+        "detail_page": {
+          "label": "상세페이지",
+          "supported": true,
+          "status": "conditional",
+          "reason": "사용자 제공 실제 렌더링 HTML의 .se-main-container 이미지 14개, 소재 단락, 단면 CM 실측표와 짧은 주석 확인. 상세 이미지 전체와 소재/사이즈 단락·표를 공통 HTML로 구성하며 갤러리로 대체하지 않음. 별도 상품정보고시 팝업 내용은 미확인으로 포함하지 않음. 동적 로딩 시 playwright와 Chromium 필요. 브라우저 자동 로딩은 현 환경에서 미검증이며 429/로그인 제한은 명시적 실패."
+        }
+      },
+      "column_fields": {
+        "품번": "product_code",
+        "상품명": "product_name",
+        "색상": "color",
+        "색상명": "color",
+        "색상코드": "color",
+        "사이즈": "size",
+        "가격": "price",
+        "카테고리": "category",
+        "대표이미지": "main_image",
+        "추가이미지": "additional_images",
+        "상세페이지 HTML": "detail_page"
+      },
+      "code_hash": "4f1ba9645cbf5f6e268cf4c0679dc0aeaf6fcee09b3afb35e3c7e75f0da570cb"
+    },
+    {
+      "id": "jessi_official",
+      "name": "제시뉴욕",
+      "category": "여성복",
+      "crawl_source": "공식 홈페이지",
+      "script": "jessi_official.py",
+      "execution_level": 1,
+      "output_headers": [
+        "품번",
+        "상품명",
+        "색상",
+        "상품 링크",
+        "색상명",
+        "색상코드",
+        "사이즈",
+        "가격",
+        "카테고리",
+        "대표이미지",
+        "추가이미지",
+        "상세페이지 HTML",
+        "원본 상품명"
+      ],
+      "extensions": [],
+      "official_color_codes": true,
+      "image_color_mapping": "verified",
+      "notes": "",
+      "capabilities": {
+        "size": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "해당 상품 ID의 공식 사이즈 select 옵션을 문자열·표시 순서대로 수집. 품절/disabled 옵션 포함, 앞자리 0 보존. 옵션이 없으면 경고 후 빈 값"
+        },
+        "price": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "공개 HTML option_stock_data의 해당 색상 option_price. KRW 확인, 쿠폰·회원 혜택 제외. 사이즈별 가격 차이는 빈 값과 경고"
+        },
+        "category": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "공식 상품 페이지 .xans-product-headcategory의 실제 분류 경로. 없는 경우 경고 후 빈 값"
+        },
+        "main_image": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "상품 ID·자체상품코드·색상 옵션을 대조한 공식 Product.image 및 색상별 갤러리. 공개 접근/실제 파일/양변 500px/10MB/정지 형식/개별 컷 규칙 통과 시 제공"
+        },
+        "additional_images": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "해당 색상 갤러리의 검사 통과 컷만 사용. 실제 바이트 해시로 중복 제거 후 유효 추가 컷을 반복해 5슬롯 구성"
+        },
+        "detail_page": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "공식 품번·색상 경로에 연결된 통합 상세 이미지를 원본 그대로 보존. 사용자 허용에 따라 이미지 안의 고시·실측표·배송/반품 안내 포함. 별도 사이즈표를 생성하지 않음. 상세 본문이 비어 있으면 해당 색상 상품사진으로 구성하고 자료 부재를 경고. 공개 URL/32767자 제한 검사"
+        }
+      },
+      "guide": {
+        "example": "JG41JWBY3680",
+        "examples": [
+          "JG41JWBY3680",
+          "JG41JWBY3680_BK",
+          "JG41JWBY3680-BK",
+          "JG41JWBY3680_IV",
+          "YGA1NPHC7780",
+          "YGA1NPHC7780_LBG",
+          "BG8-RWJK6120",
+          "BG8-RWJK6120_BK",
+          "BG8-RWJK6120-BK"
+        ],
+        "pattern": null,
+        "format": "품번 길이·하이픈 형식을 제한하지 않습니다. 입력 전체를 공식몰에서 먼저 검색하고 실제 자체상품코드와 대조합니다. 색상 지정은 공식 기본품번 뒤에 _BK 또는 -BK를 붙입니다. 품번 내부의 하이픈은 그대로 보존합니다.",
+        "notes": "확인한 공식 코드: BK=블랙, IV=아이보리, LBG=라이트베이지. 상품명에 브랜드명이 없어도 수집합니다. 실제 확인에 사용한 상품 상세 링크와 원본 상품명을 모든 결과에 보존합니다. 통합 상세 이미지의 배송/반품 안내 포함은 사용자 허용 사항입니다.",
+        "method": "공식 /product/search.html?keyword=입력전체를 먼저 검색합니다. 0개 결과일 때만 색상 지정 가능성이 있는 접미사를 나누어 추가 검색하며, 실제 자체상품코드 base_color와 색상 옵션으로 최종 대조합니다. 길이가 다른 품번과 내부 하이픈을 허용하고 상품명 브랜드명 검사는 하지 않습니다.",
+        "required_columns": [
+          "품번"
+        ],
+        "invalid_examples": [],
+        "validation_note": "정규식으로 상품 존재나 품번 형식을 미리 거르지 않습니다. 입력 전체를 먼저 공식 검색한 뒤 실제 상품 페이지의 자체상품코드·색상 옵션과 일치하지 않거나 검색 결과가 없으면 실패 처리합니다. 통신·파싱 오류는 검색 결과 없음과 구분합니다. 사이즈표는 상세 원본 이미지 안의 내용만 사용하며 별도로 생성하지 않습니다. Crawler Hub 최종 Excel·검수 정제기·재실행 교체와 WING 등록 승인은 별도 확인이 필요합니다."
+      },
+      "mapping_mode": "automatic",
+      "interface": "portal_v1",
+      "fields": {
+        "product_code": {
+          "label": "품번",
+          "supported": true,
+          "status": "conditional",
+          "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+        },
+        "product_name": {
+          "label": "상품명",
+          "supported": true,
+          "status": "conditional",
+          "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+        },
+        "color": {
+          "label": "색상",
+          "supported": true,
+          "status": "conditional",
+          "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+        },
+        "product_url": {
+          "label": "상품 링크",
+          "supported": true,
+          "status": "conditional",
+          "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+        },
+        "size": {
+          "label": "사이즈",
+          "supported": true,
+          "status": "conditional",
+          "reason": "해당 상품 ID의 공식 사이즈 select 옵션을 문자열·표시 순서대로 수집. 품절/disabled 옵션 포함, 앞자리 0 보존. 옵션이 없으면 경고 후 빈 값"
+        },
+        "price": {
+          "label": "가격",
+          "supported": true,
+          "status": "conditional",
+          "reason": "공개 HTML option_stock_data의 해당 색상 option_price. KRW 확인, 쿠폰·회원 혜택 제외. 사이즈별 가격 차이는 빈 값과 경고"
+        },
+        "category": {
+          "label": "카테고리",
+          "supported": true,
+          "status": "conditional",
+          "reason": "공식 상품 페이지 .xans-product-headcategory의 실제 분류 경로. 없는 경우 경고 후 빈 값"
+        },
+        "main_image": {
+          "label": "대표이미지",
+          "supported": true,
+          "status": "conditional",
+          "reason": "상품 ID·자체상품코드·색상 옵션을 대조한 공식 Product.image 및 색상별 갤러리. 공개 접근/실제 파일/양변 500px/10MB/정지 형식/개별 컷 규칙 통과 시 제공"
+        },
+        "additional_images": {
+          "label": "추가이미지",
+          "supported": true,
+          "status": "conditional",
+          "reason": "해당 색상 갤러리의 검사 통과 컷만 사용. 실제 바이트 해시로 중복 제거 후 유효 추가 컷을 반복해 5슬롯 구성"
+        },
+        "detail_page": {
+          "label": "상세페이지",
+          "supported": true,
+          "status": "conditional",
+          "reason": "공식 품번·색상 경로에 연결된 통합 상세 이미지를 원본 그대로 보존. 사용자 허용에 따라 이미지 안의 고시·실측표·배송/반품 안내 포함. 별도 사이즈표를 생성하지 않음. 상세 본문이 비어 있으면 해당 색상 상품사진으로 구성하고 자료 부재를 경고. 공개 URL/32767자 제한 검사"
+        }
+      },
+      "column_fields": {
+        "품번": "product_code",
+        "상품명": "product_name",
+        "색상": "color",
+        "상품 링크": "product_url",
+        "색상명": "color",
+        "색상코드": "color",
+        "사이즈": "size",
+        "가격": "price",
+        "카테고리": "category",
+        "대표이미지": "main_image",
+        "추가이미지": "additional_images",
+        "상세페이지 HTML": "detail_page",
+        "원본 상품명": null
+      },
+      "code_hash": "ddcc7a7763f8144f6e4454ca0370506f110474c8b377609c121b9e1fad8ba974"
+    },
+    {
+      "id": "westwood_official_nomodel",
+      "name": "웨스트우드",
+      "category": "아웃도어",
+      "crawl_source": "공식 홈페이지 모델컷 제외",
+      "script": "westwood_official_nomodel.py",
+      "execution_level": 1,
+      "mapping_mode": "manual",
+      "image_mode": "local",
+      "additional_image_count": 5,
+      "image_color_mapping": "manual",
+      "official_color_codes": true,
+      "output_headers": [
+        "품번",
+        "상품명",
+        "색상",
+        "상품 링크",
+        "색상명",
+        "색상코드",
+        "사이즈",
+        "가격",
+        "카테고리",
+        "대표이미지",
+        "추가이미지",
+        "상세페이지",
+        "원본 상품명",
+        "OCR 텍스트",
+        "크롭 원본 이미지",
+        "크롭 좌표",
+        "상세 원본 이미지",
+        "상세 영역 좌표",
+        "원본 권리안내"
+      ],
+      "extensions": [],
+      "capabilities": {
+        "size": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "공개 option_stock_data의 공식 색상-사이즈 조합. 품절/비노출 옵션도 포함하고 앞자리 0을 유지합니다. 전 색상의 사이즈가 동일한 경우 쉼표 구분으로 수집하며 서로 다른 경우 임의 통합하지 않습니다."
+        },
+        "price": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "공식 옵션의 현재 option_price가 모든 색상·사이즈에서 동일한 경우 KRW 숫자로 수집합니다. 옵션별 차이가 있으면 빈 값과 경고로 구분합니다."
+        },
+        "category": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "공식 상품 페이지의 카테고리 경로를 수집합니다. 사이트가 배정한 기획전/프로모션 분류일 수 있으며 관리자 분류 아웃도어와는 별개입니다."
+        },
+        "main_image": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "제품 전용 통이미지 상단에서 개별 컷을 잘라 로컬 JPEG 저장. OCR 매핑은 웹에서 확인/수정합니다."
+        },
+        "additional_images": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "대표 외 선택 컷으로 정확히 5칸을 쉼표 구분. 부족하면 반복하고 대표 외 컷이 없으면 대표 컷 재사용."
+        },
+        "detail_page": {
+          "supported": true,
+          "status": "conditional",
+          "reason": "색상명·상품사진 → 제품 세부이미지 → PRODUCT INFO·SIZE를 원본 순서대로 합친 공통 JPEG. 품번.jpg로 저장하며 모든 색상 행에 동일한 파일명을 출력합니다."
+        }
+      },
+      "guide": {
+        "example": "WO3MTJW211",
+        "examples": [
+          "WQ1MCJP211",
+          "WQ1MCJW203",
+          "WO3MTJW211",
+          "WO1MTJW229"
+        ],
+        "pattern": "^[A-Za-z0-9]{7,20}$",
+        "format": "색상코드가 없는 기본 품번",
+        "required_columns": [
+          "품번"
+        ],
+        "notes": "Windows OCR의 색상 인식 결과를 웹에서 확인·수정하세요. OCR 사용 불가/인식 불확실 시 수동 매핑으로 유지합니다.",
+        "method": "공식 품번 검색 → 실제 선언된 상세 파일명 확인 → -D 제품 전용 원본/구형 원본 구조 검사 → 모델컷 -SP/-SS/-S 제외 → 색상 제목 OCR 및 개별 컷 저장",
+        "invalid_examples": [
+          "공백",
+          "WO3MTJW211_1B"
+        ],
+        "validation_note": "형식 검사이며 상품 존재 및 모델 미포함 제품 전용 원본 구조는 실행 시 확인합니다."
+      },
+      "notes": "v0.8.2: 색상명·상품사진 → 제품 세부이미지 → PRODUCT INFO·SIZE 세 영역을 합친 상세이미지/품번.jpg를 모든 색상 행에 공통 출력합니다. 원본 출처·권리정보는 JPEG 메타데이터와 추가 열에 보존합니다.",
+      "interface": "portal_v1",
+      "fields": {
+        "product_code": {
+          "label": "품번",
+          "supported": true,
+          "status": "conditional",
+          "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+        },
+        "product_name": {
+          "label": "상품명",
+          "supported": true,
+          "status": "conditional",
+          "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+        },
+        "color": {
+          "label": "색상",
+          "supported": true,
+          "status": "conditional",
+          "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+        },
+        "product_url": {
+          "label": "상품 링크",
+          "supported": true,
+          "status": "conditional",
+          "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+        },
+        "size": {
+          "label": "사이즈",
+          "supported": true,
+          "status": "conditional",
+          "reason": "공개 option_stock_data의 공식 색상-사이즈 조합. 품절/비노출 옵션도 포함하고 앞자리 0을 유지합니다. 전 색상의 사이즈가 동일한 경우 쉼표 구분으로 수집하며 서로 다른 경우 임의 통합하지 않습니다."
+        },
+        "price": {
+          "label": "가격",
+          "supported": true,
+          "status": "conditional",
+          "reason": "공식 옵션의 현재 option_price가 모든 색상·사이즈에서 동일한 경우 KRW 숫자로 수집합니다. 옵션별 차이가 있으면 빈 값과 경고로 구분합니다."
+        },
+        "category": {
+          "label": "카테고리",
+          "supported": true,
+          "status": "conditional",
+          "reason": "공식 상품 페이지의 카테고리 경로를 수집합니다. 사이트가 배정한 기획전/프로모션 분류일 수 있으며 관리자 분류 아웃도어와는 별개입니다."
+        },
+        "main_image": {
+          "label": "대표이미지",
+          "supported": true,
+          "status": "conditional",
+          "reason": "제품 전용 통이미지 상단에서 개별 컷을 잘라 로컬 JPEG 저장. OCR 매핑은 웹에서 확인/수정합니다."
+        },
+        "additional_images": {
+          "label": "추가이미지",
+          "supported": true,
+          "status": "conditional",
+          "reason": "대표 외 선택 컷으로 정확히 5칸을 쉼표 구분. 부족하면 반복하고 대표 외 컷이 없으면 대표 컷 재사용."
+        },
+        "detail_page": {
+          "label": "상세페이지",
+          "supported": true,
+          "status": "conditional",
+          "reason": "색상명·상품사진 → 제품 세부이미지 → PRODUCT INFO·SIZE를 원본 순서대로 합친 공통 JPEG. 품번.jpg로 저장하며 모든 색상 행에 동일한 파일명을 출력합니다."
+        }
+      },
+      "column_fields": {
+        "품번": "product_code",
+        "상품명": "product_name",
+        "색상": "color",
+        "상품 링크": "product_url",
+        "색상명": "color",
+        "색상코드": "color",
+        "사이즈": "size",
+        "가격": "price",
+        "카테고리": "category",
+        "대표이미지": "main_image",
+        "추가이미지": "additional_images",
+        "상세페이지": "detail_page",
+        "원본 상품명": null,
+        "OCR 텍스트": null,
+        "크롭 원본 이미지": null,
+        "크롭 좌표": null,
+        "상세 원본 이미지": null,
+        "상세 영역 좌표": null,
+        "원본 권리안내": null
+      },
+      "code_hash": "c1b61e65657ebafafea3c03203956d666170cb26c0af62dbed9cbbea5357dde2"
+    }
+  ]
+}

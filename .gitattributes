@@ -1,0 +1,2 @@
+# Preserve the initial release bytes, including brand script hashes.
+* -text

@@ -1,0 +1,77 @@
+{
+  "id": "new_brand",
+  "name": "새 브랜드",
+  "category": "기타",
+  "script": "new_brand.py",
+  "execution_level": 1,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "가격",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": false,
+      "status": "unverified",
+      "reason": "실제 공식 사이트 구조 확인 후 지원 여부와 근거를 작성하세요."
+    },
+    "price": {
+      "supported": false,
+      "status": "unverified",
+      "reason": "실제 공식 사이트 구조 확인 후 지원 여부와 근거를 작성하세요."
+    },
+    "category": {
+      "supported": false,
+      "status": "unverified",
+      "reason": "실제 공식 사이트 구조 확인 후 지원 여부와 근거를 작성하세요."
+    },
+    "main_image": {
+      "supported": false,
+      "status": "unverified",
+      "reason": "실제 공식 사이트 구조 확인 후 지원 여부와 근거를 작성하세요."
+    },
+    "additional_images": {
+      "supported": false,
+      "status": "unverified",
+      "reason": "실제 공식 사이트 구조 확인 후 지원 여부와 근거를 작성하세요."
+    },
+    "detail_page": {
+      "supported": false,
+      "status": "unverified",
+      "reason": "실제 공식 사이트 구조 확인 후 지원 여부와 근거를 작성하세요."
+    }
+  },
+  "official_color_codes": false,
+  "image_color_mapping": "unverified",
+  "guide": {
+    "example": "EXAMPLE001",
+    "examples": [
+      "EXAMPLE001"
+    ],
+    "pattern": null,
+    "format": "실제 확인한 공식 품번 형식으로 수정하세요.",
+    "notes": "색상코드·별칭은 공식 정보 확인 후 허용하세요.",
+    "method": "공식 사이트 검색 방식과 매핑 근거를 작성하세요.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "공백"
+    ],
+    "validation_note": "형식 검사이며 상품 존재 확인이 아닙니다."
+  },
+  "notes": "",
+  "crawl_source": "",
+  "mapping_mode": "automatic",
+  "image_mode": "url"
+}
