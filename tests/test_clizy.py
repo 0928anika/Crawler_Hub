@@ -3,9 +3,11 @@ import importlib.util
 import json
 from pathlib import Path
 import sys
+import socket
+import time
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from bs4 import BeautifulSoup
 from PIL import Image
@@ -31,6 +33,34 @@ def product(retail='97,000원'):
 
 
 class ClizyTests(unittest.TestCase):
+    def test_request_local_ipv4_priority_and_ipv6_fallback(self):
+        class Context:
+            checkpoint = lambda self: None
+        addresses = [(socket.AF_INET6, socket.SOCK_STREAM, 6, '', ('::1',443,0,0)),
+                     (socket.AF_INET, socket.SOCK_STREAM, 6, '', ('127.0.0.1',443))]
+        for ipv4_failed in (False, True):
+            with self.subTest(ipv4_failed=ipv4_failed):
+                sockets = [MagicMock(), MagicMock()]
+                if ipv4_failed:
+                    sockets[0].connect.side_effect = TimeoutError('unreachable IPv4')
+                opener = clizy.public_opener(Context(), time.monotonic()+20)
+                handler = next(h for h in opener.handlers if type(h).__name__ == 'HTTPS')
+                def open_mock(factory, request, **kwargs):
+                    connection = factory('public.example', timeout=5, **kwargs)
+                    return connection._create_connection(('public.example',443),5)
+                with patch.object(handler, 'do_open', side_effect=open_mock), \
+                     patch.object(clizy.socket, 'getaddrinfo', return_value=addresses), \
+                     patch.object(clizy.socket, 'socket', side_effect=sockets):
+                    result = handler.https_open(clizy.urllib.request.Request('https://public.example'))
+                sockets[0].connect.assert_called_once_with(('127.0.0.1',443))
+                if ipv4_failed:
+                    sockets[0].close.assert_called_once()
+                    sockets[1].connect.assert_called_once_with(('::1',443,0,0))
+                    self.assertIs(result, sockets[1])
+                else:
+                    sockets[1].connect.assert_not_called()
+                    self.assertIs(result, sockets[0])
+
     def test_required_fields_are_enabled_in_registered_definition(self):
         for field in ('product_code', 'product_name', 'color', 'product_url'):
             self.assertTrue(META['fields'][field]['supported'], field)

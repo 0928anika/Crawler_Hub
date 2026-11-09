@@ -1,6 +1,7 @@
 PORTAL_API_VERSION = 1
 
 import html
+import http.client
 import io
 import json
 import re
@@ -31,19 +32,79 @@ class MissingResource(CollectionError):
     """Permanent HTTP 404; site itself removes these gallery slots on error."""
 
 
+def public_opener(ctx, deadline):
+    """Request-local dual-stack fallback; never change global socket settings.
+
+    The observed Windows network publishes a nonresponsive DNS64 IPv6 address.
+    Try DNS-provided IPv4 addresses first, retaining IPv6 as a fallback. A shared
+    deadline covers address attempts, TLS, body reads and the optional retry.
+    """
+    def connect(address, timeout, source_address=None, **unused):
+        host, port = address
+        addresses = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
+        addresses.sort(key=lambda item: item[0] != socket.AF_INET)
+        last_error = None
+        for family, socktype, protocol, _, target in addresses:
+            ctx.checkpoint()
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError('공개 요청 전체 시간 제한 초과')
+            connection = socket.socket(family, socktype, protocol)
+            try:
+                connection.settimeout(min(3, remaining))
+                if source_address:
+                    connection.bind(source_address)
+                connection.connect(target)
+                connection.settimeout(min(5, max(.01, deadline-time.monotonic())))
+                return connection
+            except OSError as exc:
+                connection.close()
+                last_error = exc
+        if last_error is not None:
+            raise last_error
+        raise OSError('공개 호스트 주소 없음: ' + host)
+
+    def factory(tls):
+        def create(host, **kwargs):
+            cls = http.client.HTTPSConnection if tls else http.client.HTTPConnection
+            connection = cls(host, **kwargs)
+            connection._create_connection = connect
+            return connection
+        return create
+
+    class HTTP(urllib.request.HTTPHandler):
+        def http_open(self, request):
+            return self.do_open(factory(False), request)
+
+    class HTTPS(urllib.request.HTTPSHandler):
+        def https_open(self, request):
+            return self.do_open(factory(True), request, context=self._context)
+
+    return urllib.request.build_opener(HTTP(), HTTPS())
+
+
 def fetch(ctx, url, limit=4_000_000):
     """Anonymous GET. No cookies, credentials or Referer, including images."""
+    deadline = time.monotonic() + 20
+    started = time.monotonic()
+    ctx.log('공개 요청: ' + url, 'INFO')
+    opener = public_opener(ctx, deadline)
     for attempt in range(2):
         ctx.checkpoint()
         try:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError('공개 요청 전체 20초 제한 초과')
             request = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(request, timeout=15) as response:
+            with opener.open(request, timeout=min(5, remaining)) as response:
                 if int(response.headers.get('Content-Length', '0')) > limit:
                     raise CollectionError('응답 크기 초과: ' + url)
                 chunks, size = [], 0
                 while True:
                     ctx.checkpoint()
-                    block = response.read(min(65536, limit + 1 - size))
+                    if time.monotonic() >= deadline:
+                        raise TimeoutError('공개 응답 전체 20초 제한 초과')
+                    block = response.read1(min(65536, limit + 1 - size))
                     if not block:
                         break
                     chunks.append(block)
@@ -51,6 +112,7 @@ def fetch(ctx, url, limit=4_000_000):
                     if size > limit:
                         raise CollectionError('응답 크기 초과: ' + url)
             ctx.checkpoint()
+            ctx.log('공개 요청 완료 %.1f초: %s' % (time.monotonic()-started, url), 'INFO')
             return b''.join(chunks)
         except urllib.error.HTTPError as exc:
             if exc.code == 404:
