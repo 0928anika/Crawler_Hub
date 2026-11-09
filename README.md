@@ -1,6 +1,6 @@
 # Crawler Hub
 
-브랜드별 크롤러를 실행하는 로컬 Windows 허브입니다.
+브랜드별 크롤러를 실행하는 로컬 Windows·macOS 허브입니다.
 
 ## v0.10.0 추가 기능
 
@@ -25,7 +25,16 @@
 
 ## 실행
 
-Python 3.10 이상이 설치된 Windows PC에서 `Crawler_Hub.bat`를 실행합니다.
+Python 3.10 이상이 설치된 PC에서 운영체제에 맞는 파일을 실행합니다.
+
+- Windows: `Crawler_Hub_Windows.bat`
+- macOS: `Crawler_Hub_Mac.command`
+
+Mac 실행기는 Homebrew·python.org 설치 경로와 PATH에서 지원되는 Python 3를 찾습니다.
+실행 권한이 사라진 경우 `Mac_실행안내.txt`를 참고하세요.
+파일·결과 폴더 열기는 Windows 기본 앱 또는 Mac Finder를 사용합니다.
+웨스트우드의 Windows OCR은 Mac에서 사용할 수 없어 색상은 수동 매핑으로 처리합니다.
+Mac에서는 기본 데이터를 `~/.local/share/CrawlerHub`에 보관합니다.
 자세한 내용은 `사용방법.txt`를 참고하세요.
 작업 이력과 설정은 기본적으로 `%LOCALAPPDATA%\CrawlerHub`에 저장됩니다.
 
@@ -59,7 +68,7 @@ JSON 파일명은 브랜드 ID와 같아야 하고 `script`는 같은 폴더의 
 ## 명령행 등록과 검사
 
 프로젝트 최상위 폴더에서 실행합니다. `import`는 허브 패키지가 설치된 Python 환경을 사용하세요.
-허브를 한 번 실행했다면 기본 환경의 Python은 `%LOCALAPPDATA%\CrawlerHub\venv\Scripts\python.exe`입니다.
+허브를 한 번 실행했다면 기본 환경의 Python은 Windows에서 `%LOCALAPPDATA%\CrawlerHub\venv\Scripts\python.exe`, Mac에서 `~/.local/share/CrawlerHub/venv/bin/python`입니다.
 
 ```text
 python tools/manage_brands.py migrate

@@ -19,6 +19,7 @@ import color_mapping
 import local_images
 import zipfile
 import uuid
+from local_paths import open_local_path
 
 TOKEN=secrets.token_urlsafe(32)
 JOBS={}
@@ -190,7 +191,6 @@ class Handler(BaseHTTPRequestHandler):
                 job.state='stopping';job.stop.set();job.control.write_text('run',encoding='utf-8');job.kill()
             elif action=='save':job.save()
             elif action in ('open-folder','open-result','open-images','open-main-images','open-additional-images','open-detail-images'):
-                if os.name!='nt':raise ValueError('폴더/파일 열기는 Windows 환경에서 지원합니다.')
                 path=job.dir.resolve()
                 if path.parent!=(HOME/'jobs').resolve():raise ValueError('허용된 작업 폴더가 아닙니다.')
                 if action=='open-result':job.save();path=path/'result.xlsx'
@@ -198,7 +198,7 @@ class Handler(BaseHTTPRequestHandler):
                 if action=='open-main-images':path=local_images.role_folder(job,'대표이미지')
                 if action=='open-additional-images':path=local_images.role_folder(job,'추가이미지')
                 if action=='open-detail-images':path=local_images.role_folder(job,'상세이미지')
-                os.startfile(str(path))
+                open_local_path(path)
             else:raise ValueError('현재 상태에서 사용할 수 없는 작업입니다.')
             return self.send({'ok':True,'saved_at':job.saved_at})
         except Exception as e:return self.send({'error':str(e)},status=400)

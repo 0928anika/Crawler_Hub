@@ -1,8 +1,20 @@
 """Dependency-free local storage guard, also used before runtime installation."""
 import os
 import re
+import subprocess
+import sys
 from pathlib import Path
 ROOT=Path(__file__).resolve().parent
+
+
+def open_local_path(path):
+    """Called only after the HTTP handler has validated the local job path."""
+    if sys.platform=='darwin':
+        subprocess.Popen(['open',str(path)])
+    elif sys.platform=='win32':
+        os.startfile(str(path))
+    else:
+        raise ValueError('폴더/파일 열기는 Windows와 macOS에서 지원합니다.')
 
 def sync_roots():
     roots=[Path(v).resolve() for k,v in os.environ.items() if k.lower().startswith('onedrive') and v]

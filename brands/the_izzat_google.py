@@ -364,6 +364,10 @@ def click_official_google_title(ctx, page, candidates, attempted):
 
 def chrome_executable(runtime):
     candidates = [shutil.which("chrome"), shutil.which("google-chrome"), shutil.which("chromium")]
+    candidates.extend([
+        '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+        str(Path.home() / 'Applications/Google Chrome.app/Contents/MacOS/Google Chrome'),
+    ])
     for root in (os.environ.get("PROGRAMFILES"), os.environ.get("PROGRAMFILES(X86)"), os.environ.get("LOCALAPPDATA")):
         if root:
             candidates.append(str(Path(root) / "Google" / "Chrome" / "Application" / "chrome.exe"))
