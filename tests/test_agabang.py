@@ -37,6 +37,53 @@ class AgabangTests(unittest.TestCase):
         self.assertIsNone(c.identity(self.doc,'01T717601'))
         self.assertEqual(c.identity(c.soup(self.source.replace('01T72101293','01T72101203')),'01T721012')['color_code'],'03')
 
+    def test_shared_color_identity_does_not_invent_numeric_mapping(self):
+        for number,base,names,page_code in [('55675','01T752007',['O/WHITE','BLACK'],''),('55638','01T752004',['PINK','CREAM'],'58')]:
+            doc=c.soup((ROOT/('tests/fixtures/agabang_'+number+'.html')).read_text(encoding='utf-8'))
+            records=c.identities(doc,base)
+            self.assertEqual([r['color'] for r in records],names)
+            self.assertTrue(all(r['_shared_gallery'] and r['color_code']=='' and r['_page_code']==page_code for r in records))
+            self.assertEqual(len(c.detail_urls(doc,c.SITE,base,'')),2)
+            self.assertEqual(c.identities(doc,'01T721012'),[])
+
+    def test_shared_photos_emit_both_colors_with_all_six_slots_identical(self):
+        doc=c.soup((ROOT/'tests/fixtures/agabang_55638.html').read_text(encoding='utf-8'))
+        stream=io.BytesIO();Image.new('RGB',(600,600),'white').save(stream,format='PNG')
+        image={'status':'accessible','data':stream.getvalue(),'width':600,'height':600,'format':'PNG'}
+        ctx=Context(fields=('main_image','additional_images','size','price','detail_page'))
+        with patch.object(c,'public_image',return_value=image):
+            rows=[c.collect_record(ctx,doc,c.SITE,'01T752004',r,{}) for r in c.identities(doc,'01T752004')]
+        self.assertEqual(len(rows),2)
+        self.assertEqual(rows[0]['main_image'],rows[1]['main_image'])
+        for row in rows:
+            self.assertEqual(row['additional_images'].split(','),[row['main_image']]*5)
+            self.assertTrue(row['size'])
+            self.assertEqual(row['price'],25900)
+            self.assertEqual(row['이미지 구분'],'다색상 공통 사진')
+            self.assertNotIn('_page_code',row)
+            self.assertEqual(row['detail_page'].count('<img '),2)
+
+    def test_shared_full_page_identifier_does_not_drop_second_color(self):
+        doc=c.soup((ROOT/'tests/fixtures/agabang_55638.html').read_text(encoding='utf-8'))
+        for code in ('01T752004','01T75200458'):
+            with tempfile.TemporaryDirectory() as folder:
+                ctx=Context(folder,code)
+                with patch('playwright.sync_api.sync_playwright',return_value=MagicMock()),patch.object(c,'search',return_value=[c.SITE+'/product/test/55638/']),patch.object(c,'visit',return_value=(doc,c.SITE+'/product/test/55638/')):
+                    c.crawl(ctx)
+                self.assertEqual([r['color'] for r in ctx.rows],['PINK','CREAM'])
+                self.assertFalse(ctx.failures)
+
+    def test_disney_brand_is_preserved_without_rejecting_product(self):
+        doc=c.soup((ROOT/'tests/fixtures/agabang_45766.html').read_text(encoding='utf-8'))
+        record=c.identities(doc,'79R717552')[0]
+        self.assertEqual(record['color'],'PINK')
+        self.assertEqual(record['product_name'],'베이비니키우주복(턱받이)')
+        self.assertEqual(record['사이트브랜드'],'디즈니베이비')
+        self.assertEqual(record['color_code'],'')
+        variants=c.matching_stocks(doc,'PINK')
+        self.assertEqual([v['option_value_orginal'][1] for v in variants],['75','80','90'])
+        self.assertEqual(variants[0]['stock_number'],0)
+
     def test_search_does_not_fetch_first_page_again_via_pagination(self):
         doc=c.soup('<ul class="prdList"><li><div class="name"><a href="/product/name/55628/">item</a></div></li></ul><div class="xans-search-paging"><a href="?keyword=01T721012&amp;page=1">1</a><a href="?keyword=01T721012&amp;page=2">2</a></div>')
         with patch.object(c,'visit',side_effect=lambda ctx,page,url:(doc,url)) as visit:

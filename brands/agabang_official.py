@@ -17,7 +17,7 @@ from crawler_rules import check_public_image, validate_gallery_image, gallery_sl
 
 SITE = 'https://agabangmall.com'
 HOSTS = ('agabangmall.com', 'www.agabangmall.com')
-REVISION = '2026-11-09-agabang-2'
+REVISION = '2026-11-09-agabang-3'
 POLICY = {'checked_on':'2026-11-09', 'source':'https://marketplace.coupang.com/mba/listing',
           'route':'WING 웹/엑셀', 'min_side':500, 'max_bytes':10000000,
           'formats':['JPEG','PNG','WEBP'], 'max_aspect':1.8}
@@ -39,35 +39,42 @@ def field(doc, label):
     return ''
 
 
-def identity(doc, base):
+def identities(doc, base):
     model=field(doc,'모델').upper()
     if model!=base:
-        return None
-    if field(doc,'브랜드')!='아가방':
-        raise ValueError('브랜드 필드가 아가방이 아닙니다.')
+        return []
+    brand=field(doc,'브랜드')
     raw=field(doc,'상품명')
-    match=re.search(r'_('+re.escape(base)+r')(\d{2})\s*$',raw,re.I)
+    match=re.search(r'_('+re.escape(base)+r')(\d{2})?\s*$',raw,re.I)
     if not match:
-        raise ValueError('공식 상품명에서 모델+숫자 색상코드를 확인하지 못했습니다: '+raw)
+        raise ValueError('공식 상품명에서 정확한 모델 코드를 확인하지 못했습니다: '+raw)
     names=[]
     for select in doc.select('select[option_title="색상"][product_type="product_option"]'):
         for option in select.select('option[value]'):
             if option['value'] not in ('','*','**'):
                 name=option.get_text(' ',strip=True)
                 if name not in names:names.append(name)
-    if len(names)!=1:
-        raise ValueError('단일 색상 상품과 갤러리 연결을 확인할 수 없습니다.')
-    color=names[0]
-    title=re.sub(r'_'+re.escape(base)+r'\d{2}\s*$','',raw,flags=re.I)
-    if not re.search(r'\('+re.escape(color)+r'\)\s*$',title,re.I):
+    if not names:raise ValueError('공식 색상 옵션 없음')
+    title=re.sub(r'_'+re.escape(base)+r'(?:\d{2})?\s*$','',raw,flags=re.I)
+    palette=re.search(r'\(([^()]*)\)\s*$',title)
+    if palette is None or set(v.strip() for v in palette[1].split(','))!=set(names):
         raise ValueError('공식 상품명과 색상 옵션 불일치')
-    title=re.sub(r'\('+re.escape(color)+r'\)\s*$','',title,flags=re.I)
-    title=re.sub(r'\[[^\]]*아가방[^\]]*\]','',title)
-    title=re.sub(r'(?<![A-Za-z0-9])(?:아가방|AGABANG)(?![A-Za-z0-9])','',title,flags=re.I)
+    title=title[:palette.start()]
+    aliases=list(dict.fromkeys(v for v in (brand,'아가방','AGABANG','디즈니베이비','DISNEY BABY') if v))
+    pattern='|'.join(re.escape(v) for v in sorted(aliases,key=len,reverse=True))
+    title=re.sub(r'\[[^\]]*(?:'+pattern+r')[^\]]*\]','',title,flags=re.I)
+    title=re.sub(r'(?<![A-Za-z0-9])(?:'+pattern+r')(?![A-Za-z0-9])','',title,flags=re.I)
     title=re.sub(r'\s+',' ',title).strip(' _-')
     if not title:raise ValueError('정리 후 상품명 누락')
-    return dict(product_code=base,product_name=title,color=color,color_name=color,
-                color_code=match[2],원본상품명=raw)
+    shared=len(names)>1
+    return [dict(product_code=base,product_name=title,color=color,color_name=color,
+                color_code='' if shared else (match[2] or ''),원본상품명=raw,
+                _shared_gallery=shared,_page_code=match[2] or '',사이트브랜드=brand) for color in names]
+
+
+def identity(doc,base):
+    records=identities(doc,base)
+    return records[0] if records else None
 
 
 def stocks(doc):
@@ -200,22 +207,26 @@ def prefetch_images(ctx,doc,final,base,code,cache):
     ctx.log(f'선택 이미지 {len(missing)}개 확인: {time.monotonic()-started:.1f}초','INFO')
 
 
-def gallery(ctx,doc,final,cache):
+def gallery(ctx,doc,final,cache,shared=False):
     accepted,seen=[],set()
     for url in gallery_urls(doc,final):
         ctx.checkpoint()
         result=public_image(ctx,url,cache)
         if not result:continue
-        evidence=f'공식 단일 색상 상품 .imgArea big 갤러리; 제외 신호 없음; {result["width"]}x{result["height"]}'
+        role='사용자 허용: 동일 품번 다색상 공통 상품 사진' if shared else '공식 단일 색상 상품 갤러리'
+        evidence=f'{role}; .imgArea big 원본; 제외 신호 없음; {result["width"]}x{result["height"]}'
         validation=validate_gallery_image(result['data'],role='product_shot',mapping_verified=True,single_shot_verified=True,
-            mapping_evidence='모델+전체 코드와 단일 색상 옵션이 일치하는 독립 상품 페이지',content_evidence=evidence)
+            mapping_evidence='모델과 상품명 전체 색상 목록이 공식 옵션과 일치하는 상품 페이지',content_evidence=evidence)
         digest=hashlib.sha256(result['data']).hexdigest()
         if validation['passed'] and digest not in seen:
             seen.add(digest);accepted.append({'url':url,'validation':validation})
             ctx.log('상품 갤러리 채택: '+evidence+' / '+url,'INFO')
         elif not validation['passed']:
             ctx.log('상품 갤러리 제외: '+', '.join(validation['reasons'])+' / '+url,'WARNING')
-    return gallery_slots(accepted)
+    main,extra,warning=gallery_slots(accepted)
+    if shared and main:
+        return main,[main]*5,'사용자 지정: 다색상 공통 사진을 대표 및 추가 5슬롯에 동일하게 사용'
+    return main,extra,warning
 
 
 def detail_urls(doc,final,base,code):
@@ -230,7 +241,8 @@ def detail_urls(doc,final,base,code):
         if NEGATIVE.search(label):continue
         filename=unquote(urlsplit(url).path).rsplit('/',1)[-1]
         # 실제 상품 코드 이미지. 공통 이벤트/브랜드/배송 이미지는 요청하지 않는다.
-        if not re.search(re.escape(base)+r'(?:'+re.escape(code)+r')?(?:[_-]\d+)?\.(?:jpe?g|png|webp)$',filename,re.I):continue
+        suffix=re.escape(code) if code else r'\d{2}'
+        if not re.search(re.escape(base)+r'(?:'+suffix+r')?(?:[_-]\d+)?\.(?:jpe?g|png|webp)$',filename,re.I):continue
         if url not in result:result.append(url)
     return result
 
@@ -247,6 +259,36 @@ def detail(ctx,doc,final,base,code,cache):
     result='<div>'+''.join(parts)+'</div>'
     if len(result.encode('utf-16-le'))//2>32767:raise ValueError('상세 HTML 엑셀 셀 한도 초과')
     return result
+
+
+def collect_record(ctx,doc,final,base,record,cache):
+    record=dict(record)
+    shared=record.pop('_shared_gallery',False)
+    record.pop('_page_code',None)
+    code=record['color_code']
+    record['원본 상품명']=record.pop('원본상품명')
+    record['사이트 브랜드']=record.pop('사이트브랜드','')
+    record['product_url']=final
+    ctx.stage('아가방 색상 '+(code or record['color'])+': '+record['color'])
+    if shared:
+        record['이미지 구분']='다색상 공통 사진'
+        ctx.log('다색상 공통 사진 사용: '+record['color']+' / 개별 숫자 색상코드는 확인되지 않아 빈칸','INFO')
+    variants=matching_stocks(doc,record['color']) if ctx.enabled('size') or ctx.enabled('price') else []
+    if ctx.enabled('size'):
+        record['size']=','.join(dict.fromkeys(str(v['option_value_orginal'][1]).strip() for v in variants))
+        if not record['size']:raise ValueError('공식 사이즈 옵션 없음')
+    if ctx.enabled('price'):record['price']=selling_price(ctx,variants)
+    if ctx.enabled('regular_price'):record['regular_price']=regular_price(ctx,doc)
+    if ctx.enabled('category'):
+        record['category']=' > '.join(a.get_text(' ',strip=True) for a in doc.select('.xans-product-headcategory ol li a') if a.get_text(strip=True) not in ('홈','현재 위치'))
+    prefetch_images(ctx,doc,final,base,code,cache)
+    if ctx.enabled('main_image') or ctx.enabled('additional_images'):
+        main,extra,warning=gallery(ctx,doc,final,cache,shared=shared)
+        if warning:ctx.log(warning,'INFO' if shared and main else 'WARNING')
+        if ctx.enabled('main_image'):record['main_image']=main or ''
+        if ctx.enabled('additional_images'):record['additional_images']=','.join(extra)
+    if ctx.enabled('detail_page'):record['detail_page']=detail(ctx,doc,final,base,code,cache)
+    return record
 
 
 def crawl(ctx):
@@ -273,31 +315,18 @@ def crawl(ctx):
                     ctx.checkpoint()
                     try:
                         doc,final=visit(ctx,page,link)
-                        record=identity(doc,base)
-                        if record is None:continue
-                        code=record['color_code']
-                        if requested and code!=requested:continue
-                        if code in emitted:continue
-                        record['원본 상품명']=record.pop('원본상품명')
-                        record['product_url']=final
-                        ctx.stage('아가방 색상 '+code+': '+record['color'])
-                        variants=matching_stocks(doc,record['color']) if ctx.enabled('size') or ctx.enabled('price') else []
-                        if ctx.enabled('size'):
-                            record['size']=','.join(dict.fromkeys(str(v['option_value_orginal'][1]).strip() for v in variants))
-                            if not record['size']:raise ValueError('공식 사이즈 옵션 없음')
-                        if ctx.enabled('price'):record['price']=selling_price(ctx,variants)
-                        if ctx.enabled('regular_price'):record['regular_price']=regular_price(ctx,doc)
-                        if ctx.enabled('category'):
-                            record['category']=' > '.join(a.get_text(' ',strip=True) for a in doc.select('.xans-product-headcategory ol li a') if a.get_text(strip=True) not in ('홈','현재 위치'))
                         cache={}
-                        prefetch_images(ctx,doc,final,base,code,cache)
-                        if ctx.enabled('main_image') or ctx.enabled('additional_images'):
-                            main,extra,warning=gallery(ctx,doc,final,cache)
-                            if warning:ctx.log(warning,'WARNING')
-                            if ctx.enabled('main_image'):record['main_image']=main or ''
-                            if ctx.enabled('additional_images'):record['additional_images']=','.join(extra)
-                        if ctx.enabled('detail_page'):record['detail_page']=detail(ctx,doc,final,base,code,cache)
-                        ctx.emit_result(record);emitted.add(code)
+                        for record in identities(doc,base):
+                            code=record['color_code']
+                            if requested and requested!=(record['_page_code'] if record['_shared_gallery'] else code):continue
+                            key=code or ('name:'+record['color'])
+                            if key in emitted:continue
+                            try:
+                                result=collect_record(ctx,doc,final,base,record,cache)
+                                ctx.emit_result(result);emitted.add(key)
+                            except Exception as exc:
+                                message=base+' '+record['color']+': '+str(exc)
+                                failures.append(message);ctx.fail_item(message)
                     except Exception as exc:
                         message=link+': '+str(exc)
                         failures.append(message);ctx.fail_item(message)
