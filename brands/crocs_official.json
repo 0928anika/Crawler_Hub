@@ -1,0 +1,171 @@
+{
+  "id": "crocs_official",
+  "name": "크록스",
+  "category": "캐주얼 풋웨어",
+  "crawl_source": "공식 홈페이지",
+  "script": "crocs_official.py",
+  "execution_level": 1,
+  "interface": "portal_v1",
+  "mapping_mode": "automatic",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "verified",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 RSC variants.variationValues.size와 product.variationAttributes.size.name 대조. 해당 색상 품절 옵션 포함."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 색상별 variants.price KRW. 사이즈별 가격이 다르면 빈칸."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 variants.retailPrice 독립 필드. 미선택 시 파싱 생략, 누락/0/잘못된 값은 빈칸. 판매가 복사/역산 없음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 product.primaryCategoryId 원문 코드 (예: footwear)."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 SKU와 imageGroups 색상/asset ID 대조. 화면 미노출 포함. 확인된 카탈로그 촬영 역할 ALT100/110/120/130/140/160만 사용하며 ALT210·리뷰·UGC·라이프스타일 제외. 공개 파일 검사 통과 컷만 제공."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "동일 공식 품번·색상의 검증된 카탈로그 촬영 컷만 5슬롯 구성. 리뷰·UGC·라이프스타일·역할 미확인 사진 제외."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상 상품컷 + 상품 상세 설명의 겉감/안감/수입자 고시 텍스트 + 사이즈 표 보기 팝업의 실제 HTML 표. 없는 고시/표는 생략."
+    }
+  },
+  "guide": {
+    "example": "10126",
+    "examples": [
+      "10126",
+      "10126-100",
+      "10126_100"
+    ],
+    "pattern": "^\\d{5,8}(?:[_-][A-Za-z0-9]{3})?$",
+    "format": "숫자 기본 품번 또는 기본품번-색상코드 / 기본품번_색상코드",
+    "notes": "화면 미노출·품절도 공식 SKU의 기본 품번과 색상코드가 일치하면 포함. 지정 색상도 같은 공식 SKU로 검증.",
+    "method": "공식 검색 후 masterProductId 및 variants.productId/variationValues로 품번·색상 대조. imageGroups의 동일 색상 asset와 확인된 카탈로그 촬영 역할만 사용.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "10126_",
+      "10126-화이트"
+    ],
+    "validation_note": "문법만 사전 검사하며 상품과 색상 존재는 실행 시 확인."
+  },
+  "notes": "사용자 최종 요청: 화면 미노출 색상도 공식 품번/SKU 연결이 확인되면 수집. 리뷰/UGC/라이프스타일(ALT210 포함)과 촬영 역할 미확인 사진 제외. 고시는 텍스트, 사이즈표는 표.",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 필수 정보"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 필수 정보"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 필수 정보"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 필수 정보"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 RSC variants.variationValues.size와 product.variationAttributes.size.name 대조. 해당 색상 품절 옵션 포함."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 색상별 variants.price KRW. 사이즈별 가격이 다르면 빈칸."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 variants.retailPrice 독립 필드. 미선택 시 파싱 생략, 누락/0/잘못된 값은 빈칸. 판매가 복사/역산 없음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 product.primaryCategoryId 원문 코드 (예: footwear)."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 SKU와 imageGroups 색상/asset ID 대조. 화면 미노출 포함. 확인된 카탈로그 촬영 역할 ALT100/110/120/130/140/160만 사용하며 ALT210·리뷰·UGC·라이프스타일 제외. 공개 파일 검사 통과 컷만 제공."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "동일 공식 품번·색상의 검증된 카탈로그 촬영 컷만 5슬롯 구성. 리뷰·UGC·라이프스타일·역할 미확인 사진 제외."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상 상품컷 + 상품 상세 설명의 겉감/안감/수입자 고시 텍스트 + 사이즈 표 보기 팝업의 실제 HTML 표. 없는 고시/표는 생략."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page"
+  },
+  "code_hash": "dd9c51b731feab4d49ee9a7a54e1bc765cabbd62a02a53f3f9c32c4d4f946c19"
+}

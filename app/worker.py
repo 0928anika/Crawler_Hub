@@ -3,14 +3,21 @@ import json
 import runpy
 import sys
 import time
+import threading
 import urllib.request
 import openpyxl
 from pathlib import Path
 from openpyxl.worksheet.worksheet import Worksheet
 
 PREFIX = '@@PORTAL@@'
+EMIT_LOCK = threading.Lock()
 def emit(kind, **data):
-    print(PREFIX + json.dumps(dict(kind=kind, **data), ensure_ascii=False, default=str), flush=True)
+    line = PREFIX + json.dumps(dict(kind=kind, **data), ensure_ascii=False, default=str) + '\n'
+    # Parallel image requests also emit stage events through the network hook.
+    # Keep an entire JSON event and its newline together on the shared pipe.
+    with EMIT_LOCK:
+        sys.stdout.write(line)
+        sys.stdout.flush()
 
 script, input_file, output_file, control = sys.argv[1:5]
 options=json.loads(sys.argv[5]) if len(sys.argv)>5 else {}
