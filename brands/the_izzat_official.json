@@ -13,7 +13,8 @@
     "색상명",
     "색상코드",
     "사이즈",
-    "가격",
+    "판매가",
+    "정상가",
     "카테고리",
     "대표이미지",
     "추가이미지",
@@ -52,6 +53,11 @@
       "supported": true,
       "status": "conditional",
       "reason": "해당 goodsId의 상품 이미지, 공개 goodsNotifyList의 실제 고시 항목·값 2열 표, prd-size의 공식 실측표·단위·측정 도식만 포함. 공통 배너·관리·배송 안내 전용 요청 제외. 공개 URL 및 32767자 제한 검사 실측표 구조 파싱 실패 시 해당 실측 구역만 경고 후 제외하고 상품 수집을 계속함."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "해당 공식 상품의 _goodsDtlInfoData.orgAmt(원본가격). saleAmt와 구분하며 누락·파싱 실패는 빈칸."
     }
   },
   "guide": {
@@ -116,7 +122,7 @@
       "reason": "공개 includeGoodsDtlOption의 goodsAttrList 중 사이즈 속성. 공식 순서·문자열·품절 옵션 보존. 사이즈 속성이 없는 상품은 경고 후 빈 값"
     },
     "price": {
-      "label": "가격",
+      "label": "판매가",
       "supported": true,
       "status": "conditional",
       "reason": "공식 상품 기본정보 saleAmt와 옵션별 addSaleAmt를 사용. 쿠폰·회원·임직원 가격 제외. KRW 확인, 사이즈별 가격이 다르면 빈 값과 경고"
@@ -144,6 +150,12 @@
       "supported": true,
       "status": "conditional",
       "reason": "해당 goodsId의 상품 이미지, 공개 goodsNotifyList의 실제 고시 항목·값 2열 표, prd-size의 공식 실측표·단위·측정 도식만 포함. 공통 배너·관리·배송 안내 전용 요청 제외. 공개 URL 및 32767자 제한 검사 실측표 구조 파싱 실패 시 해당 실측 구역만 경고 후 제외하고 상품 수집을 계속함."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "해당 공식 상품의 _goodsDtlInfoData.orgAmt(원본가격). saleAmt와 구분하며 누락·파싱 실패는 빈칸."
     }
   },
   "column_fields": {
@@ -154,11 +166,12 @@
     "색상명": "color",
     "색상코드": "color",
     "사이즈": "size",
-    "가격": "price",
+    "판매가": "price",
     "카테고리": "category",
     "대표이미지": "main_image",
     "추가이미지": "additional_images",
-    "상세페이지 HTML": "detail_page"
+    "상세페이지 HTML": "detail_page",
+    "정상가": "regular_price"
   },
-  "code_hash": "1228d042ae21245c8510af4734c481f186e09b54706a904ccb769a57b33da4a1"
+  "code_hash": "b312a4be1f2ab6cdbadda4374741be3adc9081c97a73fe0f020750d2b876c2aa"
 }

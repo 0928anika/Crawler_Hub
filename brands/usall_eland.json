@@ -16,7 +16,8 @@
     "색상명",
     "색상코드",
     "사이즈",
-    "가격",
+    "판매가",
+    "정상가",
     "카테고리",
     "대표이미지",
     "추가이미지",
@@ -53,6 +54,11 @@
       "supported": true,
       "status": "conditional",
       "reason": "공식 itemDesc의 상품·사이즈 이미지를 원래 순서로 사용. 상단 이미지 추가 없음. 사용자 요청으로 상품고시/사이즈 표를 별도로 생성하지 않음."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.orgSellprice. 링크별 값이 다르거나 누락되면 공통 정상가는 빈칸이며 실패 처리하지 않음."
     }
   },
   "guide": {
@@ -110,7 +116,7 @@
       "reason": "공식 옵션 API의 품절 포함 사이즈. 모든 색상·상품 링크의 옵션이 같을 때만 공통 사이즈 출력, 다르면 빈 값과 경고."
     },
     "price": {
-      "label": "가격",
+      "label": "판매가",
       "supported": true,
       "status": "conditional",
       "reason": "옵션 API sellPrice의 쿠폰 전 KRW 판매가. 가격이 다르면 첫 지정 상품/옵션 가격 하나를 선택하고 경고만 기록하며 성공 처리."
@@ -138,6 +144,12 @@
       "supported": true,
       "status": "conditional",
       "reason": "공식 itemDesc의 상품·사이즈 이미지를 원래 순서로 사용. 상단 이미지 추가 없음. 사용자 요청으로 상품고시/사이즈 표를 별도로 생성하지 않음."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.orgSellprice. 링크별 값이 다르거나 누락되면 공통 정상가는 빈칸이며 실패 처리하지 않음."
     }
   },
   "column_fields": {
@@ -148,11 +160,12 @@
     "색상명": "color",
     "색상코드": "color",
     "사이즈": "size",
-    "가격": "price",
+    "판매가": "price",
     "카테고리": "category",
     "대표이미지": "main_image",
     "추가이미지": "additional_images",
-    "상세페이지 HTML": "detail_page"
+    "상세페이지 HTML": "detail_page",
+    "정상가": "regular_price"
   },
-  "code_hash": "3004868756ab869d75f09c898cb15b832b24bde2b031620e4500bc950d470a4b"
+  "code_hash": "69215ed785394a863ad08eea5a2a880ee3f14a2ca086da69cbb3d88aefb01ac6"
 }

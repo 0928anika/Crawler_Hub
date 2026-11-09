@@ -1,5 +1,7 @@
 PORTAL_API_VERSION = 1
 
+from regular_price import collect_regular_price, merge_regular_prices
+
 import hashlib
 import html
 import io
@@ -341,6 +343,7 @@ def crawl(ctx):
                     record['additional_images'] = extra
             if ctx.enabled('detail_page'):
                 record['detail_page'] = detail_html(ctx, soup, product, cache)
+            collect_regular_price(ctx, record, soup, 'lynx')
             ctx.emit_result(record)
         except Exception as error:
             message = f'{base}_{color}: {error}'

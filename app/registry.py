@@ -23,7 +23,10 @@ def brands(source_root=None):
         if b['available'] and b.get('code_hash'):
             b['available']=hashlib.sha256(path.read_bytes()).hexdigest()==b['code_hash']
         supported=set(b['column_fields'].values())
-        b.setdefault('fields',{key:dict(label=label,supported=key in supported,status='conditional',reason='상품별 누락 가능') for key,label in FIELDS.items()})
+        fields=b.setdefault('fields',{})
+        for key,label in FIELDS.items():
+            fields.setdefault(key,dict(label=label,supported=key in supported,status='conditional' if key in supported else 'unsupported',reason='상품별 누락 가능' if key in supported else '독립 결과 컬럼 없음'))
+            fields[key]['label']=label
         b.setdefault('extensions',[]);b.setdefault('execution_level',1);b.setdefault('interface','portal_v1');b.setdefault('notes','')
         b.setdefault('crawl_source','')
         b.setdefault('mapping_mode','automatic')

@@ -13,7 +13,8 @@
     "색상명",
     "색상코드",
     "사이즈",
-    "가격",
+    "판매가",
+    "정상가",
     "카테고리",
     "대표이미지",
     "추가이미지",
@@ -52,6 +53,11 @@
       "supported": true,
       "status": "conditional",
       "reason": "상품명의 품번_색상코드와 파일명이 일치하는 긴 이미지와 #productWrap 고시 2열 표. 공통 판매처/공지/세탁 이미지 제외, 별도 사이즈표 미수집"
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .goodsPrice .consumer 소비자가. .normal과 #regular_price는 판매가이므로 정상가로 사용하지 않음."
     }
   },
   "guide": {
@@ -110,7 +116,7 @@
       "reason": "공식 상품의 별도 사이즈 및 색상:사이즈 통합 select 옵션 전체 수집. 품절 여부로 제외하지 않음"
     },
     "price": {
-      "label": "가격",
+      "label": "판매가",
       "supported": true,
       "status": "conditional",
       "reason": "공식 Product offers의 KRW 판매가. 옵션 추가금이 있으면 경고 후 빈 값"
@@ -138,6 +144,12 @@
       "supported": true,
       "status": "conditional",
       "reason": "상품명의 품번_색상코드와 파일명이 일치하는 긴 이미지와 #productWrap 고시 2열 표. 공통 판매처/공지/세탁 이미지 제외, 별도 사이즈표 미수집"
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .goodsPrice .consumer 소비자가. .normal과 #regular_price는 판매가이므로 정상가로 사용하지 않음."
     }
   },
   "column_fields": {
@@ -148,11 +160,12 @@
     "색상명": "color",
     "색상코드": "color",
     "사이즈": "size",
-    "가격": "price",
+    "판매가": "price",
     "카테고리": "category",
     "대표이미지": "main_image",
     "추가이미지": "additional_images",
-    "상세페이지 HTML": "detail_page"
+    "상세페이지 HTML": "detail_page",
+    "정상가": "regular_price"
   },
-  "code_hash": "6eee10cd96c0050ccfb0038a27e1a1fa551ffc2eff6c1521bd1a1468e8afa663"
+  "code_hash": "e9adafc5609360432314ca3521509ca5fe26d9845e3236b1fabb53bbd6998b37"
 }

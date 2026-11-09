@@ -13,7 +13,8 @@
     "색상명",
     "색상코드",
     "사이즈",
-    "가격",
+    "판매가",
+    "정상가",
     "카테고리",
     "대표이미지",
     "추가이미지",
@@ -52,6 +53,11 @@
       "supported": true,
       "status": "conditional",
       "reason": "사용자 지시에 따라 상품고시·실측표를 포함한 공식 상세 원본 이미지를 그대로 보존합니다. 해당 품번·색상의 상세 이미지와 페이지에 있는 공식 틴즈 사이즈가이드만 선택합니다. 소개 배너·관리·배송 안내는 요청부터 제외하며 공개 접근과 Excel HTML 셀 32767자 제한을 확인합니다."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품의 소비자가 #span_product_price_custom 또는 product_custom. 미표시·0·파싱 실패는 빈칸, 판매가로 대체하지 않음."
     }
   },
   "guide": {
@@ -109,7 +115,7 @@
       "reason": "색상별 상품의 공식 색상-사이즈 옵션을 수집합니다. 품절 옵션을 포함하며 공식 표시 순서와 앞자리 0을 보존합니다."
     },
     "price": {
-      "label": "가격",
+      "label": "판매가",
       "supported": true,
       "status": "conditional",
       "reason": "공개 HTML의 option_stock_data에서 옵션별 현재 판매가를 확인합니다. KRW 가격을 사용하며 사이즈별 가격이 다르면 빈 값과 경고를 남깁니다."
@@ -143,6 +149,12 @@
       "supported": true,
       "status": "supported",
       "reason": "실제 수집한 상품 상세페이지 링크. 수동 매핑은 첫 번째 확인 링크 공통 적용"
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품의 소비자가 #span_product_price_custom 또는 product_custom. 미표시·0·파싱 실패는 빈칸, 판매가로 대체하지 않음."
     }
   },
   "column_fields": {
@@ -153,11 +165,12 @@
     "색상명": "color",
     "색상코드": "color",
     "사이즈": "size",
-    "가격": "price",
+    "판매가": "price",
     "카테고리": "category",
     "대표이미지": "main_image",
     "추가이미지": "additional_images",
-    "상세페이지 HTML": "detail_page"
+    "상세페이지 HTML": "detail_page",
+    "정상가": "regular_price"
   },
-  "code_hash": "47840fc91cc8a5144581e3aadaa2da1a74a4bf3caae9e795fe9ebeaa9081d730"
+  "code_hash": "ccb1d5398a01493d6d869f6e977126fe55355ada4ed0cb41ec3a19f1e82a4118"
 }

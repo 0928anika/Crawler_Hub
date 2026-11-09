@@ -16,7 +16,8 @@
     "색상명",
     "색상코드",
     "사이즈",
-    "가격",
+    "판매가",
+    "정상가",
     "카테고리",
     "대표이미지",
     "추가이미지",
@@ -53,6 +54,11 @@
       "supported": true,
       "status": "conditional",
       "reason": "배경 판정 통과 링크에서 공식 Winstudio의 해당 품번 이미지와 LA/MA SIZE 이미지만 사용. 셀러 UUID 배너가 섞일 수 있는 기타 상세 이미지는 보수적으로 제외. 별도 표 생성 없음."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.orgSellprice. 링크별 값이 다르거나 누락되면 공통 정상가는 빈칸이며 실패 처리하지 않음."
     }
   },
   "guide": {
@@ -108,7 +114,7 @@
       "reason": "공식 옵션 API의 품절 포함 사이즈. 모든 색상·상품 링크의 옵션이 같을 때만 공통 사이즈 출력, 다르면 빈 값과 경고."
     },
     "price": {
-      "label": "가격",
+      "label": "판매가",
       "supported": true,
       "status": "conditional",
       "reason": "옵션 API sellPrice의 쿠폰 전 KRW 판매가. 가격이 다르면 첫 지정 상품/옵션 가격 하나를 선택하고 경고만 기록하며 성공 처리."
@@ -136,6 +142,12 @@
       "supported": true,
       "status": "conditional",
       "reason": "배경 판정 통과 링크에서 공식 Winstudio의 해당 품번 이미지와 LA/MA SIZE 이미지만 사용. 셀러 UUID 배너가 섞일 수 있는 기타 상세 이미지는 보수적으로 제외. 별도 표 생성 없음."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.orgSellprice. 링크별 값이 다르거나 누락되면 공통 정상가는 빈칸이며 실패 처리하지 않음."
     }
   },
   "column_fields": {
@@ -146,11 +158,12 @@
     "색상명": "color",
     "색상코드": "color",
     "사이즈": "size",
-    "가격": "price",
+    "판매가": "price",
     "카테고리": "category",
     "대표이미지": "main_image",
     "추가이미지": "additional_images",
-    "상세페이지 HTML": "detail_page"
+    "상세페이지 HTML": "detail_page",
+    "정상가": "regular_price"
   },
-  "code_hash": "eef09d0ca03dad7a7da700af9e0f61854d47b69d14baeb6924d95f43716b00a4"
+  "code_hash": "1b52ad02a62919c6d07063e7c7001ad32b6f5b1965f48df75b7c9bab4974cd99"
 }

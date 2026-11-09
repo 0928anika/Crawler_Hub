@@ -12,7 +12,8 @@
     "색상명",
     "색상코드",
     "사이즈",
-    "가격",
+    "판매가",
+    "정상가",
     "카테고리",
     "대표이미지",
     "추가이미지",
@@ -51,6 +52,11 @@
       "supported": true,
       "status": "conditional",
       "reason": "실제 #detail1 .cont의 images.dcollect.co.kr/GdsImages 상품·INFO 원본 이미지 유지. 고시·사이즈 표 별도 생성 없음."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품의 소비자가 #span_product_price_custom 또는 product_custom. 미표시·0·파싱 실패는 빈칸, 판매가로 대체하지 않음."
     }
   },
   "guide": {
@@ -114,7 +120,7 @@
       "reason": "상품명 색상코드와 일치하는 공식 option_stock_data의 option_value_orginal 사이즈. 색상/사이즈 통합 옵션과 disabled·품절 사이즈 포함."
     },
     "price": {
-      "label": "가격",
+      "label": "판매가",
       "supported": true,
       "status": "conditional",
       "reason": "해당 색상 공식 옵션 option_price의 현재 KRW 판매가. 사이즈별 가격 차이는 첫 옵션 가격 선택과 경고."
@@ -142,6 +148,12 @@
       "supported": true,
       "status": "conditional",
       "reason": "실제 #detail1 .cont의 images.dcollect.co.kr/GdsImages 상품·INFO 원본 이미지 유지. 고시·사이즈 표 별도 생성 없음."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품의 소비자가 #span_product_price_custom 또는 product_custom. 미표시·0·파싱 실패는 빈칸, 판매가로 대체하지 않음."
     }
   },
   "column_fields": {
@@ -152,11 +164,12 @@
     "색상명": "color",
     "색상코드": "color",
     "사이즈": "size",
-    "가격": "price",
+    "판매가": "price",
     "카테고리": "category",
     "대표이미지": "main_image",
     "추가이미지": "additional_images",
-    "상세페이지 HTML": "detail_page"
+    "상세페이지 HTML": "detail_page",
+    "정상가": "regular_price"
   },
-  "code_hash": "164d9db0265b087cabd3b1899ea75e51ba9bd1b3e36e7978b1ab06999e642e45"
+  "code_hash": "5608ce179b9114ed4312c20252bb88a0bb31c3c38e4fd639b77e2af1bc97fb4c"
 }

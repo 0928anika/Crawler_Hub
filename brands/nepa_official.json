@@ -12,7 +12,8 @@
     "색상명",
     "색상코드",
     "사이즈",
-    "가격",
+    "판매가",
+    "정상가",
     "카테고리",
     "대표이미지",
     "추가이미지",
@@ -51,6 +52,11 @@
       "supported": true,
       "status": "conditional",
       "reason": "공식 상품 이미지, 상품정보고시 항목·값 표, 상품번호별 사이즈가이드 실측표를 통합. 원본 자료가 없는 항목은 생략."
+    },
+    "regular_price": {
+      "supported": false,
+      "status": "unsupported",
+      "reason": "현재 공식 공개 응답에서 판매가와 구분되는 독립 정상가 필드를 확인하지 못해 수집 불가. 임의 추정·판매가 대체 없음."
     }
   },
   "guide": {
@@ -111,7 +117,7 @@
       "reason": "색상별 상품 HTML의 optSize/data-size. disabled·재고 0 옵션도 포함하며 원래 옵션이 없으면 경고"
     },
     "price": {
-      "label": "가격",
+      "label": "판매가",
       "supported": true,
       "status": "conditional",
       "reason": "상품 HTML .goods-info .price .sale의 일반 원화 판매가. 쿠폰·최대혜택가는 사용하지 않음. 가격 부재는 빈 값"
@@ -139,6 +145,12 @@
       "supported": true,
       "status": "conditional",
       "reason": "공식 상품 이미지, 상품정보고시 항목·값 표, 상품번호별 사이즈가이드 실측표를 통합. 원본 자료가 없는 항목은 생략."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": false,
+      "status": "unsupported",
+      "reason": "현재 공식 공개 응답에서 판매가와 구분되는 독립 정상가 필드를 확인하지 못해 수집 불가. 임의 추정·판매가 대체 없음."
     }
   },
   "column_fields": {
@@ -149,11 +161,12 @@
     "색상명": "color",
     "색상코드": "color",
     "사이즈": "size",
-    "가격": "price",
+    "판매가": "price",
     "카테고리": "category",
     "대표이미지": "main_image",
     "추가이미지": "additional_images",
-    "상세페이지 HTML": "detail_page"
+    "상세페이지 HTML": "detail_page",
+    "정상가": "regular_price"
   },
-  "code_hash": "460f835427e47e19e66e4ed7e5a4d3f8677ada2fd245f2b565246ad4fbde4786"
+  "code_hash": "1716becaf4b65cca394b2371139e39309f239491eb8abca90cba2413ebcaeb14"
 }

@@ -139,7 +139,7 @@ class Handler(BaseHTTPRequestHandler):
             _,_,n,slot=path.split('/');color=['#253448','#e5d9c7','#8fa8d0'][int(n)%3]
             svg=f'<svg xmlns="http://www.w3.org/2000/svg" width="600" height="660"><rect width="600" height="660" fill="#f3f5f8"/><path d="M195 140L110 220 160 290 200 260 200 500 400 500 400 260 440 290 490 220 405 140 350 120Q300 190 250 120Z" fill="{color}"/><text x="300" y="570" text-anchor="middle" font-family="Arial" fill="#64748b" font-size="20">Crawler Hub / SAMPLE {slot}</text></svg>'
             return self.send(svg.encode(),'image/svg+xml')
-        if path in ('/app.js','/style.css','/image-groups.css'):
+        if path in ('/app.js','/mapping-filters.js','/style.css','/image-groups.css'):
             return self.send((ROOT/'static'/path[1:]).read_bytes(),'text/javascript; charset=utf-8' if path.endswith('js') else 'text/css; charset=utf-8')
         return self.send({'error':'찾을 수 없습니다'},status=404)
     def do_POST(self):

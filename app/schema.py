@@ -6,7 +6,7 @@ from detail_store import excel_detail
 
 FIELDS = {
     'product_code':'품번', 'product_name':'상품명', 'color':'색상', 'product_url':'상품 링크',
-    'size':'사이즈', 'price':'가격', 'category':'카테고리',
+    'size':'사이즈', 'price':'판매가', 'regular_price':'정상가', 'category':'카테고리',
     'main_image':'대표이미지', 'additional_images':'추가이미지', 'detail_page':'상세페이지',
 }
 REQUIRED = ['product_code','product_name','color','product_url']
@@ -24,7 +24,8 @@ def field_for(header):
     if h == '상품명': return 'product_name'
     if h in ('색상','색상명','색상코드'): return 'color'
     if h == '사이즈': return 'size'
-    if h == '가격': return 'price'
+    if h in ('가격','판매가','price','sale_price'): return 'price'
+    if h in ('정상가','소비자가','정가','regular_price'): return 'regular_price'
     if h == '카테고리': return 'category'
     return None
 

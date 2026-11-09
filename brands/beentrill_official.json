@@ -12,7 +12,8 @@
     "색상명",
     "색상코드",
     "사이즈",
-    "가격",
+    "판매가",
+    "정상가",
     "카테고리",
     "대표이미지",
     "추가이미지",
@@ -51,6 +52,11 @@
       "supported": true,
       "status": "conditional",
       "reason": "공식 상품 페이지 #prdDetail에 실제 연결된 상품별 info/model/detail 원본 이미지. 이전 품번 폴더 재사용 허용, 공통 intro/notice 제외. 사이즈/고시 표 별도 생성 없음."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상세 #ec-product-price-info의 ec-data-custom 소비자가(KRW). salePrice와 구분하며 품번별 누락은 빈칸으로 성공 처리."
     }
   },
   "guide": {
@@ -117,7 +123,7 @@
       "reason": "색상별 상품 select[option_title=size]의 실제 옵션 값. disabled/품절 옵션도 포함."
     },
     "price": {
-      "label": "가격",
+      "label": "판매가",
       "supported": true,
       "status": "conditional",
       "reason": "기간 할인판매가 #span_product_price_sale 우선, 없으면 #span_product_price_text. 쿠폰 적용 최적할인가는 제외."
@@ -145,6 +151,12 @@
       "supported": true,
       "status": "conditional",
       "reason": "공식 상품 페이지 #prdDetail에 실제 연결된 상품별 info/model/detail 원본 이미지. 이전 품번 폴더 재사용 허용, 공통 intro/notice 제외. 사이즈/고시 표 별도 생성 없음."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상세 #ec-product-price-info의 ec-data-custom 소비자가(KRW). salePrice와 구분하며 품번별 누락은 빈칸으로 성공 처리."
     }
   },
   "column_fields": {
@@ -155,11 +167,12 @@
     "색상명": "color",
     "색상코드": "color",
     "사이즈": "size",
-    "가격": "price",
+    "판매가": "price",
     "카테고리": "category",
     "대표이미지": "main_image",
     "추가이미지": "additional_images",
-    "상세페이지 HTML": "detail_page"
+    "상세페이지 HTML": "detail_page",
+    "정상가": "regular_price"
   },
-  "code_hash": "f6058a0e09c616882f330da7668070413593f80531ed12b91c3bb0bba514e896"
+  "code_hash": "2a3239fcb1308bdd85d89052bf5e0b64c4b24e8f36b13b7c6c47631e1bb1b9c0"
 }

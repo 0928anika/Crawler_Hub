@@ -1,5 +1,7 @@
 PORTAL_API_VERSION = 1
 
+from regular_price import collect_regular_price, merge_regular_prices
+
 import html
 import io
 import json
@@ -383,6 +385,7 @@ def crawl(ctx):
                 continue
             record = {"product_code": code, "product_name": clean_name(product, code)}
             choices = colors_from(product)
+            collect_regular_price(ctx, record, None, 'unsupported')
             records.append(record)
             for color in choices:
                 if color not in colors:
@@ -436,6 +439,7 @@ def crawl(ctx):
             output["detail_page"] = markup
     if not colors or not images:
         errors.append("공식 색상 또는 유효 개별 사진이 없어 수동 매핑 불가")
+    merge_regular_prices(ctx, output, records)
     if records and colors:
         for image in images:
             ctx.checkpoint()

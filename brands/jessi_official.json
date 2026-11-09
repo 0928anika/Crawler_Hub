@@ -13,7 +13,8 @@
     "색상명",
     "색상코드",
     "사이즈",
-    "가격",
+    "판매가",
+    "정상가",
     "카테고리",
     "대표이미지",
     "추가이미지",
@@ -54,6 +55,11 @@
       "supported": true,
       "status": "conditional",
       "reason": "공식 품번·색상 경로에 연결된 통합 상세 이미지를 원본 그대로 보존. 사용자 허용에 따라 이미지 안의 고시·실측표·배송/반품 안내 포함. 별도 사이즈표를 생성하지 않음. 상세 본문이 비어 있으면 해당 색상 상품사진으로 구성하고 자료 부재를 경고. 공개 URL/32767자 제한 검사"
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품의 소비자가 #span_product_price_custom 또는 product_custom. 미표시·0·파싱 실패는 빈칸, 판매가로 대체하지 않음."
     }
   },
   "guide": {
@@ -113,7 +119,7 @@
       "reason": "해당 상품 ID의 공식 사이즈 select 옵션을 문자열·표시 순서대로 수집. 품절/disabled 옵션 포함, 앞자리 0 보존. 옵션이 없으면 경고 후 빈 값"
     },
     "price": {
-      "label": "가격",
+      "label": "판매가",
       "supported": true,
       "status": "conditional",
       "reason": "공개 HTML option_stock_data의 해당 색상 option_price. KRW 확인, 쿠폰·회원 혜택 제외. 사이즈별 가격 차이는 빈 값과 경고"
@@ -141,6 +147,12 @@
       "supported": true,
       "status": "conditional",
       "reason": "공식 품번·색상 경로에 연결된 통합 상세 이미지를 원본 그대로 보존. 사용자 허용에 따라 이미지 안의 고시·실측표·배송/반품 안내 포함. 별도 사이즈표를 생성하지 않음. 상세 본문이 비어 있으면 해당 색상 상품사진으로 구성하고 자료 부재를 경고. 공개 URL/32767자 제한 검사"
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품의 소비자가 #span_product_price_custom 또는 product_custom. 미표시·0·파싱 실패는 빈칸, 판매가로 대체하지 않음."
     }
   },
   "column_fields": {
@@ -151,12 +163,13 @@
     "색상명": "color",
     "색상코드": "color",
     "사이즈": "size",
-    "가격": "price",
+    "판매가": "price",
     "카테고리": "category",
     "대표이미지": "main_image",
     "추가이미지": "additional_images",
     "상세페이지 HTML": "detail_page",
-    "원본 상품명": null
+    "원본 상품명": null,
+    "정상가": "regular_price"
   },
-  "code_hash": "ddcc7a7763f8144f6e4454ca0370506f110474c8b377609c121b9e1fad8ba974"
+  "code_hash": "1e353890bfd29f3928b92947de993d74356ed3864c51dd5b160c59e5990c5775"
 }

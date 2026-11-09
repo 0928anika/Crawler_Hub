@@ -1,5 +1,7 @@
 PORTAL_API_VERSION = 1
 
+from regular_price import collect_regular_price, merge_regular_prices
+
 import hashlib
 import html
 import io
@@ -248,17 +250,6 @@ def detail(ctx, doc, page_url, cache):
     return result
 
 
-def regular_price(ctx, doc):
-    # 공식 소비자가 필드. 판매가/쿠폰가를 정상가의 대체값으로 쓰지 않는다.
-    node = doc.select_one('#span_product_price_custom')
-    value = node.get_text(' ', strip=True) if node else ''
-    if not value or value in ('-', '0원', '0'):
-        ctx.log('공식 소비자가(정상가) 없음: 정상가 칼럼은 빈 값', 'WARNING')
-        return None
-    match = re.fullmatch(r'([0-9][0-9,]*)\s*원', value)
-    if not match:
-        raise CrawlError('공식 소비자가(정상가) 해석 실패: ' + value)
-    return int(match[1].replace(',', ''))
 
 
 def crawl(ctx):
@@ -290,7 +281,6 @@ def crawl(ctx):
                 continue
             name = product_name(doc, base)
             palette = colors(doc)
-            original_price = regular_price(ctx, doc)
             stock = variants(doc) if ctx.enabled('size') or ctx.enabled('price') else None
             shared_detail, cache = None, {}
             for color in palette:
@@ -334,7 +324,7 @@ def crawl(ctx):
                         if shared_detail is None:
                             shared_detail = detail(ctx, doc, final, cache)
                         record['detail_page'] = shared_detail
-                    record['정상가'] = original_price
+                    collect_regular_price(ctx, record, doc, 'cafe24')
                     ctx.emit_result(record)
                     emitted.add(color['code'])
                 except CrawlError as error:

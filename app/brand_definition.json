@@ -12,7 +12,8 @@
     "색상명",
     "색상코드",
     "사이즈",
-    "가격",
+    "판매가",
+    "정상가",
     "카테고리",
     "대표이미지",
     "추가이미지",
@@ -49,6 +50,11 @@
       "supported": false,
       "status": "unverified",
       "reason": "실제 공식 사이트 구조 확인 후 지원 여부와 근거를 작성하세요."
+    },
+    "regular_price": {
+      "supported": false,
+      "status": "unverified",
+      "reason": "공식 독립 정상가·소비자가 출처 확인 후 지원 여부를 작성하세요. 판매가 대체·할인율 역산 금지. 상품별 누락은 빈칸과 안내만 남기고 성공 처리합니다."
     }
   },
   "official_color_codes": false,

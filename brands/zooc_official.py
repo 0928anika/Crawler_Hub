@@ -1,4 +1,6 @@
 PORTAL_API_VERSION = 1
+
+from regular_price import collect_regular_price, merge_regular_prices
 import re
 import io
 import json
@@ -453,6 +455,7 @@ def crawl(ctx):
                     record['additional_images'] = extra
             if ctx.enabled('detail_page'):
                 record['detail_page'] = detail(ctx, doc, url, cache)
+            collect_regular_price(ctx, record, doc, 'daehyun')
             ctx.emit_result(record)
             emitted.add(color)
         except Exception as e:

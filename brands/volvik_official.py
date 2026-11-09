@@ -1,4 +1,6 @@
 PORTAL_API_VERSION = 1
+
+from regular_price import collect_regular_price, merge_regular_prices
 import re
 import io
 import json
@@ -395,6 +397,7 @@ def crawl(ctx):
                 current_field = '상세 HTML'
                 record['detail_page'] = detail(ctx, doc, url, full, cache)
             current_field = '결과 전송'
+            collect_regular_price(ctx, record, doc, 'cafe24')
             ctx.emit_result(record)
             ctx.log(full + ' 결과 전송 완료', 'SUCCESS')
             emitted.add(color)

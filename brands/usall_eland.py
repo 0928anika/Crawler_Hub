@@ -1,5 +1,7 @@
 PORTAL_API_VERSION = 1
 
+from regular_price import collect_regular_price, merge_regular_prices
+
 import hashlib
 import html
 import io
@@ -368,6 +370,12 @@ def crawl(ctx):
     if products and colors and unique:
         main, final = products[0]
         record = {'product_code': code, 'product_name': clean_name(main['itemName'], code), 'product_url': final}
+        regular_records = []
+        for product_main, _ in products:
+            value = {}
+            collect_regular_price(ctx, value, product_main, 'eland')
+            regular_records.append(value)
+        merge_regular_prices(ctx, record, regular_records)
         if ctx.enabled('size'):
             same = bool(sizes) and all(v == sizes[0] for v in sizes)
             record['size'] = ','.join(sizes[0]) if same else ''

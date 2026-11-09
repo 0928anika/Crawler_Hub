@@ -1,0 +1,140 @@
+[
+  {
+    "id": "allforyou_official",
+    "profile": "cafe24",
+    "supported": true,
+    "reason": "공식 상품의 소비자가 #span_product_price_custom 또는 product_custom. 미표시·0·파싱 실패는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "beentrill_official",
+    "profile": "beentrill",
+    "supported": true,
+    "reason": "공식 상세 #ec-product-price-info의 ec-data-custom 소비자가(KRW). salePrice와 구분하며 품번별 누락은 빈칸으로 성공 처리."
+  },
+  {
+    "id": "benjefe_official",
+    "profile": "cafe24",
+    "supported": true,
+    "reason": "공식 상품의 소비자가 #span_product_price_custom 또는 product_custom. 미표시·0·파싱 실패는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "egoist_naver_ncys",
+    "profile": "unsupported",
+    "supported": false,
+    "reason": "현재 공식 공개 응답에서 판매가와 구분되는 독립 정상가 필드를 확인하지 못해 수집 불가. 임의 추정·판매가 대체 없음."
+  },
+  {
+    "id": "hangten_official",
+    "profile": "cafe24",
+    "supported": true,
+    "reason": "공식 상품의 소비자가 #span_product_price_custom 또는 product_custom. 미표시·0·파싱 실패는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "indigobank_kids_eland",
+    "profile": "eland",
+    "supported": true,
+    "reason": "공식 itemMain.orgSellprice. 링크별 값이 다르거나 누락되면 공통 정상가는 빈칸이며 실패 처리하지 않음."
+  },
+  {
+    "id": "jessi_official",
+    "profile": "cafe24",
+    "supported": true,
+    "reason": "공식 상품의 소비자가 #span_product_price_custom 또는 product_custom. 미표시·0·파싱 실패는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "lanzi_eland",
+    "profile": "eland",
+    "supported": true,
+    "reason": "공식 itemMain.orgSellprice. 링크별 값이 다르거나 누락되면 공통 정상가는 빈칸이며 실패 처리하지 않음."
+  },
+  {
+    "id": "lynx_official",
+    "profile": "lynx",
+    "supported": true,
+    "reason": "공식 .goodsPrice .consumer 소비자가. .normal과 #regular_price는 판매가이므로 정상가로 사용하지 않음."
+  },
+  {
+    "id": "milibam_eland",
+    "profile": "eland",
+    "supported": true,
+    "reason": "공식 itemMain.orgSellprice. 링크별 값이 다르거나 누락되면 공통 정상가는 빈칸이며 실패 처리하지 않음."
+  },
+  {
+    "id": "nbakids_official",
+    "profile": "style24",
+    "supported": true,
+    "reason": "공식 색상별 상세 .price_blk .org_price 원가 표기. 미표시·파싱 실패는 빈칸."
+  },
+  {
+    "id": "nepa_official",
+    "profile": "unsupported",
+    "supported": false,
+    "reason": "현재 공식 공개 응답에서 판매가와 구분되는 독립 정상가 필드를 확인하지 못해 수집 불가. 임의 추정·판매가 대체 없음."
+  },
+  {
+    "id": "renomagolf_official",
+    "profile": "cafe24",
+    "supported": true,
+    "reason": "공식 상품의 소비자가 #span_product_price_custom 또는 product_custom. 미표시·0·파싱 실패는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "roem_official",
+    "profile": "eland",
+    "supported": true,
+    "reason": "공식 itemMain.orgSellprice. 링크별 값이 다르거나 누락되면 공통 정상가는 빈칸이며 실패 처리하지 않음."
+  },
+  {
+    "id": "tdg_eland_ncys",
+    "profile": "eland",
+    "supported": true,
+    "reason": "공식 itemMain.orgSellprice. 링크별 값이 다르거나 누락되면 공통 정상가는 빈칸이며 실패 처리하지 않음."
+  },
+  {
+    "id": "the_izzat_google",
+    "profile": "babathe",
+    "supported": true,
+    "reason": "해당 공식 상품의 _goodsDtlInfoData.orgAmt(원본가격). saleAmt와 구분하며 누락·파싱 실패는 빈칸."
+  },
+  {
+    "id": "the_izzat_official",
+    "profile": "babathe",
+    "supported": true,
+    "reason": "해당 공식 상품의 _goodsDtlInfoData.orgAmt(원본가격). saleAmt와 구분하며 누락·파싱 실패는 빈칸."
+  },
+  {
+    "id": "ucla_manual",
+    "profile": "cafe24",
+    "supported": true,
+    "reason": "공식 상품의 소비자가 #span_product_price_custom 또는 product_custom. 미표시·0·파싱 실패는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "ucla_official",
+    "profile": "cafe24",
+    "supported": true,
+    "reason": "공식 상품의 소비자가 #span_product_price_custom 또는 product_custom. 미표시·0·파싱 실패는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "usall_eland",
+    "profile": "eland",
+    "supported": true,
+    "reason": "공식 itemMain.orgSellprice. 링크별 값이 다르거나 누락되면 공통 정상가는 빈칸이며 실패 처리하지 않음."
+  },
+  {
+    "id": "volvik_official",
+    "profile": "cafe24",
+    "supported": true,
+    "reason": "공식 상품의 소비자가 #span_product_price_custom 또는 product_custom. 미표시·0·파싱 실패는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "westwood_official_nomodel",
+    "profile": "cafe24",
+    "supported": true,
+    "reason": "공식 상품의 소비자가 #span_product_price_custom 또는 product_custom. 미표시·0·파싱 실패는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "zooc_official",
+    "profile": "daehyun",
+    "supported": true,
+    "reason": "공식 상세 .info_price .prc.consumer 소비자가. dis_price는 판매가이며 정상가 대체값으로 사용하지 않음. 품번별 누락은 빈칸으로 성공 처리."
+  }
+]

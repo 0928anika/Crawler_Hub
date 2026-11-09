@@ -1,5 +1,7 @@
 PORTAL_API_VERSION = 1
 
+from regular_price import collect_regular_price, merge_regular_prices
+
 import html
 import io
 import json
@@ -369,6 +371,7 @@ def crawl(ctx):
                 raise CrawlError("공식 색상 후보명이 비어 있습니다")
             record = {"product_code": code, "product_url": url, "product_name": clean_name(original, code, str(main.get("brandName", ""))), "원본 상품명": original}
             ctx.log("상품명: " + record["product_name"] + " / 원본 상품명: " + original, "SUCCESS")
+            collect_regular_price(ctx, record, main, 'eland')
             records.append(record)
             record_links.append(url)
             for choice in choices:
@@ -434,6 +437,7 @@ def crawl(ctx):
             output["detail_page"] = markup
     if not colors or not images:
         errors.append("공식 색상 후보 또는 유효 개별 사진이 없어 수동 매핑 불가")
+    merge_regular_prices(ctx, output, records)
     if records and colors:
         for image in images:
             ctx.checkpoint()

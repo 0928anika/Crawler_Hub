@@ -13,7 +13,8 @@
     "색상명",
     "색상코드",
     "사이즈",
-    "가격",
+    "판매가",
+    "정상가",
     "카테고리",
     "대표이미지",
     "추가이미지",
@@ -52,6 +53,11 @@
       "supported": true,
       "status": "conditional",
       "reason": "#wivis_detail의 상품별 SellerCanvas 또는 goods/S004 사진, .prodSize 실측 표/그림, .procEssInfo 실제 고시 항목·값. 없는 자료는 경고 후 생략"
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품의 소비자가 #span_product_price_custom 또는 product_custom. 미표시·0·파싱 실패는 빈칸, 판매가로 대체하지 않음."
     }
   },
   "guide": {
@@ -111,7 +117,7 @@
       "reason": "공식 option_stock_data의 색상별 option_value_orginal 사이즈. 품절 포함"
     },
     "price": {
-      "label": "가격",
+      "label": "판매가",
       "supported": true,
       "status": "conditional",
       "reason": "공식 option_stock_data.option_price의 일반 KRW 판매가. 옵션별 가격이 다르면 생략"
@@ -139,6 +145,12 @@
       "supported": true,
       "status": "conditional",
       "reason": "#wivis_detail의 상품별 SellerCanvas 또는 goods/S004 사진, .prodSize 실측 표/그림, .procEssInfo 실제 고시 항목·값. 없는 자료는 경고 후 생략"
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품의 소비자가 #span_product_price_custom 또는 product_custom. 미표시·0·파싱 실패는 빈칸, 판매가로 대체하지 않음."
     }
   },
   "column_fields": {
@@ -149,11 +161,12 @@
     "색상명": "color",
     "색상코드": "color",
     "사이즈": "size",
-    "가격": "price",
+    "판매가": "price",
     "카테고리": "category",
     "대표이미지": "main_image",
     "추가이미지": "additional_images",
-    "상세페이지 HTML": "detail_page"
+    "상세페이지 HTML": "detail_page",
+    "정상가": "regular_price"
   },
-  "code_hash": "a1d9f57c0b8fee76f349ca692371c8d3c31c16830411b5ccc93bc3bb250053d9"
+  "code_hash": "99682549e01ae424c765c7d2ef4cd2c7971c768d8044d6b81f14400cf7ebce5d"
 }

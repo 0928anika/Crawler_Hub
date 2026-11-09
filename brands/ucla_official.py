@@ -1,5 +1,7 @@
 PORTAL_API_VERSION = 1
 
+from regular_price import collect_regular_price, merge_regular_prices
+
 import hashlib
 import html
 import io
@@ -360,6 +362,7 @@ def crawl(ctx):
                         if shared_detail is None:
                             shared_detail = detail(ctx, doc, final, cache)
                         record['detail_page'] = shared_detail
+                    collect_regular_price(ctx, record, doc, 'cafe24')
                     ctx.emit_result(record)
                     emitted.add(color['code'])
                 except CrawlError as error:

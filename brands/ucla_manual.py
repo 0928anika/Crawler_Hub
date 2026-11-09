@@ -1,5 +1,7 @@
 PORTAL_API_VERSION = 1
 
+from regular_price import collect_regular_price, merge_regular_prices
+
 import hashlib
 import html
 import io
@@ -350,6 +352,7 @@ def _crawl(ctx):
             if digest not in seen:
                 candidates.append((url, record))
                 seen.add(digest)
+        collect_regular_price(ctx, record, doc, 'cafe24')
         records.append(record)
     if not candidates:
         if automatic_models:
@@ -360,9 +363,12 @@ def _crawl(ctx):
         ctx.log('색상별 사이즈가 달라 공통 사이즈를 비워 둡니다.', 'WARNING')
     if prices and len(set(prices)) > 1:
         ctx.log('옵션별 가격 차이. 첫 공식 옵션 가격 ' + str(prices[0]) + '원 선택', 'WARNING')
+    common_regular = {}
+    merge_regular_prices(ctx, common_regular, records)
     ctx.stage('수동 색상 매핑 후보 전송')
     for url, original in candidates:
         record = dict(original)
+        record.update(common_regular)
         if ctx.enabled('size'):
             record['size'] = common_size
         if ctx.enabled('price'):

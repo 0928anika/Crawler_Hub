@@ -5,6 +5,7 @@ import http.client
 import importlib.util
 import json
 import os
+import subprocess
 from pathlib import Path
 import sys
 import tempfile
@@ -225,6 +226,51 @@ class BrandManagementTests(unittest.TestCase):
             hub_http.shutdown()
             hub_http.server_close()
             thread.join(timeout=5)
+
+    def test_real_worker_snapshot_imports_price_helper_and_missing_retail_succeeds(self):
+        import tasks
+        from openpyxl import load_workbook
+        self.enterContext(patch.object(tasks, 'HOME', admin.HOME))
+        code = '''PORTAL_API_VERSION = 1
+from regular_price import collect_regular_price
+def crawl(ctx):
+    record = dict(product_code=ctx.product_code, product_name='상품', color='검정', product_url='https://example.com/product', price=12000)
+    collect_regular_price(ctx, record, '<html></html>', 'cafe24')
+    ctx.emit_result(record)
+'''
+        self.write_brand('a_brand', code)
+        brand = next(b for b in admin.listing()['brands'] if b['id'] == 'a_brand')
+        job = tasks.Job(brand, ['품번'], [['ABC']], False, ['price','regular_price'])
+        self.assertIn('regular_price.py', job.engine_manifest)
+        job.verify_engine()
+        output = job.dir/'worker-result.xlsx'
+        headers = ['품번','상품명','색상','상품 링크','판매가','정상가']
+        options = dict(interface='portal_v1', index=0, selected=['price','regular_price'],
+                       headers=headers, input_headers=['품번'], input_row=['ABC'])
+        result = subprocess.run([sys.executable,'-B',str(job.engine_root/'worker.py'),
+            str(job.engine_root/job.engine_script),str(job.dir/'input.xlsx'),str(output),
+            str(job.control),json.dumps(options)],capture_output=True,encoding='utf-8',
+            env=dict(os.environ,PYTHONIOENCODING='utf-8'),timeout=20)
+        self.assertEqual(result.returncode,0,result.stderr+'\n'+result.stdout)
+        self.assertNotIn('"kind": "item_failure"',result.stdout)
+        wb=load_workbook(output,read_only=True)
+        try:
+            rows=list(wb.active.values)
+            self.assertEqual(rows[1][-2:],(12000,None))
+        finally:
+            wb.close()
+        job.run()
+        self.assertEqual(job.state,'completed',job.logs)
+        self.assertEqual(job.queue[0]['status'],'SUCCESS',job.queue[0])
+        self.assertEqual(job.failed,0)
+        wb=load_workbook(job.dir/'result.xlsx',read_only=True)
+        try:
+            values=list(wb['결과'].values)
+            row=dict(zip(values[0],values[1]))
+            self.assertEqual(row['판매가'],12000)
+            self.assertIsNone(row['정상가'])
+        finally:
+            wb.close()
 
 
 if __name__ == '__main__':

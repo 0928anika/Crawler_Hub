@@ -13,7 +13,8 @@
     "색상명",
     "색상코드",
     "사이즈",
-    "가격",
+    "판매가",
+    "정상가",
     "카테고리",
     "대표이미지",
     "추가이미지",
@@ -52,6 +53,11 @@
       "supported": true,
       "status": "conditional",
       "reason": "실측사이즈 section의 size_img → tbl_col → 단위/측정 주석 순서. 상품정보고시 .prd_info h3/값을 실제 2열 표로 생성. 없는 자료 생략"
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상세 .info_price .prc.consumer 소비자가. dis_price는 판매가이며 정상가 대체값으로 사용하지 않음. 품번별 누락은 빈칸으로 성공 처리."
     }
   },
   "guide": {
@@ -111,7 +117,7 @@
       "reason": "공식 상세페이지 사이즈 옵션 optChipSet2 또는 option2. 품절 포함, 실측 표와 별개"
     },
     "price": {
-      "label": "가격",
+      "label": "판매가",
       "supported": true,
       "status": "conditional",
       "reason": "공식 .info_price .dis_price의 일반 KRW 판매가. 회원/쿠폰 혜택가는 제외"
@@ -139,6 +145,12 @@
       "supported": true,
       "status": "conditional",
       "reason": "실측사이즈 section의 size_img → tbl_col → 단위/측정 주석 순서. 상품정보고시 .prd_info h3/값을 실제 2열 표로 생성. 없는 자료 생략"
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상세 .info_price .prc.consumer 소비자가. dis_price는 판매가이며 정상가 대체값으로 사용하지 않음. 품번별 누락은 빈칸으로 성공 처리."
     }
   },
   "column_fields": {
@@ -149,11 +161,12 @@
     "색상명": "color",
     "색상코드": "color",
     "사이즈": "size",
-    "가격": "price",
+    "판매가": "price",
     "카테고리": "category",
     "대표이미지": "main_image",
     "추가이미지": "additional_images",
-    "상세페이지 HTML": "detail_page"
+    "상세페이지 HTML": "detail_page",
+    "정상가": "regular_price"
   },
-  "code_hash": "ccf68214895eaf2c30eae228aacb004c8a18292ff65e3e8976d8b6177c5790f4"
+  "code_hash": "62b84f42650c2dbfee417950c71171ded4b33994989358f503c1ddc67fa5e72a"
 }

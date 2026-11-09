@@ -1,3 +1,28 @@
+
+[판매가·정상가 표준 선택 수집 규칙 — 2026-11-09]
+- 기존 price 필드의 화면·엑셀 이름은 "판매가"다. price 키는 호환성을 위해 유지한다. 별도 선택 필드 regular_price의 이름은 "정상가"다.
+- output_headers에는 "판매가", "정상가"를 각각 선언한다. capabilities.regular_price에는 supported/status/reason과 확인한 공식 필드·선택자 근거를 작성한다.
+- 독립 정상가·소비자가·최초출시가를 공식 원문에서 확인한 경우에만 regular_price에 KRW 숫자를 넣는다. 판매가/회원가/쿠폰가를 대체값으로 사용하거나 할인율로 역산하지 않는다.
+- 정상가 전용 요청과 파싱은 ctx.enabled('regular_price')가 true일 때만 수행한다. 판매가와 정상가는 서로 독립적으로 선택·생략할 수 있어야 한다.
+- 정상가 출처 자체가 확인되지 않으면 supported=false, status=unsupported와 정확한 reason을 작성한다. 실행 전 "수집 불가"로 표시되어야 한다.
+- 정상가 지원 브랜드라도 일부 품번의 값이 없거나 0·불명확·형식변경·정상가 전용 통신 실패이면 regular_price=None, 빈 셀과 안내 로그만 남기고 나머지 항목 수집을 계속한다.
+- 정상가 단독 누락으로 ctx.fail_item, 필수 누락 오류, 색상 실패나 품번 실패를 발생시키지 않는다. 필수 상품명·색상·상품 링크 확인 실패와 일반 수집 오류는 기존 실패 계약을 유지한다.
+- 정가가 판매가와 같을 수는 있지만 각각 공식 필드가 확인돼야 한다. 정상가가 없다는 이유로 판매가를 복사하지 않는다.
+- 수동 매핑·이미지 저장형에서 여러 상품 링크의 공통 정상가를 확정할 수 없으면 빈칸이다. 사진 색상으로 정상가를 추측하거나 서로 다른 정상가 중 임의의 하나를 공통 값으로 선택하지 않는다.
+- record['정상가'] 같은 무조건 추가 열 방식은 사용하지 않는다. 표준 키 record['regular_price']를 선택된 경우에만 추가한다.
+- 테스트: 판매가만/정상가만/둘 다/둘 다 미선택, 정상가 누락·0·잘못된 형식·전용 요청 실패, 정상가 미지원, 서로 다른 공통 정상가를 검증한다. 정상가 누락 상품도 다른 필수 항목이 정상이면 수집 성공이어야 한다.
+
+예시:
+if ctx.enabled('regular_price'):
+    ctx.checkpoint()
+    try:
+        # 공식 독립 정상가 출처에서만 수집. 실제 출처를 확인한 구현으로 교체한다.
+        record['regular_price'] = fetch_official_regular_price()
+    except Exception as exc:
+        record['regular_price'] = None
+        ctx.log('정상가 확인 불가: ' + str(exc) + ' / 나머지 수집 계속', 'WARNING')
+    ctx.checkpoint()
+
 [호환 대상: Crawler Hub v0.8.2 이상 / Level 1. 이미지 저장 SDK는 이 버전 이상에서 새로 시작한 작업에 사용한다.]
 
 Crawler Hub — Level 1 로컬 이미지 저장·크롭·색상 매핑 크롤러 제작 요청
@@ -41,11 +66,12 @@ execution_level은 1, mapping_mode는 반드시 "manual", image_mode는 "local",
   "additional_image_count": 5,
   "image_color_mapping": "manual",
   "official_color_codes": false,
-  "output_headers": ["품번", "상품명", "색상", "상품 링크", "색상명", "색상코드", "사이즈", "가격", "카테고리", "대표이미지", "추가이미지", "상세페이지 HTML"],
+  "output_headers": ["품번", "상품명", "색상", "상품 링크", "색상명", "색상코드", "사이즈", "판매가", "정상가", "카테고리", "대표이미지", "추가이미지", "상세페이지 HTML"],
   "extensions": [],
   "capabilities": {
     "size": {"supported": false, "status": "unverified", "reason": "색상별 사이즈 연결을 실제 확인 후 작성"},
     "price": {"supported": false, "status": "unverified", "reason": "실제 가격 필드 확인 후 작성"},
+    "regular_price": {"supported": false, "status": "unverified", "reason": "공식 독립 정상가 필드 확인 후 작성. 품번별 누락은 빈칸으로 성공 처리"},
     "category": {"supported": false, "status": "unverified", "reason": "공식 분류 확인 후 작성"},
     "main_image": {"supported": false, "status": "unverified", "reason": "개별 상품 사진 후보 추출·검사 확인 후 작성. 색상은 사용자가 매핑"},
     "additional_images": {"supported": false, "status": "unverified", "reason": "개별 상품 사진 후보 추출·검사 확인 후 작성. 색상은 사용자가 매핑"},
@@ -64,7 +90,7 @@ execution_level은 1, mapping_mode는 반드시 "manual", image_mode는 "local",
   },
   "notes": "실제로 확인한 브랜드 특이사항만 작성"
 }
-필수 수집 항목은 품번·상품명·색상 후보·상품 링크다. 선택 항목은 사이즈·가격·카테고리·대표이미지·추가이미지·상세페이지다. 불가능하면 supported=false/status=unsupported/정확한 reason을 제공하여 실행 전 비활성 표시되게 한다. 일부 상품에만 없는 항목은 conditional로 구분한다. 고시나 사이즈표가 일부 상품에 없다는 이유만으로 상세 전체를 불가능하다고 하지 마라.
+필수 수집 항목은 품번·상품명·색상 후보·상품 링크다. 선택 항목은 사이즈·판매가·정상가·카테고리·대표이미지·추가이미지·상세페이지다. 불가능하면 supported=false/status=unsupported/정확한 reason을 제공하여 실행 전 비활성 표시되게 한다. 일부 상품에만 없는 항목은 conditional로 구분한다. 고시나 사이즈표가 일부 상품에 없다는 이유만으로 상세 전체를 불가능하다고 하지 마라.
 수동 매핑은 대표 또는 추가이미지 수집 중 하나 이상이 필요하다. 두 이미지 항목이 모두 불가능하면 이 방식 자체가 가능한지 다시 확인한다.
 지원 라이브러리는 Python 표준 라이브러리, beautifulsoup4, openpyxl, Pillow, playwright다. requests 등 추가 설치가 필요한 패키지에 의존하지 마라. 브라우저가 꼭 필요할 때만 playwright를 사용하고 설치·실행 조건을 명시한다. 가능한 공개 HTML/JSON 방식부터 조사한다.
 
@@ -72,7 +98,7 @@ execution_level은 1, mapping_mode는 반드시 "manual", image_mode는 "local",
 첫 줄은 PORTAL_API_VERSION = 1, 진입점은 def crawl(ctx): 이다. 명칭 PORTAL_API_VERSION은 SDK 호환 식별자이므로 HUB_API_VERSION 등으로 바꾸지 마라.
 허브는 입력 엑셀 한 행마다 별도 프로세스로 호출한다. 현재 행은 ctx.item(dict), 품번은 ctx.product_code(str)다. 전체 입력 엑셀을 다시 읽어 반복하지 마라. 반환값으로 결과를 전달하지 않는다.
 사용 가능한 메서드는 다음과 같다.
-- ctx.enabled(field): 필수·선택 필드 활성 여부. field는 product_code/product_name/color/product_url/size/price/category/main_image/additional_images/detail_page 중 하나다.
+- ctx.enabled(field): 필수·선택 필드 활성 여부. field는 product_code/product_name/color/product_url/size/price/regular_price/category/main_image/additional_images/detail_page 중 하나다.
 - ctx.collect(field, loader): 선택됐을 때만 인자 없는 loader를 실행한다. lambda: fetch()처럼 전달하며 fetch()를 먼저 호출하지 마라.
 - ctx.checkpoint(): 일시정지·중지 확인. 요청 전후, 재시도 사이, 상품·사진 반복마다 호출한다.
 - ctx.stage("단계 설명"): 진행 단계 표시와 체크포인트.
@@ -91,7 +117,7 @@ record = {
     "product_url": "https://example.com/실제확인한상품상세페이지"
 }
 colors = [{"color_name": "IVORY", "color_code": "39"}, {"color_name": "BLACK", "color_code": "19"}]
-# 선택됐고 실제로 수집한 경우에만 record에 price/size/category/detail_page를 추가한다.
+# 선택됐고 실제로 수집한 경우에만 record에 price/regular_price/size/category/detail_page를 추가한다.
 # 사이즈는 "065,070,075"처럼 쉼표 구분 문자열이다. 원본 상품명 등 추가 키도 보존된다.
 saved_path = ctx.save_image(source_image, crop=(left, top, right, bottom))
 # 미매핑 사진:

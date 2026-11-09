@@ -17,7 +17,8 @@
     "색상명",
     "색상코드",
     "사이즈",
-    "가격",
+    "판매가",
+    "정상가",
     "카테고리",
     "대표이미지",
     "추가이미지",
@@ -54,6 +55,11 @@
       "supported": true,
       "status": "conditional",
       "reason": "사용자 요청에 따라 itemDesc.itemDescdocumentCon의 판매자 원본 상세 통이미지·사이즈 이미지·표를 원래 순서대로 보존. 갤러리 개별컷으로 대체하지 않음. script/iframe/이벤트 등 제거 후 itemProvideMntList의 실제 2열 고시 표 추가. 사이트 별도 공지·배송 영역 미수집. 32767자 초과/이미지 요청 실패는 미완료."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.orgSellprice. 링크별 값이 다르거나 누락되면 공통 정상가는 빈칸이며 실패 처리하지 않음."
     }
   },
   "guide": {
@@ -104,7 +110,7 @@
       "reason": "공개 /v1/item/option/api의 색상별 하위 사이즈 옵션 itemOptionName 수집. 사용자 지정 통일 규칙: 링크 안에서 색상별 사이즈가 다르면 첫 번째 색상 기준, 여러 링크 사이즈가 다르면 첫 번째 사이즈 수집 성공 링크 기준으로 출력. 각 색상·링크의 실제 사이즈와 적용 기준을 처리로그에 기록. 전 색상 공통 사이즈라는 의미는 아님. 품절 옵션 포함. 요청/파싱 실패는 미완료 처리."
     },
     "price": {
-      "label": "가격",
+      "label": "판매가",
       "supported": true,
       "status": "conditional",
       "reason": "공개 옵션 API의 모든 색상·사이즈 sellPrice가 같은 경우에만 출력. 쿠폰가를 임의 적용하지 않음. 두 시험 품번은 39900원. 옵션/링크별 가격 차이는 미완료 처리."
@@ -138,6 +144,12 @@
       "supported": true,
       "status": "supported",
       "reason": "실제 수집한 상품 상세페이지 링크. 수동 매핑은 첫 번째 확인 링크 공통 적용"
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.orgSellprice. 링크별 값이 다르거나 누락되면 공통 정상가는 빈칸이며 실패 처리하지 않음."
     }
   },
   "column_fields": {
@@ -149,11 +161,12 @@
     "색상명": "color",
     "색상코드": "color",
     "사이즈": "size",
-    "가격": "price",
+    "판매가": "price",
     "카테고리": "category",
     "대표이미지": "main_image",
     "추가이미지": "additional_images",
-    "상세페이지 HTML": "detail_page"
+    "상세페이지 HTML": "detail_page",
+    "정상가": "regular_price"
   },
-  "code_hash": "f811973bc0906e9cce6b2db01466b51939b059f8d0daa2d56f4e462cef1cbb4b"
+  "code_hash": "d5fdc576a13d8db6e4163f223a4cb858970938b47600dfa67f67bca6d18e0c52"
 }

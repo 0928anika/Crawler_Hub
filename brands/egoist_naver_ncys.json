@@ -15,7 +15,8 @@
     "색상명",
     "색상코드",
     "사이즈",
-    "가격",
+    "판매가",
+    "정상가",
     "카테고리",
     "대표이미지",
     "추가이미지",
@@ -52,6 +53,11 @@
       "supported": true,
       "status": "conditional",
       "reason": "사용자 제공 실제 렌더링 HTML의 .se-main-container 이미지 14개, 소재 단락, 단면 CM 실측표와 짧은 주석 확인. 상세 이미지 전체와 소재/사이즈 단락·표를 공통 HTML로 구성하며 갤러리로 대체하지 않음. 별도 상품정보고시 팝업 내용은 미확인으로 포함하지 않음. 동적 로딩 시 playwright와 Chromium 필요. 브라우저 자동 로딩은 현 환경에서 미검증이며 429/로그인 제한은 명시적 실패."
+    },
+    "regular_price": {
+      "supported": false,
+      "status": "unsupported",
+      "reason": "현재 공식 공개 응답에서 판매가와 구분되는 독립 정상가 필드를 확인하지 못해 수집 불가. 임의 추정·판매가 대체 없음."
     }
   },
   "guide": {
@@ -107,7 +113,7 @@
       "reason": "공개 simpleProductForDetailPage.optionStandards에 단일 사이즈만 있는 상품 지원. 첨부 ES4OKL55의 공식 옵션은 Free, 상세에는 FF(프리사이즈). 여러 사이즈 또는 색상별 조합은 미확인이므로 그 경우 미완료 처리."
     },
     "price": {
-      "label": "가격",
+      "label": "판매가",
       "supported": false,
       "status": "unsupported",
       "reason": "첨부 원문에 판매가·할인가 요약은 있으나 색상별 옵션 가격/추가금 조합 데이터가 없어 전 색상 공통 가격을 확인할 수 없음. 가격 파싱과 전용 요청을 수행하지 않음."
@@ -135,6 +141,12 @@
       "supported": true,
       "status": "conditional",
       "reason": "사용자 제공 실제 렌더링 HTML의 .se-main-container 이미지 14개, 소재 단락, 단면 CM 실측표와 짧은 주석 확인. 상세 이미지 전체와 소재/사이즈 단락·표를 공통 HTML로 구성하며 갤러리로 대체하지 않음. 별도 상품정보고시 팝업 내용은 미확인으로 포함하지 않음. 동적 로딩 시 playwright와 Chromium 필요. 브라우저 자동 로딩은 현 환경에서 미검증이며 429/로그인 제한은 명시적 실패."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": false,
+      "status": "unsupported",
+      "reason": "현재 공식 공개 응답에서 판매가와 구분되는 독립 정상가 필드를 확인하지 못해 수집 불가. 임의 추정·판매가 대체 없음."
     }
   },
   "column_fields": {
@@ -144,11 +156,12 @@
     "색상명": "color",
     "색상코드": "color",
     "사이즈": "size",
-    "가격": "price",
+    "판매가": "price",
     "카테고리": "category",
     "대표이미지": "main_image",
     "추가이미지": "additional_images",
-    "상세페이지 HTML": "detail_page"
+    "상세페이지 HTML": "detail_page",
+    "정상가": "regular_price"
   },
-  "code_hash": "4f1ba9645cbf5f6e268cf4c0679dc0aeaf6fcee09b3afb35e3c7e75f0da570cb"
+  "code_hash": "d6480e9e6048f77c728a2021c71f163d6bea8099a59954e9193e73ca05bcf761"
 }

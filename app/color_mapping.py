@@ -279,7 +279,7 @@ def export_sheet(job):
         rows=final_items(job,view);headers=result_headers(job)
         return [headers]+[[item['raw'].get(h) for h in headers] for item in rows]
     headers=['품번','상품명','색상 후보','상품 링크','이미지파일' if local_images.enabled(job) else '이미지URL','매핑상태']
-    optional=[h for h in result_headers(job) if field_for(h) in ('size','price','category','detail_page') or field_for(h) is None]
+    optional=[h for h in result_headers(job) if field_for(h) in ('size','price','regular_price','category','detail_page') or field_for(h) is None]
     headers+=optional;rows=[headers]
     for item in job.items:
         info=item.get('unmapped')

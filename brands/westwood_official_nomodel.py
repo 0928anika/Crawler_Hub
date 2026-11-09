@@ -1,5 +1,7 @@
 PORTAL_API_VERSION = 1
 
+from regular_price import collect_regular_price, merge_regular_prices
+
 """WESTWOOD official product-only strips -> Crawler Hub local JPEG + editable OCR color mapping. Requires Crawler Hub 0.8.3+."""
 import difflib
 import ast
@@ -312,6 +314,7 @@ def collect_optional(ctx,raw,colors):
                 else:ctx.log('옵션별 가격이 달라 공통 판매가를 확정하지 못했습니다.','WARNING')
         except (CrawlError,ValueError,TypeError,SyntaxError) as exc:
             ctx.log('선택 정보 확인: '+str(exc),'WARNING')
+    collect_regular_price(ctx, result, raw, 'cafe24')
     if ctx.enabled('category'):
         soup=BeautifulSoup(raw,'html.parser')
         values=unique(text(a) for a in soup.select('.xans-product-headcategory ol li a') if text(a) and text(a) not in ('홈','HOME'))
@@ -493,11 +496,11 @@ def crawl(ctx):
         reason='공통 상세이미지 생성/저장 실패: '+(' / '.join(detail_errors[-3:]) or '상세 결과 없음')
         ctx.fail_item(reason);raise CrawlError(reason)
     common={}
-    for field in ('size','price','category'):
+    for field in ('size','price','regular_price','category'):
         if not ctx.enabled(field):continue
         values=[product['optional'].get(field) for product in products]
         if values and values[0] not in (None,'') and all(value==values[0] for value in values):common[field]=values[0]
-        else:ctx.log('상품 링크 간 공통 '+field+' 정보가 없거나 서로 달라 빈 값으로 유지합니다.','WARNING')
+        else:ctx.log('상품 링크 간 공통 '+{'size':'사이즈','price':'판매가','regular_price':'정상가','category':'카테고리'}[field]+' 정보가 없거나 서로 달라 빈 값으로 유지합니다.','WARNING')
     for item in saved:
         ctx.checkpoint()
         record=dict(product_code=code,product_name=products[0]['product_name'],product_url=products[0]['product_url'])

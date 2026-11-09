@@ -1,5 +1,7 @@
 PORTAL_API_VERSION = 1
 
+from regular_price import collect_regular_price, merge_regular_prices
+
 import ast
 import hashlib
 import html
@@ -527,6 +529,7 @@ def crawl(ctx):
                 record["detail_page"] = detail(ctx, soup, no, info, cache)
             record["원본 상품명"] = info["raw_name"]
             ctx.checkpoint()
+            collect_regular_price(ctx, record, soup, 'cafe24')
             ctx.emit_result(record)
             emitted.add(code)
         except Exception as exc:

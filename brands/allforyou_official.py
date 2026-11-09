@@ -1,5 +1,7 @@
 PORTAL_API_VERSION = 1
 
+from regular_price import collect_regular_price, merge_regular_prices
+
 import hashlib
 import html
 import io
@@ -333,6 +335,7 @@ def crawl(ctx):
                     record['additional_images'] = extras
             if ctx.enabled('detail_page'):
                 record['detail_page'] = detail(ctx,doc,final,base,color,cache)
+            collect_regular_price(ctx, record, doc, 'cafe24')
             ctx.emit_result(record)
             emitted.add(color)
         except CrawlError as error:

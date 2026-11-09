@@ -86,7 +86,7 @@ class Job:
         for path in source.parent.glob('*.py'):
             if '__pycache__' in path.parts:continue
             dest=folder/path.relative_to(source.parent);dest.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(path,dest)
-        for name in ('worker.py','crawler_sdk.py','crawler_rules.py','schema.py','detail_store.py','color_palette.py','local_images.py'):
+        for name in ('worker.py','crawler_sdk.py','crawler_rules.py','regular_price.py','schema.py','detail_store.py','color_palette.py','local_images.py'):
             shutil.copy2(ROOT/name,target/name)
         self.engine_root=target;self.engine_script='brands/'+rel.as_posix()
         self.engine_manifest={p.relative_to(target).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in target.rglob('*.py')}

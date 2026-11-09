@@ -1,5 +1,7 @@
 PORTAL_API_VERSION = 1
 
+from regular_price import collect_regular_price, merge_regular_prices
+
 import hashlib
 from io import BytesIO
 from html import escape
@@ -353,6 +355,7 @@ def crawl(ctx):
             if ctx.enabled("detail_page"):
                 record["detail_page"] = detail(ctx, doc, url, pno, cache)
             ctx.checkpoint()
+            collect_regular_price(ctx, record, None, 'unsupported')
             ctx.emit_result(record)
             ctx.log(base + "_" + color + " 완료", "SUCCESS")
         except Exception as exc:

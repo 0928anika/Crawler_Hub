@@ -38,6 +38,14 @@ def collect_color(product, ctx):
         if ctx.enabled(field):
             ctx.stage(field + ' 수집')
             row[field] = ctx.collect(field, lambda f=field: fetch_optional(product, f, ctx))
+    if ctx.enabled('regular_price'):
+        ctx.checkpoint()
+        try:
+            row['regular_price'] = fetch_optional(product, 'regular_price', ctx)
+        except Exception as exc:
+            row['regular_price'] = None
+            ctx.log('정상가 확인 불가: ' + str(exc) + ' / 나머지 수집 계속', 'WARNING')
+        ctx.checkpoint()
     if ctx.enabled('main_image') or ctx.enabled('additional_images'):
         ctx.stage('개별 상품 이미지 규격·내용 검사')
         candidates = fetch_verified_gallery(product, ctx)

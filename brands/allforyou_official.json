@@ -12,7 +12,8 @@
     "색상명",
     "색상코드",
     "사이즈",
-    "가격",
+    "판매가",
+    "정상가",
     "카테고리",
     "대표이미지",
     "추가이미지",
@@ -51,6 +52,11 @@
       "supported": true,
       "status": "conditional",
       "reason": "공식 상품설명 #prdDetail2 내부 해당 품번-색상 /allforyou/detail/ 원본만 포함. /allforyou/img/ 상단 화보와 하단 안내 제외. 사이즈/고시 별도 표 없음."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품의 소비자가 #span_product_price_custom 또는 product_custom. 미표시·0·파싱 실패는 빈칸, 판매가로 대체하지 않음."
     }
   },
   "guide": {
@@ -113,7 +119,7 @@
       "reason": "색상별 상품의 공식 사이즈 옵션 값. 품절/disabled 포함, 064 등 앞자리 0 유지."
     },
     "price": {
-      "label": "가격",
+      "label": "판매가",
       "supported": true,
       "status": "conditional",
       "reason": "일반 공개 할인판매가 우선, 없으면 판매가. 쿠폰/회원 최적혜택가는 제외."
@@ -141,6 +147,12 @@
       "supported": true,
       "status": "conditional",
       "reason": "공식 상품설명 #prdDetail2 내부 해당 품번-색상 /allforyou/detail/ 원본만 포함. /allforyou/img/ 상단 화보와 하단 안내 제외. 사이즈/고시 별도 표 없음."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품의 소비자가 #span_product_price_custom 또는 product_custom. 미표시·0·파싱 실패는 빈칸, 판매가로 대체하지 않음."
     }
   },
   "column_fields": {
@@ -151,11 +163,12 @@
     "색상명": "color",
     "색상코드": "color",
     "사이즈": "size",
-    "가격": "price",
+    "판매가": "price",
     "카테고리": "category",
     "대표이미지": "main_image",
     "추가이미지": "additional_images",
-    "상세페이지 HTML": "detail_page"
+    "상세페이지 HTML": "detail_page",
+    "정상가": "regular_price"
   },
-  "code_hash": "00013da95aa06aa671fe9a76284239a5629f2d88c8a4fce0696c4d83ad029039"
+  "code_hash": "7a1e6e8f26aeddb096a712fc065365c79153af86f8d8e829d2057a1fea28449f"
 }
