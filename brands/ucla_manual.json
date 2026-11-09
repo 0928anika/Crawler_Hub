@@ -1,7 +1,4 @@
 {
-  "id": "ucla_manual",
-  "name": "UCLA",
-  "category": "캐주얼",
   "script": "ucla_manual.py",
   "execution_level": 1,
   "output_headers": [
@@ -19,8 +16,9 @@
     "상세페이지 HTML"
   ],
   "extensions": [],
-  "official_color_codes": true,
-  "image_color_mapping": "manual",
+  "mapping_mode": "manual",
+  "image_mode": "url",
+  "additional_image_count": 9,
   "capabilities": {
     "size": {
       "supported": true,
@@ -53,6 +51,8 @@
       "reason": "실제 #detail1 .cont의 images.dcollect.co.kr/GdsImages 상품·INFO 원본 이미지 유지. 고시·사이즈 표 별도 생성 없음."
     }
   },
+  "official_color_codes": true,
+  "image_color_mapping": "manual",
   "guide": {
     "example": "UBALS53",
     "examples": [
@@ -70,10 +70,11 @@
     ],
     "validation_note": "입력 문법 검사이며 상품/색상 존재는 실행 시 확인."
   },
-  "crawl_source": "공식 홈페이지",
+  "id": "ucla_manual",
+  "name": "UCLA",
+  "category": "캐주얼",
+  "crawl_source": "공식 홈페이지 색상 미매핑",
   "notes": "수동 색상 매핑 전용 별도 크롤러. 기존 UCLA 자동 크롤러 및 Hub 수정 불필요. 사진 색감으로 색상을 추측하지 않음. 고시와 사이즈표는 상세 원본 이미지 유지. 옵션 가격 차이는 첫 가격 선택 후 경고. 색상별 사이즈가 다르면 공통 사이즈는 빈칸.",
-  "mapping_mode": "manual",
-  "image_mode": "url",
   "interface": "portal_v1",
   "fields": {
     "product_code": {
@@ -151,5 +152,5 @@
     "추가이미지": "additional_images",
     "상세페이지 HTML": "detail_page"
   },
-  "code_hash": "a900b1390e40469723d7e73d6bbdd863609021425c6f53483d04eb8760486938"
+  "code_hash": "c6f1c3354c12b9172dd141dd93d8428e691d92e2b0ccb8ab7a40a0f633f8f37f"
 }
