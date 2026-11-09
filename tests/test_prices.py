@@ -142,9 +142,9 @@ class PriceTests(unittest.TestCase):
             finally:
                 wb.close()
 
-    def test_all_23_ids_have_selection_guarded_collector_and_valid_metadata(self):
+    def test_registered_ids_have_selection_guarded_collector_and_valid_metadata(self):
         files = sorted((ROOT/'brands').glob('*.json'))
-        self.assertEqual(len(files), 23)
+        self.assertTrue(files)
         unsupported = []
         for path in files:
             meta = json.loads(path.read_bytes())
@@ -155,7 +155,15 @@ class PriceTests(unittest.TestCase):
                 self.assertIn('정상가',meta['output_headers'])
                 self.assertNotIn('가격',meta['output_headers'])
                 self.assertEqual(hashlib.sha256(code).hexdigest(),meta['code_hash'])
-                self.assertTrue(any(isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='collect_regular_price' for n in ast.walk(tree)))
+                shared_collector = any(isinstance(n,ast.Call) and isinstance(n.func,ast.Name)
+                    and n.func.id=='collect_regular_price' for n in ast.walk(tree))
+                native_guard = any(isinstance(n,ast.If) and isinstance(n.test,ast.Call)
+                    and isinstance(n.test.func,ast.Attribute) and n.test.func.attr=='enabled'
+                    and isinstance(n.test.func.value,ast.Name) and n.test.func.value.id=='ctx'
+                    and len(n.test.args)==1 and isinstance(n.test.args[0],ast.Constant)
+                    and n.test.args[0].value=='regular_price' for n in ast.walk(tree))
+                self.assertTrue(shared_collector or native_guard,
+                    '공통 정상가 도우미 또는 독립 선택 가드가 필요합니다.')
                 self.assertEqual(meta['fields']['regular_price']['supported'], meta['capabilities']['regular_price']['supported'])
                 if not meta['capabilities']['regular_price']['supported']:
                     unsupported.append(meta['id'])

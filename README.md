@@ -30,6 +30,15 @@ Python 3.10 이상이 설치된 PC에서 운영체제에 맞는 파일을 실행
 - Windows: `Crawler_Hub_Windows.bat`
 - macOS: `Crawler_Hub_Mac.command`
 
+로컬 개발 확인은 Windows에서 `Crawler_Hub_Develop_Windows.bat`를 실행합니다.
+`http://127.0.0.1:8766`에서 현재 체크아웃한 소스를 실행하며, 작업 데이터는
+`%LOCALAPPDATA%\CrawlerHub-develop`에 저장합니다. 기존 허브 Python 환경이 있으면
+재사용하고, 없으면 기본 실행기로 개발 환경을 준비합니다.
+
+클리지(`clizy_official`)는 패션플러스 검색 목록의 대표사진에서 clizy 로고 패턴 또는
+단색 배경을 검사하고 통과한 상품 링크만 수집합니다. 색상은 수동 매핑하며,
+상세 본문 이미지의 사이즈표·고시는 유지하고 별도 배송·교환 안내 이미지는 제외합니다.
+
 Mac 실행기는 Homebrew·python.org 설치 경로와 PATH에서 지원되는 Python 3를 찾습니다.
 실행 권한이 사라진 경우 `Mac_실행안내.txt`를 참고하세요.
 파일·결과 폴더 열기는 Windows 기본 앱 또는 Mac Finder를 사용합니다.
