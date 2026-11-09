@@ -1,0 +1,175 @@
+{
+  "id": "agabang_official",
+  "name": "아가방",
+  "category": "유아동 의류",
+  "crawl_source": "공식 홈페이지",
+  "script": "agabang_official.py",
+  "execution_level": 1,
+  "interface": "portal_v1",
+  "mapping_mode": "automatic",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "verified",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data의 option_value_orginal [색상,사이즈]. 품절 옵션 포함."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 색상별 option_stock_data.option_price KRW. 사이즈별 상이하면 빈칸."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "기본 정보 표의 th=소비자가에 대응하는 td. 판매가와 독립 선택. 누락/0/잘못된 값은 빈칸."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 xans-product-headcategory의 카테고리 경로."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "모델/숫자 색상코드/단일 색상 옵션 대조 후 해당 페이지 .imgArea big 원본. 공개 접근/실제 파일/규격/역할 검사."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "동일 색상 big/extra big 갤러리 통과 컷 5슬롯. 한 장뿐이면 같은 컷 반복과 안내 로그."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 #prdDetail의 실제 상품 코드 이미지 원본. 이미지 안 사이즈표/고시 유지, 별도 표 생성 없음. 이벤트/브랜드/하단 공통 배너는 요청 제외."
+    }
+  },
+  "guide": {
+    "example": "01T721012",
+    "examples": [
+      "01T721012",
+      "01T72101293",
+      "01T721012_93",
+      "01T721012-93",
+      "01T71760176"
+    ],
+    "pattern": "^\\d{2}[A-Za-z]\\d{6}(?:[_-]?\\d{2})?$",
+    "format": "기본 모델 9자리 또는 모델+숫자 색상코드 2자리. 붙여쓰기/언더바/하이픈 허용.",
+    "notes": "소문자도 허용. 기본 모델은 모든 색상, 색상 지정은 해당 색상만. 숫자 색상코드 앞자리 0 보존.",
+    "method": "공식 검색의 모든 상품 링크 조회 후 기본 정보 모델 정확히 대조. 상품명 끝 전체 코드의 모델+두 자리 숫자와 단일 색상 옵션으로 색상별 갤러리 연결.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "01T721012_",
+      "01T721012_RED"
+    ],
+    "validation_note": "문법 검사이며 상품·색상 존재는 실행 시 공식몰에서 확인."
+  },
+  "notes": "사용자 요청: 상세 이미지 안의 사이즈표/고시를 그대로 보존하며 별도 표를 만들지 않음. 공식 숫자 색상코드 사용. Google Chrome 필요. 개별 사진의 완전한 의미 인식 또는 WING 등록 승인을 보장하지 않음.",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 필수 정보"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 필수 정보"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 필수 정보"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 필수 정보"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data의 option_value_orginal [색상,사이즈]. 품절 옵션 포함."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 색상별 option_stock_data.option_price KRW. 사이즈별 상이하면 빈칸."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "기본 정보 표의 th=소비자가에 대응하는 td. 판매가와 독립 선택. 누락/0/잘못된 값은 빈칸."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 xans-product-headcategory의 카테고리 경로."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "모델/숫자 색상코드/단일 색상 옵션 대조 후 해당 페이지 .imgArea big 원본. 공개 접근/실제 파일/규격/역할 검사."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "동일 색상 big/extra big 갤러리 통과 컷 5슬롯. 한 장뿐이면 같은 컷 반복과 안내 로그."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 #prdDetail의 실제 상품 코드 이미지 원본. 이미지 안 사이즈표/고시 유지, 별도 표 생성 없음. 이벤트/브랜드/하단 공통 배너는 요청 제외."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null
+  },
+  "code_hash": "7df67ed53ce499ae32f220938178571882d4d8db51f37ba88c208eadf63c302e"
+}
