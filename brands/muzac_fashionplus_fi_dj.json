@@ -1,0 +1,171 @@
+{
+  "id": "muzac_fashionplus_fi_dj",
+  "name": "무자크",
+  "category": "여성의류",
+  "crawl_source": "패션플러스 FI_DJ",
+  "script": "muzac_fashionplus_fi_dj.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_color_mapping": "manual",
+  "official_color_codes": false,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 fetch-option-data의 options[]._name 마지막 사이즈 토큰을 선택 시에만 수집. 같은 링크의 모든 색상 및 모든 채택 링크의 사이즈 집합이 동일할 때만 공통 size 문자열을 제공. 색상별로 다르거나 공통값 불명확하면 빈칸과 안내 로그. 상세 본문의 사이즈표 이미지는 별도 유지."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 페이지 .discount-detail__row의 dt가 판매가(위탁판매자 공급가)인 dd. 상단 쿠폰할인가와 구분한다. 여러 채택 링크의 값이 같을 때만 공통 판매가를 기록한다."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 페이지 .discount-detail__row dt 희망소비자가(택가)의 dd를 독립 정상가로 사용. 선택된 경우에만 파싱. 누락/0/형식 불명확/링크 간 불일치는 빈칸과 안내 로그로 계속 수집한다. 역산/판매가 복사 없음."
+    },
+    "category": {
+      "supported": false,
+      "status": "unsupported",
+      "reason": "상품 페이지 분류가 별도 동적 트리이며 상품별 공식 분류명 파싱을 검증하지 못함. 브랜드 등록 분류 여성의류를 상품 분류로 대입하지 않는다."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "검색 카드 브랜드 무자크 및 정확한 품번을 확인한 모든 링크에서 고시 반품지주소가 대전으로 시작하고 패션아일랜드를 포함하는 경우만 채택. 로고/배경 검사 없이 해당 판매자 매장 사진 허용. .m__desc-image의 실제 원본 사진과 상단 갤러리 검사 후 모두 수동 매핑 후보로 전달."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "대표이미지와 같은 FI_DJ 실제 상품 등록 갤러리. 상세 iframe은 사진 원본 슬롯 확인을 위한 공용 갤러리 입력이며 상세 미선택이어도 사진 수집에 필요. 단색 배경 필터 없음. JPEG/PNG/WebP 규격 검사와 URL 중복 제거 후 전체 후보를 전달하며 개수 제한은 허브에 위임."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "승인 판매자의 .m__desc-image 등록 원본 사진과 본문의 실제 치수·측정 오차 문장만 유지. 공통 /mall/md_image/moda/muzak.jpg 브랜드 안내 및 배송·교환·반품·매장 연락처 제외. 고시/사이즈표를 새로 만들지 않음. 상세 미선택 시 치수 파싱·상세 HTML 생성 없음. 본문 iframe은 원본 갤러리 목록 수집에도 사용."
+    }
+  },
+  "guide": {
+    "example": "MQ8WJK03",
+    "examples": [
+      "MQ8WJK03",
+      "MQ8WLC03",
+      "MO8WKT04"
+    ],
+    "pattern": "^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$",
+    "format": "색상코드 없는 기본 품번",
+    "notes": "대전 패션아일랜드 판매자 전용. 해당 판매자의 매장 촬영 사진도 수집하며 색상은 수동 매핑합니다. Chrome 및 beautifulsoup4·Pillow·playwright 필요. 기존 스튜디오컷 버전과 별도 등록입니다.",
+    "method": "패션플러스 공개 검색에서 무자크 브랜드와 정확한 품번 토큰을 확인한 모든 링크를 조회. 고시 th 반품지주소의 td가 대전으로 시작하고 패션아일랜드를 포함할 때만 승인. 실제 대전 동구 은어송로 72 패션아일랜드 1층 무자크 매장 확인. 상품번호/이미지 접두 42970은 보조 로그이며 판매자 고유 ID로 단정하거나 주소 검사를 대체하지 않음.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "공백",
+      "CN7WJP01_39"
+    ],
+    "validation_note": "입력 형식 검사와 판매자 확인은 별개. 대전 패션아일랜드로 확인되지 않은 상품은 스튜디오컷이어도 제외합니다."
+  },
+  "notes": "무자크 패션플러스 FI_DJ 독립 버전. 반품지주소 대전+패션아일랜드 일치가 최종 조건. 해당 판매자의 매장 촬영 사진 허용하며 로고/배경 검사 없음. 42970은 관찰된 상품번호/이미지 네임스페이스이며 명시적 sellerId로 확인된 것은 아니므로 주소 검사 대체 불가. 원본 사진 전체와 색상 후보 수동 매핑. 공통 브랜드·배송·반품·연락처 안내 제외. 판매가/정상가 독립 선택과 공통값 규칙 및 IPv4 우선 연결 유지.",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 fetch-option-data의 options[]._name 마지막 사이즈 토큰을 선택 시에만 수집. 같은 링크의 모든 색상 및 모든 채택 링크의 사이즈 집합이 동일할 때만 공통 size 문자열을 제공. 색상별로 다르거나 공통값 불명확하면 빈칸과 안내 로그. 상세 본문의 사이즈표 이미지는 별도 유지."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 페이지 .discount-detail__row의 dt가 판매가(위탁판매자 공급가)인 dd. 상단 쿠폰할인가와 구분한다. 여러 채택 링크의 값이 같을 때만 공통 판매가를 기록한다."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 페이지 .discount-detail__row dt 희망소비자가(택가)의 dd를 독립 정상가로 사용. 선택된 경우에만 파싱. 누락/0/형식 불명확/링크 간 불일치는 빈칸과 안내 로그로 계속 수집한다. 역산/판매가 복사 없음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": false,
+      "status": "unsupported",
+      "reason": "상품 페이지 분류가 별도 동적 트리이며 상품별 공식 분류명 파싱을 검증하지 못함. 브랜드 등록 분류 여성의류를 상품 분류로 대입하지 않는다."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "검색 카드 브랜드 무자크 및 정확한 품번을 확인한 모든 링크에서 고시 반품지주소가 대전으로 시작하고 패션아일랜드를 포함하는 경우만 채택. 로고/배경 검사 없이 해당 판매자 매장 사진 허용. .m__desc-image의 실제 원본 사진과 상단 갤러리 검사 후 모두 수동 매핑 후보로 전달."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "대표이미지와 같은 FI_DJ 실제 상품 등록 갤러리. 상세 iframe은 사진 원본 슬롯 확인을 위한 공용 갤러리 입력이며 상세 미선택이어도 사진 수집에 필요. 단색 배경 필터 없음. JPEG/PNG/WebP 규격 검사와 URL 중복 제거 후 전체 후보를 전달하며 개수 제한은 허브에 위임."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "승인 판매자의 .m__desc-image 등록 원본 사진과 본문의 실제 치수·측정 오차 문장만 유지. 공통 /mall/md_image/moda/muzak.jpg 브랜드 안내 및 배송·교환·반품·매장 연락처 제외. 고시/사이즈표를 새로 만들지 않음. 상세 미선택 시 치수 파싱·상세 HTML 생성 없음. 본문 iframe은 원본 갤러리 목록 수집에도 사용."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page"
+  },
+  "code_hash": "fc03716b029c1e92f395c57c9f5ae77c319058a05a3f1876c4e6aef64f8395d9"
+}

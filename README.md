@@ -48,6 +48,12 @@ Python 3.10 이상이 설치된 PC에서 운영체제에 맞는 파일을 실행
 확인된 보조 정보이며 판매자 고유 ID로 단정하지 않습니다. 기존 스튜디오컷 버전은 유지합니다.
 검증 기록은 `docs/clizy-fi-dj-validation.txt`에 있습니다.
 
+무자크 패션플러스는 `muzac_fashionplus`(스튜디오컷)와 `muzac_fashionplus_fi_dj`(대전
+패션아일랜드 판매자)로 각각 등록했습니다. 스튜디오컷은 목록 대표사진의 muzak 로고가
+확인된 상품만 상세에 진입하며, 단색 매장 벽만으로 승인하지 않습니다. FI_DJ는 반품지
+주소로 선별하고 매장 사진을 허용합니다. 두 버전 모두 공통 배송·교환·반품 안내를
+제외하며 색상은 수동 매핑합니다. 검증 기록은 `docs/muzac-fashionplus-validation.txt`에 있습니다.
+
 Mac 실행기는 Homebrew·python.org 설치 경로와 PATH에서 지원되는 Python 3를 찾습니다.
 실행 권한이 사라진 경우 `Mac_실행안내.txt`를 참고하세요.
 파일·결과 폴더 열기는 Windows 기본 앱 또는 Mac Finder를 사용합니다.
