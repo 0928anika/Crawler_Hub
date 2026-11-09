@@ -73,6 +73,43 @@ class AgabangTests(unittest.TestCase):
                 self.assertEqual([r['color'] for r in ctx.rows],['PINK','CREAM'])
                 self.assertFalse(ctx.failures)
 
+    def test_multicolor_without_title_palette_uses_official_options(self):
+        doc=c.soup((ROOT/'tests/fixtures/agabang_55784.html').read_text(encoding='utf-8'))
+        records=c.identities(doc,'01T751006')
+        self.assertEqual([r['color'] for r in records],['OATMEAL','MELAN GREY','YELLOW'])
+        self.assertTrue(all(r['product_name']=='포포기모맨투맨' and r['_shared_gallery'] for r in records))
+        self.assertEqual(len(c.detail_urls(doc,c.SITE,'01T751006','')),3)
+        for code in ('01T751006','01T75100609'):
+            with tempfile.TemporaryDirectory() as folder:
+                ctx=Context(folder,code,('size','price'))
+                with patch('playwright.sync_api.sync_playwright',return_value=MagicMock()),patch.object(c,'search',return_value=[c.SITE+'/product/test/55784/']),patch.object(c,'visit',return_value=(doc,c.SITE+'/product/test/55784/')):
+                    c.crawl(ctx)
+                self.assertEqual(len(ctx.rows),3)
+                self.assertFalse(ctx.failures)
+                self.assertTrue(all(r['price']==25900 and r['size'] for r in ctx.rows))
+
+    def test_missing_color_caption_does_not_erase_product_description(self):
+        source=(ROOT/'tests/fixtures/agabang_45766.html').read_text(encoding='utf-8')
+        records=c.identities(c.soup(source.replace('(PINK)_79R717552','_79R717552')),'79R717552')
+        self.assertEqual(records[0]['product_name'],'베이비니키우주복(턱받이)')
+        self.assertEqual(records[0]['color'],'PINK')
+
+    def test_dead_detail_image_is_omitted_but_transient_failure_still_fails(self):
+        doc=c.soup((ROOT/'tests/fixtures/agabang_55650.html').read_text(encoding='utf-8'))
+        urls=c.detail_urls(doc,c.SITE,'01T753002','')
+        self.assertEqual(len(urls),2)
+        ctx=Context()
+        cache={urls[0]:{'status':'accessible'},urls[1]:{'status':'inaccessible','reasons':['공개 GET 거부: HTTP 404']}}
+        markup=c.detail(ctx,doc,c.SITE,'01T753002','',cache)
+        self.assertEqual(markup.count('<img '),1)
+        self.assertIn('01T75300238.jpg',markup)
+        self.assertNotIn('01T75300273.jpg',markup)
+        for status,reason in [('unknown','통신 시간 초과'),('inaccessible','공개 GET 거부: HTTP 403')]:
+            cache[urls[1]]={'status':status,'reasons':[reason]}
+            with self.assertRaises(ValueError):c.detail(ctx,doc,c.SITE,'01T753002','',cache)
+        cache={u:{'status':'inaccessible','reasons':['HTTP 404']} for u in urls}
+        with self.assertRaises(ValueError):c.detail(ctx,doc,c.SITE,'01T753002','',cache)
+
     def test_disney_brand_is_preserved_without_rejecting_product(self):
         doc=c.soup((ROOT/'tests/fixtures/agabang_45766.html').read_text(encoding='utf-8'))
         record=c.identities(doc,'79R717552')[0]

@@ -17,7 +17,7 @@ from crawler_rules import check_public_image, validate_gallery_image, gallery_sl
 
 SITE = 'https://agabangmall.com'
 HOSTS = ('agabangmall.com', 'www.agabangmall.com')
-REVISION = '2026-11-09-agabang-3'
+REVISION = '2026-11-09-agabang-4'
 POLICY = {'checked_on':'2026-11-09', 'source':'https://marketplace.coupang.com/mba/listing',
           'route':'WING 웹/엑셀', 'min_side':500, 'max_bytes':10000000,
           'formats':['JPEG','PNG','WEBP'], 'max_aspect':1.8}
@@ -57,9 +57,11 @@ def identities(doc, base):
     if not names:raise ValueError('공식 색상 옵션 없음')
     title=re.sub(r'_'+re.escape(base)+r'(?:\d{2})?\s*$','',raw,flags=re.I)
     palette=re.search(r'\(([^()]*)\)\s*$',title)
-    if palette is None or set(v.strip() for v in palette[1].split(','))!=set(names):
-        raise ValueError('공식 상품명과 색상 옵션 불일치')
-    title=title[:palette.start()]
+    # 색상은 공식 옵션을 기준으로 한다. 상품명 색상 표기는 생략되거나
+    # 일부 색상만 적힐 수 있으므로 필수 검증 조건으로 사용하지 않는다.
+    # 실제 색상명인 괄호만 지우고 (턱받이) 같은 상품 설명은 보존한다.
+    if palette and set(v.strip() for v in palette[1].split(',')).issubset(set(names)):
+        title=title[:palette.start()]
     aliases=list(dict.fromkeys(v for v in (brand,'아가방','AGABANG','디즈니베이비','DISNEY BABY') if v))
     pattern='|'.join(re.escape(v) for v in sorted(aliases,key=len,reverse=True))
     title=re.sub(r'\[[^\]]*(?:'+pattern+r')[^\]]*\]','',title,flags=re.I)
@@ -254,8 +256,14 @@ def detail(ctx,doc,final,base,code,cache):
         return ''
     parts=[]
     for url in urls:
-        if not public_image(ctx,url,cache):raise ValueError('선택한 상세 이미지 조회 미완료: '+url)
+        if not public_image(ctx,url,cache):
+            reasons=cache.get(url,{}).get('reasons',[])
+            if any(re.search(r'HTTP (?:404|410)\b',reason) for reason in reasons):
+                ctx.log('공식 상세 이미지 원본 없음(404/410): 해당 파일만 생략 / '+url,'WARNING')
+                continue
+            raise ValueError('선택한 상세 이미지 조회 미완료: '+url)
         parts.append('<p><img src="'+html.escape(url,quote=True)+'" alt="상품 상세정보"></p>')
+    if not parts:raise ValueError('유효한 공식 상세 이미지가 한 장도 없습니다.')
     result='<div>'+''.join(parts)+'</div>'
     if len(result.encode('utf-16-le'))//2>32767:raise ValueError('상세 HTML 엑셀 셀 한도 초과')
     return result
