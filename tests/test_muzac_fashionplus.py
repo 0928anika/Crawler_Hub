@@ -40,6 +40,28 @@ class Context:
 
 
 class MuzacTests(unittest.TestCase):
+    def test_fi_verified_portrait_aspect_keeps_other_checks(self):
+        portrait=Image.new('RGB',(800,1732),'gray')
+        self.assertFalse(fi.gallery_ok(portrait)[0])
+        self.assertTrue(fi.gallery_ok(portrait,max_aspect=2.5)[0])
+        self.assertFalse(fi.gallery_ok(Image.new('RGB',(800,2400),'gray'),max_aspect=2.5)[0])
+        self.assertFalse(fi.gallery_ok(Image.new('RGB',(200,400),'gray'),max_aspect=2.5)[0])
+
+    def test_fi_registered_images_do_not_require_model_in_filename(self):
+        product=soup('fi_product.html')
+        product.select_one('.m__product-info .text_product').string='무자크 브라운 블루 멀티체크셔츠 MQ7WBL26'
+        body=BeautifulSoup(str(soup('fi_body.html')).replace('MQ8WJK03','MQ7WBL16'),'html.parser')
+        with patch.object(fi,'soup_get',return_value=body),patch.object(fi,'image_get',return_value=Image.new('RGB',(800,1072),'gray')):
+            photos,_=fi.collect_product_images(Context(),product,fi.BASE+'/goods/detail/438222535','MQ7WBL26')
+        self.assertGreaterEqual(len(photos),6)
+        self.assertTrue(all('MQ7WBL16' in url for url in photos))
+        # Wrong seller namespace or unverified product title cannot use fallback.
+        for wrong_body,wrong_title in [(str(body).replace('/42970/','/14517/'),False),(str(body),True)]:
+            candidate=BeautifulSoup(str(product),'html.parser')
+            if wrong_title:candidate.select_one('.m__product-info .text_product').string='다른 상품 MQ7WBL260'
+            with patch.object(fi,'soup_get',return_value=BeautifulSoup(wrong_body,'html.parser')),patch.object(fi,'image_get',side_effect=AssertionError('unverified image')):
+                with self.assertRaises(fi.CollectionError):fi.collect_product_images(Context(),candidate,fi.BASE+'/goods/detail/438222535','MQ7WBL26')
+
     def test_exact_requested_ids_and_independent_source_modes(self):
         self.assertEqual(STUDIO['id'],'muzac_fashionplus')
         self.assertEqual(FI['id'],'muzac_fashionplus_fi_dj')

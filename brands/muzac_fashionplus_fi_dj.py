@@ -161,11 +161,11 @@ def image_get(ctx, url):
         raise CollectionError('손상 또는 이미지가 아닌 응답: ' + url) from exc
 
 
-def gallery_ok(image):
+def gallery_ok(image, max_aspect=1.8):
     w, h = image.size
     if min(w, h) < 500:
         return False, '가로·세로 최소 500px 미달: %sx%s' % (w, h)
-    if max(w, h) / min(w, h) > 1.8:
+    if max(w, h) / min(w, h) > max_aspect:
         return False, '통짜/긴 이미지 비율: %sx%s' % (w, h)
     # Multiple full-width/full-height internal white gutters signal a collage.
     im = image.convert('RGB').resize((120, 160))
@@ -362,6 +362,14 @@ def product_image(url, code):
             and exact_code(urllib.parse.unquote(parsed.path), code))
 
 
+def registered_seller_image(url, namespace):
+    parts = urllib.parse.urlparse(url)
+    return (parts.scheme in ('http','https')
+            and parts.hostname == 'img.fashionplus.co.kr'
+            and namespace.isdigit()
+            and parts.path.startswith('/mall/assets/product_img/' + namespace + '/'))
+
+
 def image_key(url):
     parsed = urllib.parse.urlparse(url)
     return parsed.hostname, parsed.path
@@ -376,16 +384,24 @@ def collect_product_images(ctx, soup, link, code):
     area = body.select_one('.m_prodetail-desc .mm_pinchzoom-wrapper')
     if area is None:
         raise CollectionError('FI_DJ 상품 등록 이미지 영역 형식 변경: ' + link)
+    accepted, _, namespace = seller_identity(soup)
+    title = soup.select_one('.m__product-info .text_product')
+    registered_mapping = bool(accepted and title and exact_code(title.get_text(' ',strip=True),code) and namespace)
     registered = []
     for node in area.select('.m__desc-image img'):
         ctx.checkpoint()
         url = source_url(node)
-        if url and product_image(url, code) and url not in registered:
+        if url and (product_image(url, code) or (registered_mapping and registered_seller_image(url,namespace))) and url not in registered:
             registered.append(url)
+    if any(not product_image(url,code) for url in registered):
+        ctx.log('등록 사진 파일명과 입력 품번 표기가 다름: 상세 품번 '+code+
+                ' 및 대전 반품지 확인 후 해당 상품의 실제 등록 갤러리 연결로 수집 / '+link,'WARNING')
     urls = list(registered)
     keys = {image_key(url) for url in urls}
     for node in soup.select('.m_prodetail-head-thumbnail .btn_thumbnail [data-preload]'):
         url = source_url(node)
+        # A filename mismatch in top thumbnails is accepted only when the exact
+        # resource is also present in this product's authoritative gallery slots.
         if url and product_image(url, code) and image_key(url) not in keys:
             urls.append(url)
             keys.add(image_key(url))
@@ -399,7 +415,11 @@ def collect_product_images(ctx, soup, link, code):
         except MissingResource as exc:
             ctx.log('없는 상품 등록 이미지 제외 (재시도 안 함): ' + str(exc), 'WARNING')
             continue
-        valid, why = gallery_ok(image)
+        # Verified FI_DJ registered slots include ordinary 1848x4000 portrait
+        # store photos. Aspect alone must not misclassify them as stitched HTML.
+        # This 2.5 cutoff is a local rule, not a marketplace approval guarantee.
+        max_aspect = 2.5 if registered_mapping and registered_seller_image(url,namespace) else 1.8
+        valid, why = gallery_ok(image,max_aspect=max_aspect)
         if valid:
             photos.append(url)
         else:
@@ -413,7 +433,7 @@ def collect_product_images(ctx, soup, link, code):
         for node in area.select('img'):
             ctx.checkpoint()
             url = source_url(node)
-            if not url or product_image(url, code):
+            if not url or product_image(url, code) or image_key(url) in keys:
                 continue
             parsed = urllib.parse.urlparse(url)
             # Observed common brand header adjacent to shipping/returns prelude.
