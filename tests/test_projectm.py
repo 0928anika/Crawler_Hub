@@ -90,10 +90,20 @@ class ProjectMTests(unittest.TestCase):
         self.assertNotIn('_MDL_',markup);self.assertNotIn('EPG3PP1105BK_M.jpg',markup)
         self.assertLess(markup.index('/ai_goods/detail/'),markup.index('사이즈 측정 그림'))
 
-    def test_missing_body_cannot_succeed_with_gallery_and_size_only(self):
+    def test_missing_body_uses_product_cuts_then_size(self):
         g=goods();g.pop('godAiImgList',None)
-        with patch.object(c,'picture',side_effect=fake_picture),self.assertRaises(c.CollectionError):
-            c.detail_markup(Context(),[g],fake_assets(Context(),g,{},True,True),{})
+        with patch.object(c,'picture',side_effect=fake_picture),patch.object(c,'gallery_assets',side_effect=fake_assets) as fallback:
+            markup=c.detail_markup(Context(),[g],[],{})
+        fallback.assert_called_once()
+        self.assertEqual(fallback.call_args.args[-2:],(False,True))
+        self.assertIn('EPG3PP1105BK_M.jpg',markup)
+        self.assertLess(markup.index('EPG3PP1105BK_M.jpg'),markup.index('사이즈 측정 그림'))
+        self.assertLess(markup.index('사이즈 측정 그림'),markup.index('<table'))
+
+    def test_absent_body_and_product_cuts_still_fail(self):
+        g=goods();g.pop('godAiImgList',None)
+        with patch.object(c,'gallery_assets',return_value=[]),self.assertRaises(c.CollectionError):
+            c.detail_markup(Context(),[g],[],{})
 
     def test_original_table_structure_and_escaping_are_preserved(self):
         raw='<table onclick="bad()"><thead><tr><th rowspan="2">사이즈</th><th colspan="2">치수 cm</th></tr>' \

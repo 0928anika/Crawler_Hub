@@ -407,7 +407,13 @@ def detail_markup(ctx, products, assets, cache):
                 digests.add(info['digest']);urls.add(url)
                 parts.append('<img src="'+html.escape(url,quote=True)+'" alt="상품 상세 본문" style="max-width:100%;height:auto">')
     if not parts:
-        raise CollectionError('공식 상세 본문 이미지 없음: 상품 갤러리나 사이즈표로 대체하지 않습니다')
+        ctx.log('정형 상세 본문 없음: 공식 상품컷 + 사이즈 그림/표로 상세 구성','INFO')
+        for goods in products:
+            for item in gallery_assets(ctx,goods,cache,False,True):
+                if item['detail_role'] and item['digest'] not in digests:
+                    digests.add(item['digest']);urls.add(item['url'])
+                    parts.append('<img src="'+html.escape(item['url'],quote=True)+'" alt="상품 상세" style="max-width:100%;height:auto">')
+        if not parts:raise CollectionError('상세 본문과 대체할 공식 상품컷 모두 없음')
     diagrams=[];tables=[]
     for goods in products:
         diagram,table_list=size_material(ctx,goods,cache)
@@ -456,7 +462,7 @@ def crawl(ctx):
     for item in assets:
         if item['active']:owners.setdefault(item['digest'],set()).add(item['color'])
     shared={digest for digest,colors in owners.items() if len(colors)>1}
-    if shared and need_gallery:ctx.log('여러 색상에 공통인 사진 %s종: 자동 색상 갤러리에서는 제외하고 공통 상세에만 유지'%len(shared),'WARNING')
+    if shared and need_gallery:ctx.log('여러 색상에 공통인 사진 %s종: 자동 색상 갤러리에서는 제외'%len(shared),'WARNING')
     markup=''
     if need_detail:
         try:markup=detail_markup(ctx,products,assets,cache)
