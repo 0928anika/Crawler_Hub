@@ -46,12 +46,12 @@
     "category": {
       "supported": true,
       "status": "supported",
-      "reason": "공식 xans-product-headcategory의 KIDS 분류 경로."
+      "reason": "공식 xans-product-headcategory의 분류 경로. KIDS 여부는 분류 또는 상품명 JEEPKIDS 표기로 검증."
     },
     "main_image": {
       "supported": true,
       "status": "conditional",
-      "reason": "상품명 전체 품번/색상으로 분리된 ProductGroup.hasVariant.image의 실제 big 원본. 색상별 갤러리·공개 파일·규격 검사 통과 시 제공."
+      "reason": "상품명 전체 품번/색상으로 분리된 ProductGroup.hasVariant.image 또는 동일 상품 페이지 og:image의 실제 big 원본. 품절 hasVariant 빈 배열도 지원. 공개 파일·규격 검사 유지."
     },
     "additional_images": {
       "supported": true,
@@ -72,12 +72,15 @@
       "KR3TPU051_KH",
       "KR3TPU051-KH",
       "KR3DPU535",
-      "KR3DPU735"
+      "KR3DPU735",
+      "KR3TSU023",
+      "KR4TSU824",
+      "KR4JPU403"
     ],
     "pattern": "^[A-Za-z0-9]{9}(?:[_-]?[A-Za-z0-9]{2})?$",
     "format": "기본 품번 9자리. 색상 지정은 붙여쓰기·언더바·하이픈 + 공식 색상코드 2자리.",
-    "notes": "기본 품번은 검색된 전체 색상, 지정 시 해당 색상만. 소문자 허용. 공식 텍스트 색상명이 없으면 코드만 제공.",
-    "method": "공식 검색의 모든 상품 링크 조회 후 상품명 끝 전체 SKU와 KIDS 분류 대조. 같은 색상 ProductGroup의 실제 big 원본 연결.",
+    "notes": "기본 품번은 품절 포함 전체 색상, 지정 시 해당 색상만. 소문자 허용. 공식 텍스트 색상명이 없으면 코드만 제공.",
+    "method": "공식 상품명 끝 전체 SKU와 분류/명시적 JEEPKIDS 표기로 검증. ProductGroup 또는 동일 상품 페이지 og:image의 실제 big 원본 연결.",
     "required_columns": [
       "품번"
     ],
@@ -135,13 +138,13 @@
       "label": "카테고리",
       "supported": true,
       "status": "supported",
-      "reason": "공식 xans-product-headcategory의 KIDS 분류 경로."
+      "reason": "공식 xans-product-headcategory의 분류 경로. KIDS 여부는 분류 또는 상품명 JEEPKIDS 표기로 검증."
     },
     "main_image": {
       "label": "대표이미지",
       "supported": true,
       "status": "conditional",
-      "reason": "상품명 전체 품번/색상으로 분리된 ProductGroup.hasVariant.image의 실제 big 원본. 색상별 갤러리·공개 파일·규격 검사 통과 시 제공."
+      "reason": "상품명 전체 품번/색상으로 분리된 ProductGroup.hasVariant.image 또는 동일 상품 페이지 og:image의 실제 big 원본. 품절 hasVariant 빈 배열도 지원. 공개 파일·규격 검사 유지."
     },
     "additional_images": {
       "label": "추가이미지",
@@ -172,5 +175,5 @@
     "상세페이지 HTML": "detail_page",
     "원본 상품명": null
   },
-  "code_hash": "0a101a493d0c4ebc9b9bbb8c89cbdeed795536dc51368e876707dd6a5c883b25"
+  "code_hash": "2012e5ab05bbbb98ee8add87f3fb72d13f7742346e72889045198373888ed7bc"
 }

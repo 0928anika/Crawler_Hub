@@ -2,6 +2,16 @@
 
 2026-11-10 실제 조사 및 검증. 브랜드 ID `jeepkids_official`, 소스 `공식 홈페이지`, 분류 `아동복`.
 
+## 품절 색상 이미지 / 신상품 카테고리 수정 (jeepkids-2)
+
+사용자 작업 로그에서 KR3TSU023/KR4TSU824는 SUCCESS였지만 일부 색상에 대표/추가 사진이 없어 확인 필요로 표시됐다. 해당 색상은 전 사이즈 품절로 ProductGroup.hasVariant가 비어 있었고 같은 상세페이지의 og:image에는 실제 big 원본이 남아 있었다. 정확한 상품명과 일치하는 ProductGroup이 있는 페이지에서 공식 도메인의 product/big og:image도 수집하도록 수정했다. 외부 도메인/다른 상품명/로고/썸네일 경로는 채택하지 않는다.
+
+KR4JPU403은 카테고리 경로가 26FW NEW여서 실패했다. 카테고리 KIDS 또는 상품명에 명시적인 JEEPKIDS/JEEP KIDS/[KIDS]/지프키즈 표기가 있으면 키즈로 확인한다. 브랜드 표기도 없고 KIDS 분류도 아닌 상품은 여전히 제외한다. 정리 상품명에서 JEEPKIDS/[KIDS] 표기를 제거한다.
+
+사이즈의 [품절] 장식은 제거하되 실제 사이즈 옵션은 전부 포함한다. 숫자로 변환하지 않고 문자열로 보존한다.
+
+실제 Hub worker/Excel 검증: KR3TSU023 IV/BK/WH/MG 4행, KR4TSU824 DG/IV/YE 3행, KR4JPU403 BK 1행. 총 8행 모두 사진과 상세가 있고 최종 검수 normal. 소요 시간 약 14.2초/8.6초/4.3초. 품절 색상도 서로 다른 해당 색상 원본 URL로 확인했다. 회귀 테스트 11개 통과.
+
 ## 수집 근거
 
 - 사용자 지정 jeepwear.co.kr만 수집한다. 첨부에 같이 있던 goodwearmall.com의 다른 품번은 사용하지 않는다.

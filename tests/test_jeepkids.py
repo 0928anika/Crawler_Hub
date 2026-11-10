@@ -52,6 +52,42 @@ class JeepKidsTests(unittest.TestCase):
         self.assertNotIn('a5df0bfd',urls[0])
         self.assertFalse(c.gallery_urls(self.doc,c.SITE,'different product'))
 
+    def test_sold_out_colors_use_matching_page_og_image_and_keep_sizes(self):
+        for filename,base,color,count in [('KR3TSU023_0.html','KR3TSU023','IV',4),('KR3TSU023_1.html','KR3TSU023','BK',5),('KR3TSU023_2.html','KR3TSU023','WH',5),('KR4TSU824_2.html','KR4TSU824','YE',5)]:
+            with self.subTest(filename=filename):
+                doc=c.parse((FIX/filename).read_text(encoding='utf-8'))
+                raw=c.field(doc,'상품명')
+                self.assertEqual(c.product_groups(doc,raw)[0]['hasVariant'],[])
+                self.assertEqual(c.identity(doc,base)['color_code'],color)
+                urls=c.gallery_urls(doc,c.SITE,raw)
+                self.assertEqual(urls,[doc.find('meta',property='og:image')['content']])
+                sizes=c.sizes(doc)
+                self.assertEqual(len(sizes.split(',')),count)
+                self.assertNotIn('품절',sizes)
+                self.assertFalse(c.gallery_urls(doc,c.SITE,'different product'))
+                doc.find('meta',property='og:image')['content']='https://other.example/web/product/big/wrong.jpg'
+                self.assertFalse(c.gallery_urls(doc,c.SITE,raw))
+
+    def test_explicit_jeepkids_title_in_new_arrivals_category(self):
+        doc=c.parse((FIX/'KR4JPU403_0.html').read_text(encoding='utf-8'))
+        self.assertEqual(c.categories(doc),['26FW NEW'])
+        record=c.identity(doc,'KR4JPU403')
+        self.assertEqual(record['product_name'],'JXP 다운점퍼')
+        self.assertEqual(record['color_code'],'BK')
+        without_proof=c.parse(str(doc).replace('JEEPKIDS JXP','JXP'))
+        with self.assertRaises(ValueError):c.identity(without_proof,'KR4JPU403')
+
+    def test_failure_in_one_color_keeps_completed_other_color(self):
+        black=c.parse((FIX/'KR3TPU051_1.html').read_text(encoding='utf-8'))
+        pages={'https://jeepwear.co.kr/kh':self.doc,'https://jeepwear.co.kr/bk':black}
+        with tempfile.TemporaryDirectory() as folder:
+            ctx=Context(folder,fields=('main_image',))
+            with patch('playwright.sync_api.sync_playwright',return_value=MagicMock()),patch.object(c,'search',return_value=list(pages)),patch.object(c,'visit',side_effect=lambda ctx,page,url:(pages[url],url)),patch.object(c,'gallery',side_effect=[ValueError('first color failed'),('https://jeepwear.co.kr/valid.jpg',[],'')]):
+                with self.assertRaises(RuntimeError):c.crawl(ctx)
+            self.assertEqual(len(ctx.rows),1)
+            self.assertEqual(ctx.rows[0]['color_code'],'BK')
+            self.assertTrue(ctx.failures)
+
     def test_sizes_include_disabled_options_and_category_is_official(self):
         self.doc.select_one('select option[value="P0000HWN000A"]')['disabled']=''
         self.assertEqual(c.sizes(self.doc),'130,145,155,165')

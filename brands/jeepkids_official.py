@@ -16,7 +16,7 @@ from crawler_rules import check_public_image, validate_gallery_image, gallery_sl
 
 SITE='https://jeepwear.co.kr'
 HOSTS=('jeepwear.co.kr','www.jeepwear.co.kr')
-REVISION='2026-11-10-jeepkids-1'
+REVISION='2026-11-10-jeepkids-2'
 POLICY={'checked_on':'2026-11-10','source':'https://marketplace.coupang.com/mba/listing',
         'route':'WING 웹/엑셀','min_side':500,'max_bytes':10000000,
         'formats':['JPEG','PNG','WEBP'],'max_aspect':1.8}
@@ -47,9 +47,11 @@ def identity(doc,base):
     match=re.search(r'\(([A-Z0-9]{9})([A-Z0-9]{2})\)\s*$',raw,re.I)
     if not match:raise ValueError('공식 상품명 끝의 전체 품번/색상코드 확인 실패: '+raw)
     if match[1].upper()!=base:return None
-    if not any(c.upper()=='KIDS' or '키즈' in c for c in categories(doc)):
+    kids_category=any(c.upper()=='KIDS' or '키즈' in c for c in categories(doc))
+    kids_title=bool(re.search(r'\bJEEPKIDS\b|\bJEEP\s+KIDS\b|\[KIDS\]|지프\s*키즈',raw,re.I))
+    if not (kids_category or kids_title):
         raise ValueError('공식 KIDS 카테고리 상품인지 확인할 수 없습니다.')
-    name=clean_product_name(raw[:match.start()].strip(),['지프키즈','지프 키즈','JEEP KIDS','Jeep®'],[base])
+    name=clean_product_name(raw[:match.start()].strip(),['지프키즈','지프 키즈','JEEP KIDS','JEEPKIDS','[KIDS]','Jeep®'],[base])
     if not name:raise ValueError('정리 후 상품명 없음')
     code=match[2].upper()
     color=field(doc,'색상') or field(doc,'컬러')
@@ -72,7 +74,8 @@ def product_groups(doc,raw):
 def gallery_urls(doc,final,raw):
     urls=[]
     # 실제 공식 JSON-LD는 큰 원본의 별도 해시를 제공한다.
-    for group in product_groups(doc,raw):
+    groups=product_groups(doc,raw)
+    for group in groups:
         for variant in group.get('hasVariant',[]):
             if not isinstance(variant,dict) or not str(variant.get('name','')).startswith(raw+' '):continue
             images=variant.get('image',[])
@@ -81,6 +84,14 @@ def gallery_urls(doc,final,raw):
                 parts=urlsplit(url)
                 if parts.hostname in HOSTS and re.match(r'/web/product/(?:big/|extra/big/)',parts.path) and url not in urls:
                     urls.append(url)
+    # 품절 상품은 hasVariant가 비어도 해당 상품 페이지의 og:image에는
+    # 같은 색상의 실제 big 원본이 남는다. 동일 상품명 ProductGroup이
+    # 확인된 페이지에서만 사용하며 다른 상품/사이트의 메타 이미지는 제외.
+    if groups and field(doc,'상품명')==raw:
+        for node in doc.find_all('meta',property='og:image'):
+            url=urljoin(final,node.get('content',''));parts=urlsplit(url)
+            if parts.hostname in HOSTS and re.match(r'/web/product/(?:big/|extra/big/)',parts.path) and url not in urls:
+                urls.append(url)
     for node in doc.select('.imgArea img'):
         url=urljoin(final,node.get('ec-data-src') or node.get('data-src') or node.get('src') or '')
         parts=urlsplit(url)
@@ -129,7 +140,7 @@ def gallery(ctx,urls,code,cache):
     for url in urls:
         ctx.checkpoint();result=public_image(ctx,url,cache)
         if not result:continue
-        evidence=f'공식 색상별 독립 상품의 ProductGroup.hasVariant.image big 원본; 제외 신호 없음; {result["width"]}x{result["height"]}'
+        evidence=f'공식 색상별 상품의 ProductGroup/동일 페이지 og:image big 원본; 제외 신호 없음; {result["width"]}x{result["height"]}'
         validation=validate_gallery_image(result['data'],role='product_shot',mapping_verified=True,single_shot_verified=True,
             mapping_evidence='상품명 전체 품번과 색상 '+code+' / 같은 ProductGroup의 사진',content_evidence=evidence)
         digest=hashlib.sha256(result['data']).hexdigest()
@@ -163,6 +174,7 @@ def sizes(doc):
     for select in doc.select('select[product_type="product_option"][option_title="사이즈"]'):
         for option in select.select('option[value]'):
             value=option.get_text(' ',strip=True)
+            value=re.sub(r'\s*\[(?:품절|일시품절|SOLD\s*OUT)\]\s*','',value,flags=re.I).strip()
             if option['value'] not in ('','*','**') and value and value not in result:result.append(value)
     if not result:raise ValueError('공식 사이즈 옵션 확인 실패')
     return ','.join(result)
