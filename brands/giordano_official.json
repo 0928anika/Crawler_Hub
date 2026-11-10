@@ -1,0 +1,173 @@
+{
+  "id": "giordano_official",
+  "name": "지오다노",
+  "category": "캐주얼 의류",
+  "crawl_source": "공식 홈페이지",
+  "script": "giordano_official.py",
+  "execution_level": 1,
+  "interface": "portal_v1",
+  "mapping_mode": "automatic",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "verified",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 색상 option ID의 getOptionStockSKU로 없는 조합만 제외. optChipSet2 순서와 품절 사이즈 유지."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": ".info[data-sell_prc] → #cpn_list_sell_prc의 명시적 판매가. 상단/JSON-LD 회원 쿠폰가 제외."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": ".info[data-normal_prc] → #cpn_list_normal_prc의 독립 소비자가. 누락/0/형식변경은 빈칸, 판매가 복사 없음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .navi prdpath 분류 링크. 상품명 링크 제외."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "STYLE과 colorchip_auto 전체 SKU 일치 후 ppno + 색상 option ID로 getAddImgList 조회. 공식 색상별 갤러리의 실제 공개 파일 검사."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "동일 색상 갤러리의 유효 컷만 5슬롯. 추가 컷 부족 시 통과 컷 반복."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상세 본문·실측 사이즈·상품정보고시 원본 이미지. 별도 표 생성 없음. 소재관리·배송·리뷰 제외."
+    }
+  },
+  "guide": {
+    "example": "05586901",
+    "examples": [
+      "05586901",
+      "05586901_02",
+      "05586901-02"
+    ],
+    "pattern": "^\\d{8}(?:[_-]\\d{2})?$",
+    "format": "앞자리 0을 포함한 품번 8자리. 지정 색상은 _ 또는 - 뒤 공식 숫자 코드 2자리.",
+    "notes": "기본 품번은 전체 색상. 엑셀 품번 열을 텍스트로 입력해 앞자리 0을 보존하세요.",
+    "method": "공식 STYLE 품번과 색상칩 전체 SKU를 대조하고 색상 option ID별 갤러리 연결.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "5586901",
+      "05586901_"
+    ],
+    "validation_note": "실제 상품과 색상 존재는 실행 시 검증."
+  },
+  "notes": "공식 홈페이지 공개 응답 직접 조회. 상품명에서 브랜드·품번 제거, 원본 상품명 보존. 사이즈표·고시는 원본 이미지 유지하며 별도 표를 만들지 않음. 회원 쿠폰가가 아닌 명시적 판매가 수집. 정상가는 독립 소비자가 확인 시에만 제공. WING 등록 자체는 검증하지 않음.",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 필수 정보"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 필수 정보"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 필수 정보"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 필수 정보"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 색상 option ID의 getOptionStockSKU로 없는 조합만 제외. optChipSet2 순서와 품절 사이즈 유지."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": ".info[data-sell_prc] → #cpn_list_sell_prc의 명시적 판매가. 상단/JSON-LD 회원 쿠폰가 제외."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": ".info[data-normal_prc] → #cpn_list_normal_prc의 독립 소비자가. 누락/0/형식변경은 빈칸, 판매가 복사 없음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .navi prdpath 분류 링크. 상품명 링크 제외."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "STYLE과 colorchip_auto 전체 SKU 일치 후 ppno + 색상 option ID로 getAddImgList 조회. 공식 색상별 갤러리의 실제 공개 파일 검사."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "동일 색상 갤러리의 유효 컷만 5슬롯. 추가 컷 부족 시 통과 컷 반복."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상세 본문·실측 사이즈·상품정보고시 원본 이미지. 별도 표 생성 없음. 소재관리·배송·리뷰 제외."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null
+  },
+  "code_hash": "42b07d521165dd8ecb8a73e8653381e56c803e3c3c0b13ca0cff3a83d63b825b"
+}
