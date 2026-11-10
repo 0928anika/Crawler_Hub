@@ -1,0 +1,13 @@
+Project M crawler validation — 2026-11-10
+
+ID: projectm_official; source: official Goodwearmall; automatic color mapping.
+Public sources: https://display.goodwearmall.com/search?keyword=EPG3PP1105
+https://www.goodwearmall.com/product/api/view.json?godNo=EPG3PP1105BK
+
+Exact dsgnGrpNo and sysBrnd.brndId EBR establish model/brand identity. Search links seed the recursive colorList graph. Each godNo/colorCd maps its own gallery; identical image bytes shared by multiple colors are excluded from automatic gallery slots and retained in common detail. Small centered label photographs are detail-only. Only explicit source image URLs are used. Sold-out sizes/colors remain.
+
+Size data: gdSizeLktb, then SIZE_LKTB/MOBILE_SIZE_LKTB, then actual body table or conservatively parsed labelled measurement text. The latter fallbacks are fixture-tested, not observed for the three live models. acmsrImgUrl supplies the original measurement diagram. Output order is diagram then HTML table, preserving headings, values, spans, cm unit and original measurement note. Duplicate tables are removed. Other brands' general size guide is excluded. No separate legal disclosure table is generated; original product body images are retained. Empty size data logs a warning; malformed nonempty tables fail explicitly.
+
+Independent optional price fields: selling price dspGodPrc.salePrc; original price god.cvrPrc. Missing/zero/invalid original price remains empty without failing the color. Unselected price/image/detail fields skip their work.
+
+Actual worker XLSX runs: EPG3PP1105 3 colors, EPG3PP1107 3 colors, EPG3TR1501 4 colors, EPG3PP1105_BK 1 color, all exit 0. Table/diagram order, common detail, slots and prices checked. Ten Project M regression tests pass. Full suite: 119 tests, one unrelated failure from the concurrently untracked jeepkids_official metadata in test_prices; remaining tests pass. Registry/hash/syntax check passes.

@@ -1,0 +1,289 @@
+{
+  "result": "Y",
+  "goods": {
+    "god": {
+      "godNo": "EPG3PP1105BK",
+      "dsgnGrpNo": "EPG3PP1105",
+      "godNm": "남) 파워무빙 세미와이드핏 슬랙스",
+      "colorNm": "BK",
+      "colorCd": "BK",
+      "brndId": "E",
+      "brndGrpId": "EBR",
+      "godSaleSectCd": "SALE_PROGRS",
+      "stdCtgryNo": "A01A05A05A06",
+      "cnsgnSectCd": "MCOM",
+      "cvrPrc": 69900.0
+    },
+    "sysBrnd": {
+      "brndId": "EBR",
+      "brndNm": "PROJECT M"
+    },
+    "dspGodPrc": {
+      "beginIndex": 0,
+      "endIndex": 0,
+      "salePrc": 39900.0
+    },
+    "colorList": [
+      {
+        "god": {
+          "beginIndex": 0,
+          "endIndex": 0,
+          "godNo": "EPG3PP1105BE",
+          "dsgnGrpNo": "EPG3PP1105",
+          "godSaleSectCd": "SALE_PROGRS",
+          "colorNm": "BE",
+          "colorCd": "BE",
+          "clorChipImgUrl": "/goods/EPG3PP/EPG3PP1105BE_C.jpg",
+          "turn": 0,
+          "realInvQty": 0,
+          "rprstImgCnt": 0
+        }
+      },
+      {
+        "god": {
+          "beginIndex": 0,
+          "endIndex": 0,
+          "godNo": "EPG3PP1105BK",
+          "dsgnGrpNo": "EPG3PP1105",
+          "godSaleSectCd": "SALE_PROGRS",
+          "colorNm": "BK",
+          "colorCd": "BK",
+          "clorChipImgUrl": "/goods/EPG3PP/EPG3PP1105BK_C.jpg",
+          "turn": 0,
+          "realInvQty": 0,
+          "rprstImgCnt": 0
+        }
+      },
+      {
+        "god": {
+          "beginIndex": 0,
+          "endIndex": 0,
+          "godNo": "EPG3PP1105DBR",
+          "dsgnGrpNo": "EPG3PP1105",
+          "godSaleSectCd": "SALE_PROGRS",
+          "colorNm": "DBR",
+          "colorCd": "DBR",
+          "clorChipImgUrl": "/goods/EPG3PP/EPG3PP1105DBR_C.jpg",
+          "turn": 0,
+          "realInvQty": 0,
+          "rprstImgCnt": 0
+        }
+      }
+    ],
+    "godImgList": [
+      {
+        "beginIndex": 0,
+        "endIndex": 0,
+        "imgTpCd": "THNAIL",
+        "imgTurn": 100,
+        "imgUrl": "/goods/EPG3PP/EPG3PP1105BK_M.jpg",
+        "rprstImgYn": "Y",
+        "imgUseYn": "Y",
+        "udtDt": 1790830657000
+      },
+      {
+        "beginIndex": 0,
+        "endIndex": 0,
+        "imgTpCd": "THNAIL",
+        "imgTurn": 101,
+        "imgUrl": "/goods/EPG3PP/EPG3PP1105BK_MDL_1.jpg",
+        "rprstImgYn": "N",
+        "imgUseYn": "N",
+        "udtDt": 1790830657000
+      },
+      {
+        "beginIndex": 0,
+        "endIndex": 0,
+        "imgTpCd": "THNAIL",
+        "imgTurn": 201,
+        "imgUrl": "/goods/EPG3PP/EPG3PP1105BK_1.jpg",
+        "rprstImgYn": "N",
+        "imgUseYn": "Y",
+        "udtDt": 1790830657000
+      },
+      {
+        "beginIndex": 0,
+        "endIndex": 0,
+        "imgTpCd": "THNAIL",
+        "imgTurn": 202,
+        "imgUrl": "/goods/EPG3PP/EPG3PP1105BK_2.jpg",
+        "rprstImgYn": "N",
+        "imgUseYn": "Y",
+        "udtDt": 1783476240000
+      },
+      {
+        "beginIndex": 0,
+        "endIndex": 0,
+        "imgTpCd": "THNAIL",
+        "imgTurn": 203,
+        "imgUrl": "/goods/EPG3PP/EPG3PP1105BK_3.jpg",
+        "rprstImgYn": "N",
+        "imgUseYn": "Y",
+        "udtDt": 1783476240000
+      },
+      {
+        "beginIndex": 0,
+        "endIndex": 0,
+        "imgTpCd": "THNAIL",
+        "imgTurn": 204,
+        "imgUrl": "/goods/EPG3PP/EPG3PP1105BK_4.jpg",
+        "rprstImgYn": "N",
+        "imgUseYn": "Y",
+        "udtDt": 1783476240000
+      },
+      {
+        "beginIndex": 0,
+        "endIndex": 0,
+        "imgTpCd": "THNAIL",
+        "imgTurn": 205,
+        "imgUrl": "/goods/EPG3PP/EPG3PP1105BK_5.jpg",
+        "rprstImgYn": "N",
+        "imgUseYn": "Y",
+        "udtDt": 1783476240000
+      },
+      {
+        "beginIndex": 0,
+        "endIndex": 0,
+        "imgTpCd": "THNAIL",
+        "imgTurn": 206,
+        "imgUrl": "/goods/EPG3PP/EPG3PP1105BK_6.jpg",
+        "rprstImgYn": "N",
+        "imgUseYn": "Y",
+        "udtDt": 1783476240000
+      },
+      {
+        "beginIndex": 0,
+        "endIndex": 0,
+        "imgTpCd": "THNAIL",
+        "imgTurn": 207,
+        "imgUrl": "/goods/EPG3PP/EPG3PP1105BK_7.jpg",
+        "rprstImgYn": "N",
+        "imgUseYn": "Y",
+        "udtDt": 1783476240000
+      },
+      {
+        "beginIndex": 0,
+        "endIndex": 0,
+        "imgTpCd": "THNAIL",
+        "imgTurn": 208,
+        "imgUrl": "/goods/EPG3PP/EPG3PP1105BK_8.jpg",
+        "rprstImgYn": "N",
+        "imgUseYn": "Y",
+        "udtDt": 1783476240000
+      },
+      {
+        "beginIndex": 0,
+        "endIndex": 0,
+        "imgTpCd": "THNAIL",
+        "imgTurn": 209,
+        "imgUrl": "/goods/EPG3PP/EPG3PP1105BK_9.jpg",
+        "rprstImgYn": "N",
+        "imgUseYn": "Y",
+        "udtDt": 1783476240000
+      },
+      {
+        "beginIndex": 0,
+        "endIndex": 0,
+        "imgTpCd": "THNAIL",
+        "imgTurn": 210,
+        "imgUrl": "/goods/EPG3PP/EPG3PP1105BK_10.jpg",
+        "rprstImgYn": "N",
+        "imgUseYn": "Y",
+        "udtDt": 1783476240000
+      },
+      {
+        "beginIndex": 0,
+        "endIndex": 0,
+        "imgTpCd": "THNAIL",
+        "imgTurn": 211,
+        "imgUrl": "/goods/EPG3PP/EPG3PP1105BK_11.jpg",
+        "rprstImgYn": "N",
+        "imgUseYn": "Y",
+        "udtDt": 1783476240000
+      },
+      {
+        "beginIndex": 0,
+        "endIndex": 0,
+        "imgTpCd": "THNAIL",
+        "imgTurn": 212,
+        "imgUrl": "/goods/EPG3PP/EPG3PP1105BK_12.jpg",
+        "rprstImgYn": "N",
+        "imgUseYn": "Y",
+        "udtDt": 1783476240000
+      }
+    ],
+    "godItmExList": [
+      {
+        "itmNo": "EPG3PP1105BK29",
+        "itmNm": "29",
+        "itmStatCd": "SALE_PROGRS",
+        "optValCd": "29"
+      },
+      {
+        "itmNo": "EPG3PP1105BK30",
+        "itmNm": "30",
+        "itmStatCd": "SALE_PROGRS",
+        "optValCd": "30"
+      },
+      {
+        "itmNo": "EPG3PP1105BK32",
+        "itmNm": "32",
+        "itmStatCd": "SALE_PROGRS",
+        "optValCd": "32"
+      },
+      {
+        "itmNo": "EPG3PP1105BK34",
+        "itmNm": "34",
+        "itmStatCd": "SLDOUT",
+        "optValCd": "34"
+      },
+      {
+        "itmNo": "EPG3PP1105BK36",
+        "itmNm": "36",
+        "itmStatCd": "SALE_PROGRS",
+        "optValCd": "36"
+      }
+    ],
+    "gdSizeLktb": "<table class=\"table-matrix st-dimmed size-table\"><colgroup><col style='width: 100px;'><col style='width: 90px;'><col style='width: 90px;'><col style='width: 90px;'><col style='width: 90px;'><col style='width: 90px;'></colgroup><thead><tr><th><p class=\"fs-13 lh19\"><span class=\"text-inner\">사이즈</span></p></th><th><p class=\"fs-13 lh19\"><span class='text-inner'>S(29)</span></p></th><th><p class=\"fs-13 lh19\"><span class='text-inner'>M(30)</span></p></th><th><p class=\"fs-13 lh19\"><span class='text-inner'>L(32)</span></p></th><th><p class=\"fs-13 lh19\"><span class='text-inner'>XL(34)</span></p></th><th><p class=\"fs-13 lh19\"><span class='text-inner'>XXL(36)</span></p></th></tr></thead><tbody><tr><th><p class=\"fs-13 lh19\"><span class='text-inner'>허리둘레</span></p></th><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>73</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>78</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>83</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>88</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>93</span></p></td></tr><tr><th><p class=\"fs-13 lh19\"><span class='text-inner'>허벅지둘레</span></p></th><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>62.6</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>65.2</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>67.8</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>70.4</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>73</span></p></td></tr><tr><th><p class=\"fs-13 lh19\"><span class='text-inner'>엉덩이둘레</span></p></th><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>97</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>102</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>107</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>112</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>117</span></p></td></tr><tr><th><p class=\"fs-13 lh19\"><span class='text-inner'>앞 밑위길이</span></p></th><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>26.5</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>27.5</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>28.5</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>29.5</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>30.5</span></p></td></tr><tr><th><p class=\"fs-13 lh19\"><span class='text-inner'>밑단둘레</span></p></th><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>45.6</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>46.8</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>48</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>49.2</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>50.4</span></p></td></tr><tr><th><p class=\"fs-13 lh19\"><span class='text-inner'>총기장(인심)</span></p></th><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>77.5</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>77.5</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>77.5</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>77.5</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>77.5</span></p></td></tr><tr><th><p class=\"fs-13 lh19\"><span class='text-inner'>총기장</span></p></th><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>103.5</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>104.5</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>105.5</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>106.5</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>107.5</span></p></td></tr></tbody></table>",
+    "acmsrImgUrl": "/goods/realsize/pants.jpg",
+    "godCaUseYn": "Y",
+    "godDetailList": [
+      {
+        "godDetailTpCd": "AFF_MALL_ONLY",
+        "godDetailCont": "<p align='center'><img src='https://img.goodwearmall.com/aff/EPG3PP/EPG3PP1105BK_SPEC_IMG.jpg'></p><br/>"
+      },
+      {
+        "godDetailTpCd": "AFF_NTFC_DETAIL_HTML",
+        "godDetailCont": "<table class='tbl_info'><colgroup><col width='100px'><col /></colgroup><tbody><tr><th><span>제품 주소재</span></th><td><span>겉감 : 폴리에스터 64%, 레이온 32%, 폴리우레탄 4%, 주머니감 : 폴리에스터 80%, 면 20%(심지,상표,보강재,자수,장식제외)</span></td></tr><tr><th><span>색상</span></th><td><span>BK</span></td></tr><tr><th><span>제조자</span></th><td><span>에이션패션㈜</span></td></tr><tr><th><span>제조국</span></th><td><span>미얀마</span></td></tr><tr><th><span>세탁방법 및 취급시 주의사항</span></th><td><span>1. 본 제품은 손세탁 하셔야 형태변화 및 오염없이 착용할 수 있으며 가능한 기계 세탁을 금합니다. 2. 습한 상태나 마찰등으로 인해 다른옷에 이염이 되는 수가 있으니 주의 하시기 바랍니다. 3. 오염이 되었거나 땀에 젖었을 경우, 즉시 세탁하십시오. 4. 취급 부주의로 인한 탈색 및 오염 등 제품의 형태 변질 및 수축된 제품은 보상이 불가능하오니 주의 하십시오. 5. 물에 10분이상 담가 놓지 마십시오. 6. 원단의 특성상 고온이나 열풍건조를 했을 경우, 수축할 수 있으므로 자연건조 하십시오. 7. 체질에 따라, 피부 알러지가 발생할 수 있습니다. 8. 원단 특성상, 잦은 마찰에 의해 필링현상(보풀)이 발생할 우려가 있으니 착용, 세탁시 주의 하십시오.</span></td></tr><tr><th><span>제조연월</span></th><td><span>202606</span></td></tr><tr><th><span>품질보증기준</span></th><td><span>관련법 및 소비자분쟁해결 규정에 따름</span></td></tr><tr><th><span>AS책임자와 전화번호</span></th><td><span>굿웨어몰 1600-3424</span></td></tr></tbody></table>"
+      },
+      {
+        "godDetailTpCd": "GOD_DESC_CONT",
+        "godDetailCont": "트렌디한 실루엣이 돋보이는 세미와이드핏 슬랙스로 자연스럽고 멋스러운 스타일을 연출할 수 있는 아이템입니다. 270G의 탄탄한 TR 스판 소재에 사방 스트레치 기능을 적용해 뛰어난 활동성과 편안한 착용감을 제공합니다. 허리 뒤쪽에 E-BAND를 내장해 겉으로는 깔끔한 외관을 유지하면서도 편안한 착용감을 선사하며, FW무드에 맞는 컬러 구성으로 다양한 상의와 매치하기 좋은 활용도 높은 슬랙스입니다."
+      },
+      {
+        "godDetailTpCd": "GOD_DESC_TITLE",
+        "godDetailCont": "TR스판 하프밴딩 세미와이드 슬랙스"
+      },
+      {
+        "godDetailTpCd": "GOD_DESC_USE_YN",
+        "godDetailCont": "Y"
+      },
+      {
+        "godDetailTpCd": "GOD_DETAIL_ASSTN",
+        "godDetailCont": "<div style=\"width:100%;margin:auto;max-width:780px;\" id=\"speedycat_container_root\" class=\"speedycat_container_root_class\"><script type=\"text/javascript\">setTimeout(function () { SlazyStart(''); }, 50);setTimeout(function() { SlazyReSet(''); }, 500);setTimeout(function() { SlazyReSet(''); }, 1000);</script></div>"
+      },
+      {
+        "godDetailTpCd": "MOBILE_SIZE_LKTB",
+        "godDetailCont": "<table class='table size-table'><colgroup><col style='width: 100px;'><col style='width: 90px;'><col style='width: 90px;'><col style='width: 90px;'><col style='width: 90px;'><col style='width: 90px;'></colgroup><tbody><tr><th><p class='matrix-label'><span class='text-inner'>사이즈</span></p></th><th><p class='matrix-label justify-content-center'><span class='text-inner'>S(29)</span></p></th><th><p class='matrix-label justify-content-center'><span class='text-inner'>M(30)</span></p></th><th><p class='matrix-label justify-content-center'><span class='text-inner'>L(32)</span></p></th><th><p class='matrix-label justify-content-center'><span class='text-inner'>XL(34)</span></p></th><th><p class='matrix-label justify-content-center'><span class='text-inner'>XXL(36)</span></p></th></tr><tr><th><p class='matrix-label'><span class='text-inner'>허리둘레</span></p></th><td><p class='matrix-label text-dimmed'><span class='text-inner'>73</span></p></td><td><p class='matrix-label text-dimmed'><span class='text-inner'>78</span></p></td><td><p class='matrix-label text-dimmed'><span class='text-inner'>83</span></p></td><td><p class='matrix-label text-dimmed'><span class='text-inner'>88</span></p></td><td><p class='matrix-label text-dimmed'><span class='text-inner'>93</span></p></td></tr><tr><th><p class='matrix-label'><span class='text-inner'>허벅지둘레</span></p></th><td><p class='matrix-label text-dimmed'><span class='text-inner'>62.6</span></p></td><td><p class='matrix-label text-dimmed'><span class='text-inner'>65.2</span></p></td><td><p class='matrix-label text-dimmed'><span class='text-inner'>67.8</span></p></td><td><p class='matrix-label text-dimmed'><span class='text-inner'>70.4</span></p></td><td><p class='matrix-label text-dimmed'><span class='text-inner'>73</span></p></td></tr><tr><th><p class='matrix-label'><span class='text-inner'>엉덩이둘레</span></p></th><td><p class='matrix-label text-dimmed'><span class='text-inner'>97</span></p></td><td><p class='matrix-label text-dimmed'><span class='text-inner'>102</span></p></td><td><p class='matrix-label text-dimmed'><span class='text-inner'>107</span></p></td><td><p class='matrix-label text-dimmed'><span class='text-inner'>112</span></p></td><td><p class='matrix-label text-dimmed'><span class='text-inner'>117</span></p></td></tr><tr><th><p class='matrix-label'><span class='text-inner'>앞 밑위길이</span></p></th><td><p class='matrix-label text-dimmed'><span class='text-inner'>26.5</span></p></td><td><p class='matrix-label text-dimmed'><span class='text-inner'>27.5</span></p></td><td><p class='matrix-label text-dimmed'><span class='text-inner'>28.5</span></p></td><td><p class='matrix-label text-dimmed'><span class='text-inner'>29.5</span></p></td><td><p class='matrix-label text-dimmed'><span class='text-inner'>30.5</span></p></td></tr><tr><th><p class='matrix-label'><span class='text-inner'>밑단둘레</span></p></th><td><p class='matrix-label text-dimmed'><span class='text-inner'>45.6</span></p></td><td><p class='matrix-label text-dimmed'><span class='text-inner'>46.8</span></p></td><td><p class='matrix-label text-dimmed'><span class='text-inner'>48</span></p></td><td><p class='matrix-label text-dimmed'><span class='text-inner'>49.2</span></p></td><td><p class='matrix-label text-dimmed'><span class='text-inner'>50.4</span></p></td></tr><tr><th><p class='matrix-label'><span class='text-inner'>총기장(인심)</span></p></th><td><p class='matrix-label text-dimmed'><span class='text-inner'>77.5</span></p></td><td><p class='matrix-label text-dimmed'><span class='text-inner'>77.5</span></p></td><td><p class='matrix-label text-dimmed'><span class='text-inner'>77.5</span></p></td><td><p class='matrix-label text-dimmed'><span class='text-inner'>77.5</span></p></td><td><p class='matrix-label text-dimmed'><span class='text-inner'>77.5</span></p></td></tr><tr><th><p class='matrix-label'><span class='text-inner'>총기장</span></p></th><td><p class='matrix-label text-dimmed'><span class='text-inner'>103.5</span></p></td><td><p class='matrix-label text-dimmed'><span class='text-inner'>104.5</span></p></td><td><p class='matrix-label text-dimmed'><span class='text-inner'>105.5</span></p></td><td><p class='matrix-label text-dimmed'><span class='text-inner'>106.5</span></p></td><td><p class='matrix-label text-dimmed'><span class='text-inner'>107.5</span></p></td></tr></tbody></table>"
+      },
+      {
+        "godDetailTpCd": "SIZE_LKTB",
+        "godDetailCont": "<table class=\"table-matrix st-dimmed size-table\"><colgroup><col style='width: 100px;'><col style='width: 90px;'><col style='width: 90px;'><col style='width: 90px;'><col style='width: 90px;'><col style='width: 90px;'></colgroup><thead><tr><th><p class=\"fs-13 lh19\"><span class=\"text-inner\">사이즈</span></p></th><th><p class=\"fs-13 lh19\"><span class='text-inner'>S(29)</span></p></th><th><p class=\"fs-13 lh19\"><span class='text-inner'>M(30)</span></p></th><th><p class=\"fs-13 lh19\"><span class='text-inner'>L(32)</span></p></th><th><p class=\"fs-13 lh19\"><span class='text-inner'>XL(34)</span></p></th><th><p class=\"fs-13 lh19\"><span class='text-inner'>XXL(36)</span></p></th></tr></thead><tbody><tr><th><p class=\"fs-13 lh19\"><span class='text-inner'>허리둘레</span></p></th><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>73</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>78</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>83</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>88</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>93</span></p></td></tr><tr><th><p class=\"fs-13 lh19\"><span class='text-inner'>허벅지둘레</span></p></th><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>62.6</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>65.2</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>67.8</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>70.4</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>73</span></p></td></tr><tr><th><p class=\"fs-13 lh19\"><span class='text-inner'>엉덩이둘레</span></p></th><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>97</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>102</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>107</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>112</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>117</span></p></td></tr><tr><th><p class=\"fs-13 lh19\"><span class='text-inner'>앞 밑위길이</span></p></th><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>26.5</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>27.5</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>28.5</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>29.5</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>30.5</span></p></td></tr><tr><th><p class=\"fs-13 lh19\"><span class='text-inner'>밑단둘레</span></p></th><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>45.6</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>46.8</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>48</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>49.2</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>50.4</span></p></td></tr><tr><th><p class=\"fs-13 lh19\"><span class='text-inner'>총기장(인심)</span></p></th><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>77.5</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>77.5</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>77.5</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>77.5</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>77.5</span></p></td></tr><tr><th><p class=\"fs-13 lh19\"><span class='text-inner'>총기장</span></p></th><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>103.5</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>104.5</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>105.5</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>106.5</span></p></td><td class=\"text-center\"><p class=\"fs-13 lh19 text-dimmed\"><span class='text-inner'>107.5</span></p></td></tr></tbody></table>"
+      },
+      {
+        "godDetailTpCd": "AI_DETAIL_IMG",
+        "godDetailCont": "Y"
+      }
+    ]
+  }
+}

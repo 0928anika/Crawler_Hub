@@ -135,3 +135,7 @@ node --test tests/test_mapping_filters.js
 ## 공개 저장소
 
 코드와 수정 이력은 공개됩니다. 인증키, 쿠키, 비밀번호, 작업 결과와 개인정보를 커밋하지 마세요.
+
+## 프로젝트엠
+
+`projectm_official`은 굿웨어몰 공식 상품을 색상별로 수집합니다. 사이즈 측정 그림 다음에 실제 측정값 HTML 표를 넣고 고시정보는 별도로 생성하지 않습니다. 검증 기록은 `docs/projectm-validation.txt`에 있습니다.

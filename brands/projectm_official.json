@@ -1,0 +1,173 @@
+{
+  "id": "projectm_official",
+  "name": "프로젝트엠",
+  "category": "캐주얼 의류",
+  "crawl_source": "공식 홈페이지",
+  "script": "projectm_official.py",
+  "execution_level": 1,
+  "mapping_mode": "automatic",
+  "image_color_mapping": "verified",
+  "official_color_codes": true,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 /product/api/view.json?godNo=색상상품ID의 goods.godItmExList[].itmNm. 선택 시에만 파싱하고 품절 itmStatCd도 유지."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "goods.dspGodPrc.salePrc. 공식 product.form.js가 화면 판매가 prc.salePrc에 사용하는 독립 값. 쿠폰/회원가와 구분하며 색상별 KRW 숫자로 선택 시에만 파싱."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "goods.god.cvrPrc 독립 정상가. 공식 product.form.js/prc.html에서 prc.cvrPrc로 취소선 원가 표시. 선택 시에만 파싱, 누락/0/잘못된 형식은 None과 경고로 계속. 판매가 복사/할인율 역산 없음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "선택된 경우만 해당 공개 상품 HTML의 공식 metaItm stdCtgryNm_1..5를 읽어 계층으로 제공. 숫자 분류 코드를 이름처럼 출력하지 않음."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "독립 dsgnGrpNo/브랜드 EBR과 각 godNo/colorCd를 확인. 그 색상의 활성 goods.godImgList THNAIL 원본을 공개 GET/정지 JPEG·PNG·WebP/500px/비율1.8 검사. 여러 색상에서 바이트가 동일한 공통 사진은 자동 색상 갤러리 제외, 작은 라벨/표는 상세에만 유지. 역할/매핑 근거를 validate_gallery_image에 전달."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "같은 검증 색상 갤러리에서 대표 다음 최대 5슬롯을 채움. 부족하면 통과 사진만 반복하며 유효 컷 하나면 대표를 재사용. 필터 탈락 이미지는 반복 사용하지 않음."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 본문과 모든 색상의 상세용 model/product 원본을 공통으로 유지. 고시 HTML을 별도로 만들지 않음. gdSizeLktb/acmsrImgUrl 우선, 없으면 SIZE_LKTB·MOBILE_SIZE_LKTB 또는 본문의 실제 치수표/라벨형 치수 텍스트를 확인. 사이즈 그림 다음 실제 HTML 표를 배치하며 머리글·값·rowspan/colspan·cm 단위·측정 주석 보존. 배너·배송·케어 섹션 요청 없음. 미선택 시 사이즈 자료 파싱/그림 요청/HTML 생성 없음."
+    }
+  },
+  "guide": {
+    "example": "EPG3PP1105",
+    "examples": [
+      "EPG3PP1105",
+      "EPG3PP1107",
+      "EPG3TR1501",
+      "EPG3PP1105_BK",
+      "EPG3PP1105-DBR"
+    ],
+    "pattern": "^[A-Za-z0-9]+(?:[_-][A-Za-z0-9]+)?$",
+    "format": "기본 품번 또는 기본품번_공식색상코드 (하이픈도 허용)",
+    "notes": "색상-사진은 공식 godNo/colorCd 응답으로 연결합니다. 기본품번은 모든 색상, 색상 지정은 그 색상만 출력합니다. 색상명을 추측하지 않으며 코드만 공개된 경우 코드로 표시합니다. 색상/사이즈 품절도 유지합니다. 고시는 이미지 원본 유지, 실측은 그림→HTML 표 순서입니다.",
+    "method": "display.goodwearmall.com/search?keyword=기본품번의 실제 상품 링크를 시작점으로 goods.colorList의 색상 ID를 재귀 확인. goods.god.dsgnGrpNo와 sysBrnd.brndId=EBR로 소속 확인, 제목에 브랜드/품번이 없어도 허용. 공개 상품 API GET만 사용하며 로그인/브라우저 불필요.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "공백",
+      "EPG3PP1105_UNKNOWN"
+    ],
+    "validation_note": "입력 형식 검사는 존재/색상 지원과 별개. 공식 조회 결과에서 그룹/색상 ID를 대조합니다. 단독 색상 입력도 공통 사진 판별과 전 색상 공통 상세를 위해 같은 그룹 자료를 확인할 수 있습니다."
+  },
+  "notes": "사용자 요청: 고시 별도 생성 없음. 실측 그림 다음 표로 구성. 주된 사이즈 출처는 goods.acmsrImgUrl와 gdSizeLktb이며 같은 표가 godDetailList에도 있어 중복 제거. 일반 사이즈가이드의 다른 브랜드 자료를 섞지 않음. 여러 색상 공통 사진/라벨은 상세에는 보존하지만 해당 색상의 대표·추가 후보에서는 제외. 선택 항목은 요청·파싱 단계부터 조건부 수행. 원본 URL을 추측해 고해상도를 발명하지 않음.",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 /product/api/view.json?godNo=색상상품ID의 goods.godItmExList[].itmNm. 선택 시에만 파싱하고 품절 itmStatCd도 유지."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "goods.dspGodPrc.salePrc. 공식 product.form.js가 화면 판매가 prc.salePrc에 사용하는 독립 값. 쿠폰/회원가와 구분하며 색상별 KRW 숫자로 선택 시에만 파싱."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "goods.god.cvrPrc 독립 정상가. 공식 product.form.js/prc.html에서 prc.cvrPrc로 취소선 원가 표시. 선택 시에만 파싱, 누락/0/잘못된 형식은 None과 경고로 계속. 판매가 복사/할인율 역산 없음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "선택된 경우만 해당 공개 상품 HTML의 공식 metaItm stdCtgryNm_1..5를 읽어 계층으로 제공. 숫자 분류 코드를 이름처럼 출력하지 않음."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "독립 dsgnGrpNo/브랜드 EBR과 각 godNo/colorCd를 확인. 그 색상의 활성 goods.godImgList THNAIL 원본을 공개 GET/정지 JPEG·PNG·WebP/500px/비율1.8 검사. 여러 색상에서 바이트가 동일한 공통 사진은 자동 색상 갤러리 제외, 작은 라벨/표는 상세에만 유지. 역할/매핑 근거를 validate_gallery_image에 전달."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "같은 검증 색상 갤러리에서 대표 다음 최대 5슬롯을 채움. 부족하면 통과 사진만 반복하며 유효 컷 하나면 대표를 재사용. 필터 탈락 이미지는 반복 사용하지 않음."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 본문과 모든 색상의 상세용 model/product 원본을 공통으로 유지. 고시 HTML을 별도로 만들지 않음. gdSizeLktb/acmsrImgUrl 우선, 없으면 SIZE_LKTB·MOBILE_SIZE_LKTB 또는 본문의 실제 치수표/라벨형 치수 텍스트를 확인. 사이즈 그림 다음 실제 HTML 표를 배치하며 머리글·값·rowspan/colspan·cm 단위·측정 주석 보존. 배너·배송·케어 섹션 요청 없음. 미선택 시 사이즈 자료 파싱/그림 요청/HTML 생성 없음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page"
+  },
+  "code_hash": "bc3d89b34607c3e2d286a598d85973009175ee76a605b1b4cb9ae5ef3871474b"
+}
