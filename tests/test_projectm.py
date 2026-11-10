@@ -83,6 +83,18 @@ class ProjectMTests(unittest.TestCase):
         self.assertNotIn('AFF_NTFC',markup);self.assertNotIn('<script',markup)
         self.assertNotIn('onclick',markup);self.assertNotIn('data-',markup)
 
+    def test_actual_long_body_replaces_gallery_and_is_deduplicated(self):
+        with patch.object(c,'picture',side_effect=fake_picture):
+            markup=c.detail_markup(Context(),products(),fake_assets(Context(),goods(),{},True,True),{})
+        self.assertEqual(markup.count('/ai_goods/detail/EPG3PP1105/EPG3PP1105-1.jpg'),1)
+        self.assertNotIn('_MDL_',markup);self.assertNotIn('EPG3PP1105BK_M.jpg',markup)
+        self.assertLess(markup.index('/ai_goods/detail/'),markup.index('사이즈 측정 그림'))
+
+    def test_missing_body_cannot_succeed_with_gallery_and_size_only(self):
+        g=goods();g.pop('godAiImgList',None)
+        with patch.object(c,'picture',side_effect=fake_picture),self.assertRaises(c.CollectionError):
+            c.detail_markup(Context(),[g],fake_assets(Context(),g,{},True,True),{})
+
     def test_original_table_structure_and_escaping_are_preserved(self):
         raw='<table onclick="bad()"><thead><tr><th rowspan="2">사이즈</th><th colspan="2">치수 cm</th></tr>' \
             '<tr><th>가슴</th><th>총장</th></tr></thead><tbody><tr><th>S &amp; M</th><td>90</td>' \

@@ -19,6 +19,7 @@ from crawler_rules import gallery_slots, validate_gallery_image
 SITE = 'https://www.goodwearmall.com'
 SEARCH = 'https://display.goodwearmall.com/search'
 IMAGES = 'https://img.goodwearmall.com'
+AI_IMAGES = 'https://img.goodwearmall.com/ai_goods/'
 BRAND = 'EBR'
 MAX_BYTES = 10_000_000
 
@@ -379,9 +380,7 @@ def size_material(ctx,goods,cache):
 
 def detail_markup(ctx, products, assets, cache):
     parts=[];digests=set();urls=set()
-    # Preserve official product detail, with all colour images together. It is
-    # independent of the final main/additional selection. Mixed-colour images
-    # and original labels remain here, never a reconstructed notice table.
+    # Preserve only original detail-body sources, independent of gallery slots.
     for goods in products:
         fragment=BeautifulSoup(body_fragment(goods),'html.parser')
         for node in fragment.select('script,style,iframe,object,form'):node.decompose()
@@ -393,11 +392,22 @@ def detail_markup(ctx, products, assets, cache):
             if info['digest'] not in digests:
                 digests.add(info['digest']);urls.add(url)
                 parts.append('<img src="'+html.escape(url,quote=True)+'" alt="상품 상세" style="max-width:100%;height:auto">')
-    for item in assets:
-        ctx.checkpoint()
-        if item['detail_role'] and item['digest'] not in digests:
-            digests.add(item['digest']);urls.add(item['url'])
-            parts.append('<img src="'+html.escape(item['url'],quote=True)+'" alt="상품 상세" style="max-width:100%;height:auto">')
+    # The official infoGodDetail template selects godAiImgList for the long
+    # product-detail body. These are not the thumbnail/gallery photographs.
+    for goods in products:
+        rows=goods.get('godAiImgList') or []
+        if not rows or rows[0].get('aiDetailImgUseYn')!='Y':continue
+        for row in rows:
+            path=row.get('godImgUrl') or ''
+            if not path:raise CollectionError('공식 상세 본문 이미지 경로 누락')
+            url=urljoin(AI_IMAGES,path)
+            if NEGATIVE.search(urlsplit(url).path):continue
+            info=picture(ctx,url,cache)
+            if info['digest'] not in digests:
+                digests.add(info['digest']);urls.add(url)
+                parts.append('<img src="'+html.escape(url,quote=True)+'" alt="상품 상세 본문" style="max-width:100%;height:auto">')
+    if not parts:
+        raise CollectionError('공식 상세 본문 이미지 없음: 상품 갤러리나 사이즈표로 대체하지 않습니다')
     diagrams=[];tables=[]
     for goods in products:
         diagram,table_list=size_material(ctx,goods,cache)
@@ -436,9 +446,9 @@ def crawl(ctx):
     need_gallery=ctx.enabled('main_image') or ctx.enabled('additional_images')
     need_detail=ctx.enabled('detail_page')
     cache={};assets=[]
-    if need_gallery or need_detail:
+    if need_gallery:
         for goods in products:
-            try:assets.extend(gallery_assets(ctx,goods,cache,need_gallery,need_detail))
+            try:assets.extend(gallery_assets(ctx,goods,cache,need_gallery,False))
             except CollectionError as exc:
                 message=goods['god']['godNo']+' / '+str(exc);ctx.fail_item(message);errors.append(message)
     # Same bytes under multiple color IDs cannot prove one-color assignment.

@@ -278,6 +278,27 @@
         "godDetailTpCd": "AI_DETAIL_IMG",
         "godDetailCont": "Y"
       }
+    ],
+    "godAiMeta": {
+      "beginIndex": 0,
+      "endIndex": 0,
+      "godNo": "EPG3PP1107BK",
+      "aiDetailImgUseYn": "Y",
+      "aiDetailImg": "EPG3PP1107",
+      "aiDetailImgCnt": "1",
+      "aiModelImgUseYn": "N",
+      "aiModelImg": "",
+      "aiModelImgCnt": "0",
+      "udtDt": "20260804172324"
+    },
+    "godAiImgList": [
+      {
+        "beginIndex": 0,
+        "endIndex": 0,
+        "aiDetailImgUseYn": "Y",
+        "godImgUrl": "detail/EPG3PP1107/EPG3PP1107-1.jpg",
+        "udtDt": "20260804172324"
+      }
     ]
   }
 }

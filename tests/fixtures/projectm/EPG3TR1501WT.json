@@ -263,6 +263,18 @@
         "godDetailTpCd": "AI_DETAIL_IMG",
         "godDetailCont": "N"
       }
-    ]
+    ],
+    "godAiMeta": {
+      "beginIndex": 0,
+      "endIndex": 0,
+      "godNo": "EPG3TR1501WT",
+      "aiDetailImgUseYn": "N",
+      "aiDetailImg": "EPG3TR1501",
+      "aiDetailImgCnt": "1",
+      "aiModelImgUseYn": "N",
+      "aiModelImg": "",
+      "aiModelImgCnt": "0",
+      "udtDt": "20260721143103"
+    }
   }
 }
