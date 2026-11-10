@@ -42,11 +42,36 @@ class Context:
 
 
 class EnteteeTests(unittest.TestCase):
+    def test_campaign_badge_and_trailing_size_are_not_product_name(self):
+        for name in ('[*한파특가] 체크 플란넬 원피스 파자마 110 ATJP25T61',
+                     '[한파특가] 체크 플란넬 원피스 파자마 ATJP25T61 110',
+                     '[쿠폰특가] 체크 플란넬 원피스 파자마 110호 ATJP25T61_충장점',
+                     '【한파특가】 체크 플란넬 원피스 파자마 (110) ATJP25T61'):
+            with self.subTest(name=name):
+                self.assertEqual(c.clean_name(name,'ATJP25T61'),'체크 플란넬 원피스 파자마')
+        self.assertEqual(c.clean_name('[키즈] 2매입 7부 파자마 (주니어) ATLA24376','ATLA24376'),
+                         '[키즈] 2매입 7부 파자마 (주니어)')
     def test_name_keeps_meaningful_parentheses_and_removes_store_suffix(self):
         self.assertEqual(c.clean_name('FG 라운지 7부 세트 B (주니어) ATLA24376','ATLA24376'),
                          'FG 라운지 7부 세트 B (주니어)')
         self.assertEqual(c.clean_name('튤립 레이온 원피스 파자마 ATJP25161_NC충장점','ATJP25161'),
                          '튤립 레이온 원피스 파자마')
+
+    def test_any_branch_suffix_is_removed_without_touching_product_qualifiers(self):
+        for suffix in ('_충장점','_중동점','_평촌점','_NC충장점','_NC 충장점',
+                       '_뉴코아 부천점','[평촌점]','(뉴코아 부천점)',' 충장점',
+                       ' NC 충장점','-강서점','|천안지점','/경산점'):
+            with self.subTest(suffix=suffix):
+                self.assertEqual(c.clean_name('앙떼떼 원마일웨어 레몬 원피스 '+suffix,'ATJP25161'),
+                                 '원마일웨어 레몬 원피스')
+                self.assertEqual(c.clean_name('원마일웨어 레몬 원피스 '+suffix+' ATJP25161','ATJP25161'),
+                                 '원마일웨어 레몬 원피스')
+        self.assertEqual(c.clean_name('[앙떼떼] FG 라운지 (주니어) ATLA24376_충장점','ATLA24376'),
+                         'FG 라운지 (주니어)')
+        self.assertEqual(c.clean_name('원마일웨어-레몬 원피스 충장점','ATJP25161'),
+                         '원마일웨어-레몬 원피스')
+        self.assertEqual(c.clean_name('원마일웨어 레몬-원피스_충장점','ATJP25161'),
+                         '원마일웨어 레몬-원피스')
     def test_scene_is_not_rejected_by_background_or_first_position(self):
         self.assertFalse(c.white_background(Image.open(FIX/'scene.jpg')))
         self.assertTrue(c.white_background(Image.open(FIX/'flat.jpg')))

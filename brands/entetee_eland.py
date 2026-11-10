@@ -281,12 +281,34 @@ def optional_values(ctx, main, actual, record):
 
 
 def clean_name(name, code):
-    # Store-name suffixes are not part of the garment name. Keep meaningful
-    # parentheses such as (주니어); only empty brand/code brackets are removed.
-    name = re.sub(r'_(?:NC|뉴코아|이천일)[^_\s]{0,20}점\s*$','',name)
+    # Remove explicit leading campaign badges, not product qualifiers [키즈].
+    while True:
+        badge = re.match(r'^\s*(?:\[([^\]]{1,60})\]|【([^】]{1,60})】)\s*',name)
+        if not badge or not re.search(r'특가|할인|쿠폰|세일|타임딜|한정딜',next(v for v in badge.groups() if v)):
+            break
+        name = name[badge.end():]
+    # Remove the model first: some sellers put it AFTER the branch suffix.
     for token in ('앙떼떼','ENTETEE',code):
         name = re.sub(r'(?<![A-Za-z0-9])'+re.escape(token)+r'(?![A-Za-z0-9])','',name,flags=re.I)
     name = re.sub(r'\[\s*\]|\(\s*\)','',name)
+    # A branch suffix does not have to start with NC/뉴코아: _충장점,
+    # _중동점, [평촌점], (뉴코아 부천점), and bare " 충장점" are all retail
+    # annotations. Keep product qualifiers such as (주니어) intact.
+    branch = r'(?:(?:NC|뉴코아|이천일|이랜드리테일|이랜드몰|모다아울렛)\s*)?[^\s\[\]()_|/\-]{1,35}(?:지점|점)'
+    suffixes = (
+        r'\s*[_|/\-]\s*'+branch+r'\s*$',
+        r'\s*[\[(]\s*[^\[\]()]{1,60}(?:지점|점)\s*[\])]\s*$',
+        r'\s+'+branch+r'\s*$',
+    )
+    while True:
+        previous = name
+        for pattern in suffixes:
+            name = re.sub(pattern,'',name,flags=re.I)
+        # A standalone trailing numeric clothing size is not the product name.
+        # Keep quantities/length qualifiers such as 2매입, 7부 and (주니어).
+        name = re.sub(r'\s+(?:\d{2,3}호?|[\[(]\d{2,3}호?[\])])\s*$','',name)
+        if name == previous:
+            break
     return re.sub(r'\s+',' ',name).strip(' _-')
 
 
