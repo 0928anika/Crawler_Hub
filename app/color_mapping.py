@@ -234,7 +234,7 @@ def final_items(job,view):
                 elif field=='additional_images':value=','.join(extras)
                 elif field=='detail_page':value=compact
                 values.append(value)
-            item=preview(headers,values,job.selected)
+            item=preview(headers,values,job.selected,allow_empty_product_name=bool(getattr(job,'brand',{}).get('allow_empty_product_name',False)))
             if entries is not None:
                 folder=state.get('file_export',{}).get('folder') if state.get('finalized') else None
                 role_layout=folder and state.get('file_export',{}).get('layout')=='roles-v1'

@@ -465,6 +465,7 @@ def common(values):
 
 
 def crawl(ctx):
+    ctx.allow_empty_product_name = True
     code = str(ctx.product_code).strip().upper()
     if not re.fullmatch(r'[A-Z0-9]+(?:-[A-Z0-9]+)*', code):
         ctx.fail_item('색상코드 없는 기본 품번을 입력하세요')
@@ -498,7 +499,7 @@ def crawl(ctx):
                 raise CollectionError('상품 상세 품번 불일치/확인 불가: ' + link)
             name = clean_name(name, code)
             if not name:
-                raise CollectionError('필수 상품명 없음: ' + link)
+                ctx.log('공식 제목에 품번만 있어 상품명은 빈칸으로 수집: '+link,'INFO')
             colors, sizes = options(ctx, link, ctx.enabled('size'))
             record = {'product_code': code, 'product_name': name, 'product_url': link}
             if ctx.enabled('size'):

@@ -78,7 +78,7 @@ def sanitized_html(markup):
             tag['referrerpolicy'] = 'no-referrer'
     return str(soup)
 
-def preview(headers, row, selected=None):
+def preview(headers, row, selected=None, allow_empty_product_name=False):
     selected = selection(selected)
     allowed = set(REQUIRED + selected)
     raw = dict(zip(headers,row))
@@ -95,7 +95,7 @@ def preview(headers, row, selected=None):
         if f == 'main_image': main.extend(urls(value))
         elif f == 'additional_images': extra.extend(urls(value))
         elif f == 'detail_page': markup = str(value or '')
-    missing = [FIELDS[k] for k in REQUIRED if not normalized.get(k)]
+    missing = [FIELDS[k] for k in REQUIRED if not normalized.get(k) and not (k=='product_name' and allow_empty_product_name)]
     compact,overflow=excel_detail(markup)
     return dict(code=normalized.get('product_code',''), name=normalized.get('product_name',''),
         color=normalized.get('color',''), normalized=normalized, fields=fields,

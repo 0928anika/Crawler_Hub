@@ -205,7 +205,7 @@ class Job:
         self.sheets.setdefault(title,[heads]).append(row)
         is_log=any(x in title for x in ('로그','중복'))
         if not is_log:
-            item=preview(heads,row,self.selected)
+            item=preview(heads,row,self.selected,allow_empty_product_name=bool(self.brand.get('allow_empty_product_name',False)))
             item.update(index=len(self.items),id=str(len(self.items)),task_id=event.get('task_id',self.current_task))
             item['raw']=dict(zip(heads,row))
             if event.get('unmapped'):item['unmapped']=event['unmapped']

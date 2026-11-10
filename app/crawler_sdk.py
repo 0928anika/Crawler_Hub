@@ -121,6 +121,7 @@ class CrawlContext:
         if not record.get('product_url'):
             record['product_url']=next((v for h,v in record.items() if field_for(h)=='product_url' and v),'')
         for key in REQUIRED:
+            if key=='product_name' and getattr(self,'allow_empty_product_name',False):continue
             if not str(record.get(key) or '').strip():
                 raise ValueError('필수 결과 누락: '+key)
         link=record['product_url']

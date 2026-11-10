@@ -40,6 +40,20 @@ class Context:
 
 
 class MuzacTests(unittest.TestCase):
+    def test_empty_name_opt_in_preserves_other_required_fields(self):
+        from schema import preview
+        with tempfile.TemporaryDirectory() as tmp:
+            ctx=CrawlContext(Path(tmp)/'in.xlsx',Path(tmp)/'out.xlsx',0,[],FI['output_headers'],lambda:None,lambda *a,**k:None,input_item={'품번':'MQ8WPT05'})
+            record=dict(product_code='MQ8WPT05',product_name='',color='BLACK',product_url=fi.BASE+'/goods/detail/439828617')
+            with self.assertRaisesRegex(ValueError,'product_name'):ctx.emit_result(record)
+            ctx.allow_empty_product_name=True
+            ctx.emit_result(record);ctx.finish()
+            with self.assertRaisesRegex(ValueError,'product_url'):ctx.emit_result(dict(record,product_url=''))
+            h=['품번','상품명','색상','상품 링크'];r=['MQ8WPT05','','BLACK',record['product_url']]
+            self.assertIn('상품명',preview(h,r,[])['missing'])
+            self.assertNotIn('상품명',preview(h,r,[],allow_empty_product_name=True)['missing'])
+            self.assertEqual(fi.clean_name('MQ8WPT05','MQ8WPT05'),'')
+
     def test_fi_verified_portrait_aspect_keeps_other_checks(self):
         portrait=Image.new('RGB',(800,1732),'gray')
         self.assertFalse(fi.gallery_ok(portrait)[0])

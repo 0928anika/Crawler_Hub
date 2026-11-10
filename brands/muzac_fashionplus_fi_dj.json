@@ -59,6 +59,11 @@
       "supported": true,
       "status": "conditional",
       "reason": "승인 판매자의 .m__desc-image 등록 원본 사진과 본문의 실제 치수·측정 오차 문장만 유지. 공통 /mall/md_image/moda/muzak.jpg 브랜드 안내 및 배송·교환·반품·매장 연락처 제외. 고시/사이즈표를 새로 만들지 않음. 상세 미선택 시 치수 파싱·상세 HTML 생성 없음. 본문 iframe은 원본 갤러리 목록 수집에도 사용."
+    },
+    "product_name": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "FI_DJ 사용자 허용: 공식 제목에 품번만 있어 정리 후 상품명이 없으면 실제 빈칸으로 성공 수집. 다른 필수값/품번/판매자 검사는 유지."
     }
   },
   "guide": {
@@ -96,7 +101,7 @@
       "label": "상품명",
       "supported": true,
       "status": "conditional",
-      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+      "reason": "FI_DJ 사용자 허용: 공식 제목에 품번만 있어 정리 후 상품명이 없으면 실제 빈칸으로 성공 수집. 다른 필수값/품번/판매자 검사는 유지."
     },
     "color": {
       "label": "색상",
@@ -168,5 +173,6 @@
     "추가이미지": "additional_images",
     "상세페이지 HTML": "detail_page"
   },
-  "code_hash": "6b61204095606ffa65d57eefee31149a0a4d643d414a7c90a4fc1725946f3501"
+  "code_hash": "aa09b6090615933a97bf95e8fcc458a688bd2e6f71845a3db341201b189b3467",
+  "allow_empty_product_name": true
 }
