@@ -1,0 +1,172 @@
+{
+  "id": "ncbasic_eland_official",
+  "name": "NC베이직",
+  "category": "캐주얼 의류",
+  "crawl_source": "이랜드몰 공식",
+  "script": "ncbasic_eland_official.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_color_mapping": "manual",
+  "official_color_codes": true,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명",
+    "판매자번호"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 /v1/item/option/api의 색상 하위 itemOptionTcode=20 itemOptionName. 사이즈 선택 시에만 하위 요청·파싱. 실제 색상/상품 링크 모두의 집합이 같을 때만 공통 사이즈를 제공, 다르면 빈칸."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "itemMain.sellprice와 실제 색상·사이즈 옵션의 sellPrice. 선택 시에만 값 파싱과 하위 옵션 요청. 전 색상/사이즈 및 링크에서 공통인 판매가만 제공. 쿠폰가/회원가와 구분."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemDetailJson.itemDetail.itemMain.orgSellprice 독립 정상가. sellprice와 별도. 선택 시에만 파싱하며 누락/0/잘못된 형식/링크별 불일치는 None과 안내 로그로 계속 수집. 판매가 복사/할인율 역산 없음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.depth4StandardCategoryName을 선택 시에만 추출. 여러 링크에서 공통인 경우만 제공."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 브랜드 ID 2400112310 및 정확한 modelNo를 확인한 상품의 itemMain.itemImage imageDcode=010/030. 공개 정지 JPEG/PNG/WebP, 양변 500px 이상, 비율 1.8 이하 검사. 흰 배경 여부는 보조 로그이며 첫 장면형 사진/복잡 배경/같은 상품 세트 구성만으로 제외하지 않음. 명시적 매장촬영·셀러컷/배너/표 표기가 있으면 제외, 불명확한 사진은 수동 검수. 공식 판매자 LV24013164 응답만 허용."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "대표와 같은 공식 상품 갤러리 전체 후보. 색상 추측·사전 개수 제한 없음. 모든 링크 색상/상세 취합 후 URL·실제 이미지 해시 중복 제거. 최종 대표/추가 개수 제한은 허브에 위임. 공식 판매자 LV24013164 응답만 허용."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemDesc.itemDescdocumentCon 상품 본문 이미지 원본만 유지. itemAnnounceList 쿠폰/행사 및 본문에 중복된 안내 이미지 제외. 이미지 내 고시·사이즈표 보존, 별도 표 생성 없음. 상세 선택 시에만 파싱/조회."
+    }
+  },
+  "guide": {
+    "example": "DCJD24A02",
+    "examples": [
+      "DCJD24A02",
+      "DCVW24A01"
+    ],
+    "pattern": "^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$",
+    "format": "색상코드 없는 기본 품번",
+    "notes": "공식 판매자 LV24013164만 수집합니다. 개별 사진과 실제 색상 후보는 수집 후 수동 매핑하세요. AA 대표칼라는 실제 색상에서 제외하며 품절 색상·사이즈는 유지합니다.",
+    "method": "이랜드몰 공개 품번 검색 후 lowerVendNo=LV24013164 링크만 조회. 응답 lowerVendNo·brandNo=2400112310·modelNo를 대조.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "DCJD24A02_09"
+    ],
+    "validation_note": "실제 공식 품번과 판매자 일치는 실행 시 확인합니다."
+  },
+  "notes": "공식 계정 판매자번호 LV24013164 상품만 수집. 검색 링크 및 itemMain 응답의 판매자번호를 이중 확인하며 다른 판매자는 제외합니다. 색상은 추측하지 않고 기존 수동 매핑 화면에 전체 개별 사진과 실제 색상 후보를 전달합니다. 상세는 itemDescdocumentCon 본문 원본만 보존하고 itemAnnounceList 쿠폰·심야특가·행사 이미지는 요청하지 않습니다. 고시·사이즈는 본문 이미지에 있으므로 별도 표를 만들지 않습니다. 원본 상품명과 판매자번호를 추가 열에 보존합니다.",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 /v1/item/option/api의 색상 하위 itemOptionTcode=20 itemOptionName. 사이즈 선택 시에만 하위 요청·파싱. 실제 색상/상품 링크 모두의 집합이 같을 때만 공통 사이즈를 제공, 다르면 빈칸."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "itemMain.sellprice와 실제 색상·사이즈 옵션의 sellPrice. 선택 시에만 값 파싱과 하위 옵션 요청. 전 색상/사이즈 및 링크에서 공통인 판매가만 제공. 쿠폰가/회원가와 구분."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemDetailJson.itemDetail.itemMain.orgSellprice 독립 정상가. sellprice와 별도. 선택 시에만 파싱하며 누락/0/잘못된 형식/링크별 불일치는 None과 안내 로그로 계속 수집. 판매가 복사/할인율 역산 없음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.depth4StandardCategoryName을 선택 시에만 추출. 여러 링크에서 공통인 경우만 제공."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 브랜드 ID 2400112310 및 정확한 modelNo를 확인한 상품의 itemMain.itemImage imageDcode=010/030. 공개 정지 JPEG/PNG/WebP, 양변 500px 이상, 비율 1.8 이하 검사. 흰 배경 여부는 보조 로그이며 첫 장면형 사진/복잡 배경/같은 상품 세트 구성만으로 제외하지 않음. 명시적 매장촬영·셀러컷/배너/표 표기가 있으면 제외, 불명확한 사진은 수동 검수. 공식 판매자 LV24013164 응답만 허용."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "대표와 같은 공식 상품 갤러리 전체 후보. 색상 추측·사전 개수 제한 없음. 모든 링크 색상/상세 취합 후 URL·실제 이미지 해시 중복 제거. 최종 대표/추가 개수 제한은 허브에 위임. 공식 판매자 LV24013164 응답만 허용."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemDesc.itemDescdocumentCon 상품 본문 이미지 원본만 유지. itemAnnounceList 쿠폰/행사 및 본문에 중복된 안내 이미지 제외. 이미지 내 고시·사이즈표 보존, 별도 표 생성 없음. 상세 선택 시에만 파싱/조회."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page"
+  },
+  "code_hash": "dce1e2690e28eb915aef21c2467b8b55fa19f776da360edeab7ae34fc6deb70f",
+  "additional_image_count": 5
+}

@@ -1,0 +1,130 @@
+{
+  "itemMain": {
+    "brandName": "NC베이직",
+    "brandNo": "2400112310",
+    "modelNo": "DCVW24A01",
+    "itemNo": "2411568411",
+    "lowerVendNo": "LV24013164",
+    "itemTcode": "10",
+    "itemName": "베이직 경량 조끼 DCVW24A01",
+    "itemImage": [
+      {
+        "imageDcode": "010",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2026-09-08/9941e95e-5210-4734-877e-16e6beb36ae3.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2026-09-08/f115aad7-cf76-45aa-9c88-122f0d08d6fc.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2024-11-05/13bb44c4-302b-45a5-85b6-7d5ccb10daf7.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2024-11-05/6eb4f8c3-cf4f-4249-858e-40368719a6ee.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2024-11-05/623ff12d-74e1-469a-99df-25ac8c3034c3.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2024-11-05/7d49a21e-e48d-4f19-8d8f-ca891e167dec.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2024-11-05/94dbf277-bd65-4472-9710-e4b0b28c4970.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2025-11-21/b571def2-2fc1-4399-b8ee-42b7a90b4a49.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2025-11-21/6ac49dd7-18c1-41ea-a5a7-a151c85e0320.jpg",
+        "imageName": ""
+      }
+    ],
+    "sellprice": 23900,
+    "orgSellprice": 29900,
+    "depth4StandardCategoryName": "하프기장 다운점퍼"
+  },
+  "itemDesc": {
+    "itemNo": "2411568411",
+    "itemDescdocumentCon": "&lt;p&gt;\n\t&lt;img alt=&quot;NCVW24A01_01&quot; src=&quot;https://item.elandrs.com/r/image/item/2025-11-21/c555a704-aab9-42fa-a7a8-222c1473b9c5.jpg&quot; style=&quot;width: 1080px; height: 4453px;&quot;&gt;&lt;img alt=&quot;NCVW24A01_01-&quot; src=&quot;https://item.elandrs.com/r/image/item/2025-11-21/ea757f44-414f-48c9-8cca-164fbc55b900.jpg&quot; style=&quot;width: 1080px; height: 2981px;&quot;&gt;&lt;img alt=&quot;NCVW24A01_02&quot; src=&quot;https://item.elandrs.com/r/image/item/2025-11-21/2b113c86-e0f0-4b4c-b1ab-e022a89cb2e3.jpg&quot; style=&quot;width: 1080px; height: 12386px;&quot;&gt;&lt;!--img alt=&quot;&quot; src=&quot;https://item.elandrs.com/r/image/item/2024-11-08/c06e0c35-5406-45aa-834a-38458c15c4b5.jpg&quot; style=&quot;width: 1080px; height: 17000px;&quot;&gt;&lt;img src=&quot;http://img-studio.elandmall.com/Winstudio/DN-BANNER.jpg&quot;&gt;&lt;br&gt;\n\t&lt;br&gt;\n\t&lt;img src=&quot;http://img-studio.elandmall.com/Winstudio/UI-SIZE.jpg&quot;--&gt;\n&lt;/p&gt;\n",
+    "itemAttImagePath": "",
+    "itemCertiList": [],
+    "itemAnnounceList": [],
+    "itemAttList": [],
+    "itemProvideMntList": [
+      {
+        "itemProvideMntArtiName": "제품 소재 (섬유의 조성 또는 혼용률을 백분율로 표시, 기능성인 경우 성적서 또는 허가서)",
+        "itemProvideMntArtiCon": "[겉감]나일론100% [충전재]덕다운제품 솜털80% 깃털20%"
+      },
+      {
+        "itemProvideMntArtiName": "색상",
+        "itemProvideMntArtiCon": " 09 BLACK / 26 LIGHT BROWN"
+      },
+      {
+        "itemProvideMntArtiName": "치수",
+        "itemProvideMntArtiCon": "[XL(105)사이즈 기준/단위:cm]어깨넓이43 소매길이 0 가슴둘레114 총장65 (재는 위치에 따라 약간의 오차가 있을 수 있습니다.)"
+      },
+      {
+        "itemProvideMntArtiName": "수입여부(Y,N)",
+        "itemProvideMntArtiCon": "Y"
+      },
+      {
+        "itemProvideMntArtiName": "제조사, 수입품의 경우 수입자를 함께 표기 (병행수입의 경우 병행수입 여부로 대체 가능)",
+        "itemProvideMntArtiCon": "㈜이랜드글로벌"
+      },
+      {
+        "itemProvideMntArtiName": "제조국",
+        "itemProvideMntArtiCon": "미얀마"
+      },
+      {
+        "itemProvideMntArtiName": "세탁방법 및 취급시 주의사항",
+        "itemProvideMntArtiCon": "세제를 포함한 물 속에 30분 이상 담가두지 마십시오. (케어라벨참조)"
+      },
+      {
+        "itemProvideMntArtiName": "제조연월",
+        "itemProvideMntArtiCon": "2024-04"
+      },
+      {
+        "itemProvideMntArtiName": "품질보증기준",
+        "itemProvideMntArtiCon": "관련법 및 소비자분쟁 해결기준에 따름"
+      },
+      {
+        "itemProvideMntArtiName": "A/S 책임자와 전화번호",
+        "itemProvideMntArtiCon": "㈜이랜드글로벌 1899-9500"
+      }
+    ],
+    "itemAttListToConvert": {}
+  }
+}

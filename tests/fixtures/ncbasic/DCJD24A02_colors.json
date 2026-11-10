@@ -1,0 +1,44 @@
+[
+  {
+    "itemNo": "2411568415",
+    "lowerVendNo": "LV24013164",
+    "itemOptionNo": "24119872325",
+    "itemOptionName": "01 LIGHT GREY",
+    "itemOptionTcode": "10",
+    "itemOptionTypeInputNo": 1,
+    "standardItemOptionName": null,
+    "standardItemOptionImageCon": null,
+    "soldoutYn": "N",
+    "reWhsInNotificPossYn": "Y",
+    "sellPrice": 39900,
+    "jwOptionLength": null
+  },
+  {
+    "itemNo": "2411568415",
+    "lowerVendNo": "LV24013164",
+    "itemOptionNo": "24119872326",
+    "itemOptionName": "09 BLACK",
+    "itemOptionTcode": "10",
+    "itemOptionTypeInputNo": 1,
+    "standardItemOptionName": null,
+    "standardItemOptionImageCon": null,
+    "soldoutYn": "N",
+    "reWhsInNotificPossYn": "Y",
+    "sellPrice": 39900,
+    "jwOptionLength": null
+  },
+  {
+    "itemNo": "2411568415",
+    "lowerVendNo": "LV24013164",
+    "itemOptionNo": "24119872327",
+    "itemOptionName": "AA 대표칼라",
+    "itemOptionTcode": "10",
+    "itemOptionTypeInputNo": 1,
+    "standardItemOptionName": null,
+    "standardItemOptionImageCon": null,
+    "soldoutYn": "Y",
+    "reWhsInNotificPossYn": "Y",
+    "sellPrice": 39900,
+    "jwOptionLength": null
+  }
+]

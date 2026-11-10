@@ -1,0 +1,58 @@
+[
+  {
+    "itemNo": "2411568411",
+    "lowerVendNo": "LV24013164",
+    "itemOptionNo": "24119872297",
+    "itemOptionName": "09 BLACK",
+    "itemOptionTcode": "10",
+    "itemOptionTypeInputNo": 1,
+    "standardItemOptionName": null,
+    "standardItemOptionImageCon": null,
+    "soldoutYn": "N",
+    "reWhsInNotificPossYn": "Y",
+    "sellPrice": 23900,
+    "jwOptionLength": null
+  },
+  {
+    "itemNo": "2411568411",
+    "lowerVendNo": "LV24013164",
+    "itemOptionNo": "24119872298",
+    "itemOptionName": "26 LIGHT BROWN",
+    "itemOptionTcode": "10",
+    "itemOptionTypeInputNo": 1,
+    "standardItemOptionName": null,
+    "standardItemOptionImageCon": null,
+    "soldoutYn": "N",
+    "reWhsInNotificPossYn": "Y",
+    "sellPrice": 23900,
+    "jwOptionLength": null
+  },
+  {
+    "itemNo": "2411568411",
+    "lowerVendNo": "LV24013164",
+    "itemOptionNo": "24119872299",
+    "itemOptionName": "34 BEIGE",
+    "itemOptionTcode": "10",
+    "itemOptionTypeInputNo": 1,
+    "standardItemOptionName": null,
+    "standardItemOptionImageCon": null,
+    "soldoutYn": "Y",
+    "reWhsInNotificPossYn": "Y",
+    "sellPrice": 23900,
+    "jwOptionLength": null
+  },
+  {
+    "itemNo": "2411568411",
+    "lowerVendNo": "LV24013164",
+    "itemOptionNo": "24119872300",
+    "itemOptionName": "AA 대표칼라",
+    "itemOptionTcode": "10",
+    "itemOptionTypeInputNo": 1,
+    "standardItemOptionName": null,
+    "standardItemOptionImageCon": null,
+    "soldoutYn": "Y",
+    "reWhsInNotificPossYn": "Y",
+    "sellPrice": 23900,
+    "jwOptionLength": null
+  }
+]
