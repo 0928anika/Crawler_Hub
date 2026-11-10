@@ -1,0 +1,75 @@
+{
+  "itemMain": {
+    "brandNo": "1690000448",
+    "brandName": "앙떼떼",
+    "itemNo": "2607516147",
+    "itemTcode": "10",
+    "lowerVendNo": "LV19015754",
+    "modelNo": "ATJP25161",
+    "itemName": "튤립 레이온 원피스 파자마 ATJP25161_NC충장점",
+    "sellprice": 12000,
+    "orgSellprice": 29900,
+    "depth4StandardCategoryName": "잠옷/파자마_여아",
+    "itemImage": [
+      {
+        "imageDcode": "010",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2025-02-24/d4c7896a-3ae5-43f7-bfc2-784f993ebc76.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2025-02-24/488288b1-3757-414b-8062-f2075a04f046.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2025-02-24/1bad4c32-34d8-4c59-85c5-7620680405a9.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2025-02-24/1cef7cde-d6a7-4ca6-bb9a-216a0fac0808.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2025-02-24/31fef699-8e7d-4a83-b548-43c3d259f528.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2025-02-24/bb41b8cb-ee80-4530-a4e4-f8831ab6d3cf.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2025-02-24/49631e36-2089-4177-a27b-4c11070aef8c.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2025-02-24/603afff3-c05d-4887-b702-cea3a84d6792.jpg",
+        "imageName": ""
+      }
+    ]
+  },
+  "itemDesc": {
+    "itemDescdocumentCon": "&lt;p&gt;\n\t&lt;img src=&quot;http://img-studio.elandmall.com/Winstudio/AT-BANNER-3.jpg&quot;&gt;&lt;br&gt;\n\t&lt;img src=&quot;http://img-studio.elandmall.com/Winstudio/ATJP25161.jpg&quot;&gt;&lt;br&gt;\n\t&lt;img src=&quot;http://img-studio.elandmall.com/Winstudio/AT21-SIZE.jpg&quot;&gt;\n&lt;/p&gt;\n"
+  }
+}

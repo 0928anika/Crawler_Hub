@@ -1,0 +1,61 @@
+{
+  "itemMain": {
+    "brandNo": "1690000448",
+    "brandName": "앙떼떼",
+    "itemNo": "2404156364",
+    "itemTcode": "10",
+    "lowerVendNo": "CN003623",
+    "modelNo": "ATLA24376",
+    "itemName": "FG 라운지 7부 세트 B (주니어) ATLA24376",
+    "sellprice": 9160,
+    "orgSellprice": 22900,
+    "depth4StandardCategoryName": "잠옷/파자마_공용",
+    "itemImage": [
+      {
+        "imageDcode": "010",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2024-04-08/1d0ba25a-3695-4e9e-b846-256a4b8c0f50.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2024-04-08/23145f88-201b-43fc-b505-9e7a0b78061d.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2024-04-08/f9e09918-388b-40ba-946d-7069f862bd75.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2024-04-08/0cc41050-6e41-4db2-a6b7-c0b06a284df3.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2024-04-08/89526b1b-3c5f-4c52-bf17-b1709d9ae3f2.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2024-04-08/40c69809-9f77-4307-bad9-309cd30b5e2e.jpg",
+        "imageName": ""
+      }
+    ]
+  },
+  "itemDesc": {
+    "itemDescdocumentCon": "&lt;p&gt;\n\t&lt;img src=&quot;http://img-studio.elandmall.com/Winstudio/AT-BANNER-3.jpg&quot;&gt;&lt;br&gt;\n\t&lt;img src=&quot;http://img-studio.elandmall.com/Winstudio/ATLA24376.jpg&quot;&gt;&lt;br&gt;\n\t&lt;img src=&quot;http://img-studio.elandmall.com/Winstudio/AT21-SIZE.jpg&quot;&gt;\n&lt;/p&gt;\n"
+  }
+}

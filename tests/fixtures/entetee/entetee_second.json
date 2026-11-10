@@ -1,0 +1,61 @@
+{
+  "itemMain": {
+    "brandNo": "1690000448",
+    "brandName": "앙떼떼",
+    "itemNo": "2311741989",
+    "itemTcode": "10",
+    "lowerVendNo": "CN003623",
+    "modelNo": "ATLH24B31",
+    "itemName": "따뜻한 극세사 수면조끼 키즈 ATLH24B31",
+    "sellprice": 6360,
+    "orgSellprice": 15900,
+    "depth4StandardCategoryName": "수면조끼/배앓이방지",
+    "itemImage": [
+      {
+        "imageDcode": "010",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2023-11-08/436f1a1c-4a63-4b9b-a122-cdcca3cbfac6.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2023-11-08/e4764e39-8196-48f7-beb5-b570210dce1a.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2023-11-08/24b1088e-2421-4be5-9e6c-d5078701ab3b.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2023-11-08/d60ad174-12cc-4196-b942-03957e3c1664.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2023-11-08/721f8517-9b21-46c2-b55d-ff4b1687c31e.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2023-11-08/f3ff8ed4-7621-47ae-90f6-c0ec2033b0c4.jpg",
+        "imageName": ""
+      }
+    ]
+  },
+  "itemDesc": {
+    "itemDescdocumentCon": "&lt;p&gt;\n\t&lt;img src=&quot;http://img-studio.elandmall.com/Winstudio/AT-BANNER-3.jpg&quot;&gt;&lt;br&gt;\n\t&lt;img src=&quot;http://img-studio.elandmall.com/Winstudio/ATLH24B31.jpg&quot;&gt;&lt;br&gt;\n\t&lt;img src=&quot;http://img-studio.elandmall.com/Winstudio/AT21-SIZE.jpg&quot;&gt;\n&lt;/p&gt;\n"
+  }
+}

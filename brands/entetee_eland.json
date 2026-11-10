@@ -1,0 +1,171 @@
+{
+  "id": "entetee_eland",
+  "name": "앙떼떼",
+  "category": "유아동 내의·실내복",
+  "crawl_source": "이랜드몰",
+  "script": "entetee_eland.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_color_mapping": "manual",
+  "official_color_codes": true,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 /v1/item/option/api의 색상 하위 itemOptionTcode=20 itemOptionName. 사이즈 선택 시에만 하위 요청·파싱. 실제 색상/상품 링크 모두의 집합이 같을 때만 공통 사이즈를 제공, 다르면 빈칸."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "itemMain.sellprice와 실제 색상·사이즈 옵션의 sellPrice. 선택 시에만 값 파싱과 하위 옵션 요청. 전 색상/사이즈 및 링크에서 공통인 판매가만 제공. 쿠폰가/회원가와 구분."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemDetailJson.itemDetail.itemMain.orgSellprice 독립 정상가. sellprice와 별도. 선택 시에만 파싱하며 누락/0/잘못된 형식/링크별 불일치는 None과 안내 로그로 계속 수집. 판매가 복사/할인율 역산 없음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.depth4StandardCategoryName을 선택 시에만 추출. 여러 링크에서 공통인 경우만 제공."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 브랜드 ID 1690000448 및 정확한 modelNo를 확인한 상품의 itemMain.itemImage imageDcode=010/030. 공개 정지 JPEG/PNG/WebP, 양변 500px 이상, 비율 1.8 이하 검사. 흰 배경 여부는 보조 로그이며 첫 장면형 사진/복잡 배경/같은 상품 세트 구성만으로 제외하지 않음. 명시적 매장촬영·셀러컷/배너/표 표기가 있으면 제외, 불명확한 사진은 수동 검수."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "대표와 같은 공식 상품 갤러리 전체 후보. 색상 추측·사전 개수 제한 없음. 모든 링크 색상/상세 취합 후 URL·실제 이미지 해시 중복 제거. 최종 대표/추가 개수 제한은 허브에 위임."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "itemDesc.itemDescdocumentCon만 사용. /Winstudio/의 해당 품번 본문·AT SIZE 원본 이미지 및 /r/image/item/ 본문 이미지 유지. AT-BANNER/저작권/배송/셀러 안내 명시 이미지는 요청 전에 제외. 고시/사이즈표 새로 생성하지 않으며 원본 이미지 보존. 선택 시에만 파싱·본문 이미지 요청·HTML 생성."
+    }
+  },
+  "guide": {
+    "example": "ATLS24TT3",
+    "examples": [
+      "ATLS24TT3",
+      "ATJP25161",
+      "ATLA24376"
+    ],
+    "pattern": "^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$",
+    "format": "색상코드 없는 기본 품번",
+    "notes": "갤러리의 장면형 본사컷도 유지합니다. 첫 사진의 복잡 배경만으로 상품/사진을 제외하지 않습니다. 실제 색상은 수집 후 수동 매핑하세요. CN003623 외 NC 지점 판매자도 공식 브랜드/품번이 맞으면 포함합니다. AA 대표칼라는 사이트 표시용 옵션이라 제외하며 실제 품절 색상은 유지합니다.",
+    "method": "공개 /s/srch?q=품번 모든 검색 페이지를 읽고 상품의 itemDetailJson에서 brandNo=1690000448 및 독립 modelNo를 대조. 제목에 브랜드명/품번이 없어도 허용. /v1/item/option/api에 해당 링크의 실제 lowerVendNo/itemNo/itemTcode를 사용하여 색상 후보를 수집.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "공백",
+      "ATLS24TT3_34"
+    ],
+    "validation_note": "형식 검사와 실제 상품 존재 확인은 별개. 스튜디오 배경 검사는 수동 검수를 돕는 느슨한 보조 검사이며 모든 매장 사진 자동 차단을 보장하지 않습니다."
+  },
+  "notes": "사용자 요청에 따라 정상 본사 장면형 컷의 과도한 탈락 방지 우선. 앙떼떼 공식 브랜드/독립 품번과 실제 갤러리 역할을 기본 근거로 사용. 흰 배경과 장면형 사진이 섞여도 전부 유지하며 명시적인 셀러 촬영/안내/표 신호만 제외. 모든 사진은 사용자가 색상 매핑 단계에서 검수. 고시·사이즈표는 원본 상세 이미지 안에 보존하고 별도 표 생성 없음. 상세 공통 배너 AT-BANNER-3 제외. IPv4 우선·IPv6 대체 및 요청 제한 사용. 별도 브라우저/로그인 불필요.",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 /v1/item/option/api의 색상 하위 itemOptionTcode=20 itemOptionName. 사이즈 선택 시에만 하위 요청·파싱. 실제 색상/상품 링크 모두의 집합이 같을 때만 공통 사이즈를 제공, 다르면 빈칸."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "itemMain.sellprice와 실제 색상·사이즈 옵션의 sellPrice. 선택 시에만 값 파싱과 하위 옵션 요청. 전 색상/사이즈 및 링크에서 공통인 판매가만 제공. 쿠폰가/회원가와 구분."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemDetailJson.itemDetail.itemMain.orgSellprice 독립 정상가. sellprice와 별도. 선택 시에만 파싱하며 누락/0/잘못된 형식/링크별 불일치는 None과 안내 로그로 계속 수집. 판매가 복사/할인율 역산 없음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.depth4StandardCategoryName을 선택 시에만 추출. 여러 링크에서 공통인 경우만 제공."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 브랜드 ID 1690000448 및 정확한 modelNo를 확인한 상품의 itemMain.itemImage imageDcode=010/030. 공개 정지 JPEG/PNG/WebP, 양변 500px 이상, 비율 1.8 이하 검사. 흰 배경 여부는 보조 로그이며 첫 장면형 사진/복잡 배경/같은 상품 세트 구성만으로 제외하지 않음. 명시적 매장촬영·셀러컷/배너/표 표기가 있으면 제외, 불명확한 사진은 수동 검수."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "대표와 같은 공식 상품 갤러리 전체 후보. 색상 추측·사전 개수 제한 없음. 모든 링크 색상/상세 취합 후 URL·실제 이미지 해시 중복 제거. 최종 대표/추가 개수 제한은 허브에 위임."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "itemDesc.itemDescdocumentCon만 사용. /Winstudio/의 해당 품번 본문·AT SIZE 원본 이미지 및 /r/image/item/ 본문 이미지 유지. AT-BANNER/저작권/배송/셀러 안내 명시 이미지는 요청 전에 제외. 고시/사이즈표 새로 생성하지 않으며 원본 이미지 보존. 선택 시에만 파싱·본문 이미지 요청·HTML 생성."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page"
+  },
+  "code_hash": "485883c58e6d344be943c5b744ba68fb0ba2af7544d42b76e1690f26c9ee1e65"
+}

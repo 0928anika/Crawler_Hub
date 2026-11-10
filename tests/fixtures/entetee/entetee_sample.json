@@ -1,0 +1,82 @@
+{
+  "itemMain": {
+    "brandNo": "1690000448",
+    "brandName": "앙떼떼",
+    "itemNo": "2409495989",
+    "itemTcode": "10",
+    "lowerVendNo": "CN003623",
+    "modelNo": "ATLS24TT3",
+    "itemName": "원마일웨어 밀리 실내복 ATLS24TT3",
+    "sellprice": 11960,
+    "orgSellprice": 29900,
+    "depth4StandardCategoryName": "잠옷/파자마_공용",
+    "itemImage": [
+      {
+        "imageDcode": "010",
+        "imageNo": null,
+        "imageFileName": null,
+        "imagePath": "r/image/item/2024-12-10/9f1a5bd0-4bb0-43ad-bfd1-00a43ecc2106.jpg",
+        "imageName": null
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": null,
+        "imageFileName": null,
+        "imagePath": "r/image/item/2024-12-10/be870fe1-438f-4fe6-9839-4fab057f87d0.jpg",
+        "imageName": null
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": null,
+        "imageFileName": null,
+        "imagePath": "r/image/item/2024-12-10/ab2349ea-9f55-47f1-b932-4ac95f010933.jpg",
+        "imageName": null
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": null,
+        "imageFileName": null,
+        "imagePath": "r/image/item/2024-10-23/153fd50a-ca77-493c-9b2e-369ba824982e.jpg",
+        "imageName": null
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": null,
+        "imageFileName": null,
+        "imagePath": "r/image/item/2024-10-23/cf1326bd-39af-40be-ac42-2d599dceaadb.jpg",
+        "imageName": null
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": null,
+        "imageFileName": null,
+        "imagePath": "r/image/item/2024-10-23/7d7401f7-ddcc-4c55-b8d7-196b39f64407.jpg",
+        "imageName": null
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": null,
+        "imageFileName": null,
+        "imagePath": "r/image/item/2024-10-23/75f3e727-c426-41d9-98f4-e9abc1c4e4cd.jpg",
+        "imageName": null
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": null,
+        "imageFileName": null,
+        "imagePath": "r/image/item/2024-10-23/56a589ab-d7ed-4ddd-97cd-236b34289ea0.jpg",
+        "imageName": null
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": null,
+        "imageFileName": null,
+        "imagePath": "r/image/item/2024-10-23/f599e2f0-4c00-42c6-86c2-bef7ffd3d832.jpg",
+        "imageName": null
+      }
+    ]
+  },
+  "itemDesc": {
+    "itemDescdocumentCon": "&lt;p&gt;\n\t&lt;img alt=&quot;&quot; src=&quot;https://item.elandrs.com/r/image/item/2024-12-10/9c415d7d-2cab-408b-a7d3-fe79d0a08ddf.jpg&quot; style=&quot;width: 1080px; height: 5382px;&quot;&gt;&lt;br&gt;\n\t&lt;img alt=&quot;&quot; src=&quot;https://item.elandrs.com/r/image/item/2024-10-23/43e2bf3a-1599-4ce4-a288-24413bed8fd0.jpg&quot; style=&quot;width: 1080px; height: 10896px;&quot;&gt;&lt;br&gt;\n\t&lt;img src=&quot;http://img-studio.elandmall.com/Winstudio/AT21-SIZE.jpg&quot;&gt;\n&lt;/p&gt;\n"
+  }
+}
