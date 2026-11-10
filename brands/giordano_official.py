@@ -6,16 +6,22 @@ import json
 import re
 import sys
 import time
+from io import BytesIO
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urljoin, urlsplit, parse_qs, urlencode, urldefrag
 from urllib.request import Request, build_opener
 
 from bs4 import BeautifulSoup
+from PIL import Image, ImageStat
 from crawler_rules import check_public_image, validate_gallery_image, gallery_slots, clean_product_name
 
 SITE = 'https://www.giordano.co.kr'
 HOSTS = ('www.giordano.co.kr', 'giordano.co.kr')
-REVISION = '2026-11-10-giordano-1'
+REVISION = '2026-11-10-giordano-3'
+# 인명 표기 상품의 갤러리 전용 보수적 휴리스틱. 사람 신원/AI 여부 판별 아님.
+# 양쪽 상단 12.5% 영역의 채널별 표준편차 <= 8, 평균색 차이 <= 10.
+BACKGROUND_MAX_NOISE = 8.0
+BACKGROUND_MAX_DIFFERENCE = 10.0
 POLICY = dict(checked_on='2026-11-10', source='https://marketplace.coupang.com/mba/listing',
               route='WING 웹/엑셀', min_side=500, max_bytes=10000000,
               formats=['JPEG', 'PNG', 'WEBP'], max_aspect=1.8)
@@ -106,7 +112,10 @@ def identity(doc, base):
         return None
     title = doc.select_one('form[name="prdFrm"] input[name="product_name"]')
     raw = title.get('value', '').strip() if title else ''
-    name = clean_product_name(raw, ['지오다노', 'GIORDANO'], [base])
+    # 원본을 먼저 보존하고, 표준 상품명에서만 광고 표기와 인명 제거.
+    title_text = re.sub(r'\[[가-힣]{2,4}\]', lambda m: '' if named_campaign(m[0]) else m[0], raw)
+    title_text = re.sub(r'(?<!\w)NEW(?!\w)', '', title_text, flags=re.I)
+    name = clean_product_name(title_text, ['지오다노', 'GIORDANO'], [base])
     if not name:
         raise ValueError('공식 상품명 없음')
     return dict(product_code=base, product_name=name, **{'원본 상품명': raw})
@@ -229,13 +238,43 @@ def prefetch(ctx, urls, cache):
             ctx.checkpoint()
 
 
-def gallery(ctx, urls, code, cache):
+def named_campaign(raw_name):
+    # 실제 공식 제목 [박현지], [변우석], [문가영]과 같은 인명형 표기.
+    # 상품 제목의 다른 대괄호 분류는 인명으로 취급하지 않는다.
+    labels = re.findall(r'\[([가-힣]{2,4})\]', raw_name)
+    return any(label not in {'남성', '여성', '공용', '키즈', '주니어', '온라인', '신상품', '남성용', '여성용', '한정', '단독'} for label in labels)
+
+
+def uniform_background(data):
+    """Check visible upper edge background; fail closed when obscured/textured.
+
+    Two wide patches prevent a tiny plain corner of an outdoor wall from passing.
+    Subject close-ups touching these patches can be conservatively excluded too.
+    Verified on official 05376918 / 01076501 sample galleries, not a face classifier.
+    """
+    with Image.open(BytesIO(data)) as source:
+        image = source.convert('RGB').resize((160, 200), Image.Resampling.BILINEAR)
+    left = ImageStat.Stat(image.crop((0, 0, 20, 25)))
+    right = ImageStat.Stat(image.crop((140, 0, 160, 25)))
+    noise = max(left.stddev + right.stddev)
+    difference = max(abs(a - b) for a, b in zip(left.mean, right.mean))
+    passed = noise <= BACKGROUND_MAX_NOISE and difference <= BACKGROUND_MAX_DIFFERENCE
+    return passed, f'가장자리 배경 질감={noise:.1f}/8, 좌우 색차={difference:.1f}/10'
+
+
+def gallery(ctx, urls, code, cache, filter_background=False):
     accepted, seen = [], set()
     for url in urls:
         ctx.checkpoint()
         result = public_image(ctx, url, cache)
         if not result:
             continue
+        if filter_background:
+            passed, reason = uniform_background(result['data'])
+            if not passed:
+                ctx.log('인명 표기 상품의 비균일/불명확 배경 컷 제외: ' + reason + ' / ' + url, 'WARNING')
+                continue
+            ctx.log('균일 배경 확인: ' + reason + ' / ' + url, 'INFO')
         validation = validate_gallery_image(result['data'], role='product_shot', mapping_verified=True,
             single_shot_verified=True, mapping_evidence='STYLE 검증 상품의 공식 색상 option ID 갤러리: ' + code,
             content_evidence='공식 상품갤러리 개별 컷, 본문/리뷰/색상칩 제외; 부정 신호 없음')
@@ -298,7 +337,7 @@ def collect(ctx, doc, final, base, requested, emitted, cache):
             photos = gallery_urls(ctx, doc, option['option_id']) if ctx.enabled('main_image') or ctx.enabled('additional_images') else []
             prefetch(ctx, photos + details, cache)
             if ctx.enabled('main_image') or ctx.enabled('additional_images'):
-                main, extras, warning = gallery(ctx, photos, code, cache)
+                main, extras, warning = gallery(ctx, photos, code, cache, filter_background=named_campaign(common['원본 상품명']))
                 if warning:
                     ctx.log(warning, 'WARNING')
                 if ctx.enabled('main_image'):

@@ -26,10 +26,10 @@ class GiordanoTests(unittest.TestCase):
         self.doc = c.parse((ROOT / 'tests/fixtures/giordano/05586901.html').read_text(encoding='utf-8'))
 
     def test_style_and_colorchip_full_sku_are_independent_of_brand_title(self):
-        self.assertEqual(c.identity(self.doc, '05586901')['product_name'], 'NEW 부클 머플러')
+        self.assertEqual(c.identity(self.doc, '05586901')['product_name'], '부클 머플러')
         self.assertIsNone(c.identity(self.doc, '05356951'))
         self.doc.select_one('input[name=product_name]')['value'] = '지오다노 NEW 부클 머플러 05586901'
-        self.assertEqual(c.identity(self.doc, '05586901')['product_name'], 'NEW 부클 머플러')
+        self.assertEqual(c.identity(self.doc, '05586901')['product_name'], '부클 머플러')
         self.assertEqual([v['color_code'] for v in c.colors(self.doc, '05586901')], ['01','02','03','04','05','06'])
         self.doc.select_one('.color_option img')['src'] = '/_data/product/colorchip_auto/9999999901.jpg'
         with self.assertRaises(ValueError): c.colors(self.doc, '05586901')
@@ -117,6 +117,55 @@ class GiordanoTests(unittest.TestCase):
             self.assertEqual(len(c.search(Context(), '05586901')), 2)
             self.assertEqual(fetch.call_count, 2)
             self.assertIn('module_page=2', fetch.call_args.args[1])
+
+    def test_named_campaign_uses_original_bracketed_title(self):
+        for name in ('NEW [박현지] 울캐시 코트', '[변우석] 코튼 자켓', 'NEW [문가영] 니트'):
+            self.assertTrue(c.named_campaign(name))
+        for name in ('부클 머플러', '[주니어] 니트', '[여성] 코트', '[온라인] 자켓'):
+            self.assertFalse(c.named_campaign(name))
+
+    def test_clean_title_keeps_original_for_background_filter(self):
+        for raw, expected in [('NEW [박현지] 울캐시 발마칸 코트', '울캐시 발마칸 코트'), ('[변우석] 코튼 트윌 풀집 자켓', '코튼 트윌 풀집 자켓'), ('new [문가영] 니트', '니트'), ('RENEW 니트', 'RENEW 니트')]:
+            with self.subTest(raw=raw):
+                self.doc.select_one('input[name=product_name]')['value'] = raw
+                row = c.identity(self.doc, '05586901')
+                self.assertEqual(row['product_name'], expected)
+                self.assertEqual(row['원본 상품명'], raw)
+        self.doc.select_one('input[name=product_name]')['value'] = 'NEW [박현지] 울캐시 발마칸 코트'
+        ctx = Context(('main_image',))
+        with patch.object(c, 'gallery_urls', return_value=[]), patch.object(c, 'gallery', return_value=('', [], '')) as gallery:
+            c.collect(ctx, self.doc, c.SITE + '/shop/detail.php?pno=verified', '05586901', '01', set(), {})
+            self.assertTrue(gallery.call_args.kwargs['filter_background'])
+        self.assertEqual(ctx.rows[0]['product_name'], '울캐시 발마칸 코트')
+
+    def test_real_scene_backgrounds_are_rejected_and_plain_shots_remain(self):
+        folder = ROOT / 'tests/fixtures/giordano/background'
+        for name in ('a_0','a_1','a_2','a_3','b_0','b_8'):
+            with self.subTest(name=name):
+                self.assertFalse(c.uniform_background((folder / (name + '.png')).read_bytes())[0])
+        for name in ('a_4','a_5','b_1','b_6'):
+            with self.subTest(name=name):
+                self.assertTrue(c.uniform_background((folder / (name + '.png')).read_bytes())[0])
+
+    def test_background_exclusions_cannot_reenter_main_or_extra_padding(self):
+        folder = ROOT / 'tests/fixtures/giordano/background'
+        scene, plain = (folder / 'b_8.png').read_bytes(), (folder / 'b_1.png').read_bytes()
+        ctx = Context()
+        with patch.object(c, 'public_image', side_effect=[{'data': scene}, {'data': plain}]), patch.object(c, 'validate_gallery_image', return_value={'passed': True}):
+            main, extras, warning = c.gallery(ctx, ['https://example.com/scene.jpg', 'https://example.com/plain.jpg'], '01', {}, filter_background=True)
+        self.assertEqual(main, 'https://example.com/plain.jpg')
+        self.assertEqual(extras, [main] * 5)
+        self.assertTrue(warning)
+        with patch.object(c, 'public_image', return_value={'data': scene}), patch.object(c, 'validate_gallery_image') as validate:
+            main, extras, warning = c.gallery(ctx, ['https://example.com/scene.jpg'], '01', {}, filter_background=True)
+            validate.assert_not_called()
+        self.assertFalse(main)
+        self.assertTrue(warning)
+
+    def test_unnamed_product_skips_background_analysis(self):
+        with patch.object(c, 'public_image', return_value={'data': b'image'}), patch.object(c, 'uniform_background') as background, patch.object(c, 'validate_gallery_image', return_value={'passed': True}):
+            c.gallery(Context(), ['https://example.com/a.jpg'], '01', {})
+            background.assert_not_called()
 
 
 if __name__ == '__main__':
