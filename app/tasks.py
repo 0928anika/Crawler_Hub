@@ -56,7 +56,7 @@ class Job:
             success=sum(x['status']=='SUCCESS' for x in self.queue)
             waiting=sum(x['status']=='WAITING' for x in self.queue)
             mapping=color_mapping.snapshot(self) if color_mapping.is_manual(self) else None
-            mapped_count=sum(len({image['assigned_to'] for image in group['images'] if image.get('assigned_to')}) for group in mapping['groups']) if mapping and mapping['finalized'] else len(self.items)
+            mapped_count=len(color_mapping.final_items(self,mapping)) if mapping and mapping['finalized'] else len(self.items)
             return dict(id=self.id,name=self.name,brand=brand_label(self.brand),brand_name=self.brand['name'],crawl_source=self.brand.get('crawl_source',''),brand_id=self.brand['id'],state=self.state,
                 total=len(self.rows),done=self.done,failed=self.failed,success=success,waiting=waiting,
                 current=self.current,stage=self.stage,directory=str(self.dir),demo=self.demo,selected=self.selected,

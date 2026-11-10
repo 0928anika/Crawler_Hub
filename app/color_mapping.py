@@ -2,6 +2,7 @@
 import hashlib
 import html
 import json
+from copy import deepcopy
 from schema import field_for, preview, output_headers
 from detail_store import excel_detail
 from storage import atomic_json
@@ -16,6 +17,14 @@ def key(value):
 
 def is_manual(job):
     return job.brand.get('mapping_mode')=='manual'
+
+
+def is_hybrid(job):
+    return is_manual(job) and bool(job.brand.get('hybrid_mapping'))
+
+
+def automatic_items(job):
+    return [item for item in successful_items(job) if not item.get('unmapped')] if is_hybrid(job) else []
 
 
 def successful_items(job):
@@ -92,6 +101,7 @@ def snapshot(job):
         group['complete']=len(confirmed)==len(valid_colors)
         total+=len(valid_colors);done+=len(confirmed)
     finalized=bool(state.get('finalized') and state.get('fingerprint')==fingerprint and groups and all(g['complete'] for g in groups))
+    if is_hybrid(job) and not groups and automatic_items(job):finalized=True
     excluded=[dict(code=q['code'],status=q['status'],error=q.get('error','')) for q in job.queue if q['status']!='SUCCESS']
     return dict(revision=state.get('revision',0),groups=groups,total_colors=total,saved_colors=done,excluded_tasks=excluded,image_mode=job.brand.get('image_mode','url'),
                 finalized=finalized,fingerprint=fingerprint,unassigned=sum(not i['assigned_to'] for g in groups for i in g['images']))
@@ -195,7 +205,7 @@ def first_product_link(job,code):
 
 
 def final_items(job,view):
-    by_id={item['id']:item for item in job.items};result=[]
+    by_id={item['id']:item for item in job.items};result=deepcopy(automatic_items(job))
     headers=result_headers(job)
     count=local_images.additional_count(job)
     local_plan=local_images.plan(view,job.selected,count) if local_images.enabled(job) else None
@@ -247,6 +257,43 @@ def final_items(job,view):
                 local_images.decorate_detail(job,item,relative,detail['filename'])
             item.update(id=str(len(result)),index=len(result),task_id=base.get('task_id'),raw=dict(zip(headers,values)))
             result.append(item)
+    return merge_hybrid(job,result,headers) if is_hybrid(job) else result
+
+
+def merge_hybrid(job,items,headers):
+    """Keep official rows and add manually chosen shots to the same color once."""
+    result=[];positions={}
+    def identity(item):
+        raw=item['raw']
+        code=next((v for h,v in raw.items() if field_for(h)=='product_code'),'')
+        color=next((v for h,v in raw.items() if h.replace(' ','')=='색상코드'),'')
+        if not color:color=next((v for h,v in raw.items() if field_for(h)=='color'),'')
+        return str(code).strip().upper(),str(color).strip().casefold()
+    def photos(item):
+        raw=item['raw'];urls=[]
+        for role in ('main_image','additional_images'):
+            for h,v in raw.items():
+                if field_for(h)!=role or not v:continue
+                for url in str(v).split(','):
+                    if url and url not in urls:urls.append(url)
+        return urls
+    for item in items:
+        signature=identity(item)
+        if signature not in positions:
+            positions[signature]=len(result);result.append(item);continue
+        index=positions[signature];base=result[index];urls=photos(base)
+        urls.extend(u for u in photos(item) if u not in urls)
+        raw=dict(base['raw'])
+        if urls:
+            extras=urls[1:6] or urls[:1]
+            while len(extras)<5:extras.append(extras[-1])
+            for h in headers:
+                if field_for(h)=='main_image':raw[h]=urls[0]
+                elif field_for(h)=='additional_images':raw[h]=','.join(extras)
+        values=[raw.get(h) for h in headers]
+        merged=preview(headers,values,job.selected,allow_empty_product_name=bool(job.brand.get('allow_empty_product_name',False)))
+        merged.update(task_id=base.get('task_id'),raw=raw);result[index]=merged
+    for index,item in enumerate(result):item.update(id=str(index),index=index)
     return result
 
 
@@ -278,6 +325,9 @@ def export_sheet(job):
     if view['finalized']:
         rows=final_items(job,view);headers=result_headers(job)
         return [headers]+[[item['raw'].get(h) for h in headers] for item in rows]
+    if is_hybrid(job):
+        headers=result_headers(job)+['매핑상태']
+        return [headers]+[[item['raw'].get(h) for h in headers[:-1]]+['색상 매핑 대기' if item.get('unmapped') else '공식 색상 자동 매핑 완료'] for item in successful_items(job)]
     headers=['품번','상품명','색상 후보','상품 링크','이미지파일' if local_images.enabled(job) else '이미지URL','매핑상태']
     optional=[h for h in result_headers(job) if field_for(h) in ('size','price','regular_price','category','detail_page') or field_for(h) is None]
     headers+=optional;rows=[headers]

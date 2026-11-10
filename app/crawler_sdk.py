@@ -19,7 +19,7 @@ class CrawlContext:
             if not any(field_for(h)==field for h in self.headers):self.headers.append(FIELDS[field])
         self._checkpoint,self._emit=checkpoint,emit
         self._failures=[]
-        self.mapping_mode=mapping_mode;self._unmapped=None;self._unmapped_count=0
+        self.mapping_mode=mapping_mode;self._unmapped=None;self._unmapped_count=0;self._automatic_count=0
         self.image_mode=image_mode;self.image_dir=Path(asset_dir) if asset_dir else self.output_dir/'image_candidates'
         self.detail_image_dir=self.image_dir.parent/'detail-original'
         if input_item is not None:self.item=input_item
@@ -55,7 +55,7 @@ class CrawlContext:
         self._emit('item_failure',message=str(message))
         self.log(str(message),'ERROR')
     def finish(self):
-        if self.mapping_mode=='manual' and not self._unmapped_count:self.fail_item('수동 매핑 후보가 수집되지 않았습니다.')
+        if self.mapping_mode=='manual' and not self._unmapped_count and not (getattr(self,'allow_automatic_results',False) and self._automatic_count):self.fail_item('수동 매핑 후보가 수집되지 않았습니다.')
         if self._failures:
             raise RuntimeError('품번 수집 미완료: '+' / '.join(self._failures))
     def emit_unmapped(self,record,colors,image_url,shared_detail_html=''):
@@ -155,5 +155,6 @@ class CrawlContext:
         self._emit('row',sheet='결과',row=row,header=False,**({'unmapped':self._unmapped} if self._unmapped else {}))
         self._sheet.append(excel_row)
         self._book.save(self.output_path)
+        if self._unmapped is None:self._automatic_count+=1
         if detail_overflow:self.fail_item('상세 HTML을 정리해도 Excel 셀 한도(32,767자)를 초과하여 등록용 상세 생성 실패')
 

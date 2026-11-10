@@ -1,0 +1,175 @@
+{
+  "id": "whoau_official",
+  "name": "후아유",
+  "category": "캐주얼 의류",
+  "crawl_source": "공식 홈페이지",
+  "script": "whoau_official.py",
+  "execution_level": 1,
+  "interface": "portal_v1",
+  "mapping_mode": "manual",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "hybrid",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 ProductGroup.hasVariant의 색상별 size 전체. 품절 포함."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "기본 정보 판매가 행의 공개 KRW 숫자."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "독립 소비자가 행. 누락/0/잘못된 형식은 빈칸."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 분류 경로."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 Color link_image 연결 사진은 자동 저장, 미연결 갤러리 사진만 수동 매핑 후보. 동일 바이트 중복 제외."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 연결 사진은 수동 화면에 넣지 않음. 수동 선택 후 자동 사진과 같은 색상 한 행으로 병합하고 5슬롯 생성."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상세 원본과 고시·사이즈 이미지 보존. 상세 전용 64MiB 제한, 갤러리 10MB 기준과 분리."
+    }
+  },
+  "guide": {
+    "example": "WHMAG4V22U",
+    "examples": [
+      "WHMAG4V22U",
+      "WHMAG4V22U_60",
+      "WHKAG4T35U_AC",
+      "WHMZG4V21F"
+    ],
+    "pattern": "^[A-Za-z0-9]{10}(?:[_-][A-Za-z0-9]{2})?$",
+    "format": "품번 10자리. 특정 색상은 _ 또는 - 뒤 공식 영숫자 코드 2자리.",
+    "notes": "대소문자 무관. 연결 사진은 자동 수집, 미연결 사진만 수동 매핑 화면에 표시합니다.",
+    "method": "공식 품번 검색 및 색상 옵션의 실제 link_image 연결.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "WHMAG4V22U_"
+    ],
+    "validation_note": "실제 상품 존재는 실행 시 확인."
+  },
+  "notes": "공식 홈페이지 색상 연결 사진은 자동 결과로 보존하고, 미연결 개별 갤러리 사진만 수동 색상 매핑에 전달합니다. 공식 연결 사진과 동일한 내용의 URL 별칭도 수동 화면에서 제외합니다. 숫자/영문 색상코드 지원. 상세 원본은 최대 64MiB로 별도 조회하며 대표·추가의 10MB 제한은 유지합니다. 고시·사이즈표는 상세 이미지 원본으로 보존합니다. 혼합 매핑 지원 Crawler Hub 앱으로 업데이트 후 재시작하고 새 작업에서 실행하세요.",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 필수 정보"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 필수 정보"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 필수 정보"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 필수 정보"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 ProductGroup.hasVariant의 색상별 size 전체. 품절 포함."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "기본 정보 판매가 행의 공개 KRW 숫자."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "독립 소비자가 행. 누락/0/잘못된 형식은 빈칸."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 분류 경로."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 Color link_image 연결 사진은 자동 저장, 미연결 갤러리 사진만 수동 매핑 후보. 동일 바이트 중복 제외."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 연결 사진은 수동 화면에 넣지 않음. 수동 선택 후 자동 사진과 같은 색상 한 행으로 병합하고 5슬롯 생성."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상세 원본과 고시·사이즈 이미지 보존. 상세 전용 64MiB 제한, 갤러리 10MB 기준과 분리."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null
+  },
+  "code_hash": "9af4a58eadab8479906c30c8f7a8d882bce601cbf8c8ffd9182fc34c0e18b571",
+  "hybrid_mapping": true,
+  "additional_image_count": 5
+}
