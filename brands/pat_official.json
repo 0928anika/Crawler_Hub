@@ -1,0 +1,169 @@
+{
+  "id": "pat_official",
+  "name": "피에이티",
+  "category": "의류",
+  "crawl_source": "공식 홈페이지",
+  "script": "pat_official.py",
+  "execution_level": 1,
+  "interface": "portal_v1",
+  "mapping_mode": "automatic",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "verified",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 사이즈 옵션 및 색상별 option_select 응답의 공개 표시값. 품절 여부와 앞자리 0 보존."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 판매가 영역의 금액."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 정가 영역의 독립 금액. 누락 시 빈칸."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 페이지의 카테고리 경로."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 색상 옵션 이미지와 파일명이 일치하는 원본 갤러리 사진."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "검증된 같은 색상 사진으로 5슬롯 구성."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상세 본문에서 품번과 연결된 product 이미지 보존. 브랜드 띠와 시즌 화보 제외."
+    }
+  },
+  "guide": {
+    "example": "1M85101",
+    "examples": [
+      "1M85101",
+      "1M82038"
+    ],
+    "pattern": "^[A-Za-z0-9]+$",
+    "format": "기본 품번",
+    "notes": "기본 품번으로 공식 색상 옵션 전체를 조회합니다.",
+    "method": "공식 검색 결과의 PAT 브랜드와 상품코드를 확인합니다.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "1M85101_513"
+    ],
+    "validation_note": "실제 상품과 색상 존재는 실행 시 확인."
+  },
+  "notes": "공식 옵션의 숫자 색상코드를 보존합니다. 숫자 코드가 없으면 색상명만 사용합니다. 상세에는 품번과 연결된 product 경로의 본문 이미지를 유지합니다. 브랜드 띠와 시즌 인트로를 제외하며 고시와 사이즈표는 본문 이미지에 포함됩니다.",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 필수 정보"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 필수 정보"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 필수 정보"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 필수 정보"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 사이즈 옵션 및 색상별 option_select 응답의 공개 표시값. 품절 여부와 앞자리 0 보존."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 판매가 영역의 금액."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 정가 영역의 독립 금액. 누락 시 빈칸."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 페이지의 카테고리 경로."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 색상 옵션 이미지와 파일명이 일치하는 원본 갤러리 사진."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "검증된 같은 색상 사진으로 5슬롯 구성."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상세 본문에서 품번과 연결된 product 이미지 보존. 브랜드 띠와 시즌 화보 제외."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page"
+  },
+  "code_hash": "548bc87df4939ffac61d38acc18a49960ece12ce0a1a6624259b4ae1c82a6ea1"
+}
