@@ -275,8 +275,12 @@ def image_role(url, base, color):
     parts = urlsplit(url)
     if parts.hostname != 'image.style24.com' or not parts.path.startswith('/Upload/ProductImage/'):
         return None
-    match = re.search('/' + re.escape(base) + '_' + re.escape(color) + r'_(\d+|D\d+|I\d+)(?:\[\d+\])?\.(?:jpg|jpeg|png|webp)(?:/|$)', unquote(parts.path), re.I)
-    return match[1].upper() if match else None
+    match = re.search('/' + re.escape(base) + '_' + re.escape(color) + r'_([A-Z]*\d+)(?:\[\d+\])?\.(?:jpg|jpeg|png|webp)(?:/|$)', unquote(parts.path), re.I)
+    cut = match[1].upper() if match else ''
+    # 갤러리 DOM을 근거로 컷을 찾되, 명확한 보조자료 역할은 계속 제외.
+    if re.match(r'[LGFHJ]\d+$', cut):
+        return None
+    return cut or None
 
 
 def gallery_color(ctx, doc, link, base, color):
@@ -291,7 +295,7 @@ def gallery_color(ctx, doc, link, base, color):
             address = urlsplit(image_url(node, link))
             if address.hostname != 'image.style24.com' or not address.path.startswith('/Upload/ProductImage/'):
                 continue
-            match = re.search('/' + re.escape(base) + r'_([A-Za-z0-9]+)_(?:\d+|D\d+)(?:\[\d+\])?\.(?:jpg|jpeg|png|webp)(?:/|$)', unquote(address.path), re.I)
+            match = re.search('/' + re.escape(base) + r'_([A-Za-z0-9]+)_[A-Za-z]*\d+(?:\[\d+\])?\.(?:jpg|jpeg|png|webp)(?:/|$)', unquote(address.path), re.I)
             if match:
                 mapped.add(match[1].upper())
     if len(mapped) > 1:
