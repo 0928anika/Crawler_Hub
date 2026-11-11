@@ -65,20 +65,20 @@
   "guide": {
     "example": "JQ6JPU441",
     "examples": [
+      "GK0JPU492",
       "JQ6JPU441"
     ],
-    "pattern": "^J[A-Za-z0-9]{8}$",
-    "format": "색상 접미사 없는 지프 기본 품번 9자리",
+    "pattern": "^[\\s\\S]+$",
+    "format": "품번 형식 제한 없음. 입력값으로 먼저 검색한 뒤 실제 결과 대조.",
     "notes": "색상은 수동 매핑. 배경이 밝고 균일하며 왼쪽 위 행사/판매자 로고가 없는 대표사진의 상품만 수집. 대표 또는 추가이미지 선택 필수.",
     "method": "공개 검색 qapi itemList/total 전체 순회. 지프 brandId/brdNo=P3782와 상품명 속 정확한 품번 대조. 행사 emblemInfo 및 실제 사진 검사. 공개 기본 옵션의 색상 후보와 품절 포함 사이즈 유지.",
     "required_columns": [
       "품번"
     ],
     "invalid_examples": [
-      "JR4JPU492_BK",
       ""
     ],
-    "validation_note": "상품/스튜디오컷 존재는 실행 시 확인. Windows 기본 한국어 OCR 필요. 다른 색상 사진은 사용자 매핑."
+    "validation_note": "비어 있지 않은 입력은 길이/접두사/문자 형식으로 제한하지 않고 검색. 상품과 스튜디오컷 존재 여부는 검색 응답에서 확인."
   },
   "notes": "색상 미매핑 버전. 스튜디오컷 검사는 픽셀 배경/코너 신호이며 모든 촬영 환경을 의미적으로 구분하지는 못함. 배너 OCR 실패 시 조용히 포함하지 않고 실패. Windows 기본 한국어 OCR 필요. 원문 고시/사이즈표 외 별도 생성 없음. 사진 URL 크기 패턴을 추측하지 않음.",
   "interface": "portal_v1",
@@ -167,5 +167,5 @@
     "추가이미지": "additional_images",
     "상세페이지 HTML": "detail_page"
   },
-  "code_hash": "551d0fae9c435b695c5bd2a74d4b670331aadefcbe0f99d494ceb7f3bb4a41fc"
+  "code_hash": "7d4f3461d5b851edab14485c28418625f033482ba7175c8dd644af7b6dec0870"
 }

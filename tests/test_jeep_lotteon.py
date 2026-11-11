@@ -43,6 +43,26 @@ class LotteStudioTests(unittest.TestCase):
             for name in ['shopping_banner.png','delivery_banner.png']:
                 with Image.open(FIX/name) as pic:words=c.ocr(C(),pic.convert('RGB'),Path(folder),{})
                 self.assertRegex(words,c.BANNER)
+    def test_all_nonempty_article_formats_reach_search_first(self):
+        for value in ['GK0JPU492','AB12','JQ6JPU441_BK','상품 코드-1234567890']:
+            with self.subTest(value=value):
+                class Context(C):
+                    product_code=value
+                    def enabled(self,key):return True
+                    def stage(self,message):return None
+                    def fail_item(self,message):return None
+                with patch.object(c,'search',side_effect=c.CollectionError('검색 실행 확인')) as search:
+                    with self.assertRaisesRegex(c.CollectionError,'검색 실행 확인'):c.crawl(Context())
+                search.assert_called_once()
+                self.assertEqual(search.call_args.args[1],value.upper())
+
+    def test_empty_qapi_only_means_no_results_with_official_confirmation(self):
+        source='<p><em>GK0JPU492</em>의 검색결과가 없습니다.</p>'
+        with patch.object(c,'fetch',side_effect=[b'',source.encode()]):
+            self.assertEqual(c.search(C(),'GK0JPU492'),[])
+        with patch.object(c,'fetch',side_effect=[b'',b'<html>temporary error</html>']):
+            with self.assertRaises(c.CollectionError):c.search(C(),'GK0JPU492')
+
     def test_palette_keeps_disabled_colors_without_guessing_codes(self):
         data={'optionInfo':{'optionList':[{'title':'색상','options':[{'label':'블랙','disabled':True},{'label':'베이지'}]}]}}
         self.assertEqual(c.palette(data),[{'color_name':'블랙','color_code':''},{'color_name':'베이지','color_code':''}])

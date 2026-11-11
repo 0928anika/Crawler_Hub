@@ -130,7 +130,8 @@ def fetch(ctx, url, limit=4_000_000):
 
 
 def json_get(ctx,url):
-    data=json.loads(fetch(ctx,url,MAX_BYTES).decode('utf-8-sig'))
+    try:data=json.loads(fetch(ctx,url,MAX_BYTES).decode('utf-8-sig'))
+    except json.JSONDecodeError as exc:raise CollectionError('공개 JSON 응답 비어 있음/형식 오류: '+url) from exc
     if 'returnCode' in data:
         if str(data['returnCode'])!='200':raise CollectionError('공개 API 오류: '+str(data.get('message')))
         return data['data']
@@ -140,7 +141,18 @@ def json_get(ctx,url):
 def search(ctx,code):
     result=[];seen=set();offset=0;total=None
     for _ in range(30):
-        data=json_get(ctx,SITE+'/csearch/search/search?'+urlencode({'u2':offset,'u3':60,'u16':'ranking.desc','u37':'true','u39':2,'render':'qapi','platform':'pc','collection_id':9,'q':code,'mallId':1}))
+        try:
+            data=json_get(ctx,SITE+'/csearch/search/search?'+urlencode({'u2':offset,'u3':60,'u16':'ranking.desc','u37':'true','u39':2,'render':'qapi','platform':'pc','collection_id':9,'q':code,'mallId':1}))
+        except CollectionError as exc:
+            if not str(exc).startswith('공개 JSON 응답'):raise
+            # LotteON returns an empty qapi body for some zero-result terms.
+            # Confirm zero results in official HTML; never treat an empty or
+            # malformed API response alone as product absence.
+            page=BeautifulSoup(fetch(ctx,SITE+'/csearch/search/search?'+urlencode({'render':'search','platform':'pc','q':code,'mallId':1,'sort':'ranking'}),MAX_BYTES),'html.parser')
+            absent=any(p.find('em') and p.find('em').get_text(strip=True).upper()==code and '검색결과가 없습니다' in p.get_text() for p in page.find_all('p'))
+            if absent:
+                ctx.log('공식 검색 결과 0개 확인: '+code,'INFO');return []
+            raise CollectionError('검색 응답 확인 실패: 빈 JSON이며 공식 결과 없음 표시도 확인되지 않음') from exc
         rows=data.get('itemList');count=data.get('total')
         if not isinstance(rows,list) or not isinstance(count,int):raise CollectionError('검색 목록/전체 개수 형식 변경')
         if total is None:total=count
@@ -284,13 +296,16 @@ def load_product(ctx,row,code):
 
 def crawl(ctx):
     code=str(ctx.product_code).strip().upper()
-    if not re.fullmatch(r'J[A-Z0-9]{8}',code):raise CollectionError('지프 기본 품번 9자리를 입력하세요')
+    # Article syntax varies by season; search every nonempty input first.
+    if not code:raise CollectionError('검색할 품번이 비어 있습니다')
     if not (ctx.enabled('main_image') or ctx.enabled('additional_images')):raise CollectionError('색상 미매핑 버전: 대표 또는 추가이미지를 선택하세요')
     ctx.stage('롯데온 스튜디오컷 검색: '+code)
     cache={};ocr_cache={};records=[];colors=[];photos=[];details=[];errors=[]
     with tempfile.TemporaryDirectory(prefix='jeep-lotteon-') as temp:
         folder=Path(temp)
-        for row in search(ctx,code):
+        try:candidates=search(ctx,code)
+        except CollectionError as exc:ctx.fail_item(str(exc));raise
+        for row in candidates:
             ctx.checkpoint();url=SITE+'/p'+row['pdLink']
             try:
                 thumb=urljoin(CDN,row['pdImage']);ok,reason=studio(image(ctx,thumb,cache)['image'])
@@ -329,7 +344,7 @@ def crawl(ctx):
             except (CollectionError,OSError,ValueError,KeyError,subprocess.SubprocessError) as exc:
                 errors.append(row['pdId']+' / '+str(exc));ctx.fail_item(errors[-1])
         if not records or not photos:
-            message='로고 없는 밝은 단색 스튜디오컷 상품 미조회: '+code
+            message='검색 후 수집 조건에 맞는 지프 스튜디오컷 상품 없음: '+code
             ctx.fail_item(message);raise CollectionError(message)
         out=dict(records[0]);out['원본 상품명']='\n'.join(dict.fromkeys(r['원본 상품명'] for r in records))
         for field in ('price','category'):
