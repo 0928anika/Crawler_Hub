@@ -1,0 +1,171 @@
+{
+  "id": "jeep_lotteon",
+  "name": "지프",
+  "category": "캐주얼 의류",
+  "crawl_source": "롯데온 스튜디오컷",
+  "script": "jeep_lotteon.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_color_mapping": "manual",
+  "official_color_codes": false,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "원본 상품명",
+    "상품 링크",
+    "색상",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 optionInfo.optionList의 사이즈 표시명. 품절/disabled 포함. 여러 링크 사이즈가 다르면 첫 성공 링크 기준과 경고."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 기본 응답 priceInfo.slPrc의 실제 판매가. 쿠폰/카드 finalPrice 사용하지 않음. 여러 링크 값이 다르면 공통값 빈칸."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 basicInfo.stdCatLevel1Nm..4Nm. 서로 다르면 공통 분류 빈칸."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "검색 카드 행사 emblemInfo 및 상세 emblInfo 제외. 대표사진 밝은 단색 외곽/왼쪽 위 오브젝트 검사 통과 상품만 진입. 실제 origImgFileNm 원본도 같은 검사와 500px 확인 후 수동 색상 매핑 후보로 출력."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "통과한 원본 상품사진 전체 전달, 바이트 중복 제거. 밝은 단색 배경 사진만 수집. 매장컷/추가 로고 사진 제외."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "판매자 DSCRP 원문 #llis-root를 순서대로 보존. Windows 한국어 OCR로 신세계라이브쇼핑/내일도착/배송/저작권 배너 제거. 기존 원문 사이즈표/고시는 보존하고 별도 생성·추가 안 함. 본문과 배너가 합쳐진 긴 이미지는 명시적 오류. 상세에는 배경 검사를 적용하지 않음."
+    },
+    "regular_price": {
+      "supported": false,
+      "status": "unsupported",
+      "reason": "독립 소비자가/정상가 출처 미확인. 검색 original/slPrc는 판매가이므로 정상가로 바꾸지 않음."
+    }
+  },
+  "guide": {
+    "example": "JQ6JPU441",
+    "examples": [
+      "JQ6JPU441"
+    ],
+    "pattern": "^J[A-Za-z0-9]{8}$",
+    "format": "색상 접미사 없는 지프 기본 품번 9자리",
+    "notes": "색상은 수동 매핑. 배경이 밝고 균일하며 왼쪽 위 행사/판매자 로고가 없는 대표사진의 상품만 수집. 대표 또는 추가이미지 선택 필수.",
+    "method": "공개 검색 qapi itemList/total 전체 순회. 지프 brandId/brdNo=P3782와 상품명 속 정확한 품번 대조. 행사 emblemInfo 및 실제 사진 검사. 공개 기본 옵션의 색상 후보와 품절 포함 사이즈 유지.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "JR4JPU492_BK",
+      ""
+    ],
+    "validation_note": "상품/스튜디오컷 존재는 실행 시 확인. Windows 기본 한국어 OCR 필요. 다른 색상 사진은 사용자 매핑."
+  },
+  "notes": "색상 미매핑 버전. 스튜디오컷 검사는 픽셀 배경/코너 신호이며 모든 촬영 환경을 의미적으로 구분하지는 못함. 배너 OCR 실패 시 조용히 포함하지 않고 실패. Windows 기본 한국어 OCR 필요. 원문 고시/사이즈표 외 별도 생성 없음. 사진 URL 크기 패턴을 추측하지 않음.",
+  "interface": "portal_v1",
+  "image_mode": "url",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 optionInfo.optionList의 사이즈 표시명. 품절/disabled 포함. 여러 링크 사이즈가 다르면 첫 성공 링크 기준과 경고."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 기본 응답 priceInfo.slPrc의 실제 판매가. 쿠폰/카드 finalPrice 사용하지 않음. 여러 링크 값이 다르면 공통값 빈칸."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": false,
+      "status": "unsupported",
+      "reason": "독립 소비자가/정상가 출처 미확인. 검색 original/slPrc는 판매가이므로 정상가로 바꾸지 않음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 basicInfo.stdCatLevel1Nm..4Nm. 서로 다르면 공통 분류 빈칸."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "검색 카드 행사 emblemInfo 및 상세 emblInfo 제외. 대표사진 밝은 단색 외곽/왼쪽 위 오브젝트 검사 통과 상품만 진입. 실제 origImgFileNm 원본도 같은 검사와 500px 확인 후 수동 색상 매핑 후보로 출력."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "통과한 원본 상품사진 전체 전달, 바이트 중복 제거. 밝은 단색 배경 사진만 수집. 매장컷/추가 로고 사진 제외."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "판매자 DSCRP 원문 #llis-root를 순서대로 보존. Windows 한국어 OCR로 신세계라이브쇼핑/내일도착/배송/저작권 배너 제거. 기존 원문 사이즈표/고시는 보존하고 별도 생성·추가 안 함. 본문과 배너가 합쳐진 긴 이미지는 명시적 오류. 상세에는 배경 검사를 적용하지 않음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "원본 상품명": null,
+    "상품 링크": "product_url",
+    "색상": "color",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page"
+  },
+  "code_hash": "551d0fae9c435b695c5bd2a74d4b670331aadefcbe0f99d494ceb7f3bb4a41fc"
+}
