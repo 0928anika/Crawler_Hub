@@ -46,9 +46,13 @@ def search(ctx, base):
     page = 1
     while page <= 100:
         data = api(ctx, '/search/api/getTotalSearch.json', {'searchWord': base, 'pageNoGod': page})
-        if not isinstance(data.get('godList'), list):
+        rows = data.get('godList')
+        if rows is None and (data.get('searchDTO') or {}).get('searchWord') == base and not data.get('godPaging'):
+            # 공식몰은 0건일 때 godList/godPaging 없이 searchDTO만 반환한다.
+            return result
+        if not isinstance(rows, list):
             raise ValueError('공식 검색 응답 형식 확인 실패')
-        for row in data['godList']:
+        for row in rows:
             sku = row.get('GOD_NO')
             if row.get('BRND_ID') == 'PBR' and sku and sku not in result:
                 result.append(sku)
@@ -192,6 +196,10 @@ def crawl(ctx):
         raise ValueError('입력 품번 형식 오류')
     base, requested = match.groups()
     pending = search(ctx, base)
+    if not pending:
+        message = '공식 홈페이지 검색 결과 없음: ' + base + ' / 굿웨어몰에서 해당 품번의 상품·색상 링크를 확인할 수 없습니다.'
+        ctx.fail_item(message)
+        raise ValueError(message)
     seen, failures, completed = set(), [], set()
     cache = {}
     while pending:
