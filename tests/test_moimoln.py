@@ -187,6 +187,20 @@ class MoimolnTests(unittest.TestCase):
     main,extras=c.gallery(Context('',[]),doc,c.SITE,'M254DMB09P','BK',{})
    assert not main and not extras and not requested
 
+ def test_korean_color_name_never_falls_back_to_code(self):
+  doc=BeautifulSoup(str(DOCS['BE']),'html.parser')
+  assert c.korean_color_name(doc,'M264DMB07P','BE','BE')=='베이지'
+  doc.select_one('.option_box .opt_color .opt_header .color').string='BEIGE'
+  assert c.korean_color_name(doc,'M264DMB07P','BE','베이지')=='베이지'
+  import json
+  group={'@type':'ProductGroup','hasVariant':[{'url':'https://www.style24.com/goods/detail/form?goodsCd=M264DMB07P&colorCd=BE','color':'베이지'}]}
+  node=doc.new_tag('script',type='application/ld+json');node.string=json.dumps(group);doc.append(node)
+  doc=BeautifulSoup(str(doc),'html.parser')
+  assert c.korean_color_name(doc,'M264DMB07P','BE','BE')=='베이지'
+  with self.assertRaises(c.CrawlError):c.korean_color_name(doc,'M264DMB07P','OW','OW')
+  metadata=json.loads((ROOT/'brands/moimoln_official.json').read_text(encoding='utf-8'))
+  assert '색상명' in metadata['output_headers'] and '색상코드' not in metadata['output_headers']
+
  def test_image_policy_and_printed_garment(self):
   for fmt in ['JPEG','PNG','WEBP']:
    main,extra,_=run(encoded(fmt=fmt));assert main and len(extra.split(','))==5

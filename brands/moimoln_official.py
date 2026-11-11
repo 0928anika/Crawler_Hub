@@ -223,6 +223,22 @@ def product_name(doc, base):
     return name
 
 
+def korean_color_name(doc, base, code, option_name=''):
+    # 코드 번역표로 추측하지 않고 해당 공식 색상 페이지의 한글 원문 사용.
+    candidates = [text(doc.select_one('.option_box .opt_color .opt_header .color')), option_name]
+    for value in candidates:
+        if re.search(r'[가-힣]', str(value)):
+            return str(value).strip()
+    group = structured(doc, 'ProductGroup')
+    for variant in group.get('hasVariant', []):
+        params = parse_qs(urlsplit(str(variant.get('url', ''))).query)
+        value = variant.get('color', '')
+        if (params.get('goodsCd') == [base] and params.get('colorCd') == [code]
+                and isinstance(value, str) and re.search(r'[가-힣]', value)):
+            return value.strip()
+    raise CrawlError('공식 한글 색상명 확인 불가: ' + code + ' (코드로 대체하지 않음)')
+
+
 def option_nodes(doc, code):
     return [n for n in doc.select('.option_box .opt_size input[name="opt"][optcd2]') if n.get('optcd1') == code]
 
@@ -460,8 +476,8 @@ def crawl(ctx):
                 doc, link, current = load_product(ctx, choice['url'], base)
             if current != code:
                 raise CrawlError('요청 색상과 공식 활성 색상 불일치: ' + code + '/' + current)
-            color_name = choice['name'] or text(doc.select_one('.option_box .opt_color .opt_header .color'))
-            record = dict(product_code=base, product_name=product_name(doc, base), color=color_name or code, color_name=color_name, color_code=code, product_url=link)
+            color_name = korean_color_name(doc, base, code, choice['name'])
+            record = dict(product_code=base, product_name=product_name(doc, base), color=color_name, color_name=color_name, color_code=code, product_url=link)
             if ctx.enabled('size'):
                 record['size'] = sizes(doc, code)
             if ctx.enabled('price'):
