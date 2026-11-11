@@ -134,6 +134,22 @@ class MoimolnTests(unittest.TestCase):
   assert not any('moigift' in u or '/contents/brand/' in u or '_J1' in u for u in requested)
   assert not BeautifulSoup(output,'html.parser').select('table')
 
+ def test_option_color_and_photo_filename_can_differ(self):
+  doc=BeautifulSoup((FIX/'M2652AW06P_OW.html').read_bytes(),'html.parser')
+  urls=[]
+  def info(ctx,url,cache,gallery=False):
+   urls.append(url)
+   return ('JPEG',1080,1404,False,url,'')
+  with patch.object(c,'image_info',info):
+   main,extra=c.gallery(Context('',[]),doc,c.SITE,'M2652AW06P','OW',{})
+  assert '_OH_01.jpg' in main and len(extra.split(','))==5
+  assert all('_OH_' in u for u in urls) and not any('_YE_' in u for u in urls)
+  # Same official mapping rule applies to any article, not a fixed exception.
+  other=BeautifulSoup(str(doc).replace('M2652AW06P','TEST123').replace('colorCd=OW','colorCd=ZZ').replace('_OH_','_XY_'),'html.parser')
+  with patch.object(c,'image_info',info):
+   main,_=c.gallery(Context('',[]),other,c.SITE,'TEST123','ZZ',{})
+  assert '_XY_01.jpg' in main
+
  def test_image_policy_and_printed_garment(self):
   for fmt in ['JPEG','PNG','WEBP']:
    main,extra,_=run(encoded(fmt=fmt));assert main and len(extra.split(','))==5

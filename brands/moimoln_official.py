@@ -279,7 +279,33 @@ def image_role(url, base, color):
     return match[1].upper() if match else None
 
 
+def gallery_color(ctx, doc, link, base, color):
+    # 공식 옵션 a의 colorCd -> 자식 img 연결이 근거다. 파일명의 색상 토큰은
+    # 판매 옵션 코드와 다를 수 있다. 특정 품번/색상의 예외 목록은 쓰지 않는다.
+    mapped = set()
+    for anchor in doc.select('.option_box .opt_color a[href]'):
+        params = parse_qs(urlsplit(urljoin(link, anchor['href'])).query)
+        if params.get('goodsCd') != [base] or params.get('colorCd') != [color]:
+            continue
+        for node in anchor.select('img[data-thumbnail="goodsDetailOptionWeb"]'):
+            address = urlsplit(image_url(node, link))
+            if address.hostname != 'image.style24.com' or not address.path.startswith('/Upload/ProductImage/'):
+                continue
+            match = re.search('/' + re.escape(base) + r'_([A-Za-z0-9]+)_01\.(?:jpg|jpeg|png|webp)(?:/|$)', address.path, re.I)
+            if match:
+                mapped.add(match[1].upper())
+    if len(mapped) > 1:
+        raise CrawlError('공식 색상 옵션의 이미지 연결이 서로 다름: ' + color)
+    if mapped:
+        actual = next(iter(mapped))
+        if actual != color:
+            ctx.log('공식 옵션 이미지 연결 확인: 판매 색상=' + color + ', 사진 파일 색상=' + actual, 'INFO')
+        return actual
+    return color
+
+
 def gallery(ctx, doc, link, base, color, cache):
+    photo_color = gallery_color(ctx, doc, link, base, color)
     # 원문에 실제 제공되는 원본 및 갤러리 URL만 사용. CDN 주소를 변조하지 않는다.
     nodes = doc.select('.pd-core__color-item img[data-thumbnail="goodsDetailOptionWeb"]')
     nodes += doc.select('img[data-thumbnail="goodsDetailImageWeb"], img[data-thumbnail="goodsDetailImageMob"]')
@@ -287,7 +313,7 @@ def gallery(ctx, doc, link, base, color, cache):
     for node in nodes:
         ctx.checkpoint()
         url = image_url(node, link)
-        cut = image_role(url, base, color)
+        cut = image_role(url, base, photo_color)
         if not cut or cut.startswith('I') or cut in seen_cuts:
             continue
         info = image_info(ctx, url, cache, gallery=True)
@@ -430,7 +456,8 @@ def crawl(ctx):
                 doc, link, current = load_product(ctx, choice['url'], base)
             if current != code:
                 raise CrawlError('요청 색상과 공식 활성 색상 불일치: ' + code + '/' + current)
-            record = dict(product_code=base, product_name=product_name(doc, base), color=choice['name'] or code, color_name=choice['name'], color_code=code, product_url=link)
+            color_name = choice['name'] or text(doc.select_one('.option_box .opt_color .opt_header .color'))
+            record = dict(product_code=base, product_name=product_name(doc, base), color=color_name or code, color_name=color_name, color_code=code, product_url=link)
             if ctx.enabled('size'):
                 record['size'] = sizes(doc, code)
             if ctx.enabled('price'):
