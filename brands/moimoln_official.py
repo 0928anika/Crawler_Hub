@@ -7,7 +7,7 @@ import json
 import re
 from html import escape
 from urllib.error import HTTPError, URLError
-from urllib.parse import parse_qs, urlencode, urljoin, urlsplit, quote
+from urllib.parse import parse_qs, urlencode, urljoin, urlsplit, quote, unquote
 from urllib.request import Request, build_opener
 from bs4 import BeautifulSoup
 from PIL import Image, UnidentifiedImageError
@@ -19,8 +19,8 @@ POLICY = {'checked': '2026-11-11', 'source': 'https://marketplace.coupang.com/mb
           'note': '정지 WebP·비율 1.8은 프로젝트 정책. 전체 등록 승인은 미검증.'}
 # 공식 STYLE24 HTML 확인: M264DMB07P BE/IV, M264DMB08P BR.
 # 색상별 공식 링크 + 활성 colorCd + 해당 갤러리의 품번/색상 원본으로 연결.
-# 공통 notice_content, 로고/홍보, 별도 FABRIC/CARE 구역은 요청·출력하지 않는다.
-# 원본 고시 .required_box .area_infotbl의 항목·값을 새 2열 표로 만든다.
+# 공통 공지의 사이즈 조견표만 상세 끝에 보존. 선물상자/홍보/별도 FABRIC/CARE 제외.
+# 고시는 상품 본문 이미지 원본을 보존하며 별도 표로 생성하지 않는다.
 # 이미지/HTML 및 선택 항목은 실사이트와 오프라인 테스트로 구분 검증.
 # 실제 Hub 최종 정제/재실행 교체와 WING 업로드 승인은 별도 환경에서 확인 필요.
 
@@ -378,18 +378,25 @@ def detail(ctx, doc, link, base, color, cache):
             ctx.log('실제 사이즈표/측정 그림 없음: 생략', 'WARNING')
     else:
         ctx.log('공식 사이즈표 없음: 생략', 'WARNING')
-    notices = [table for section in doc.select('.required_box .area_infotbl') if text(section.select_one('.title')) == '상품고시정보' for table in section.select('table')]
-    if not notices:
-        ctx.log('공식 상품고시정보 없음: 생략', 'WARNING')
-    for table in notices:
-        rows = []
-        for tr in table.select('tr'):
-            label, value = tr.find('th'), tr.find('td')
-            if label is not None and value is not None:
-                rows.append((text(label), value))
-        if not rows or not any(text(value) for _, value in rows):
-            raise CrawlError('원본 상품고시는 있지만 실제 항목·값 추출 실패')
-        parts.append('<h3>상품정보고시</h3><table border="1" cellpadding="6" style="width:100%;border-collapse:collapse"><tbody>' + ''.join('<tr><th>' + escape(label) + '</th><td>' + cell_text(value) + '</td></tr>' for label, value in rows) + '</tbody></table>')
+    # 사용자 요청: 고시는 본문 이미지에 있으므로 별도 표를 만들지 않는다.
+    # 하단 공통 공지 전체를 넣지 않고 공식 사이즈 조견표 이미지만 고른다.
+    charts = []
+    for node in doc.select('.notice_content img'):
+        url = image_url(node, link)
+        address = urlsplit(url)
+        filename = unquote(address.path).rsplit('/', 1)[-1]
+        if (address.hostname == 'image.style24.com'
+                and address.path.startswith('/Upload/editor/')
+                and re.search(r'(?:^|_)모이몰른_사이즈_조견표(?:_|\.|$)', filename)):
+            charts.append(url)
+    if not charts:
+        ctx.log('공식 하단 사이즈 조견표 없음: 생략', 'WARNING')
+    for url in dict.fromkeys(charts):
+        if url in seen:
+            continue
+        seen.add(url)
+        if image_info(ctx, url, cache):
+            parts.append('<img src="' + escape(url, quote=True) + '" style="max-width:100%"><br>')
     result = ''.join(parts)
     if len(result.encode('utf-16-le')) // 2 > 32767:
         raise CrawlError('상세 HTML 엑셀 셀 한도 초과. 임의 절단하지 않음')
