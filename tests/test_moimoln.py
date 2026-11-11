@@ -62,16 +62,24 @@ def offline():
  with patch.object(c,'image_info',info):
   html=c.detail(Context('',[]),DOCS['BE'],'https://www.style24.com','M264DMB07P','BE',{})
   out=BeautifulSoup(html,'html.parser')
-  source=[(c.text(t.th),c.text(t.td)) for t in DOCS['BE'].select('.required_box .area_infotbl')[0].select('table tr')]
-  target=[(c.text(t.th),c.text(t.td)) for t in out.select('table')[-1].select('tr')]
-  assert len(source)==14 and source==target
-  assert all('M264DMB07P_BE_' in x['src'] for x in out.select('img'))
-  assert not any('/Upload/editor/' in u or '_J' in u or '_F' in u or '_G' in u or '/contents/' in u for u in requested)
+  assert not out.select('table') and '상품정보고시' not in html
+  images=out.select('img')
+  assert '사이즈_조견표' in c.unquote(images[-1]['src'])
+  assert sum('사이즈_조견표' in c.unquote(n['src']) for n in images)==1
+  assert all('M264DMB07P_BE_' in n['src'] for n in images[:-1])
+  assert not any('_J' in u or '_F' in u or '_G' in u or '/contents/' in u or 'moigift' in u or '배너' in c.unquote(u) for u in requested)
   main,extra=c.gallery(Context('',[]),DOCS['BE'],'https://www.style24.com','M264DMB07P','BE',{})
   assert main and len(extra.split(','))==5 and main not in extra.split(',')
   assert 'moigift' not in html and '배너' not in html
-  missing=BeautifulSoup(str(DOCS['BE']),'html.parser');missing.select_one('.pd-core__size').decompose();missing.select_one('.required_box .area_infotbl').decompose()
-  assert '상품정보고시' not in c.detail(Context('',[]),missing,'https://www.style24.com','M264DMB07P','BE',{})
+  missing=BeautifulSoup(str(DOCS['BE']),'html.parser')
+  missing.select_one('.pd-core__size').decompose()
+  for node in missing.select('.notice_content'):node.decompose()
+  absent=c.detail(Context('',[]),missing,'https://www.style24.com','M264DMB07P','BE',{})
+  assert '상품정보고시' not in absent and '조견표' not in c.unquote(absent)
+  # 원본 고시가 비어 있거나 구조가 달라도 별도 고시 파싱은 수행하지 않는다.
+  altered=BeautifulSoup(str(DOCS['BE']),'html.parser')
+  altered.select_one('.required_box').clear()
+  assert c.detail(Context('',[]),altered,'https://www.style24.com','M264DMB07P','BE',{})==html
  def fail_iv(ctx,url,base):
   if 'colorCd=IV' in url:raise c.CrawlError('IV network failure')
   return local_product(ctx,url,base)
@@ -80,7 +88,7 @@ def offline():
   try:c.crawl(ctx)
   except c.CrawlError:assert len(ctx.rows)==1 and ctx.failures
   else:raise AssertionError('partial failure swallowed')
- print('OFFLINE PASS: suffixes/all colors, disabled loaders, name cleanup, price combinations, missing/zero/malformed/error regular price, 14 notice rows, excluded sections requested 0 times, absent tables, partial failure')
+ print('OFFLINE PASS: suffixes/all colors, disabled loaders, name cleanup, price combinations, missing/zero/malformed/error regular price, no generated notice table, bottom size chart last, excluded banners requested 0 times, absent tables, partial failure')
 
 
 
