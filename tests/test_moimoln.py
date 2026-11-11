@@ -166,6 +166,27 @@ class MoimolnTests(unittest.TestCase):
   assert c.image_role('https://image.style24.com/Upload/ProductImage/M2652AW10P_OH_I1%5B0%5D.jpg','M2652AW10P','OH')=='I1'
   assert not c.image_role('https://image.style24.com/Upload/ProductImage/M2652AW10P_OH_L1[0].jpg','M2652AW10P','OH')
 
+ def test_official_gallery_not_limited_to_specific_cut_prefix(self):
+  source=(FIX/'M254DMB09P.html').read_text(encoding='utf-8')
+  for prefix in ['Z','Q','ABC']:
+   # Z is the live source. Other tokens test the common rule, not live products.
+   doc=BeautifulSoup(source.replace('_Z','_'+prefix),'html.parser')
+   requested=[]
+   def info(ctx,url,cache,gallery=False):
+    requested.append(url)
+    return ('JPEG',1080,1600,False,url,'')
+   with patch.object(c,'image_info',info):
+    main,extras=c.gallery(Context('',[]),doc,c.SITE,'M254DMB09P','BK',{})
+   assert '_BK_'+prefix+'2.jpg' in main and len(extras.split(','))==5
+   assert requested and all('_BK_' in u for u in requested)
+  assert c.image_role('https://image.style24.com/Upload/ProductImage/OTHER_BK_Z2.jpg','M254DMB09P','BK') is None
+  for prefix in ['I','L','G','F','H','J']:
+   doc=BeautifulSoup(source.replace('_Z','_'+prefix),'html.parser')
+   requested=[]
+   with patch.object(c,'image_info',info):
+    main,extras=c.gallery(Context('',[]),doc,c.SITE,'M254DMB09P','BK',{})
+   assert not main and not extras and not requested
+
  def test_image_policy_and_printed_garment(self):
   for fmt in ['JPEG','PNG','WEBP']:
    main,extra,_=run(encoded(fmt=fmt));assert main and len(extra.split(','))==5
