@@ -1,0 +1,86 @@
+{
+  "id": "moimoln_official",
+  "name": "모이몰른",
+  "category": "유아동복",
+  "crawl_source": "공식 홈페이지",
+  "script": "moimoln_official.py",
+  "execution_level": 1,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "verified",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 색상 페이지 .option_box .opt_size input[name=opt]의 optcd1/optcd2. 품절 옵션과 앞자리 0 보존."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 색상 페이지 .descript_box .sale_price em 판매가와 옵션 addprice. 사이즈별 추가금이 다르면 경고 후 빈칸."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "독립 정상가 .descript_box .org_price em 확인. 선택 시에만 파싱. 누락·0·불명확·해석 오류는 None과 안내 로그로 처리하며 실패시키지 않음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 BreadcrumbList 구조화 데이터에서 브랜드와 상품 자신을 제외한 경로."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 colorCd별 실제 갤러리와 파일의 품번·색상코드를 대조. 바이트 형식·픽셀·용량·비율·내용 보조 검사 통과한 상품컷 사용."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "같은 공식 색상의 개별 상품컷만 5슬롯 쉼표 연결. 부족하면 통과한 컷 반복, 0장은 빈칸과 경고."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": ".pd-core__wrap의 상품 설명·상품 사진·실제 사이즈 자료와 하단 상품고시정보 표. 공통 선물상자·몽글다운 홍보 배너·로고·별도 소재/관리 제외. 고시는 원문 항목·값으로 2열 HTML 표 생성. 없는 자료는 생략."
+    }
+  },
+  "guide": {
+    "example": "M264DMB07P",
+    "examples": [
+      "M264DMB07P",
+      "M264DMB07P_BE",
+      "M264DMB07P-IV",
+      "M264DMB08P"
+    ],
+    "pattern": "^[A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)*$",
+    "format": "STYLE24 공식 goodsCd(품번). 특정 색상만 수집하려면 품번_색상코드 또는 품번-색상코드.",
+    "notes": "기본 품번은 공식 색상 전체 수집. 예시 BE/IV/BR은 공식 색상코드. 상품명에서 브랜드와 시즌 표기를 제거. 사이즈·추가이미지는 쉼표 한 줄.",
+    "method": "공식 /goods/detail/form?goodsCd=품번 직접 조회 후 cartForm goodsCd, ProductGroup productGroupID와 brand, og:url 검증. 색상 옵션의 공식 링크로 각 색상 페이지 수집. 내부 하이픈 포함 입력도 먼저 전체 goodsCd로 조회.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "M264DMB07P_",
+      "M264DMB07P IV"
+    ],
+    "validation_note": "문법 검사이며 실제 상품·브랜드·색상 존재는 실행 중 공식 응답으로 확인."
+  },
+  "notes": "2026-11-11 STYLE24 M264DMB07P BE/IV, M264DMB08P BR 확인. 첨부 공통 홍보 배너 제외. 고시는 공식 원문 그대로이며 원문 자체의 색상 등 오류는 임의 수정하지 않음. 실측표가 이미지만 있으면 원본 이미지 보존, 실제 HTML 표가 있으면 표 재구성. 이미지 내용 검사는 OCR이 아닌 보조 판정이며 모든 콜라주 자동 판별이나 WING 업로드 승인을 보장하지 않음.",
+  "code_hash": "a8d3e72ee4ab5136cef530678d6ff1f4e2c11ef93aa7561b8b886bc81b006d82"
+}
