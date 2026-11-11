@@ -9,7 +9,7 @@ from html import escape
 from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlencode, urljoin, urlsplit, quote, unquote
 from urllib.request import Request, build_opener
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Comment, NavigableString, Tag
 from PIL import Image, UnidentifiedImageError
 
 SITE = 'https://www.style24.com'
@@ -19,7 +19,8 @@ POLICY = {'checked': '2026-11-11', 'source': 'https://marketplace.coupang.com/mb
           'note': '정지 WebP·비율 1.8은 프로젝트 정책. 전체 등록 승인은 미검증.'}
 # 공식 STYLE24 HTML 확인: M264DMB07P BE/IV, M264DMB08P BR.
 # 색상별 공식 링크 + 활성 colorCd + 해당 갤러리의 품번/색상 원본으로 연결.
-# 공통 공지의 사이즈 조견표만 상세 끝에 보존. 선물상자/홍보/별도 FABRIC/CARE 제외.
+# 실제 본문 전체(에디터 이미지·설명·상품 정보·라벨·실측)를 원래 순서대로 보존.
+# 공통 공지의 사이즈 조견표만 끝에 추가. 선물상자/홍보/로고/공통 CARE 제외.
 # 고시는 상품 본문 이미지 원본을 보존하며 별도 표로 생성하지 않는다.
 # 이미지/HTML 및 선택 항목은 실사이트와 오프라인 테스트로 구분 검증.
 # 실제 Hub 최종 정제/재실행 교체와 WING 업로드 승인은 별도 환경에서 확인 필요.
@@ -342,42 +343,46 @@ def table_html(table):
 
 def detail(ctx, doc, link, base, color, cache):
     parts, seen = [], set()
-    if doc.select_one('.pd-core__wrap') is None:
+    body = doc.select_one('.pd-core__wrap')
+    if body is None:
         raise CrawlError('공식 상세 본문 구조를 확인하지 못함: ' + link)
-    def add_image(node, size=False):
-        ctx.checkpoint()
-        url = image_url(node, link)
-        cut = image_role(url, base, color)
-        if not cut or (cut.startswith('I') != size) or url in seen:
-            return
-        seen.add(url)
-        info = image_info(ctx, url, cache)
-        if info:
-            parts.append('<img src="' + escape(url, quote=True) + '" style="max-width:100%"><br>')
-    # 상품 본문 설명은 보존하되 공통 홍보물과 로고는 제외한다.
-    for node in doc.select('.pd-core__description .pd-core__txt, .pd-core__description .list li'):
-        if text(node):
-            parts.append('<p>' + cell_text(node) + '</p>')
-    # 공지/에디터 배너/로고/별도 핏·소재·케어는 요청하지 않는다.
-    for section in doc.select('.pd-core__product-view, .pd-core__detail'):
-        for node in section.select('img'):
-            add_image(node)
-        for node in section.select('.pd-core__txt'):
-            if text(node):
-                parts.append('<p>' + cell_text(node) + '</p>')
-    size_section = doc.select_one('.pd-core__size')
-    if size_section is not None:
-        images, tables = size_section.select('img'), size_section.select('table')
-        if images or tables:
-            parts.append('<h3>사이즈 안내</h3>')
-            for node in images:
-                add_image(node, size=True)
-            for table in tables:
-                parts.append(table_html(table))
-        else:
-            ctx.log('실제 사이즈표/측정 그림 없음: 생략', 'WARNING')
-    else:
-        ctx.log('공식 사이즈표 없음: 생략', 'WARNING')
+
+    def render(node):
+        # 본문 DOM 순서를 유지한다. 대표/추가 이미지의 파일명·색상 필터를
+        # 공유 본문 이미지에 적용하지 않는다(에디터 본문에는 색상 코드가 없음).
+        if isinstance(node, Comment):
+            return ''
+        if isinstance(node, NavigableString):
+            return escape(str(node))
+        if not isinstance(node, Tag):
+            return ''
+        classes = set(node.get('class', []))
+        if (node.name in ('script', 'style', 'iframe', 'form', 'button', 'input')
+                or classes.intersection({'logo', 'pd-core__color', 'pd-core__care'})):
+            return ''
+        if node.name == 'img':
+            ctx.checkpoint()
+            url = image_url(node, link)
+            address = urlsplit(url)
+            if (address.scheme not in ('http', 'https')
+                    or address.hostname != 'image.style24.com' or url in seen):
+                return ''
+            seen.add(url)
+            if not image_info(ctx, url, cache):
+                return ''
+            return '<img src="' + escape(url, quote=True) + '" style="max-width:100%"><br>'
+        if node.name == 'br':
+            return '<br>'
+        if node.name == 'table':
+            return table_html(node)
+        children = ''.join(render(child) for child in node.children)
+        if not children.strip():
+            return ''
+        allowed = {'p', 'div', 'span', 'h2', 'h3', 'h4', 'strong', 'b', 'em', 'ul', 'ol', 'li'}
+        name = node.name if node.name in allowed else 'div'
+        return '<' + name + '>' + children + '</' + name + '>'
+
+    parts.append(render(body))
     # 사용자 요청: 고시는 본문 이미지에 있으므로 별도 표를 만들지 않는다.
     # 하단 공통 공지 전체를 넣지 않고 공식 사이즈 조견표 이미지만 고른다.
     charts = []

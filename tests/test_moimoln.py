@@ -67,7 +67,7 @@ def offline():
   assert '사이즈_조견표' in c.unquote(images[-1]['src'])
   assert sum('사이즈_조견표' in c.unquote(n['src']) for n in images)==1
   assert all('M264DMB07P_BE_' in n['src'] for n in images[:-1])
-  assert not any('_J' in u or '_F' in u or '_G' in u or '/contents/' in u or 'moigift' in u or '배너' in c.unquote(u) for u in requested)
+  assert not any('_J' in u or '/contents/' in u or 'moigift' in u or '배너' in c.unquote(u) for u in requested)
   main,extra=c.gallery(Context('',[]),DOCS['BE'],'https://www.style24.com','M264DMB07P','BE',{})
   assert main and len(extra.split(','))==5 and main not in extra.split(',')
   assert 'moigift' not in html and '배너' not in html
@@ -116,6 +116,24 @@ def run(data,cuts=('01',)):
 class MoimolnTests(unittest.TestCase):
  def test_official_parsing_and_optional_contract(self):
   offline()
+ def test_real_editor_body_and_labels_are_preserved_in_source_order(self):
+  doc=BeautifulSoup((FIX/'M254CAI01P.html').read_bytes(),'html.parser')
+  requested=[]
+  def info(ctx,url,cache,gallery=False):
+   requested.append(url)
+   return ('JPEG',1920,4029,False,url,'')
+  with patch.object(c,'image_info',info):
+   output=c.detail(Context('',[]),doc,c.SITE,'M254CAI01P','NA',{})
+  imgs=BeautifulSoup(output,'html.parser').select('img')
+  urls=[n['src'] for n in imgs]
+  assert urls[0]=='https://image.style24.com/Upload/editor/M254CAI01P.jpg'
+  assert any('_NA_L1.jpg' in u for u in urls) and any('_NA_L2.jpg' in u for u in urls)
+  assert '사이즈_조견표' in c.unquote(urls[-1])
+  original=[c.image_url(n,c.SITE) for n in doc.select('.pd-core__wrap img') if not any(set(p.get('class',[])).intersection({'logo','pd-core__color','pd-core__care'}) for p in n.parents)]
+  assert urls[:-1]==list(dict.fromkeys(original))
+  assert not any('moigift' in u or '/contents/brand/' in u or '_J1' in u for u in requested)
+  assert not BeautifulSoup(output,'html.parser').select('table')
+
  def test_image_policy_and_printed_garment(self):
   for fmt in ['JPEG','PNG','WEBP']:
    main,extra,_=run(encoded(fmt=fmt));assert main and len(extra.split(','))==5
