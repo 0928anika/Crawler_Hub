@@ -199,7 +199,7 @@ class MoimolnTests(unittest.TestCase):
   assert c.korean_color_name(doc,'M264DMB07P','BE','BE')=='베이지'
   with self.assertRaises(c.CrawlError):c.korean_color_name(doc,'M264DMB07P','OW','OW')
   metadata=json.loads((ROOT/'brands/moimoln_official.json').read_text(encoding='utf-8'))
-  assert '색상명' in metadata['output_headers'] and '색상코드' not in metadata['output_headers']
+  assert '색상명' in metadata['output_headers'] and '색상코드' in metadata['output_headers']
 
  def test_image_policy_and_printed_garment(self):
   for fmt in ['JPEG','PNG','WEBP']:
