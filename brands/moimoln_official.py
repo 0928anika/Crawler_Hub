@@ -216,7 +216,7 @@ def product_name(doc, base):
         name = re.sub(r'\[\s*' + re.escape(alias) + r'\s*\]', '', name, flags=re.I)
         name = re.sub(r'(?<![A-Za-z0-9가-힣])' + re.escape(alias) + r'(?![A-Za-z0-9가-힣])', '', name, flags=re.I)
     # 확인한 공식 시즌 표기만 제거한다. 상품명 자체의 다른 대괄호 문구는 보존.
-    name = re.sub(r'\[\s*(?:20)?\d{2}\s*(?:봄|여름|가을|겨울|SPRING|SUMMER|FALL|AUTUMN|WINTER|SS|FW)\s*\]', '', name, flags=re.I)
+    name = re.sub(r'\[\s*(?:(?:20)?\d{2}\s*)?(?:전시즌|봄|여름|가을|겨울|SPRING|SUMMER|FALL|AUTUMN|WINTER|SS|FW)\s*\]', '', name, flags=re.I)
     name = re.sub(r'\s+', ' ', name).strip(' _-')
     if not name:
         raise CrawlError('정리된 실제 상품명 없음')
@@ -275,7 +275,7 @@ def image_role(url, base, color):
     parts = urlsplit(url)
     if parts.hostname != 'image.style24.com' or not parts.path.startswith('/Upload/ProductImage/'):
         return None
-    match = re.search('/' + re.escape(base) + '_' + re.escape(color) + r'_(\d+|D\d+|I\d+)\.(?:jpg|jpeg|png|webp)(?:/|$)', parts.path, re.I)
+    match = re.search('/' + re.escape(base) + '_' + re.escape(color) + r'_(\d+|D\d+|I\d+)(?:\[\d+\])?\.(?:jpg|jpeg|png|webp)(?:/|$)', unquote(parts.path), re.I)
     return match[1].upper() if match else None
 
 
@@ -291,7 +291,7 @@ def gallery_color(ctx, doc, link, base, color):
             address = urlsplit(image_url(node, link))
             if address.hostname != 'image.style24.com' or not address.path.startswith('/Upload/ProductImage/'):
                 continue
-            match = re.search('/' + re.escape(base) + r'_([A-Za-z0-9]+)_01\.(?:jpg|jpeg|png|webp)(?:/|$)', address.path, re.I)
+            match = re.search('/' + re.escape(base) + r'_([A-Za-z0-9]+)_(?:\d+|D\d+)(?:\[\d+\])?\.(?:jpg|jpeg|png|webp)(?:/|$)', unquote(address.path), re.I)
             if match:
                 mapped.add(match[1].upper())
     if len(mapped) > 1:

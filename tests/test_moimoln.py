@@ -150,6 +150,22 @@ class MoimolnTests(unittest.TestCase):
    main,_=c.gallery(Context('',[]),other,c.SITE,'TEST123','ZZ',{})
   assert '_XY_01.jpg' in main
 
+ def test_gallery_accepts_official_numbered_filename_suffix(self):
+  source=(FIX/'M2652AW06P_OW.html').read_text(encoding='utf-8').replace('M2652AW06P','M2652AW10P')
+  for marker in ['[0]', '%5B0%5D', '[12]']:
+   doc=BeautifulSoup(source.replace('.jpg',marker+'.jpg'),'html.parser')
+   requested=[]
+   def info(ctx,url,cache,gallery=False):
+    requested.append(url)
+    return ('JPEG',1080,1404,False,url,'')
+   with patch.object(c,'image_info',info):
+    main,extras=c.gallery(Context('',[]),doc,c.SITE,'M2652AW10P','OW',{})
+   assert '_OH_01' in main and '%5B' in main and len(extras.split(','))==5
+   assert all('_OH_' in u for u in requested)
+   assert all(c.image_role(u,'M2652AW10P','OH') for u in requested)
+  assert c.image_role('https://image.style24.com/Upload/ProductImage/M2652AW10P_OH_I1%5B0%5D.jpg','M2652AW10P','OH')=='I1'
+  assert not c.image_role('https://image.style24.com/Upload/ProductImage/M2652AW10P_OH_L1[0].jpg','M2652AW10P','OH')
+
  def test_image_policy_and_printed_garment(self):
   for fmt in ['JPEG','PNG','WEBP']:
    main,extra,_=run(encoded(fmt=fmt));assert main and len(extra.split(','))==5
