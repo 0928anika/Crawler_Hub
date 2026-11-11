@@ -287,45 +287,58 @@ def image_url(node, link):
     return quote(urljoin(link, src), safe=':/?&=%+#') if src else ''
 
 
-def image_role(url, base, color):
+def stem_role(url, stem):
     parts = urlsplit(url)
     if parts.hostname != 'image.style24.com' or not parts.path.startswith('/Upload/ProductImage/'):
         return None
-    match = re.search('/' + re.escape(base) + '_' + re.escape(color) + r'_([A-Z]*\d+)(?:\[\d+\])?\.(?:jpg|jpeg|png|webp)(?:/|$)', unquote(parts.path), re.I)
+    match = re.search('/' + re.escape(stem) + r'_([A-Z]*\d+)(?:\[\d+\])?\.(?:jpg|jpeg|png|webp)(?:/|$)', unquote(parts.path), re.I)
     cut = match[1].upper() if match else ''
-    # 갤러리 DOM을 근거로 컷을 찾되, 명확한 보조자료 역할은 계속 제외.
     if re.match(r'[LGFHJ]\d+$', cut):
         return None
     return cut or None
 
 
-def gallery_color(ctx, doc, link, base, color):
-    # 공식 옵션 a의 colorCd -> 자식 img 연결이 근거다. 파일명의 색상 토큰은
-    # 판매 옵션 코드와 다를 수 있다. 특정 품번/색상의 예외 목록은 쓰지 않는다.
-    mapped = set()
+def image_role(url, base, color):
+    return stem_role(url, base + '_' + color)
+
+
+def gallery_stem(ctx, doc, link, base, color):
+    # Product identity comes from verified goodsCd/ProductGroup. File names
+    # are not product IDs: use the actual photo assigned to each option.
+    mapped = {}
     for anchor in doc.select('.option_box .opt_color a[href]'):
         params = parse_qs(urlsplit(urljoin(link, anchor['href'])).query)
-        if params.get('goodsCd') != [base] or params.get('colorCd') != [color]:
+        if params.get('goodsCd') != [base] or not params.get('colorCd'):
             continue
+        option_code = params['colorCd'][0]
         for node in anchor.select('img[data-thumbnail="goodsDetailOptionWeb"]'):
             address = urlsplit(image_url(node, link))
             if address.hostname != 'image.style24.com' or not address.path.startswith('/Upload/ProductImage/'):
                 continue
-            match = re.search('/' + re.escape(base) + r'_([A-Za-z0-9]+)_[A-Za-z]*\d+(?:\[\d+\])?\.(?:jpg|jpeg|png|webp)(?:/|$)', unquote(address.path), re.I)
+            match = re.search(r'/([^/]+)_[A-Z]*\d+(?:\[\d+\])?\.(?:jpg|jpeg|png|webp)(?:/|$)', unquote(address.path), re.I)
             if match:
-                mapped.add(match[1].upper())
-    if len(mapped) > 1:
-        raise CrawlError('공식 색상 옵션의 이미지 연결이 서로 다름: ' + color)
-    if mapped:
-        actual = next(iter(mapped))
-        if actual != color:
-            ctx.log('공식 옵션 이미지 연결 확인: 판매 색상=' + color + ', 사진 파일 색상=' + actual, 'INFO')
-        return actual
-    return color
+                mapped.setdefault(option_code, set()).add(match[1])
+    stems = mapped.get(color, set())
+    if len(stems) > 1:
+        raise CrawlError('공식 색상 옵션의 사진 파일명 연결이 서로 다름: ' + color)
+    if not stems:
+        return base + '_' + color
+    stem = next(iter(stems))
+    if any(stem in values for code, values in mapped.items() if code != color):
+        raise CrawlError('여러 색상 옵션이 같은 사진 파일명에 연결됨: ' + color)
+    ctx.log('공식 색상-사진 파일명 연결: ' + base + '/' + color + ' -> ' + stem, 'INFO')
+    return stem
+
+
+def gallery_color(ctx, doc, link, base, color):
+    # Compatibility helper: the full official file stem is authoritative.
+    stem = gallery_stem(ctx, doc, link, base, color)
+    prefix = base + '_'
+    return stem[len(prefix):].upper() if stem.startswith(prefix) else color
 
 
 def gallery(ctx, doc, link, base, color, cache):
-    photo_color = gallery_color(ctx, doc, link, base, color)
+    photo_stem = gallery_stem(ctx, doc, link, base, color)
     # 원문에 실제 제공되는 원본 및 갤러리 URL만 사용. CDN 주소를 변조하지 않는다.
     nodes = doc.select('.pd-core__color-item img[data-thumbnail="goodsDetailOptionWeb"]')
     nodes += doc.select('img[data-thumbnail="goodsDetailImageWeb"], img[data-thumbnail="goodsDetailImageMob"]')
@@ -333,7 +346,7 @@ def gallery(ctx, doc, link, base, color, cache):
     for node in nodes:
         ctx.checkpoint()
         url = image_url(node, link)
-        cut = image_role(url, base, photo_color)
+        cut = stem_role(url, photo_stem)
         if not cut or cut.startswith('I') or cut in seen_cuts:
             continue
         info = image_info(ctx, url, cache, gallery=True)

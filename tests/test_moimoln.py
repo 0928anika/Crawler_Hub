@@ -187,6 +187,32 @@ class MoimolnTests(unittest.TestCase):
     main,extras=c.gallery(Context('',[]),doc,c.SITE,'M254DMB09P','BK',{})
    assert not main and not extras and not requested
 
+ def test_actual_article_file_stem_variants_use_official_option_mapping(self):
+  base='M254OVF09P'
+  expected={'RE':'M254OVF09PRE','1M':'M2540VF09P_1M','IV':'M254OVF09P'}
+  for color,stem in expected.items():
+   with self.subTest(color=color):
+    doc=BeautifulSoup((FIX/(base+'_'+color+'.html')).read_bytes(),'html.parser')
+    ctx=Context(base,[]);requested=[]
+    def info(ctx,url,cache,gallery=False):requested.append(url);return ('JPEG',1000,1300,False,url,'')
+    assert c.gallery_stem(ctx,doc,c.SITE,base,color)==stem
+    with patch.object(c,'image_info',info):main,extras=c.gallery(ctx,doc,c.SITE,base,color,{})
+    assert main and len(extras.split(','))==5
+    assert requested and all(c.stem_role(url,stem) for url in requested)
+    assert all('_I' not in url for url in requested)
+
+ def test_nonstandard_file_stem_needs_official_mapping_and_must_be_unambiguous(self):
+  base='M254OVF09P';doc=BeautifulSoup((FIX/(base+'_1M.html')).read_bytes(),'html.parser')
+  for node in doc.select('.option_box .opt_color img'):node.decompose()
+  requested=[]
+  def info(*a,**kw):requested.append(a[1]);return ('JPEG',1000,1300,False,a[1],'')
+  with patch.object(c,'image_info',info):main,extras=c.gallery(Context(base,[]),doc,c.SITE,base,'1M',{})
+  assert not main and not requested
+  doc=BeautifulSoup((FIX/(base+'_1M.html')).read_bytes(),'html.parser')
+  anchors=doc.select('.option_box .opt_color a[href]')
+  anchors[0].find('img')['src']=anchors[1].find('img')['src']
+  with self.assertRaises(c.CrawlError):c.gallery_stem(Context(base,[]),doc,c.SITE,base,'1M')
+
  def test_korean_color_name_never_falls_back_to_code(self):
   doc=BeautifulSoup(str(DOCS['BE']),'html.parser')
   assert c.korean_color_name(doc,'M264DMB07P','BE','BE')=='베이지'
