@@ -59,4 +59,10 @@ class AwkTests(unittest.TestCase):
   with patch.object(c,'stock_options',return_value=[]):options=c.choices(c.parse('<html></html>'),group)
   self.assertEqual([o['images'] for o in options],[[],[]])
   with self.assertRaises(c.CrawlError):c.gallery(Context(),options[0],{})
+ def test_mapping_failure_is_not_reported_as_missing_product(self):
+  ctx=Context(['main_image'])
+  with patch.object(c,'search',return_value=[c.SITE+'/product/detail.html?product_no=5157']),patch.object(c,'fetch',return_value=RAW),patch.object(c,'gallery',side_effect=c.CrawlError('색상별 사진 자동 연결 불가')):
+   with self.assertRaisesRegex(c.CrawlError,'상품은 조회됐으나 수집 실패'):c.crawl(ctx)
+  self.assertFalse(any('공식 자체상품코드와 일치하는 AWK 상품 없음' in e for e in ctx.errors))
+
 if __name__=='__main__':unittest.main()

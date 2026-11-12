@@ -232,7 +232,7 @@ def gallery(ctx,item,cache):
         if info['validation']['passed'] and info['digest'] not in seen:
             seen.add(info['digest']);accepted.append({'url':url,'validation':info['validation']})
         else:ctx.log('상품컷 제외: '+url,'WARNING')
-    if not accepted:raise CrawlError('해당 색상의 검증 가능한 원본 상품컷 없음: '+item['color'])
+    if not accepted:raise CrawlError('색상별 사진 자동 연결 불가: '+item['color']+' / 공식 옵션들이 같은 사진을 공유하거나 독립 사진이 없음. 색상 미매핑 수집 필요')
     main,extras,warning=gallery_slots(accepted)
     if warning:ctx.log(warning,'WARNING')
     return main,','.join(extras)
@@ -314,6 +314,7 @@ def crawl(ctx):
                 ctx.emit_result(record);emitted.add(key)
         except Exception as exc:errors.append(link+' / '+str(exc));ctx.fail_item(errors[-1])
     if not emitted:
+        if errors:raise CrawlError('상품은 조회됐으나 수집 실패: '+' / '.join(errors))
         message='공식 자체상품코드와 일치하는 AWK 상품 없음: '+code
         ctx.fail_item(message);raise CrawlError(message)
     if errors:raise CrawlError('일부 수집 미완료: '+' / '.join(errors))
