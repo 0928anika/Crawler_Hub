@@ -6,7 +6,7 @@
   "script": "awk_official.py",
   "execution_level": 1,
   "interface": "portal_v1",
-  "mapping_mode": "automatic",
+  "mapping_mode": "manual",
   "image_mode": "url",
   "output_headers": [
     "품번",
@@ -25,7 +25,7 @@
   ],
   "extensions": [],
   "official_color_codes": true,
-  "image_color_mapping": "verified",
+  "image_color_mapping": "hybrid",
   "capabilities": {
     "size": {
       "supported": true,
@@ -70,7 +70,7 @@
     ],
     "pattern": "^[\\s\\S]+$",
     "format": "공식 자체상품코드 전체 입력, 형식 제한 없이 검색 후 대조.",
-    "notes": "색상은 전체 원문 유지(네이비29), 색상명은 숫자 앞부분(네이비), 색상코드는 끝 숫자(29)로 분리. 옵션 link_image 우선, 없으면 색상 버튼 img.src를 검사. 실제 파일500px 미만이면 Chrome에서 확인한 갤러리 원본과 동일 이미지 비교.",
+    "notes": "품번 전체 색상 연결이 확인되면 자동 완료하며 매핑 화면에서 제외. 한 옵션이라도 미확정이면 해당 품번 전체 사진/색상을 한 수동 매핑 그룹으로 표시. 색상=네이비29, 색상명=네이비, 코드=29.",
     "method": "자체상품코드/공식 상품 ID 대조 후 색상 option_value→link_image로 원본 자동 매핑. ProductGroup의 공통 기본사진보다 옵션 원본 연결을 우선.",
     "required_columns": [
       "품번"
@@ -80,7 +80,9 @@
     ],
     "validation_note": "여러 색상이 같은 사진을 공유해 연결을 확정할 수 없으면 명시적 실패. 상세 안 고시/사이즈 원본 유지, notice_2021 배송 안내 제외."
   },
-  "notes": "색상/색상명/숫자코드를 각각 네이비29/네이비/29로 출력. 옵션 사진은 실제 픽셀 검사 후 사용하며 부족하면 동일한 갤러리 원본을 대조. 판매가·소비자가 독립 선택. 본문 사이즈/고시 보존, 별도 표 생성 없음. notice_2021 배송 안내 제외. 작은 옵션 파일의 원본 대조 시 Chrome 필요.",
+  "notes": "AWK 색상 미매핑/자동완료 혼합 버전. 품번 단위 원자적 처리: 모든 색상 확정 시 자동 결과만, 일부 미확정 시 전 색상·전 사진을 수동 그룹으로만 전송. 기존 상세 원본·배송 안내 제외·독립 가격 선택 유지. Chrome 필요.",
+  "hybrid_mapping": true,
+  "color_label_format": "name_code",
   "fields": {
     "product_code": {
       "label": "품번",
@@ -164,5 +166,5 @@
     "추가이미지": "additional_images",
     "상세페이지 HTML": "detail_page"
   },
-  "code_hash": "12800a33063ea03be2d4721a5d91d18204a8ce5459459f9bed3830630c69d45a"
+  "code_hash": "e32c402b32d183febf0f50f1d1da09d075c34ecf56b8d5a29ab9e2c4eabc395e"
 }

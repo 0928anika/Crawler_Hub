@@ -20,6 +20,8 @@ HOSTS=('awkmall.com','www.awkmall.com')
 MAX_BYTES=10000000
 class CrawlError(RuntimeError):
     """Official source or collection error."""
+class MappingFailure(CrawlError):
+    """Valid product but color-to-photo assignment is unconfirmed."""
 class MissingResource(CrawlError):
     """Source permanently removed."""
 
@@ -264,7 +266,7 @@ def browser_gallery(ctx,link,cache):
             if response is None or response.status>=400:raise CrawlError('원본 갤러리 화면 조회 실패')
             thumbs=page.locator('.imgArea .ThumbImage')
             for i in range(thumbs.count()):
-                ctx.checkpoint();thumbs.nth(i).click(force=True)
+                ctx.checkpoint();thumbs.nth(i).dispatch_event('mouseover');thumbs.nth(i).dispatch_event('mouseenter');thumbs.nth(i).dispatch_event('click')
                 source=page.locator('.imgArea .BigImage').get_attribute('src') or ''
                 url=urljoin(link,source)
                 if urlsplit(url).hostname in HOSTS and re.match(r'/web/product/(?:big/|extra/big/)',urlsplit(url).path) and url not in urls:urls.append(url)
@@ -284,7 +286,7 @@ def matching_original(ctx,thumb,link,cache):
         matches.append((score,url))
     matches.sort()
     if not matches or matches[0][0]>4 or (len(matches)>1 and matches[1][0]-matches[0][0]<6):
-        raise CrawlError('옵션 썸네일과 동일한 원본을 고유하게 확인하지 못함')
+        raise MappingFailure('옵션 썸네일과 동일한 원본을 고유하게 확인하지 못함')
     ctx.log('옵션 사진 동일 원본 확인: 오차 '+str(round(matches[0][0],3))+' / '+matches[0][1],'INFO')
     return matches[0][1]
 
@@ -298,7 +300,7 @@ def gallery(ctx,item,cache,doc=None,link=None):
         if info['validation']['passed'] and info['digest'] not in seen:
             seen.add(info['digest']);accepted.append({'url':url,'validation':info['validation']})
         else:ctx.log('상품컷 제외: '+url,'WARNING')
-    if not accepted:raise CrawlError('색상별 사진 자동 연결 불가: '+item['color']+' / 공식 옵션들이 같은 사진을 공유하거나 독립 사진이 없음. 색상 미매핑 수집 필요')
+    if not accepted:raise MappingFailure('색상별 사진 자동 연결 불가: '+item['color']+' / 공식 옵션들이 같은 사진을 공유하거나 독립 사진이 없음. 색상 미매핑 수집 필요')
     main,extras,warning=gallery_slots(accepted)
     if warning:ctx.log(warning,'WARNING')
     return main,','.join(extras)
@@ -341,8 +343,27 @@ def regular_price(ctx,doc):
     return value
 
 
+def manual_candidates(ctx,products):
+    photos=[];seen=set()
+    for doc,link,options,cache in products:
+        urls=[]
+        for item in options:
+            for url in item['images']:
+                if url not in urls:urls.append(url)
+        urls.extend(u for u in browser_gallery(ctx,link,cache) if u not in urls)
+        for url in urls:
+            try:info=picture(ctx,url,cache)
+            except MissingResource:
+                ctx.log('삭제된 수동 후보 사진 제외: '+url,'WARNING');continue
+            if min(info['width'],info['height'])<500 or max(info['width'],info['height'])/min(info['width'],info['height'])>1.8:continue
+            if info['digest'] in seen:continue
+            seen.add(info['digest']);photos.append(url)
+    return photos
+
+
 def crawl(ctx):
-    code=str(ctx.product_code).strip().upper();emitted=set();errors=[]
+    ctx.allow_automatic_results=True
+    code=str(ctx.product_code).strip().upper();errors=[];work=[];products=[];seen=set()
     if not code:raise CrawlError('품번이 비어 있습니다')
     ctx.stage('AWK 공식 품번 검색: '+code)
     try:links=search(ctx,code)
@@ -356,31 +377,67 @@ def crawl(ctx):
             variants=group.get('hasVariant',[])
             if any(not re.search(r'\bAWK\b',str(v.get('brand',{}).get('name','')),re.I) for v in variants):raise CrawlError('공식 AWK 브랜드 불일치')
             options=choices(doc,group);cache={};markup=detail(ctx,doc,link,cache) if ctx.enabled('detail_page') else ''
+            products.append((doc,link,options,cache))
             for item in options:
                 key=(pid,item['color'])
-                if key in emitted:continue
-                name=field(doc,'상품명');name=re.sub(r'(?i)^\s*AWK[\s_-]*','',name);name=name.replace(code,'').strip(' _-/()')
-                record={'product_code':code,'product_name':name,'product_url':link,'color':item['color'],'color_name':color_fields(item['color'])[0],'color_code':color_fields(item['color'])[1]}
-                if ctx.enabled('size'):
-                    if not item['sizes']:raise CrawlError('공식 사이즈 옵션 없음')
-                    record['size']=','.join(item['sizes'])
-                if ctx.enabled('price'):
-                    values={int(r['option_price']) for r in item['rows'] if isinstance(r.get('option_price'),(int,float)) and r['option_price']>0}
-                    if len(values)>1:raise CrawlError('동일 색상 사이즈별 판매가 상이')
-                    record['price']=next(iter(values)) if values else amount(field(doc,'판매가'))
-                if ctx.enabled('regular_price'):record['regular_price']=regular_price(ctx,doc)
-                if ctx.enabled('category'):
-                    cats=[a.get_text(' ',strip=True) for a in doc.select('.xans-product-headcategory li a')]
-                    record['category']=' > '.join(x for x in cats if x and x not in ('홈','현재 위치'))
-                if ctx.enabled('main_image') or ctx.enabled('additional_images'):
-                    main,extra=gallery(ctx,item,cache,doc,link)
-                    if ctx.enabled('main_image'):record['main_image']=main
-                    if ctx.enabled('additional_images'):record['additional_images']=extra
-                if ctx.enabled('detail_page'):record['detail_page']=markup
-                ctx.emit_result(record);emitted.add(key)
+                if key in seen:continue
+                seen.add(key)
+                work.append((item,doc,link,cache,markup))
         except Exception as exc:errors.append(link+' / '+str(exc));ctx.fail_item(errors[-1])
-    if not emitted:
-        if errors:raise CrawlError('상품은 조회됐으나 수집 실패: '+' / '.join(errors))
+    if errors:raise CrawlError('상품은 조회됐으나 수집 실패: '+' / '.join(errors))
+    if not work:
         message='공식 자체상품코드와 일치하는 AWK 상품 없음: '+code
         ctx.fail_item(message);raise CrawlError(message)
-    if errors:raise CrawlError('일부 수집 미완료: '+' / '.join(errors))
+    records=[]
+    for item,doc,link,cache,markup in work:
+        name=field(doc,'상품명');name=re.sub(r'(?i)^\s*AWK[\s_-]*','',name);name=name.replace(code,'').strip(' _-/()')
+        record={'product_code':code,'product_name':name,'product_url':link,'color':item['color'],'color_name':color_fields(item['color'])[0],'color_code':color_fields(item['color'])[1]}
+        if ctx.enabled('size'):
+            if not item['sizes']:raise CrawlError('공식 사이즈 옵션 없음')
+            record['size']=','.join(item['sizes'])
+        if ctx.enabled('price'):
+            values={int(r['option_price']) for r in item['rows'] if isinstance(r.get('option_price'),(int,float)) and r['option_price']>0}
+            if len(values)>1:raise CrawlError('동일 색상 사이즈별 판매가 상이')
+            record['price']=next(iter(values)) if values else amount(field(doc,'판매가'))
+        if ctx.enabled('regular_price'):record['regular_price']=regular_price(ctx,doc)
+        if ctx.enabled('category'):
+            cats=[a.get_text(' ',strip=True) for a in doc.select('.xans-product-headcategory li a')]
+            record['category']=' > '.join(x for x in cats if x and x not in ('홈','현재 위치'))
+        if ctx.enabled('detail_page'):record['detail_page']=markup
+        records.append(record)
+    wants_images=ctx.enabled('main_image') or ctx.enabled('additional_images')
+    auto=[];unconfirmed=[]
+    for record,(item,doc,link,cache,markup) in zip(records,work):
+        output=dict(record)
+        if wants_images:
+            try:main,extra=gallery(ctx,item,cache,doc,link)
+            except (MappingFailure,MissingResource) as exc:
+                unconfirmed.append(str(exc));break
+            if ctx.enabled('main_image'):output['main_image']=main
+            if ctx.enabled('additional_images'):output['additional_images']=extra
+        auto.append(output)
+    if not unconfirmed:
+        for record in auto:ctx.emit_result(record)
+        ctx.log('품번 전체 공식 색상 연결 확인: 자동 완료, 수동 매핑 화면에서 제외','SUCCESS')
+        return
+    # No partial auto rows are emitted: one uncertain option sends the whole
+    # article, every colour and all photographs, to one manual group.
+    ctx.log('색상 일부 미확정: 품번 전체 수동 매핑으로 전환 / '+' / '.join(unconfirmed),'INFO')
+    photos=manual_candidates(ctx,products)
+    if not photos:
+        message='수동 매핑에 사용할 유효한 원본 상품사진 없음: '+code
+        ctx.fail_item(message);raise CrawlError(message)
+    palette=[]
+    for record in records:
+        value={'color_name':record['color_name'],'color_code':record['color_code']}
+        if value not in palette:palette.append(value)
+    common=dict(records[0])
+    for key in ('color','color_name','color_code'):common.pop(key,None)
+    for key in ('size','price','regular_price','category'):
+        if ctx.enabled(key) and any(r.get(key)!=common.get(key) for r in records):
+            common[key]=None;ctx.log('품번 공통 '+key+' 값이 달라 빈칸으로 유지','WARNING')
+    shared=''.join(dict.fromkeys(r.get('detail_page','') for r in records)) if ctx.enabled('detail_page') else ''
+    if len(shared.encode('utf-16-le'))//2>32767:raise CrawlError('공통 상세 HTML 엑셀 셀 한도 초과')
+    if ctx.enabled('detail_page'):common['detail_page']=shared
+    for url in photos:ctx.emit_unmapped(dict(common),[dict(c) for c in palette],url,shared_detail_html=shared)
+    ctx.log('품번 전체 수동 매핑 후보 '+str(len(photos))+'장 / 색상 '+str(len(palette))+'개','SUCCESS')

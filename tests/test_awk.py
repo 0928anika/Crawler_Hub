@@ -12,13 +12,14 @@ FIX=ROOT/'tests/fixtures/awk'
 RAW=(FIX/'R267B0101A.html').read_bytes()
 class Context:
  product_code='R267B0101A'
- def __init__(self,fields=()):self.fields=set(fields);self.rows=[];self.errors=[]
+ def __init__(self,fields=()):self.fields=set(fields);self.rows=[];self.errors=[];self.unmapped=[]
  def enabled(self,key):return key in self.fields
  def checkpoint(self):return None
  def stage(self,*a):return None
  def log(self,*a):return None
  def fail_item(self,msg):self.errors.append(msg)
  def emit_result(self,row):self.rows.append(row)
+ def emit_unmapped(self,record,colors,url,shared_detail_html=""):self.unmapped.append((record,colors,url,shared_detail_html))
 class AwkTests(unittest.TestCase):
  def test_actual_option_stock_json_and_original_labels(self):
   doc=c.parse(RAW);options=c.choices(doc,c.product_group(doc))
@@ -59,11 +60,11 @@ class AwkTests(unittest.TestCase):
   with patch.object(c,'stock_options',return_value=[]):options=c.choices(c.parse('<html></html>'),group)
   self.assertEqual([o['images'] for o in options],[[],[]])
   with self.assertRaises(c.CrawlError):c.gallery(Context(),options[0],{})
- def test_mapping_failure_is_not_reported_as_missing_product(self):
+ def test_mapping_failure_becomes_manual_not_product_absence(self):
   ctx=Context(['main_image'])
-  with patch.object(c,'search',return_value=[c.SITE+'/product/detail.html?product_no=5157']),patch.object(c,'fetch',return_value=RAW),patch.object(c,'gallery',side_effect=c.CrawlError('색상별 사진 자동 연결 불가')):
-   with self.assertRaisesRegex(c.CrawlError,'상품은 조회됐으나 수집 실패'):c.crawl(ctx)
-  self.assertFalse(any('공식 자체상품코드와 일치하는 AWK 상품 없음' in e for e in ctx.errors))
+  with patch.object(c,'search',return_value=[c.SITE+'/product/detail.html?product_no=5157']),patch.object(c,'fetch',return_value=RAW),patch.object(c,'gallery',side_effect=c.MappingFailure('색상별 사진 자동 연결 불가')),patch.object(c,'manual_candidates',return_value=['https://example.com/photo.jpg']):
+   c.crawl(ctx)
+  self.assertFalse(ctx.errors);self.assertFalse(ctx.rows);self.assertEqual(len(ctx.unmapped),1)
 
  def test_color_button_original_images_override_shared_default_jsonld(self):
   doc=c.parse((FIX/'R267B0301A.html').read_bytes());options=c.choices(doc,c.product_group(doc))
@@ -96,5 +97,24 @@ class AwkTests(unittest.TestCase):
   def info(ctx,url,cache):return {'raw':raw if url==urls[0] else wrong.getvalue(),'width':700,'height':700}
   with patch.object(c,'browser_gallery',return_value=urls),patch.object(c,'picture',side_effect=info):
    self.assertEqual(c.matching_original(Context(),{'raw':small},c.SITE,{}),urls[0])
+
+ def test_one_unknown_option_sends_whole_article_to_manual(self):
+  raw=(FIX/'R267B0301A.html').read_bytes();ctx=Context(['main_image']);ctx.product_code='R267B0301A'
+  with patch.object(c,'search',return_value=[c.SITE+'/product/detail.html?product_no=5160']),patch.object(c,'fetch',return_value=raw),patch.object(c,'gallery',side_effect=[('https://example.com/black.jpg','https://example.com/black.jpg'),c.MappingFailure('brown unknown')]),patch.object(c,'manual_candidates',return_value=['https://example.com/black.jpg','https://example.com/brown.jpg']):
+   c.crawl(ctx)
+  self.assertFalse(ctx.rows);self.assertFalse(ctx.errors);self.assertEqual(len(ctx.unmapped),2)
+  self.assertEqual({c['color_code'] for c in ctx.unmapped[0][1]},{'19','88'})
+  self.assertEqual({r[2] for r in ctx.unmapped},{'https://example.com/black.jpg','https://example.com/brown.jpg'})
+ def test_all_confirmed_options_emit_auto_only(self):
+  raw=(FIX/'R267B0301A.html').read_bytes();ctx=Context(['main_image']);ctx.product_code='R267B0301A'
+  with patch.object(c,'search',return_value=[c.SITE+'/product/detail.html?product_no=5160']),patch.object(c,'fetch',return_value=raw),patch.object(c,'gallery',side_effect=[('https://example.com/black.jpg',''),('https://example.com/brown.jpg','')]),patch.object(c,'manual_candidates',side_effect=AssertionError('unneeded manual')):
+   c.crawl(ctx)
+  self.assertEqual(len(ctx.rows),2);self.assertFalse(ctx.unmapped);self.assertTrue(ctx.allow_automatic_results)
+
+ def test_user_manual_example_has_all_colors_and_unconfirmed_shared_photo(self):
+  doc=c.parse((FIX/'R267B3501A.html').read_bytes());options=c.choices(doc,c.product_group(doc))
+  self.assertEqual([o['color'] for o in options],['멜란지그레이14','블랙19'])
+  self.assertTrue(all(not o['images'] for o in options))
+  with self.assertRaises(c.MappingFailure):c.gallery(Context(),options[0],{})
 
 if __name__=='__main__':unittest.main()
