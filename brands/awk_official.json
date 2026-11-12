@@ -60,7 +60,7 @@
     "detail_page": {
       "supported": true,
       "status": "conditional",
-      "reason": "공식 #prdDetail .cont 이미지 순서 유지. 기존 본문·사이즈·고시 이미지 보존. 확인된 공통 notice_2021.jpg(배송/교환/환불)만 요청 전 제외. 별도 고시/사이즈 표 생성 없음."
+      "reason": "공식 #prdDetail .cont 이미지 순서 유지. 기존 본문·사이즈·고시 이미지 보존. 확인된 공통 notice_2021.jpg(배송/교환/환불)만 요청 전 제외. 별도 고시/사이즈 표 생성 없음. 상품 본문 원본이404로 삭제된 경우에만 실제 원본 상품컷과 남은 사이즈/고시 이미지를 조합해 성공 처리. 배송 안내 제외 유지. 정상 본문은 대체하지 않음."
     }
   },
   "guide": {
@@ -148,7 +148,7 @@
       "label": "상세페이지",
       "supported": true,
       "status": "conditional",
-      "reason": "공식 #prdDetail .cont 이미지 순서 유지. 기존 본문·사이즈·고시 이미지 보존. 확인된 공통 notice_2021.jpg(배송/교환/환불)만 요청 전 제외. 별도 고시/사이즈 표 생성 없음."
+      "reason": "공식 #prdDetail .cont 이미지 순서 유지. 기존 본문·사이즈·고시 이미지 보존. 확인된 공통 notice_2021.jpg(배송/교환/환불)만 요청 전 제외. 별도 고시/사이즈 표 생성 없음. 상품 본문 원본이404로 삭제된 경우에만 실제 원본 상품컷과 남은 사이즈/고시 이미지를 조합해 성공 처리. 배송 안내 제외 유지. 정상 본문은 대체하지 않음."
     }
   },
   "column_fields": {
@@ -166,5 +166,5 @@
     "추가이미지": "additional_images",
     "상세페이지 HTML": "detail_page"
   },
-  "code_hash": "e32c402b32d183febf0f50f1d1da09d075c34ecf56b8d5a29ab9e2c4eabc395e"
+  "code_hash": "b657d3988f285f19bcc2694e8cbe86497da47b89a9e0d7b4a31cfdc59e2b4c1b"
 }

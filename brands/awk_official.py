@@ -314,19 +314,33 @@ def is_shipping(url):
 def detail(ctx,doc,link,cache):
     area=doc.select_one('#prdDetail .cont')
     if area is None:raise CrawlError('공식 상세 본문 영역 없음')
-    parts=[];seen=set()
+    urls=[];seen=set();missing_body=False
+    code=field(doc,'자체상품코드').strip().upper()
     for node in area.find_all('img'):
         url=urljoin(link,node.get('ec-data-src') or node.get('data-src') or node.get('src') or '')
         if not url or url in seen:continue
         if is_shipping(url):ctx.log('배송/교환/환불 공통 안내 이미지 제외: '+url,'INFO');continue
         if urlsplit(url).hostname not in HOSTS+('jc2016.cafe24.com',):raise CrawlError('미확인 상세 이미지 출처: '+url)
-        info=picture(ctx,url,cache);seen.add(url)
+        seen.add(url)
+        try:info=picture(ctx,url,cache)
+        except MissingResource:
+            path=urlsplit(url).path
+            if '/aw/' in path.lower() or (code and code in path.upper()):missing_body=True
+            ctx.log('삭제된 상세 이미지404 생략: '+url,'WARNING');continue
         if info['height']<3:continue
-        parts.append('<img src="'+html.escape(url,quote=True)+'" alt="상품 상세정보" style="max-width:100%;height:auto"><br>')
-    if not parts:raise CrawlError('배송 안내 제외 후 본문 이미지 없음')
-    result='<div>'+''.join(parts)+'</div>'
+        urls.append(url)
+    if missing_body:
+        options=choices(doc,product_group(doc))
+        photos=manual_candidates(ctx,[(doc,link,options,cache)])
+        if not photos:raise CrawlError('본문 삭제 후 대체할 유효 상품컷 없음')
+        # Keep original surviving size/legal images; omit the generic brand
+        # introduction when composing the user-authorized fallback.
+        remaining=[u for u in urls if not urlsplit(u).path.lower().endswith('/awk_brand.jpg')]
+        urls=list(dict.fromkeys(photos+remaining))
+        ctx.log('공식 본문 삭제: 상품컷 '+str(len(photos))+'장 + 남은 사이즈/고시 이미지로 상세 구성','WARNING')
+    if not urls:raise CrawlError('배송 안내/삭제 이미지 제외 후 본문 이미지 없음')
+    result='<div>'+''.join('<img src="'+html.escape(url,quote=True)+'" alt="상품 상세정보" style="max-width:100%;height:auto"><br>' for url in urls)+'</div>'
     if len(result.encode('utf-16-le'))//2>32767:raise CrawlError('상세 HTML 엑셀 셀 한도 초과')
-    # Existing image-based size/legal information stays; no new tables.
     return result
 
 
