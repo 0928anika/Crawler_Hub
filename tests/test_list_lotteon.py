@@ -46,4 +46,10 @@ class ListLotteTests(unittest.TestCase):
   wrong=dict(row,spdId='LE2')
   with patch.object(c,'json_get',return_value=data),self.assertRaises(c.CollectionError):c.load_product(C(),wrong,'TWWJKP82030')
 
+ def test_automatic_query_correction_is_not_misreported_as_broken_api(self):
+  source='<script>create({queryInfo: {"query":"ts","originalQuery":"TSDJPO82080","correctionKeyword":"ts"},suggestedKeyword:{isReSearch:true}})</script>'
+  with patch.object(c,'fetch',side_effect=[b'',source.encode()]):self.assertEqual(c.search(C(),'TSDJPO82080'),[])
+  with patch.object(c,'fetch',side_effect=[b'',source.encode()]),self.assertRaises(c.CollectionError):c.search(C(),'OTHER')
+  with patch.object(c,'fetch',side_effect=[b'',b'<html>Temporary Error</html>']),self.assertRaises(c.CollectionError):c.search(C(),'TSDJPO82080')
+
 if __name__=='__main__':unittest.main()

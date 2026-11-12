@@ -152,7 +152,21 @@ def search(ctx,code):
             absent=any(p.find('em') and p.find('em').get_text(strip=True).upper()==code and '검색결과가 없습니다' in p.get_text() for p in page.find_all('p'))
             if absent:
                 ctx.log('공식 검색 결과 0개 확인: '+code,'INFO');return []
-            raise CollectionError('검색 응답 확인 실패: 빈 JSON이며 공식 결과 없음 표시도 확인되지 않음') from exc
+            for script in page.find_all('script'):
+                source=script.string or script.get_text()
+                match=re.search(r'\bqueryInfo\s*:\s*',source)
+                if not match:continue
+                try:info=json.JSONDecoder().raw_decode(source[match.end():])[0]
+                except (ValueError,TypeError):continue
+                if not isinstance(info,dict):continue
+                original=str(info.get('originalQuery','')).strip().upper()
+                corrected=str(info.get('correctionKeyword','')).strip()
+                effective=str(info.get('query','')).strip()
+                rerun=bool(re.search(r'\bisReSearch\s*:\s*true',source))
+                if original==code and corrected and effective==corrected and corrected.upper()!=code and rerun:
+                    ctx.log('롯데온 자동 검색어 교정: '+code+' -> '+corrected+' / 원래 품번의 직접 일치 결과 없음, 교정 추천상품 제외','INFO')
+                    return []
+            raise CollectionError('검색 응답 확인 실패: 빈 JSON이며 공식 결과 없음/자동 교정 표시도 확인되지 않음') from exc
         rows=data.get('itemList');count=data.get('total')
         if not isinstance(rows,list) or not isinstance(count,int):raise CollectionError('검색 목록/전체 개수 형식 변경')
         if total is None:total=count
