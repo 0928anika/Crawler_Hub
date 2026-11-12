@@ -31,6 +31,10 @@ class CrawlError(RuntimeError):
     pass
 
 
+class UnavailableSource(CrawlError):
+    """Public source returned HTTP 403/404."""
+
+
 def text(node):
     return node.get_text(" ", strip=True) if node else ""
 
@@ -128,8 +132,8 @@ def fetch(ctx, url, limit=4_000_000):
             ctx.log('공개 요청 완료 %.1f초: %s' % (time.monotonic()-started, url), 'INFO')
             return b''.join(chunks)
         except urllib.error.HTTPError as exc:
-            if exc.code == 404:
-                raise CrawlError('HTTP 404: ' + url) from exc
+            if exc.code in (403,404):
+                raise UnavailableSource('HTTP %s: %s' % (exc.code,url)) from exc
             if exc.code not in (429, 500, 502, 503, 504) or attempt:
                 raise CrawlError('HTTP %s: %s' % (exc.code, url)) from exc
         except (urllib.error.URLError, TimeoutError, socket.timeout, OSError) as exc:
@@ -380,7 +384,12 @@ def detail(ctx, page, data):
                 node.decompose()
                 continue
             seen.add(url)
-            image_info(ctx, url)
+            try:
+                image_info(ctx, url)
+            except UnavailableSource as exc:
+                ctx.log("공식 상세 이미지 접근 불가(403/404), 해당 파일만 제외: " + str(exc), "WARNING")
+                node.decompose()
+                continue
             node.attrs = {"src": url, "alt": node.get("alt", ""), "style": "max-width:100%;height:auto"}
         else:
             spans = {key: str(node[key]) for key in ("rowspan", "colspan")

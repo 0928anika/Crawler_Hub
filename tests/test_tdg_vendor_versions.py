@@ -19,6 +19,19 @@ class Context:
     def __init__(self):self.output=[]
 
 class VendorVersionTests(unittest.TestCase):
+    def test_official_inaccessible_size_banner_preserves_actual_body(self):
+        for c in self.modules():
+            if c.VENDOR_NO!='LV17008491':continue
+            urls=['http://img-studio.elandmall.com/Winstudio/TG-24-2BANNER.jpg','http://img-studio.elandmall.com/Winstudio/TGAK26A04.jpg','http://img-studio.elandmall.com/Winstudio/TG25-SIZE-1BANNER.jpg']
+            data={'itemDesc':{'itemDescdocumentCon':''.join('<img src="'+u+'"><br>' for u in urls),'itemProvideMntList':[{'itemProvideMntArtiName':'종류','itemProvideMntArtiCon':'백팩'}]}}
+            def load(ctx,url):
+                if url==urls[-1]:raise c.UnavailableSource('HTTP 403')
+                return (900,3000,'JPEG')
+            with patch.object(c,'image_info',side_effect=load):result=''.join(c.detail(Context(),BeautifulSoup('','html.parser'),data))
+            self.assertIn(urls[1],result);self.assertIn('백팩',result);self.assertNotIn(urls[-1],result)
+            with patch.object(c,'image_info',side_effect=c.CrawlError('TLS timeout')):
+                with self.assertRaises(c.CrawlError):c.detail(Context(),BeautifulSoup('','html.parser'),data)
+
     def test_official_zero_search_reports_search_not_image_failure(self):
         for c in self.modules():
             if c.VENDOR_NO!='LV17008491':continue
