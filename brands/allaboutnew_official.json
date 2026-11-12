@@ -1,0 +1,170 @@
+{
+  "id": "allaboutnew_official",
+  "name": "올어바웃뉴",
+  "category": "캐주얼",
+  "crawl_source": "공식 홈페이지",
+  "script": "allaboutnew_official.py",
+  "execution_level": 1,
+  "mapping_mode": "automatic",
+  "image_color_mapping": "verified",
+  "official_color_codes": true,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "주상품 [option_title=사이즈]의 li[option_value] 또는 option. 품절 옵션 유지."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "주상품 .xans-product-detaildesign #span_product_price_sale 또는 #span_product_price_text. 최대할인가/쿠폰가 제외. 예시 기본 판매가129900."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "주상품 .xans-product-detaildesign #span_product_price_custom 독립 소비자가. 예시129900 KRW. 미표시/0/형식오류는 빈칸과 경고."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .path ol li의 홈을 제외한 분류 경로."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "주상품 .imgArea img.BigImage. 공식 상품명 전체품번과 ALLABOUTNEW 구조화 데이터로 단일색상 페이지 검증."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "동일 주상품 .imgArea .listImg 원본 전체 검증·바이트 중복 제거 후5슬롯. 색상칩의 잘못된 라벨로 매핑하지 않음."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "#prdDetail 실제 본문 원본 이미지 우선. 본문 이미지가 없는 빈 영역에서만 해당색상 검증 상품컷 전체로 구성. 원본 사이즈표/고시 이미지 보존, 별도 표 생성 없음. 이벤트·배송 영역 제외. 있는 본문 이미지의 통신/404 오류를 빈본문으로 오인하지 않음."
+    }
+  },
+  "guide": {
+    "example": "ANA3DC01A",
+    "examples": [
+      "ANA3DC01A",
+      "ANA3DC01ACC",
+      "ANA3DC01A_CC"
+    ],
+    "pattern": "^[\\s\\S]+$",
+    "format": "기본 품번 또는 색상코드 포함 전체 품번. 기본품번_색상코드도 허용.",
+    "notes": "공식 상품명 끝 전체품번의 기본9자리+색상2자리. 차콜/CC, D베이지/DE. 잘못된 칩 라벨 대신 실제 주상품명과 구조화 브랜드 확인.",
+    "method": "올어바웃뉴 공식 검색 결과 실제 링크별 주상품 검증. 인터크루와 별개.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      ""
+    ],
+    "validation_note": "원본 상세 우선. 본문 없는 경우만 상품컷 조합. 별도 사이즈·고시 생성 없음."
+  },
+  "notes": "인터크루와 독립된 올어바웃뉴 공식몰 크롤러. 본문 이미지가 있으면 그대로 보존하고, 비어 있는 경우에만 검증된 동일색상 상품컷 전체로 상세 구성. 판매가는 명시 판매가, 최대할인가/쿠폰가 사용 안 함.",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "code_hash": "0c2295598feba68e6ad611901abdb3bbb24ca3e3108381e9642711b925d19649",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "주상품 [option_title=사이즈]의 li[option_value] 또는 option. 품절 옵션 유지."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "주상품 .xans-product-detaildesign #span_product_price_sale 또는 #span_product_price_text. 최대할인가/쿠폰가 제외. 예시 기본 판매가129900."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "주상품 .xans-product-detaildesign #span_product_price_custom 독립 소비자가. 예시129900 KRW. 미표시/0/형식오류는 빈칸과 경고."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .path ol li의 홈을 제외한 분류 경로."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "주상품 .imgArea img.BigImage. 공식 상품명 전체품번과 ALLABOUTNEW 구조화 데이터로 단일색상 페이지 검증."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "동일 주상품 .imgArea .listImg 원본 전체 검증·바이트 중복 제거 후5슬롯. 색상칩의 잘못된 라벨로 매핑하지 않음."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "#prdDetail 실제 본문 원본 이미지 우선. 본문 이미지가 없는 빈 영역에서만 해당색상 검증 상품컷 전체로 구성. 원본 사이즈표/고시 이미지 보존, 별도 표 생성 없음. 이벤트·배송 영역 제외. 있는 본문 이미지의 통신/404 오류를 빈본문으로 오인하지 않음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page"
+  }
+}

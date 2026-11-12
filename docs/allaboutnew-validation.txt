@@ -1,0 +1,48 @@
+Allaboutnew official crawler — 2026-11-12
+Brand: allaboutnew_official / 올어바웃뉴 / 공식 홈페이지
+Independent script and metadata; no import or modification of Intercrew adapter.
+
+Observed public official pages:
+https://allaboutnew.co.kr/product/detail.html?product_no=683
+https://allaboutnew.co.kr/product/detail.html?product_no=682
+https://allaboutnew.co.kr/product/search.html?keyword=ANA3DC01A
+
+Search returns actual links for ANA3DC01ACC and ANA3DC01ADE. Verify primary
+.headingArea h1 full SKU and matching ProductGroup name/ALLABOUTNEW brand in
+JSON-LD. Parse Korean color from the actual primary title, not color-chip text:
+683 is 차콜/CC but its active chip incorrectly says D/BEIGE. 682 is D베이지/DE.
+Titles remove only the trailing color and full SKU. Button size options are
+95,100,105, including unavailable sizes if marked sold out. Category uses
+visible nonempty breadcrumb rows only.
+
+Prices come from the primary .xans-product-detaildesign, accepting KRW text.
+Displayed selling price #span_product_price_text is 129900; independent
+consumer price #span_product_price_custom is 129900. #span_optimum_discount_price
+103900 is labeled maximum discount and is not used as unconditional selling
+price. Independent regular-price selection, missing/zero/invalid = blank and
+warning, no reverse calculation or copying between fields.
+
+Original detail area is #prdDetail. Events/shipping are excluded. Preserve
+actual body images (including lazy ec-data-src, size/notice images) in order;
+do not generate notice or size tables. Only when the area exists but contains
+no actual body images: compose HTML from every valid primary color gallery
+shot, deduplicating bytes without the gallery's five-extra-slot padding or
+gallery ratio cutoff. Do not fall back when a nonempty source fails requests.
+Missing #prdDetail means structure failure, not permission to replace it.
+An actual nonempty body was not located among the sampled current products;
+normal-body priority and size/notice retention are verified by a controlled
+unit fixture addition, not presented as a live normal-body collection check.
+
+Primary galleries: .imgArea img.BigImage and .imgArea .listImg img. Only actual
+declared original URLs; no directory substitution. Public bytes decoded and
+deduplicated. Gallery helper enforces main/additional rules; fallback detail
+retains real tall shots and ignores one-pixel placeholders.
+
+Live worker all optional fields:
+ANA3DC01A: exit0, two rows, no item failures, 차콜/CC and D베이지/DE.
+ANA3DC01ACC: exit0, one row, 차콜/CC.
+Both empty product details composed from five valid distinct primary-color
+shots in original order. No fabricated size/notice tables.
+11 regression tests passed. Registry/hash/syntax check: 63 brands passed.
+Raw live evidence and worker logs are outside the repo in workspace files
+allaboutnew_*.html and allaboutnew-verification/.
