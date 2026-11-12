@@ -425,10 +425,10 @@ def detail_images(ctx, detail, code, cache):
             ctx.log('공통 배너/저작권/셀러 안내 제외 (요청 안 함): '+url,'INFO')
             continue
         studio = parsed.hostname=='img-studio.elandmall.com' and parsed.path.startswith('/Winstudio/')
-        product = bool(re.fullmatch(re.escape(code)+r'(?:[_-][A-Za-z0-9]+)?\.(?:jpg|jpeg|png|webp)',name,re.I))
-        size = bool(re.fullmatch(r'(?:NC|DC)[A-Za-z0-9_-]*SIZE[A-Za-z0-9_-]*\.(?:jpg|jpeg|png|webp)',name,re.I))
         cdn = parsed.hostname=='item.elandrs.com' and parsed.path.startswith('/r/image/item/')
-        if not ((studio and (product or size)) or cdn):
+        # The verified official body also uses UI-SIZE.jpg and other shared
+        # product/size filenames. Filename prefixes do not establish image role.
+        if not (studio or cdn):
             raise CollectionError('상품 본문/공통 안내 구분 미확인 이미지: '+url)
         # Observed official HTTPS endpoint serves the original HTTP-authored URL.
         if parsed.scheme=='http':

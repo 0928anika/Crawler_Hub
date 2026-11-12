@@ -41,6 +41,23 @@ def document(data):
 
 
 class NCBasicTests(unittest.TestCase):
+    def test_official_shared_size_filename_is_preserved(self):
+        ctx=Context();data=source('NCCK26T02')
+        with patch.object(c,'image_info',return_value={}) as image:
+            urls=c.detail_images(ctx,data,'NCCK26T02',{})
+        self.assertEqual(urls,[
+            'https://img-studio.elandmall.com/Winstudio/NCCK26T02.jpg',
+            'https://img-studio.elandmall.com/Winstudio/UI-SIZE.jpg'])
+        self.assertEqual([call.args[1] for call in image.call_args_list],urls)
+        self.assertFalse(any('DN-BANNER' in call.args[1] for call in image.call_args_list))
+
+    def test_official_body_filename_need_not_contain_product_code(self):
+        data=source('NCCK26T02')
+        data['itemDesc']['itemDescdocumentCon']='<img src="https://img-studio.elandmall.com/Winstudio/new_product_body.jpg"><img src="https://img-studio.elandmall.com/Winstudio/UI-SIZE.jpg">'
+        with patch.object(c,'image_info',return_value={}):
+            urls=c.detail_images(Context(),data,'NCCK26T02',{})
+        self.assertEqual(len(urls),2)
+
     def test_search_counts_all_results_but_returns_only_requested_vendor(self):
         doc=c.BeautifulSoup('<b data-searchresult-total>2</b><a class="ui-item__link" href="/i/item?itemNo=2411568415&amp;lowerVendNo=LV24013164"></a><a class="ui-item__link" href="/i/item?itemNo=2610597760&amp;lowerVendNo=LV26024017"></a>','html.parser')
         with patch.object(c,'page',return_value=doc) as page:

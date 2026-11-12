@@ -165,8 +165,10 @@
     "카테고리": "category",
     "대표이미지": "main_image",
     "추가이미지": "additional_images",
-    "상세페이지 HTML": "detail_page"
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null,
+    "판매자번호": null
   },
-  "code_hash": "dce1e2690e28eb915aef21c2467b8b55fa19f776da360edeab7ae34fc6deb70f",
+  "code_hash": "812cb6a8dfc63feb17cd4fe31656b5d95e9ccc890198b772fff105dcc9e6c6a6",
   "additional_image_count": 5
 }
