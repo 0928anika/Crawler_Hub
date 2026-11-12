@@ -1,0 +1,170 @@
+{
+  "id": "intercrew_official",
+  "name": "인터크루",
+  "category": "캐주얼",
+  "crawl_source": "공식 홈페이지",
+  "script": "intercrew_official.py",
+  "execution_level": 1,
+  "mapping_mode": "automatic",
+  "image_color_mapping": "verified",
+  "official_color_codes": true,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 주상품 select[option_title=사이즈] option. 품절/disabled 옵션도 보존."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "주상품 #span_product_price_sale 할인판매가 우선, 없으면 #span_product_price_text 판매가. 예시 53900."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 별도 소비자가 #span_product_price_custom. ITA3EL05ADG 소비자가89900/할인판매53900 확인. 누락·0·형식오류는 None과 경고로 계속."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .path ol li의 홈을 제외한 분류 경로."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 단일 색상 페이지의 .keyImg img.BigImage 실제 원본. 상품코드와 색상 옵션 검증."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .listImg img의 명시된 실제 원본(예시 small 경로도2000x2000), 검증 후5슬롯. 임의 원본 주소 변환 없음."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "#prdDetail .cont img의 ec-data-src 지연로딩 원본 전체 순서 유지. 사이즈/고시/소재 이미지는 그대로, 별도 표 생성 없음. 배송·교환 이미지와1픽셀 빈 파일만 제외, 원본404 경고. 통신 오류 실패."
+    }
+  },
+  "guide": {
+    "example": "ITA3EL05A",
+    "examples": [
+      "ITA3EL05A",
+      "ITA3EL05ADG",
+      "ITA3EL05A_DG"
+    ],
+    "pattern": "^[\\s\\S]+$",
+    "format": "기본 품번 또는 색상코드 포함 전체 품번. 기본품번_색상코드도 허용.",
+    "notes": "기본9자리+공식2자리 색상코드. 예시 ITA3EL05ADG: D그레이/DG. 단일 색상 상품 페이지의 공식 갤러리 자동 매핑.",
+    "method": "공식 검색 결과의 실제 링크 수집 후 product no.와 INTERCREW 브랜드·색상 옵션 확인.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      ""
+    ],
+    "validation_note": "품절 사이즈 포함. 상세 원본의 사이즈·고시 보존. 여러 색상인데 연결근거 없는 페이지는 오매핑하지 않고 실패."
+  },
+  "notes": "원본 상세 본문에 사이즈표와 고시가 포함되어 있으므로 별도 표를 만들지 않습니다. 배송 안내와1픽셀 자리표시자 제외. 공식 개별 색상 페이지의 이미지 자동 매핑.",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "code_hash": "0a24cba4fd2ce5551a6a131eaa7f86de78fab84b562f177e9bd130a702af7fde",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 주상품 select[option_title=사이즈] option. 품절/disabled 옵션도 보존."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "주상품 #span_product_price_sale 할인판매가 우선, 없으면 #span_product_price_text 판매가. 예시 53900."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 별도 소비자가 #span_product_price_custom. ITA3EL05ADG 소비자가89900/할인판매53900 확인. 누락·0·형식오류는 None과 경고로 계속."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .path ol li의 홈을 제외한 분류 경로."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 단일 색상 페이지의 .keyImg img.BigImage 실제 원본. 상품코드와 색상 옵션 검증."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .listImg img의 명시된 실제 원본(예시 small 경로도2000x2000), 검증 후5슬롯. 임의 원본 주소 변환 없음."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "#prdDetail .cont img의 ec-data-src 지연로딩 원본 전체 순서 유지. 사이즈/고시/소재 이미지는 그대로, 별도 표 생성 없음. 배송·교환 이미지와1픽셀 빈 파일만 제외, 원본404 경고. 통신 오류 실패."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page"
+  }
+}
