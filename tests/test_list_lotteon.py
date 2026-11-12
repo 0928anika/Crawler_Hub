@@ -52,4 +52,17 @@ class ListLotteTests(unittest.TestCase):
   with patch.object(c,'fetch',side_effect=[b'',source.encode()]),self.assertRaises(c.CollectionError):c.search(C(),'OTHER')
   with patch.object(c,'fetch',side_effect=[b'',b'<html>Temporary Error</html>']),self.assertRaises(c.CollectionError):c.search(C(),'TSDJPO82080')
 
+ def test_deleted_seller_photo_uses_explicit_lotte_stored_image(self):
+  item={'origImgFileNm':'https://seller.example/deleted.jpg','imgRteNm':'/20250522182429/LO/24/88/17/78/69/_2/48/81/77/87/0/','imgFileNm':'LO2488177869_2488177870_1.jpg'}
+  expected=c.CDN+'/itemimage'+item['imgRteNm']+item['imgFileNm']
+  good={'image':Image.new('RGB',(600,600)),'digest':'good'}
+  with patch.object(c,'image',side_effect=[c.MissingResource('404'),good]) as load:
+   source,info=c.gallery_image(C(),item,{})
+  self.assertEqual(source,expected);self.assertIs(info,good);self.assertEqual(load.call_count,2)
+  with patch.object(c,'image',side_effect=c.CollectionError('HTTP503')),self.assertRaises(c.CollectionError):c.gallery_image(C(),item,{})
+ def test_halfclub_user_banner_is_recognized_by_local_ocr(self):
+  with Image.open(ROOT/'tests/fixtures/list_lotteon/halfclub_banner.png') as pic,tempfile.TemporaryDirectory() as folder:
+   words=c.ocr(C(),pic.convert('RGB'),Path(folder),{})
+  self.assertRegex(words,c.BANNER)
+
 if __name__=='__main__':unittest.main()

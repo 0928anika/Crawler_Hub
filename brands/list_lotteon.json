@@ -44,7 +44,7 @@
     "main_image": {
       "supported": true,
       "status": "conditional",
-      "reason": "대표사진 외곽 배경의 지배색/균일도 검사 통과 상품만 조회. 밝기나 좌상단 로고를 별도 필수 조건으로 삼지 않음. 원본 상품사진도 동일 검사 및 500px 확인. 색상은 수동 매핑."
+      "reason": "대표사진 외곽 배경의 지배색/균일도 검사 통과 상품만 조회. 밝기나 좌상단 로고를 별도 필수 조건으로 삼지 않음. 원본 상품사진도 동일 검사 및 500px 확인. 색상은 수동 매핑. 판매자 원본이404면 공식 imgRteNm/imgFileNm 저장본을 실제 조회·검사 후 사용하며 URL을 추측하지 않음."
     },
     "additional_images": {
       "supported": true,
@@ -54,7 +54,7 @@
     "detail_page": {
       "supported": true,
       "status": "conditional",
-      "reason": "판매자 DSCRP 원문 #llis-root를 순서대로 보존. Windows 한국어 OCR로 신세계라이브쇼핑/내일도착/배송/저작권 배너 제거. 기존 원문 사이즈표/고시는 보존하고 별도 생성·추가 안 함. 본문과 배너가 합쳐진 긴 이미지는 명시적 오류. 상세에는 배경 검사를 적용하지 않음."
+      "reason": "판매자 DSCRP 원문 #llis-root를 순서대로 보존. Windows 한국어 OCR로 신세계라이브쇼핑/내일도착/배송/저작권 배너 제거. 기존 원문 사이즈표/고시는 보존하고 별도 생성·추가 안 함. 본문과 배너가 합쳐진 긴 이미지는 명시적 오류. 상세에는 배경 검사를 적용하지 않음. 하프클럽·브랜드 패션 전문몰 상단 홍보 배너도 OCR로 제외."
     },
     "regular_price": {
       "supported": false,
@@ -135,7 +135,7 @@
       "label": "대표이미지",
       "supported": true,
       "status": "conditional",
-      "reason": "대표사진 외곽 배경의 지배색/균일도 검사 통과 상품만 조회. 밝기나 좌상단 로고를 별도 필수 조건으로 삼지 않음. 원본 상품사진도 동일 검사 및 500px 확인. 색상은 수동 매핑."
+      "reason": "대표사진 외곽 배경의 지배색/균일도 검사 통과 상품만 조회. 밝기나 좌상단 로고를 별도 필수 조건으로 삼지 않음. 원본 상품사진도 동일 검사 및 500px 확인. 색상은 수동 매핑. 판매자 원본이404면 공식 imgRteNm/imgFileNm 저장본을 실제 조회·검사 후 사용하며 URL을 추측하지 않음."
     },
     "additional_images": {
       "label": "추가이미지",
@@ -147,7 +147,7 @@
       "label": "상세페이지",
       "supported": true,
       "status": "conditional",
-      "reason": "판매자 DSCRP 원문 #llis-root를 순서대로 보존. Windows 한국어 OCR로 신세계라이브쇼핑/내일도착/배송/저작권 배너 제거. 기존 원문 사이즈표/고시는 보존하고 별도 생성·추가 안 함. 본문과 배너가 합쳐진 긴 이미지는 명시적 오류. 상세에는 배경 검사를 적용하지 않음."
+      "reason": "판매자 DSCRP 원문 #llis-root를 순서대로 보존. Windows 한국어 OCR로 신세계라이브쇼핑/내일도착/배송/저작권 배너 제거. 기존 원문 사이즈표/고시는 보존하고 별도 생성·추가 안 함. 본문과 배너가 합쳐진 긴 이미지는 명시적 오류. 상세에는 배경 검사를 적용하지 않음. 하프클럽·브랜드 패션 전문몰 상단 홍보 배너도 OCR로 제외."
     }
   },
   "column_fields": {
@@ -166,5 +166,5 @@
     "추가이미지": "additional_images",
     "상세페이지 HTML": "detail_page"
   },
-  "code_hash": "0c32e7b4a6cfb5d321a15ed1a39cf6668213cb1bb5bd4014d3c0f9d9c2571756"
+  "code_hash": "7e598f5ab3066e555876c679873e78db9499b961fcb514c41ae07bf8a7d54bc7"
 }

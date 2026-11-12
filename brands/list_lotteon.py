@@ -199,6 +199,25 @@ def image(ctx,url,cache):
     return cache[url]
 
 
+def gallery_image(ctx,item,cache):
+    # Both sources are explicit API fields: no size/hash/path guessing.
+    sources=[]
+    if item.get('origImgFileNm'):sources.append(item['origImgFileNm'])
+    if item.get('imgRteNm') and item.get('imgFileNm'):
+        stored=CDN+'/itemimage'+item['imgRteNm']+item['imgFileNm']
+        if stored not in sources:sources.append(stored)
+    if not sources:raise CollectionError('공식 상품사진 URL 없음')
+    for source in sources:
+        try:
+            info=image(ctx,source,cache)
+            if source!=sources[0]:ctx.log('삭제된 판매자 원본 대신 공식 롯데온 저장본 사용: '+source,'INFO')
+            return source,info
+        except MissingResource:
+            ctx.log('상품사진 404: 다음 공식 저장본 확인 '+source,'WARNING')
+    ctx.log('원본/롯데온 저장본 모두 삭제된 상품사진 생략','WARNING')
+    return None,None
+
+
 def studio(pic):
     if min(pic.size)<250:return False,'사진 해상도 부족'
     p=pic.convert('RGB').resize((160,160));pixels=p.load()
@@ -236,7 +255,7 @@ def ocr(ctx,pic,folder,cache):
     cache[digest]=' '.join(texts);return cache[digest]
 
 
-BANNER=re.compile(r'신세계\s*라이브\s*쇼[핑평]|내일\s*도착|오늘\s*23\s*시|주문상품.*내일|교환.{0,4}반품.{0,8}안내|배송.{0,4}안내|무단.{0,8}(?:사용|복제)|저작권|정품.{0,4}(?:안내|인증)|구매대행.{0,6}안내',re.I)
+BANNER=re.compile(r'하프\s*클럽|half\s*club|브랜드\s*패션\s*전문몰|신세계\s*라이브\s*쇼[핑평]|내일\s*도착|오늘\s*23\s*시|주문상품.*내일|교환.{0,4}반품.{0,8}안내|배송.{0,4}안내|무단.{0,8}(?:사용|복제)|저작권|정품.{0,4}(?:안내|인증)|구매대행.{0,6}안내',re.I)
 
 
 def body_markup(ctx,data,cache,ocr_cache,folder):
@@ -338,9 +357,9 @@ def crawl(ctx):
                 accepted=[]
                 for item in data.get('imgInfo',{}).get('imageList',[]):
                     if item.get('epsrTypCd')!='IMG':continue
-                    source=item.get('origImgFileNm')
-                    if not source:raise CollectionError('실제 원본 상품사진 URL 없음')
-                    info=image(ctx,source,cache);ok,why=studio(info['image'])
+                    source,info=gallery_image(ctx,item,cache)
+                    if info is None:continue
+                    ok,why=studio(info['image'])
                     if not ok:ctx.log('추가사진 제외: '+why,'INFO');continue
                     if min(info['image'].size)<500:continue
                     if info['digest'] not in {p['digest'] for p in accepted}:accepted.append({'url':source,'digest':info['digest']})
