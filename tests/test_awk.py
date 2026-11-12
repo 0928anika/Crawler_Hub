@@ -65,4 +65,12 @@ class AwkTests(unittest.TestCase):
    with self.assertRaisesRegex(c.CrawlError,'상품은 조회됐으나 수집 실패'):c.crawl(ctx)
   self.assertFalse(any('공식 자체상품코드와 일치하는 AWK 상품 없음' in e for e in ctx.errors))
 
+ def test_color_button_original_images_override_shared_default_jsonld(self):
+  doc=c.parse((FIX/'R267B0301A.html').read_bytes());options=c.choices(doc,c.product_group(doc))
+  self.assertEqual([o['color'] for o in options],['블랙19','브라운88'])
+  self.assertTrue(options[0]['images'][0].endswith('/big/202610/d1a1f9d0b896ebdcb2cf2e7454c11099.jpg'))
+  self.assertTrue(options[1]['images'][0].endswith('/extra/big/202609/25c460f2958fd5e98bf2bc9673c0c6f2.jpg'))
+  self.assertFalse(set(options[0]['images']) & set(options[1]['images']))
+  self.assertTrue(all('/option_button/' not in u for o in options for u in o['images']))
+
 if __name__=='__main__':unittest.main()

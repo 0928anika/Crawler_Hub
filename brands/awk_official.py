@@ -183,6 +183,17 @@ def choices(doc,group):
         if '사이즈' in names:
             size=str(values[names.index('사이즈')]).strip()
             if size and size not in item['sizes']:item['sizes'].append(size)
+    # Explicit option_value -> link_image is the original image paired with
+    # the small colour button. Prefer this over shared JSON-LD default images.
+    linked={}
+    for node in doc.select('[option_title="색상"] li[option_value][link_image]'):
+        color=str(node.get('option_value') or '').strip()
+        source=str(node.get('link_image') or '').strip()
+        if not source:continue
+        url=urljoin(SITE,source)
+        if urlsplit(url).hostname not in HOSTS or not re.match(r'/web/product/(?:big/|extra/big/)',urlsplit(url).path):continue
+        if color not in result:raise CrawlError('사진 옵션과 공식 색상 목록 불일치: '+color)
+        linked.setdefault(color,set()).add(url)
     owners={}
     for variant in group.get('hasVariant',[]):
         color=str(variant.get('color') or '').strip()
@@ -207,6 +218,13 @@ def choices(doc,group):
             if urlsplit(url).hostname in HOSTS and re.match(r'/web/product/(?:big/|extra/big/)',urlsplit(url).path) and url not in item['images']:item['images'].append(url)
     else:
         for item in result.values():item['images']=[u for u in item['images'] if owners.get(u)=={item['color']}]
+    if linked:
+        linked_owners={}
+        for color,urls in linked.items():
+            for url in urls:linked_owners.setdefault(url,set()).add(color)
+        for item in result.values():
+            if item['color'] in linked:
+                item['images']=[u for u in linked[item['color']] if linked_owners[u]=={item['color']}]
     return list(result.values())
 
 
