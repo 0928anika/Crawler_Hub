@@ -41,6 +41,15 @@ def document(data):
 
 
 class NCBasicTests(unittest.TestCase):
+    def test_search_alias_reports_actual_model_instead_of_absence(self):
+        ctx=Context(('main_image',),code='NCLA26W51');data=source('NCLA26T51')
+        link=c.SITE+'/i/item?itemNo=2609594384&lowerVendNo='+c.VENDOR_NO
+        with patch.object(c,'search',return_value=[link]),patch.object(c,'page',return_value=document(data)):
+            with self.assertRaises(c.CollectionError) as error:c.crawl(ctx)
+        self.assertIn('NCLA26W51',str(error.exception));self.assertIn('NCLA26T51',str(error.exception))
+        self.assertIn('불일치',str(error.exception))
+        self.assertFalse(ctx.rows)
+
     def test_denied_body_uses_verified_shots_and_original_size(self):
         ctx=Context();data=source('NCJM26T05')
         shots=['https://item.elandrs.com/r/image/item/shot1.jpg','https://item.elandrs.com/r/image/item/shot2.jpg']

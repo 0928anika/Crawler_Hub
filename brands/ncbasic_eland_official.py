@@ -176,7 +176,7 @@ def search(ctx, code):
     raise CollectionError('검색 100페이지 안전 한도 초과: 미완료')
 
 
-def product(ctx, url, code):
+def product(ctx, url, code, diagnostics=None):
     params = parse_qs(urlsplit(url).query)
     if params.get('lowerVendNo') != [VENDOR_NO]:
         ctx.log('지정 판매자 외 상세 조회 생략: '+url,'INFO')
@@ -196,7 +196,9 @@ def product(ctx, url, code):
             ctx.log('공식 응답의 판매자번호 불일치 제외: '+url,'WARNING')
             return None
         if str(main.get('brandNo'))!=BRAND_NO or str(main.get('modelNo','')).strip().upper()!=code:
-            ctx.log('다른 브랜드/공식 품번 제외: '+url,'INFO')
+            reason='검색 결과는 있으나 실제 공식 품번/브랜드 불일치: 요청 %s, 실제 %s, 브랜드 %s / %s' % (code, main.get('modelNo'), main.get('brandNo'), url)
+            if diagnostics is not None:diagnostics.append(reason)
+            ctx.log(reason,'WARNING')
             return None
         params = parse_qs(urlsplit(url).query)
         if str(main.get('itemNo'))!=params['itemNo'][0] or str(main.get('lowerVendNo'))!=params['lowerVendNo'][0]:
@@ -471,11 +473,12 @@ def crawl(ctx):
     except CollectionError as exc:
         ctx.fail_item(str(exc));raise
     products,errors,cache = [],[],{}
+    diagnostics=[]
     for link in links:
         ctx.checkpoint()
         try:
             ctx.stage('공식 브랜드·품번 확인: '+link)
-            data = product(ctx,link,code)
+            data = product(ctx,link,code,diagnostics=diagnostics)
             if data is None:
                 continue
             main = data['itemMain']
@@ -494,7 +497,10 @@ def crawl(ctx):
             message = link+' / '+str(exc)
             ctx.fail_item(message);errors.append(message)
     if not products:
-        message = '정확한 NC베이직 브랜드/품번과 색상·사진을 확인할 수 없음: '+code
+        if diagnostics:message=' / '.join(dict.fromkeys(diagnostics))
+        elif errors:message='공식 검색 상품은 있으나 수집 처리 실패: '+code
+        elif links:message='검색 결과가 있으나 지정 브랜드/품번 검증 불일치: '+code
+        else:message='공식 검색에서 지정 판매자 상품 조회 안 됨(전체 사이트 미등록으로 단정하지 않음): '+code
         ctx.fail_item(message)
         raise CollectionError(message+(' / '+'; '.join(errors) if errors else ''))
     palette,photos,bodies,digests = [],[],[],set()
