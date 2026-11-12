@@ -3,7 +3,7 @@ import itertools
 from pathlib import Path
 import sys
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch,MagicMock
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'app'))
@@ -25,6 +25,23 @@ class Context:
     def emit_result(self,row):self.rows.append(row)
 
 class StcoTests(unittest.TestCase):
+    def test_tls_timeout_retries_fresh_connection(self):
+        ctx=Context();first=MagicMock();second=MagicMock()
+        first.open.side_effect=c.urllib.error.URLError(TimeoutError('TLS handshake timed out'))
+        response=second.open.return_value.__enter__.return_value
+        response.headers={};response.read1.side_effect=[b'official response',b'']
+        with patch.object(c,'public_opener',side_effect=[first,second]) as factory,patch.object(c.time,'sleep'):
+            self.assertEqual(c.fetch(ctx,c.SITE+'/Search?searchWord=SDSXD54CSA'),b'official response')
+        self.assertEqual(factory.call_count,2)
+        self.assertEqual(second.open.call_args.kwargs['timeout'],15)
+        self.assertTrue(any('재시도' in log[0] for log in ctx.logs))
+
+    def test_tls_failure_is_bounded(self):
+        opener=MagicMock();opener.open.side_effect=c.urllib.error.URLError(TimeoutError('TLS handshake timed out'))
+        with patch.object(c,'public_opener',return_value=opener),patch.object(c.time,'sleep'):
+            with self.assertRaises(c.CrawlError):c.fetch(Context(),c.SITE)
+        self.assertEqual(opener.open.call_count,3)
+
     def test_notice_identity_and_korean_color(self):
         for sku,color,code in [('DDSXD01CCD','베이지','CCD'),('JDSXZ83CSB','다크 그레이','CSB')]:
             row=c.identity(source(sku),sku)

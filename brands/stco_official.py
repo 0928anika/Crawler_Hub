@@ -18,6 +18,9 @@ SITE='https://www.stco.co.kr'
 HOSTS=('www.stco.co.kr','stco.co.kr')
 IMAGE_HOSTS=('image.codigallery.com','webimg.codigallery.com')
 MAX_BYTES=15000000
+REQUEST_SECONDS=45
+SOCKET_SECONDS=15
+REQUEST_ATTEMPTS=3
 class CrawlError(RuntimeError):
     """Official source or collection failure."""
 class MissingResource(CrawlError):
@@ -46,7 +49,8 @@ def public_opener(ctx, deadline):
                 if source_address:
                     connection.bind(source_address)
                 connection.connect(target)
-                connection.settimeout(min(5, max(.01, deadline-time.monotonic())))
+                # This timeout also covers TLS after the TCP socket is returned.
+                connection.settimeout(min(SOCKET_SECONDS, max(.01, deadline-time.monotonic())))
                 return connection
             except OSError as exc:
                 connection.close()
@@ -78,25 +82,26 @@ def fetch(ctx, url, limit=4_000_000):
     """Anonymous GET. No cookies, credentials or Referer, including images."""
     if urlsplit(url).scheme not in ('http','https'):
         raise CrawlError('공개 HTTP/HTTPS 주소가 아님: '+url)
-    deadline = time.monotonic() + 20
+    deadline = time.monotonic() + REQUEST_SECONDS
     started = time.monotonic()
     ctx.log('공개 요청: ' + url, 'INFO')
-    opener = public_opener(ctx, deadline)
-    for attempt in range(2):
+    for attempt in range(REQUEST_ATTEMPTS):
         ctx.checkpoint()
         try:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
-                raise TimeoutError('공개 요청 전체 20초 제한 초과')
+                raise TimeoutError('공개 요청 전체 %s초 제한 초과' % REQUEST_SECONDS)
             request = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-            with opener.open(request, timeout=min(5, remaining)) as response:
+            # Retry with a fresh connection after TLS/temporary network failures.
+            opener = public_opener(ctx, deadline)
+            with opener.open(request, timeout=min(SOCKET_SECONDS, remaining)) as response:
                 if int(response.headers.get('Content-Length', '0')) > limit:
                     raise CrawlError('응답 크기 초과: ' + url)
                 chunks, size = [], 0
                 while True:
                     ctx.checkpoint()
                     if time.monotonic() >= deadline:
-                        raise TimeoutError('공개 응답 전체 20초 제한 초과')
+                        raise TimeoutError('공개 응답 전체 %s초 제한 초과' % REQUEST_SECONDS)
                     block = response.read1(min(65536, limit + 1 - size))
                     if not block:
                         break
@@ -108,13 +113,15 @@ def fetch(ctx, url, limit=4_000_000):
             ctx.log('공개 요청 완료 %.1f초: %s' % (time.monotonic()-started, url), 'INFO')
             return b''.join(chunks)
         except urllib.error.HTTPError as exc:
+            exc.close()
             if exc.code == 404:
                 raise MissingResource('HTTP 404: ' + url) from exc
-            if exc.code not in (429, 500, 502, 503, 504) or attempt:
+            if exc.code not in (429, 500, 502, 503, 504) or attempt == REQUEST_ATTEMPTS-1:
                 raise CrawlError('HTTP %s: %s' % (exc.code, url)) from exc
         except (urllib.error.URLError, TimeoutError, socket.timeout, OSError) as exc:
-            if attempt:
+            if attempt == REQUEST_ATTEMPTS-1 or time.monotonic() >= deadline:
                 raise CrawlError('통신 실패: %s / %s' % (url, exc)) from exc
+        ctx.log('일시적인 연결/응답 실패, 새 연결로 재시도 %s/%s: %s' % (attempt+2, REQUEST_ATTEMPTS, url),'WARNING')
         for _ in range(5):
             ctx.checkpoint()
             time.sleep(0.1)

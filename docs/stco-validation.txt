@@ -51,3 +51,15 @@ missing notice/body failures, search scope, and all four price selections.
 12 tests passed. manage_brands check passed for 48 brands.
 
 Live check artifacts are outside the repository in workspace/stco-verification.
+
+TLS timeout follow-up — 2026-11-12:
+Production reported an SSL handshake timeout before search returned. The
+adapter previously allowed only five seconds for TLS/read operations. Allow
+15 seconds, retry up to three times with a fresh connection and warning logs,
+and retain a shared 45-second request deadline. TLS certificate verification
+remains enabled. No app/ changes required. Repeated failure remains a clear
+collection error, never an empty successful search.
+Regression tests simulate timeout then recovery and exhausted attempts.
+14 tests passed. Live SDSXD54CSA worker: exit 0, one row, no item failures,
+와인 / CSA, sizes 100,105, selling 49900, five body images plus notice table.
+This local live check does not prove connectivity from the production host.
