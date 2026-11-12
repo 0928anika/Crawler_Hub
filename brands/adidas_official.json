@@ -1,0 +1,170 @@
+{
+  "id": "adidas_official",
+  "name": "아디다스",
+  "category": "스포츠",
+  "crawl_source": "공식 홈페이지",
+  "script": "adidas_official.py",
+  "execution_level": 1,
+  "mapping_mode": "automatic",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명"
+  ],
+  "extensions": [],
+  "official_color_codes": false,
+  "image_color_mapping": "verified",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 variation_list의 사이즈 전체(품절 포함)."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 pricing_information.currentPrice."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 pricing_information.standard_price. 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 breadcrumb_list."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "해당 상품코드의 공식 view_list(동영상 제외) 개별 컷. 공개 접근·형식·500px·비율 검사."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "같은 view_list에서 검사 통과 컷 5슬롯."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 사진 + product_certificates(소재·제조국·제조년월·제조자·수입자) 고시 표 + 공식 사이즈표 API가 읽히면 표. 설명·특징 문단은 제외."
+    }
+  },
+  "guide": {
+    "pattern": "^[A-Za-z]{1,3}\\d{3,5}$",
+    "format": "아디다스 상품코드(예: JZ3160). 색상마다 코드가 다릅니다.",
+    "notes": "코드 1개가 색상 1개입니다.",
+    "method": "공식 상품 API의 id와 입력 코드를 정확히 대조.",
+    "example": "JZ3160",
+    "examples": [
+      "JZ3160"
+    ],
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "공백"
+    ],
+    "validation_note": "입력 형식 검사이며 실제 상품 존재 확인은 실행 시 수행"
+  },
+  "notes": "아디다스 상품코드(article)는 색상마다 다르므로 상품코드 1개 = 색상 1개 자동 매핑. 공식 /api/products/{코드} 우선, 실패 시 상세페이지 __NEXT_DATA__. 이미지는 공식 CDN 변환 경로 w_1000(쉼표 없는 주소)으로 사용하고 동영상 제외. 색상명은 공식 color 값 그대로(번역하지 않음). 검증 범위: 사용자 단독 크롤러(adidas_crawler.py)에서 운영 확인된 URL·선택자·응답 키를 Crawler Hub SDK 규약으로 이식. 이 코드를 작성한 환경은 해당 사이트 접속이 차단되어 실사이트 실행은 미검증이며, SDK 계약·선택 항목 생략·표 재구성은 오프라인 fixture 테스트(tests/test_oberon_brands.py)로만 확인함.",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 variation_list의 사이즈 전체(품절 포함)."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 pricing_information.currentPrice."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 pricing_information.standard_price. 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 breadcrumb_list."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "해당 상품코드의 공식 view_list(동영상 제외) 개별 컷. 공개 접근·형식·500px·비율 검사."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "같은 view_list에서 검사 통과 컷 5슬롯."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 사진 + product_certificates(소재·제조국·제조년월·제조자·수입자) 고시 표 + 공식 사이즈표 API가 읽히면 표. 설명·특징 문단은 제외."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null
+  },
+  "code_hash": "8710f57bbf5dad1035a0de79614a30c8e97d0977de903336c0f035624a934c67"
+}
