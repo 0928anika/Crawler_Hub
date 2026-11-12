@@ -63,3 +63,13 @@ Regression tests simulate timeout then recovery and exhausted attempts.
 14 tests passed. Live SDSXD54CSA worker: exit 0, one row, no item failures,
 와인 / CSA, sizes 100,105, selling 49900, five body images plus notice table.
 This local live check does not prove connectivity from the production host.
+
+Empty-banner follow-up — 2026-11-12:
+SEJXC01NSB used an img src ending in /promotion/ without a filename. This
+directory placeholder returned 404 and incorrectly failed the whole article.
+Skip empty-filename directory URLs on the official image hosts, including the
+root placeholder. Actual image-file 404s still fail, preserving the complete
+body requirement. Real source excerpt added as a regression fixture.
+Live worker SEJXC01NSB: exit 0, one row, no item failures; 블랙 / NSB,
+95,100,105,110,115; five real body images including SIZESEJXF01.jpg and eight
+notice rows. All 15 regression tests and the 50-brand registry check passed.

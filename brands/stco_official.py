@@ -253,9 +253,9 @@ def body_urls(doc,link):
     for node in area.find_all('img'):
         url=urljoin(link,node.get('data-original') or node.get('data-src') or node.get('src') or '')
         parts=urlsplit(url)
-        if parts.path in ('','/'):
-            continue  # Empty image-host placeholder in the official HTML.
         if parts.hostname not in IMAGE_HOSTS:raise CrawlError('미확인 본문 이미지 출처: '+url)
+        if not parts.path or parts.path.endswith('/'):
+            continue  # Empty filename: host root or /promotion/ banner placeholder.
         if url not in urls:urls.append(url)
     if not urls:raise CrawlError('실제 상세 본문 이미지 없음')
     return urls

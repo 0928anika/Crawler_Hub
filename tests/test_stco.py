@@ -25,6 +25,17 @@ class Context:
     def emit_result(self,row):self.rows.append(row)
 
 class StcoTests(unittest.TestCase):
+    def test_empty_banner_directory_does_not_fail_real_body(self):
+        doc=source('SEJXC01NSB');urls=c.body_urls(doc,c.SITE)
+        self.assertEqual(len(urls),5)
+        self.assertTrue(urls[0].endswith('SEJXC01NSB_t.jpg'))
+        self.assertTrue(urls[-1].endswith('SIZESEJXF01.jpg'))
+        with patch.object(c,'image',return_value={}) as loader:
+            result=c.detail(Context(),doc,c.SITE,{})
+        self.assertEqual([call.args[1] for call in loader.call_args_list],urls)
+        self.assertNotIn('src="https://image.codigallery.com/promotion/"',result)
+        self.assertEqual(len(c.parse(result).select('table tr')),8)
+
     def test_tls_timeout_retries_fresh_connection(self):
         ctx=Context();first=MagicMock();second=MagicMock()
         first.open.side_effect=c.urllib.error.URLError(TimeoutError('TLS handshake timed out'))
