@@ -22,6 +22,16 @@ class Context:
     def fail_item(self,message):self.failures.append(message)
 
 class AllaboutnewTests(unittest.TestCase):
+    def test_actual_normal_body_uses_shared_official_image_host(self):
+        doc=source('ANA4UP02ABR');urls=c.detail_urls(doc,c.SITE)
+        self.assertEqual(len(urls),4)
+        self.assertTrue(all(c.urlsplit(url).hostname=='intercrewkk.mycafe24.com' for url in urls))
+        self.assertTrue(all(c.urlsplit(url).hostname in c.IMAGE_HOSTS for url in urls))
+        with patch.object(c,'gallery_candidates',side_effect=AssertionError('normal body must not fall back')),patch.object(c,'image',return_value=dict(width=900,height=2000)):
+            result=c.detail(Context(),doc,c.SITE,{})
+        self.assertEqual([n['src'] for n in c.parse(result).select('img')],urls)
+        self.assertFalse(c.parse(result).select('table'))
+
     def test_real_heading_color_not_incorrect_chip(self):
         record,sku=c.identity(source(),'ANA3DC01A')
         self.assertEqual((record['product_name'],record['color_name'],record['color_code']),('빈티지 솔트 워싱 집업 가디건','차콜','CC'))

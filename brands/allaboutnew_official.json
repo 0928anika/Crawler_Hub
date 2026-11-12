@@ -83,7 +83,7 @@
   "notes": "인터크루와 독립된 올어바웃뉴 공식몰 크롤러. 본문 이미지가 있으면 그대로 보존하고, 비어 있는 경우에만 검증된 동일색상 상품컷 전체로 상세 구성. 판매가는 명시 판매가, 최대할인가/쿠폰가 사용 안 함.",
   "image_mode": "url",
   "interface": "portal_v1",
-  "code_hash": "0c2295598feba68e6ad611901abdb3bbb24ca3e3108381e9642711b925d19649",
+  "code_hash": "741a0cf908f044ca472ec3a728794bcd5a766faf4b440a0b6d3e7cf0af7370ae",
   "fields": {
     "product_code": {
       "label": "품번",

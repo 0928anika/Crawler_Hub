@@ -46,3 +46,15 @@ shots in original order. No fabricated size/notice tables.
 11 regression tests passed. Registry/hash/syntax check: 63 brands passed.
 Raw live evidence and worker logs are outside the repo in workspace files
 allaboutnew_*.html and allaboutnew-verification/.
+
+Shared image host follow-up — 2026-11-12:
+ANA4UP02ABR (product 742) has a real four-image #prdDetail referencing
+intercrewkk.mycafe24.com/allaboutnew/, which was missing from the explicit
+image-host list. Add this observed official shared host; do not relax to all
+Cafe24 domains. The adapter remains fully independent from Intercrew.
+Live worker now exits0, one row, no failures: 브라운/BR, M(95),L(100),XL(105),
+selling199900/regular199900. All four real body images preserved without
+gallery fallback or fabricated tables. This also supplies the previously
+missing live normal-body validation. New actual public fixture and regression
+test verify host allowance, original source order and no gallery fallback.
+12 tests passed; 63-brand registry check passed.

@@ -17,7 +17,7 @@ from crawler_rules import validate_gallery_image,gallery_slots
 
 SITE='https://allaboutnew.co.kr'
 HOSTS=('allaboutnew.co.kr','www.allaboutnew.co.kr')
-IMAGE_HOSTS=HOSTS+('ecimg.cafe24img.com','allaboutnewk.mycafe24.com')
+IMAGE_HOSTS=HOSTS+('ecimg.cafe24img.com','allaboutnewk.mycafe24.com','intercrewkk.mycafe24.com')
 MAX_BYTES=30000000
 REQUEST_SECONDS=45
 SOCKET_SECONDS=15
