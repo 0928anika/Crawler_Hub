@@ -24,7 +24,7 @@
   "extensions": [],
   "official_color_codes": true,
   "image_color_mapping": "verified",
-  "notes": "",
+  "notes": "2026-11-12: 공식 색상코드가 같은 옵션(BKM/BKM_블랙멀티 등)은 한 색상으로 통합. 색상/컬러 select 및 버튼 옵션 지원. 동일 품번·색상의 중복 상품 페이지는 첫 완료 결과를 유지. 상세 이미지의 버전 쿼리는 보존하고 원본 경로로 소속을 확인.",
   "capabilities": {
     "size": {
       "supported": true,
@@ -171,5 +171,5 @@
     "원본 상품명": null,
     "정상가": "regular_price"
   },
-  "code_hash": "1e353890bfd29f3928b92947de993d74356ed3864c51dd5b160c59e5990c5775"
+  "code_hash": "b9fb8bbb2b0390d2889cef0f6b962dcb42c6977298b42c519e42eb40dde0cbd3"
 }
