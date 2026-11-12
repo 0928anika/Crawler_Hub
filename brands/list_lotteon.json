@@ -1,0 +1,170 @@
+{
+  "id": "list_lotteon",
+  "name": "리스트",
+  "category": "여성복",
+  "crawl_source": "롯데온 스튜디오컷",
+  "script": "list_lotteon.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_color_mapping": "manual",
+  "official_color_codes": false,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "원본 상품명",
+    "상품 링크",
+    "색상",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 optionInfo.optionList의 사이즈 표시명. 품절/disabled 포함. 여러 링크 사이즈가 다르면 첫 성공 링크 기준과 경고."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 기본 응답 priceInfo.slPrc의 실제 판매가. 쿠폰/카드 finalPrice 사용하지 않음. 여러 링크 값이 다르면 공통값 빈칸."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 basicInfo.stdCatLevel1Nm..4Nm. 서로 다르면 공통 분류 빈칸."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "대표사진 외곽 배경의 지배색/균일도 검사 통과 상품만 조회. 밝기나 좌상단 로고를 별도 필수 조건으로 삼지 않음. 원본 상품사진도 동일 검사 및 500px 확인. 색상은 수동 매핑."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "균일 배경 검사 통과한 원본 사진 전체를 미매핑 후보로 출력. 바이트 중복 제거."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "판매자 DSCRP 원문 #llis-root를 순서대로 보존. Windows 한국어 OCR로 신세계라이브쇼핑/내일도착/배송/저작권 배너 제거. 기존 원문 사이즈표/고시는 보존하고 별도 생성·추가 안 함. 본문과 배너가 합쳐진 긴 이미지는 명시적 오류. 상세에는 배경 검사를 적용하지 않음."
+    },
+    "regular_price": {
+      "supported": false,
+      "status": "unsupported",
+      "reason": "독립 소비자가/정상가 출처 미확인. 검색 original/slPrc는 판매가이므로 정상가로 바꾸지 않음."
+    }
+  },
+  "guide": {
+    "example": "TWWJKP82030",
+    "examples": [
+      "TWWJKP82030"
+    ],
+    "pattern": "^[\\s\\S]+$",
+    "format": "품번 형식 제한 없음. 입력값으로 먼저 검색한 뒤 실제 결과 대조.",
+    "notes": "배경색 균일함으로 스튜디오컷 판단. 색상 수동 매핑. 상품명에서 대괄호 판매자/브랜드 문구와 입력 품번 제거.",
+    "method": "롯데온 공개 검색 결과와 상세 basicInfo의 리스트 브랜드 P1170, 입력 품번 정확 대조. 공식 optionInfo의 색상/사이즈와 DSCRP 본문 사용.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      ""
+    ],
+    "validation_note": "비어 있지 않은 입력은 길이/접두사/문자 형식으로 제한하지 않고 검색. 상품과 스튜디오컷 존재 여부는 검색 응답에서 확인."
+  },
+  "notes": "리스트 롯데온 스튜디오컷, 색상 수동 매핑. 배경 밝기와 무관하게 외곽 색상 균일도로 선별. 사진 배경 보조 검사는 의미 인식이 아님. 본문 원문 사이즈표/고시만 유지하며 별도 생성·추가 없음. Windows 한국어 OCR로 공통 안내 배너 제외.",
+  "interface": "portal_v1",
+  "image_mode": "url",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 optionInfo.optionList의 사이즈 표시명. 품절/disabled 포함. 여러 링크 사이즈가 다르면 첫 성공 링크 기준과 경고."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 기본 응답 priceInfo.slPrc의 실제 판매가. 쿠폰/카드 finalPrice 사용하지 않음. 여러 링크 값이 다르면 공통값 빈칸."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": false,
+      "status": "unsupported",
+      "reason": "독립 소비자가/정상가 출처 미확인. 검색 original/slPrc는 판매가이므로 정상가로 바꾸지 않음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 basicInfo.stdCatLevel1Nm..4Nm. 서로 다르면 공통 분류 빈칸."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "대표사진 외곽 배경의 지배색/균일도 검사 통과 상품만 조회. 밝기나 좌상단 로고를 별도 필수 조건으로 삼지 않음. 원본 상품사진도 동일 검사 및 500px 확인. 색상은 수동 매핑."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "균일 배경 검사 통과한 원본 사진 전체를 미매핑 후보로 출력. 바이트 중복 제거."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "판매자 DSCRP 원문 #llis-root를 순서대로 보존. Windows 한국어 OCR로 신세계라이브쇼핑/내일도착/배송/저작권 배너 제거. 기존 원문 사이즈표/고시는 보존하고 별도 생성·추가 안 함. 본문과 배너가 합쳐진 긴 이미지는 명시적 오류. 상세에는 배경 검사를 적용하지 않음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "원본 상품명": null,
+    "상품 링크": "product_url",
+    "색상": "color",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page"
+  },
+  "code_hash": "63e04259fbf4f509e268a0428845acb7f65582952f9fca61a8144bb3563a5463"
+}
