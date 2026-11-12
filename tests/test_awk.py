@@ -117,4 +117,18 @@ class AwkTests(unittest.TestCase):
   self.assertTrue(all(not o['images'] for o in options))
   with self.assertRaises(c.MappingFailure):c.gallery(Context(),options[0],{})
 
+ def test_deleted_product_body_uses_product_cuts_then_remaining_size_images(self):
+  doc=c.parse(RAW);requested=[]
+  def pic(ctx,url,cache):
+   requested.append(url)
+   if '/aw/' in url:raise c.MissingResource('HTTP404')
+   return {'height':1 if url.endswith('/1.jpg') else 1000}
+  photos=['https://awkmall.com/web/product/big/front.jpg','https://awkmall.com/web/product/extra/big/back.jpg']
+  with patch.object(c,'picture',side_effect=pic),patch.object(c,'manual_candidates',return_value=photos):result=c.detail(Context(),doc,c.SITE,{})
+  self.assertIn('front.jpg',result);self.assertIn('back.jpg',result);self.assertIn('size-info.jpg',result)
+  self.assertLess(result.index('back.jpg'),result.index('size-info.jpg'))
+  self.assertNotIn('/aw/R267B0101A.jpg',result);self.assertNotIn('notice_2021',result);self.assertNotIn('awk_brand.jpg',result);self.assertNotIn('<table',result)
+ def test_body_transport_errors_are_not_mislabeled_as_deleted_files(self):
+  with patch.object(c,'picture',side_effect=c.CrawlError('HTTP503')),self.assertRaises(c.CrawlError):c.detail(Context(),c.parse(RAW),c.SITE,{})
+
 if __name__=='__main__':unittest.main()
