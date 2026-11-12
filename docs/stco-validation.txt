@@ -1,0 +1,53 @@
+STCO official crawler validation — 2026-11-12
+
+Brand: stco_official / 에스티코 / 공식 홈페이지
+Anonymous public GET, without cookies, login, or Referer.
+
+Observed official pages:
+https://www.stco.co.kr/detail/index/DDSXD01CCD
+https://www.stco.co.kr/Detail/Index/JDSXZ83CSB
+https://www.stco.co.kr/Search?searchWord=DDSXD01
+
+Primary identity is the direct .prodOptionBox > input.prd_no_cate,
+cross-checked against #targetProdInfoNotice 품번. The notice supplies the
+Korean color name. The last three characters of the verified full identifier
+are the color code (DDSXD01CCD: 베이지 / CCD; JDSXZ83CSB: 다크 그레이 / CSB).
+Search reads actual result links and matches the full code, or base + 3 color
+characters. If search has no matching card, the direct route is requested and
+must still pass both identity checks; a guessed route alone is never emitted.
+
+Primary gallery: .prodDetailTopWrap .swpMainVisual img, explicit source URLs
+whose filename belongs to the exact full SKU. Coordinate-product .coordOption
+images, sizes, categories and prices are excluded. Real image bytes are checked
+before emitting gallery URLs; the hub's gallery validator is applied.
+
+Detail: every actual #prodInfo image is fetched and decoded in original order.
+An empty image-host root placeholder is skipped. Shared size-chart filenames
+may differ from the primary SKU and are deliberately retained. Body images
+are not subjected to gallery ratio/filename filters. Missing body files fail
+clearly rather than silently dropping part of the detail.
+
+Latest user correction: rebuild #targetProdInfoNotice table rows and remaining
+text as escaped HTML and append after body images. Do not generate a separate
+size table; preserve the original size-chart image.
+
+Live worker checks, with all optional fields enabled:
+DDSXD01CCD: exit 0, one row, no item failures, six gallery URLs,
+six body images including SIZEDDSXF04.jpg, eight notice rows.
+DDSXD01: exit 0, same verified color found by base-code search.
+JDSXZ83CSB: exit 0, one row, no item failures, six gallery URLs,
+eight body images including SIZEJDSXS06.jpg, eight notice rows.
+
+Prices: primary .priceBox .priceNew is selling price. Independent .priceOld
+is regular price. JDSXZ83CSB: selling 44900 / regular 59900.
+DDSXD01CCD: selling 59900 / regular absent and left blank with warning.
+Never copy selling price or reverse-calculate a regular price. Each price
+field is independently selected; absent/zero/invalid regular price is nonfatal.
+
+Offline tests: tests/test_stco.py uses relevant public DOM excerpts under
+tests/fixtures/stco. Covers coordinate exclusion, stock-zero size retention,
+complete body and shared size preservation, notice table/text escaping,
+missing notice/body failures, search scope, and all four price selections.
+12 tests passed. manage_brands check passed for 48 brands.
+
+Live check artifacts are outside the repository in workspace/stco-verification.

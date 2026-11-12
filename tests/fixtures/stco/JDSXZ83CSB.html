@@ -1,0 +1,344 @@
+<!doctype html><html><body><div class="prodDetailTopWrap">
+<div class="swpBox">
+<div class="swiper-container swpMainVisualThumbs">
+<div class="swiper-wrapper">
+<div class="swiper-slide">
+<div class="img" style="background-image: url('https://image.codigallery.com//gentlemens/2026/ss/main/JDSXZ83CSB_m0.jpg');"></div>
+</div>
+<div class="swiper-slide">
+<div class="img" style="background-image: url('https://image.codigallery.com//gentlemens/2026/ss/main/JDSXZ83CSB_m1.jpg');"></div>
+</div>
+<div class="swiper-slide">
+<div class="img" style="background-image: url('https://image.codigallery.com//gentlemens/2026/ss/main/JDSXZ83CSB_m.jpg');"></div>
+</div>
+<div class="swiper-slide">
+<div class="img" style="background-image: url('https://image.codigallery.com//gentlemens/2026/ss/main/JDSXZ83CSB_m_1.jpg');"></div>
+</div>
+<div class="swiper-slide">
+<div class="img" style="background-image: url('https://image.codigallery.com//gentlemens/2026/ss/main/JDSXZ83CSB_m_2.jpg');"></div>
+</div>
+<div class="swiper-slide">
+<div class="img" style="background-image: url('https://image.codigallery.com//gentlemens/2026/ss/main/JDSXZ83CSB_m_3.jpg');"></div>
+</div>
+</div>
+</div>
+<div class="swiper-container swpMainVisual">
+<div class="swiper-wrapper">
+<div class="swiper-slide">
+<img class="zoom_img" data-zoom-image="https://image.codigallery.com//gentlemens/2026/ss/main/JDSXZ83CSB_m0.jpg" src="https://image.codigallery.com//gentlemens/2026/ss/main/JDSXZ83CSB_m0.jpg"/>
+</div>
+<div class="swiper-slide">
+<img class="zoom_img" data-zoom-image="https://image.codigallery.com//gentlemens/2026/ss/main/JDSXZ83CSB_m1.jpg" src="https://image.codigallery.com//gentlemens/2026/ss/main/JDSXZ83CSB_m1.jpg"/>
+</div>
+<div class="swiper-slide">
+<img class="zoom_img" data-zoom-image="https://image.codigallery.com//gentlemens/2026/ss/main/JDSXZ83CSB_m.jpg" src="https://image.codigallery.com//gentlemens/2026/ss/main/JDSXZ83CSB_m.jpg"/>
+</div>
+<div class="swiper-slide">
+<img class="zoom_img" data-zoom-image="https://image.codigallery.com//gentlemens/2026/ss/main/JDSXZ83CSB_m_1.jpg" src="https://image.codigallery.com//gentlemens/2026/ss/main/JDSXZ83CSB_m_1.jpg"/>
+</div>
+<div class="swiper-slide">
+<img class="zoom_img" data-zoom-image="https://image.codigallery.com//gentlemens/2026/ss/main/JDSXZ83CSB_m_2.jpg" src="https://image.codigallery.com//gentlemens/2026/ss/main/JDSXZ83CSB_m_2.jpg"/>
+</div>
+<div class="swiper-slide">
+<img class="zoom_img" data-zoom-image="https://image.codigallery.com//gentlemens/2026/ss/main/JDSXZ83CSB_m_3.jpg" src="https://image.codigallery.com//gentlemens/2026/ss/main/JDSXZ83CSB_m_3.jpg"/>
+</div>
+</div>
+</div>
+<script>
+                            $(document).ready(function () {
+                                var swpMainVisualThumbs = new Swiper('.swpMainVisualThumbs', {
+                                    direction: 'vertical',
+                                    slidesPerView: 'auto',
+                                    freeMode: true,
+                                    spaceBetween: 4,
+                                });
+
+                                var swpMainVisual = new Swiper('.swpMainVisual', {
+                                    loop: true,
+                                    effect: 'fade',
+                                    speed: 1000,
+                                    autoplay: 5000,
+                                    thumbs: {
+                                        swiper: swpMainVisualThumbs
+                                    },
+                                });
+
+                                // 이미지에 마우스 오버 시 초기화
+                                $(document).on('mouseenter', '.zoom_img', function () {
+                                    // 이미지 초기화
+                                    $(this).elevateZoom({
+                                        zoomType: "window",
+                                        cursor: "crosshair",
+                                        zoomWindowFadeIn: 0,
+                                        zoomWindowFadeOut: 0,
+                                        zoomWindowWidth: 570,
+                                        zoomWindowHeight: 860,
+                                        borderSize: 0,
+                                    });
+                                });
+
+                                // 이미지에 마우스가 나갈 때 삭제
+                                $(document).on('mouseleave', '.zoom_img', function () {
+                                    // 줌 제거
+                                    $('.zoomContainer').remove();
+                                    $(this).removeData('elevateZoom');
+                                });
+                            });
+
+                        </script>
+</div>
+<div class="prodOptionBox">
+<div class="dDayBox timer" style="display:none">
+<h3 class="titDDay">타임특가 종료 </h3>
+<p class="txtDDay">D-<span id="day">00</span> /  <span id="h">23</span>:<span id="m">23</span>:<span id="s">23</span></p>
+</div>
+<h2 class="prodTitle">[자개버튼] 헤리티지 플란넬 셔츠_다크 그레이 (레귤러핏)</h2>
+<input class="prd_no_cate" data-category="all&gt;SHIRTS&gt;캐주얼셔츠&gt;캐주얼셔츠" type="hidden" value="JDSXZ83CSB"/>
+<div class="priceBox">
+<p class="priceOld">59,900</p>
+<p class="priceNew">44,900</p>
+<p class="pricePer">25%</p>
+</div>
+<div class="discountBox">
+<h3 class="titDiscount">묶음 할인 상품</h3>
+<p class="txtDiscount">
+<span>3장 이상 구매시</span> <span class="colorRed">장당 11,900원 할인</span>
+<br/>
+<br/>- 묶음 할인 혜택은 <span class="colorBlue">장바구니/결제 단계에서 자동 적용</span>됩니다.
+                                </p>
+<a class="btnDiscount" href="/Event/ProductPlanSp/24532">묶음할인 가능한 상품 모두 보기</a>
+</div>
+<div class="prodInfoBox">
+<ul class="listProdInfo">
+<li>
+<h3 class="titProdInfo">계절</h3>
+<p class="txtProdInfo">공통</p>
+</li>
+</ul>
+<a class="btnProdInfoMore" href="#" onclick="targetClick(this, 'targetProdInfoNotice')">상품정보 더보기</a>
+</div>
+<div class="optionBox">
+<ul class="listOption">
+<li>
+<h3 class="titOption">사이즈</h3>
+<div class="option">
+<div class="sizeBox">
+<div class="list_ size" name="list_0">
+<input data-name="사이즈" data-prd_no="JDSXZ83CSB" data-price="44900" data-qty="77" id="size1_0" name="size0" type="checkbox" value="95"/>
+<label for="size1_0">95</label>
+</div>
+<div class="list_ size" name="list_1">
+<input data-name="사이즈" data-prd_no="JDSXZ83CSB" data-price="44900" data-qty="184" id="size1_1" name="size1" type="checkbox" value="100"/>
+<label for="size1_1">100</label>
+</div>
+<div class="list_ size" name="list_2">
+<input data-name="사이즈" data-prd_no="JDSXZ83CSB" data-price="44900" data-qty="190" id="size1_2" name="size2" type="checkbox" value="105"/>
+<label for="size1_2">105</label>
+</div>
+<div class="list_ size" name="list_3">
+<input data-name="사이즈" data-prd_no="JDSXZ83CSB" data-price="44900" data-qty="43" id="size1_3" name="size3" type="checkbox" value="110"/>
+<label for="size1_3">110</label>
+</div>
+</div>
+</div>
+</li>
+</ul>
+<!-- 2025.05 수정 -->
+<div class="coordOption">
+<h4 class="inTit">함께 코디된 상품</h4>
+<ul class="inCont">
+<li>
+<div class="imgbox">
+<a href="/detail/index/DKTVD01CSI"><div class="img" style="background-image: url(https://image.codigallery.com//diems/2024/fw/main/DKTVD01CSI_m0.jpg);"></div></a>
+</div>
+<div class="txtbox">
+<div class="coordTag">코디 상품 1</div>
+<p class="coordName">소프트터치 터틀넥 니트_화이트 (클래식핏)</p>
+<div class="coordPrice">
+<span class="priceBefore">39,900</span>
+<span class="priceCurrent">19,000</span>
+<p class="pricePer" style="color: #cf152d; font-size: 15px; line-height:25px; font-weigh:700;margin-left:10px ">52%</p>
+</div>
+<select class="coordOpt">
+<option value="">--- [필수] 옵션을 선택해 주세요--- </option>
+<option disabled="" value="">--------------------</option>
+<option data-name="[ 코디 상품 1 ]" data-prd_no="DKTVD01CSI" data-price="19000" data-qty="131" value="95">
+                                                                        95
+                                                                    </option>
+<option data-name="[ 코디 상품 1 ]" data-prd_no="DKTVD01CSI" data-price="19000" data-qty="395" value="100">
+                                                                        100
+                                                                    </option>
+<option data-name="[ 코디 상품 1 ]" data-prd_no="DKTVD01CSI" data-price="19000" data-qty="267" value="105">
+                                                                        105
+                                                                    </option>
+<option data-name="[ 코디 상품 1 ]" data-prd_no="DKTVD01CSI" data-price="19000" data-qty="183" value="110">
+                                                                        110
+                                                                    </option>
+</select>
+</div>
+</li>
+<input class="prd_no_cate" data-category="all&gt;OUTLET&gt;니트/가디건&gt;니트/가디건" type="hidden" value="DKTVD01CSI"/>
+<li>
+<div class="imgbox">
+<a href="/detail/index/DPVVC01CSG"><div class="img" style="background-image: url(https://image.codigallery.com//diems/2024/fw/main/DPVVC01CSG_m0.jpg);"></div></a>
+</div>
+<div class="txtbox">
+<div class="coordTag">코디 상품 2</div>
+<p class="coordName">코듀로이 패딩 베스트_그레이 (클래식핏)</p>
+<div class="coordPrice">
+<span class="priceBefore">89,900</span>
+<span class="priceCurrent">59,900</span>
+<p class="pricePer" style="color: #cf152d; font-size: 15px; line-height:25px; font-weigh:700;margin-left:10px ">33%</p>
+</div>
+<select class="coordOpt">
+<option value="">--- [필수] 옵션을 선택해 주세요--- </option>
+<option disabled="" value="">--------------------</option>
+<option data-name="[ 코디 상품 2 ]" data-prd_no="DPVVC01CSG" data-price="59900" data-qty="105" value="M">
+                                                                        M
+                                                                    </option>
+<option data-name="[ 코디 상품 2 ]" data-prd_no="DPVVC01CSG" data-price="59900" data-qty="47" value="L">
+                                                                        L
+                                                                    </option>
+<option data-name="[ 코디 상품 2 ]" data-prd_no="DPVVC01CSG" data-price="59900" data-qty="2" value="XL">
+                                                                        XL
+                                                                    </option>
+</select>
+</div>
+</li>
+<input class="prd_no_cate" data-category="all&gt;OUTER&gt;패딩베스트&gt;패딩베스트" type="hidden" value="DPVVC01CSG"/>
+<li>
+<div class="imgbox">
+<a href="/detail/index/0PAWD04GSB"><div class="img" style="background-image: url(https://image.codigallery.com//zero/2025/fw/main/0PAWD04GSB_m0.jpg);"></div></a>
+</div>
+<div class="txtbox">
+<div class="coordTag">코디 상품 3</div>
+<p class="coordName">비슈 울 플란넬 팬츠 (블랙)</p>
+<div class="coordPrice">
+<span class="priceBefore">199,000</span>
+<span class="priceCurrent">129,000</span>
+<p class="pricePer" style="color: #cf152d; font-size: 15px; line-height:25px; font-weigh:700;margin-left:10px ">65%</p>
+</div>
+<select class="coordOpt">
+<option value="">--- [필수] 옵션을 선택해 주세요--- </option>
+<option disabled="" value="">--------------------</option>
+<option data-name="[ 코디 상품 3 ]" data-prd_no="0PAWD04GSB" data-price="129000" data-qty="18" value="M">
+                                                                        M
+                                                                    </option>
+<option data-name="[ 코디 상품 3 ]" data-prd_no="0PAWD04GSB" data-price="129000" data-qty="7" value="L">
+                                                                        L
+                                                                    </option>
+<option data-name="[ 코디 상품 3 ]" data-prd_no="0PAWD04GSB" data-price="129000" data-qty="0" disabled="" value="XL">
+                                                                        XL [품절]
+                                                                    </option>
+</select>
+</div>
+</li>
+<input class="prd_no_cate" data-category="all&gt;PANTS&gt;치노/데님/카고" type="hidden" value="0PAWD04GSB"/>
+</ul>
+</div>
+<!-- //2025.05 수정 -->
+<ul class="listOptionDetail">
+</ul>
+<!-- 2025.05 수정 -->
+<ul class="listOptionDetailCoord">
+</ul>
+<!-- //2025.05 수정 -->
+<!-- 2025.05 수정 -->
+<script>
+                                $(function () {
+                                    $('.coordOption .inTit').on('click', function () {
+                                        $(this).toggleClass('close');
+                                        $(this).next('.inCont').stop().slideToggle(400);
+                                    })
+                                })
+                            </script>
+<!-- //2025.05 수정 -->
+</div>
+<div class="totalPriceBox">
+<h3 class="titTotalPrice">총 상품금액</h3>
+<p class="txtTotalPrice">0원</p>
+</div>
+<div class="btnOptionBox">
+<a class="btnOption style1" href="javascript:void(0)" onclick="btnCart('cart')">장바구니</a>
+<a class="btnOption style2" href="javascript:void(0)" onclick="btnCart('buy')">바로 구매</a>
+</div>
+</div>
+</div><div class="tabCont prodInfo on" id="prodInfo">
+<div class="prodInfoItem">
+<div style="width:900px; margin:0 auto;">
+<div>
+<div class="detail_banner">
+<img src="https://image.codigallery.com/promotion/GP_brand_main_950.jpg"/>
+</div>
+</div>
+</div>
+</div>
+<div class="prodInfoItem">
+<div style="width: 1000px; margin: 0 auto; text-align: center">
+<table class="tblStyle1" style="margin-bottom:15px;">
+<tbody>
+<tr>
+<th scope="row">비침</th>
+<td><strong>없음</strong></td>
+<td>중간</td>
+<td>비침</td>
+</tr>
+<tr>
+<th scope="row">두께감</th>
+<td>얇음</td>
+<td>중간</td>
+<td><strong>도톰</strong></td>
+</tr>
+<tr>
+<th scope="row">신축성</th>
+<td><strong>없음</strong></td>
+<td>중간</td>
+<td>높음</td>
+</tr>
+</tbody>
+</table>
+<div style="text-align:left; margin-bottom:15px;">
+<span>*상기 정보는 개인에 따라 주관적일 수 있으므로 참고해주시기 바랍니다.</span>
+</div>
+<img src="https://image.codigallery.com/gentlemens/2026/ss/detail/JDSXZ83CSB_top_bn.jpg"/><img src="https://image.codigallery.com/gentlemens/2026/ss/detail/JDSXZ83CSB_bn.jpg"/><br/><img src="https://image.codigallery.com/gentlemens/2026/ss/detail/JDSXZ83CSB_t.jpg"/><br/><img src="https://image.codigallery.com/gentlemens/2026/ss/detail/JDSXZ83CSB_main.jpg"/><br/><img src="https://image.codigallery.com/gentlemens/2026/ss/detail/JDSXZ83CSB_0.jpg"/><br/><img src="https://image.codigallery.com/gentlemens/2026/ss/detail/JDSXZ83CSB_1.jpg"/><br/><img src="https://image.codigallery.com/gentlemens/2026/ss/detail/SIZEJDSXS06.jpg"/> </div>
+</div>
+<div class="prodInfoItem" id="targetProdInfoNotice">
+<h3 class="titProdInfoStyle2" style="text-align:left">상품정보 제공고시</h3>
+<table class="tblStyle2">
+<tbody>
+<tr>
+<th scope="row">품번</th>
+<td>JDSXZ83CSB</td>
+</tr>
+<tr>
+<th scope="row">제조년월</th>
+<td>2026-02</td>
+</tr>
+<tr>
+<th scope="row">색상</th>
+<td>다크 그레이</td>
+</tr>
+<tr>
+<th scope="row">제조국</th>
+<td>베트남</td>
+</tr>
+<tr>
+<th scope="row">소재</th>
+<td>폴리에스터 66%, 레이온 34%</td>
+</tr>
+<tr>
+<th scope="row">제조업자명/수입업자명</th>
+<td>(주)지와이인터내셔날</td>
+</tr>
+<tr>
+<th scope="row">세탁방법</th>
+<td>손세탁 (단독세탁)</td>
+</tr>
+<tr>
+<th scope="row">판매자명</th>
+<td>㈜에스티오</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div></body></html>

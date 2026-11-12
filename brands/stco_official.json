@@ -1,0 +1,171 @@
+{
+  "id": "stco_official",
+  "name": "에스티코",
+  "category": "남성복",
+  "crawl_source": "공식 홈페이지",
+  "script": "stco_official.py",
+  "execution_level": 1,
+  "mapping_mode": "automatic",
+  "image_color_mapping": "verified",
+  "official_color_codes": true,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "주상품 .listOption input의 data-prd_no 정확 일치 및 data-name=사이즈. 코디 옵션 제외, 품절/재고0도 유지."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "주상품 .prodOptionBox .priceBox .priceNew의 실제 판매가. 코디 상품 가격·쿠폰/회원가 사용 안 함."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "동일 주상품 .priceBox .priceOld의 별도 취소선 정상가. 할인 예시 JDSXZ83CSB:59900/판매44900. 미표시·0·파싱 실패는 빈칸과 경고로 계속, 판매가 복사/역산 없음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "주상품 바로 아래 input.prd_no_cate[data-category]의 경로. 코디 상품 카테고리 제외."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "주상품 .prodDetailTopWrap .swpMainVisual img의 명시적 원본 URL과 해당 전체품번 파일명 대조. 코디 영역 제외, 실제 파일·규격·역할 검사."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "동일 색상의 검증된 주상품 갤러리 원본만5슬롯. 실제 URL만 사용."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "#prodInfo의 실제 이미지 전부 순서대로 보존(다른 코드가 들어간 공통 사이즈 이미지도 유지). 주상품 #targetProdInfoNotice의 실제 고시 항목과 텍스트를 HTML 표·문단으로 재구성해 끝에 추가. 별도 사이즈표 생성 안 함. 코디·후기·배송 영역 미수집."
+    }
+  },
+  "guide": {
+    "example": "DDSXD01CCD",
+    "examples": [
+      "DDSXD01CCD",
+      "DDSXD01",
+      "DDSXD01_CCD",
+      "JDSXZ83CSB"
+    ],
+    "pattern": "^[\\s\\S]+$",
+    "format": "전체 품번 또는 색상3자리를 제외한 기본 품번. 기본품번_색상코드도 허용.",
+    "notes": "전체 품번은 해당 색상, 기본 품번은 검색에 제공된 전체 색상. 색상코드는 공식 전체 품번 끝3자리(CCD), 한글 색상명은 주상품 고시 색상 원문.",
+    "method": "공식 /Search?searchWord 결과의 실제 상품 링크와 주상품 .prd_no_cate/고시 품번 재확인. 코디 상품 제외.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      ""
+    ],
+    "validation_note": "형식 제한 없이 조회 후 공식 상품과 색상을 대조. 상세 이미지 모두 보존, 원문 고시 표·텍스트를 끝에 추가. 사이즈표 별도 생성 없음."
+  },
+  "notes": "사용자 정정 반영: 상세 이미지에 있는 사이즈표는 그대로, 하단 고시 표/텍스트는 HTML로 재구성하여 추가. 본문 이미지 누락 없이 확인. #prodInfo의 빈 이미지 호스트 자리표시자만 제외. 색상명 한글 원문, 색상코드3자리 유지.",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "주상품 .listOption input의 data-prd_no 정확 일치 및 data-name=사이즈. 코디 옵션 제외, 품절/재고0도 유지."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "주상품 .prodOptionBox .priceBox .priceNew의 실제 판매가. 코디 상품 가격·쿠폰/회원가 사용 안 함."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "동일 주상품 .priceBox .priceOld의 별도 취소선 정상가. 할인 예시 JDSXZ83CSB:59900/판매44900. 미표시·0·파싱 실패는 빈칸과 경고로 계속, 판매가 복사/역산 없음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "주상품 바로 아래 input.prd_no_cate[data-category]의 경로. 코디 상품 카테고리 제외."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "주상품 .prodDetailTopWrap .swpMainVisual img의 명시적 원본 URL과 해당 전체품번 파일명 대조. 코디 영역 제외, 실제 파일·규격·역할 검사."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "동일 색상의 검증된 주상품 갤러리 원본만5슬롯. 실제 URL만 사용."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "#prodInfo의 실제 이미지 전부 순서대로 보존(다른 코드가 들어간 공통 사이즈 이미지도 유지). 주상품 #targetProdInfoNotice의 실제 고시 항목과 텍스트를 HTML 표·문단으로 재구성해 끝에 추가. 별도 사이즈표 생성 안 함. 코디·후기·배송 영역 미수집."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page"
+  },
+  "code_hash": "d4f6db4c1e6071b831b9946955b38b445c1b8f6ca11ca6707bf6324af8c8e1ea"
+}

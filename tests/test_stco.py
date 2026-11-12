@@ -1,0 +1,109 @@
+import importlib.util
+import itertools
+from pathlib import Path
+import sys
+import unittest
+from unittest.mock import patch
+
+ROOT=Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(ROOT/'app'))
+spec=importlib.util.spec_from_file_location('stco_test',ROOT/'brands/stco_official.py')
+c=importlib.util.module_from_spec(spec);spec.loader.exec_module(c)
+FIX=ROOT/'tests/fixtures/stco'
+
+def source(code='DDSXD01CCD'):
+    return c.parse((FIX/(code+'.html')).read_bytes())
+
+class Context:
+    product_code='DDSXD01CCD'
+    def __init__(self,selected=()):self.selected=selected;self.rows=[];self.failures=[];self.logs=[]
+    def enabled(self,key):return key in self.selected
+    def checkpoint(self):pass
+    def stage(self,*args):pass
+    def log(self,*args):self.logs.append(args)
+    def fail_item(self,message):self.failures.append(message)
+    def emit_result(self,row):self.rows.append(row)
+
+class StcoTests(unittest.TestCase):
+    def test_notice_identity_and_korean_color(self):
+        for sku,color,code in [('DDSXD01CCD','베이지','CCD'),('JDSXZ83CSB','다크 그레이','CSB')]:
+            row=c.identity(source(sku),sku)
+            self.assertEqual((row['color'],row['color_name'],row['color_code']),(color,color,code))
+        with self.assertRaises(c.CrawlError):c.identity(source(),'DJPXD02CSB')
+
+    def test_coordinate_gallery_excluded(self):
+        doc=source();self.assertTrue(doc.select('.coordOption'))
+        urls=c.gallery_urls(doc,c.SITE,'DDSXD01CCD')
+        self.assertEqual(len(urls),6)
+        self.assertTrue(all('/main/DDSXD01CCD_' in u for u in urls))
+        self.assertFalse(any('DJPXD02' in u or 'DKTXD04' in u for u in urls))
+
+    def test_sizes_include_zero_stock_and_ignore_coordinates(self):
+        doc=source();node=doc.select_one('.listOption input[data-prd_no="DDSXD01CCD"]')
+        node['data-qty']='0';node['disabled']='disabled'
+        self.assertEqual(c.sizes(doc,'DDSXD01CCD'),'95,100,105,110')
+
+    def test_complete_body_includes_shared_size_image(self):
+        doc=source();urls=c.body_urls(doc,c.SITE)
+        self.assertEqual(len(urls),6)
+        self.assertTrue(urls[0].endswith('DIEMS_brand_bn.jpg'))
+        self.assertTrue(urls[-1].endswith('SIZEDDSXF04.jpg'))
+        with patch.object(c,'image',return_value={}) as fetch:
+            result=c.detail(Context(),doc,c.SITE,{})
+        self.assertEqual([call.args[1] for call in fetch.call_args_list],urls)
+        parsed=c.parse(result)
+        self.assertEqual([i['src'] for i in parsed.select('img')],urls)
+        self.assertEqual(len(parsed.select('table')),1)
+        self.assertEqual(len(parsed.select('table tr')),8)
+        self.assertEqual(parsed.find_all(['img','table'])[-1].name,'table')
+        self.assertIn('폴리에스터 65%, 레이온 35%',result)
+
+    def test_notice_text_and_escaping(self):
+        doc=source();area=doc.select_one('#targetProdInfoNotice')
+        p=doc.new_tag('p');p.string='추가 안내 <보관> & 세탁';area.append(p)
+        value=c.notice_html(doc)
+        self.assertIn('추가 안내 &lt;보관&gt; &amp; 세탁',value)
+
+    def test_missing_notice_fails_instead_of_fabricating(self):
+        doc=source();doc.select_one('#targetProdInfoNotice').decompose()
+        with self.assertRaises(c.CrawlError):c.notice_html(doc)
+
+    def test_removed_body_image_does_not_silently_truncate(self):
+        with patch.object(c,'image',side_effect=c.MissingResource('404')):
+            with self.assertRaises(c.MissingResource):c.detail(Context(),source(),c.SITE,{})
+
+    def test_search_ignores_header_recommendations_and_accepts_base(self):
+        raw=(FIX/'search.html').read_bytes()+b'<a href="/Detail/Index/JDSXZ83CSB">header</a>'
+        with patch.object(c,'fetch',return_value=raw):
+            self.assertEqual([sku for sku,url in c.search(Context(),'DDSXD01')],['DDSXD01CCD'])
+
+    def test_absent_search_card_still_tries_direct_input(self):
+        with patch.object(c,'fetch',return_value=b'<html></html>'):
+            self.assertEqual(c.search(Context(),'ANYINPUT'),[('ANYINPUT',c.SITE+'/detail/index/ANYINPUT')])
+
+    def test_optional_prices_all_combinations(self):
+        raw=(FIX/'JDSXZ83CSB.html').read_bytes()
+        for selling,normal in itertools.product([False,True],repeat=2):
+            ctx=Context([key for key,enabled in [('price',selling),('regular_price',normal)] if enabled]);ctx.product_code='JDSXZ83CSB'
+            with patch.object(c,'search',return_value=[('JDSXZ83CSB',c.SITE+'/detail/index/JDSXZ83CSB')]),patch.object(c,'fetch',return_value=raw),patch.object(c,'gallery',side_effect=AssertionError('unselected gallery')),patch.object(c,'detail',side_effect=AssertionError('unselected detail')):
+                c.crawl(ctx)
+            self.assertFalse(ctx.failures);self.assertEqual(len(ctx.rows),1)
+            row=ctx.rows[0]
+            self.assertEqual(row.get('price'),44900 if selling else None)
+            self.assertEqual(row.get('regular_price'),59900 if normal else None)
+            self.assertEqual('price' in row,selling);self.assertEqual('regular_price' in row,normal)
+
+    def test_invalid_regular_price_is_blank_with_warning(self):
+        for value in [None,'0','문의','59,900원부터']:
+            doc=source('JDSXZ83CSB');node=doc.select_one('.priceOld')
+            if value is None:node.decompose()
+            else:node.string=value
+            ctx=Context();self.assertIsNone(c.regular_price(ctx,doc));self.assertTrue(ctx.logs)
+            self.assertEqual(c.amount(c.text(doc.select_one('.priceNew'))),44900)
+
+    def test_full_price_is_not_copied_to_regular_price(self):
+        ctx=Context();doc=source()
+        self.assertEqual(c.amount(c.text(doc.select_one('.priceNew'))),59900)
+        self.assertIsNone(c.regular_price(ctx,doc))
+
+if __name__=='__main__':unittest.main()
