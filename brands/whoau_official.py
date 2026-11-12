@@ -15,7 +15,7 @@ from PIL import Image
 from crawler_rules import check_public_image, validate_gallery_image, gallery_slots, clean_product_name
 
 SITE = 'https://whoau.com'
-REVISION = '2026-11-10-whoau-2'
+REVISION = '2026-11-12-whoau-cdn'
 DETAIL_MAX_BYTES = 64 * 1024 * 1024
 POLICY = dict(checked_on='2026-11-10', source='https://marketplace.coupang.com/mba/listing', min_side=500, max_bytes=10000000, formats=['JPEG','PNG','WEBP'], max_aspect=1.8)
 # 실제 WHMAG4V22U 검색 결과 5696/5692와 상세 이미지의 품번 확인.
@@ -31,7 +31,9 @@ def official(url):
 def image_url(raw, final=SITE):
     url = urljoin(final, raw)
     p = urlsplit(url)
-    allowed = p.hostname == 'cafe24.poxo.com' and p.path.startswith('/ec01/whoaukr/') or p.hostname == 'item-imghub.eland.co.kr'
+    allowed = (p.hostname == 'cafe24.poxo.com' and p.path.startswith('/ec01/whoaukr/')
+               or p.hostname == 'cafe24img.poxo.com' and p.path.startswith('/whoaukr/')
+               or p.hostname == 'item-imghub.eland.co.kr')
     if p.scheme != 'https' or not allowed or p.username or p.password:
         return ''
     return urlunsplit((p.scheme,p.netloc,quote(p.path,safe="/%:@+=$,;~!*'()"),p.query,''))

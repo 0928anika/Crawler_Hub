@@ -24,6 +24,14 @@ class Context:
 
 
 class WhoauTests(unittest.TestCase):
+    def test_current_official_cdn_retains_color_links_and_gallery(self):
+        doc=c.parse((ROOT/'tests/fixtures/whoau/5669.html').read_text(encoding='utf-8'))
+        colors=c.colors(doc,True)
+        self.assertEqual([x['color_code'] for x in colors],['39','AC'])
+        self.assertTrue(all(x['image'].startswith('https://cafe24img.poxo.com/whoaukr/') for x in colors))
+        self.assertEqual(len(c.gallery_urls(doc,c.SITE)),2)
+        self.assertEqual(c.image_url('https://cafe24img.poxo.com/another-shop/product.jpg'),'')
+
     def setUp(self):
         self.sources = {n: (ROOT / 'tests/fixtures/whoau' / (n + '.html')).read_text(encoding='utf-8') for n in ('5696','5692')}
         self.doc = c.parse(self.sources['5696'])

@@ -90,25 +90,25 @@
       "label": "품번",
       "supported": true,
       "status": "conditional",
-      "reason": "공식 필수 정보"
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
     },
     "product_name": {
       "label": "상품명",
       "supported": true,
       "status": "conditional",
-      "reason": "공식 필수 정보"
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
     },
     "color": {
       "label": "색상",
       "supported": true,
       "status": "conditional",
-      "reason": "공식 필수 정보"
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
     },
     "product_url": {
       "label": "상품 링크",
       "supported": true,
       "status": "conditional",
-      "reason": "공식 필수 정보"
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
     },
     "size": {
       "label": "사이즈",
@@ -169,7 +169,7 @@
     "상세페이지 HTML": "detail_page",
     "원본 상품명": null
   },
-  "code_hash": "9af4a58eadab8479906c30c8f7a8d882bce601cbf8c8ffd9182fc34c0e18b571",
+  "code_hash": "d12fda6ff4fa3a1f2514a35005ce19702150966ab359a285e53b4d685a421882",
   "hybrid_mapping": true,
   "additional_image_count": 5
 }

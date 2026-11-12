@@ -1,0 +1,14 @@
+WHOAU CDN follow-up — 2026-11-12
+Official WHKAG4V21F source: https://whoau.com/product/steve-aran-cable-pullover/5669/category/23/display/1/
+Current option link_image and primary gallery URLs use cafe24img.poxo.com/whoaukr/.
+The adapter previously only accepted cafe24.poxo.com/ec01/whoaukr/, losing
+both known color links and manual candidates and failing with no completed colors.
+Allow the observed new host with the exact /whoaukr/ path restriction, retaining
+the existing old CDN and official detail host. No image-color guesses added.
+Actual DOM excerpt: tests/fixtures/whoau/5669.html. Regression tests: 11 passed.
+Live all-field workers WHKAG4V21F, WHBGG4T21A, WHMZG4V24F succeeded without failures.
+WHKAG4V21F: Ivory/39 and Melange Gray/AC, S(085),M(090), 55920/69900.
+Latest 22-input job rechecked: 14 official search matches with recognized current
+CDN links; 8 without official search cards. Those 8 are not explained by this CDN fix.
+Independent public search/detail audit stored outside repo in whoau-failure-audit/audit.json.
+63-brand registry/hash/syntax check passed. No app/ changes.
