@@ -24,7 +24,7 @@
     "상세페이지 HTML"
   ],
   "extensions": [],
-  "official_color_codes": false,
+  "official_color_codes": true,
   "image_color_mapping": "verified",
   "capabilities": {
     "size": {
@@ -50,7 +50,7 @@
     "main_image": {
       "supported": true,
       "status": "conditional",
-      "reason": "공식 색상 옵션 li의 option_value→link_image 원본을 최우선으로 연결. 작은 option_button 썸네일은 최종 사진으로 쓰지 않음. 없으면 색상별 독립 ProductGroup.image 또는 단일 색상 BigImage. 공유 URL은 매핑에서 제외."
+      "reason": "색상 버튼 option_value→link_image 또는 img.src의 명시적 연결을 사용. 화면 썸네일이어도 파일 자체500px 이상이면 실제 원본으로 채택. 작을 때는 Chrome 갤러리 클릭으로 얻은 실제 원본과 엄격한 픽셀 유사도 및 고유 매치 검증. 색상명으로 사진을 추측하지 않음."
     },
     "additional_images": {
       "supported": true,
@@ -70,7 +70,7 @@
     ],
     "pattern": "^[\\s\\S]+$",
     "format": "공식 자체상품코드 전체 입력, 형식 제한 없이 검색 후 대조.",
-    "notes": "공식 색상 원문(예: 네이비29) 유지. 숫자 접미사를 별도 코드로 추측하지 않음. 단일 색상 또는 색상별 독립 원본 이미지가 검증되는 상품 자동 매핑.",
+    "notes": "색상은 전체 원문 유지(네이비29), 색상명은 숫자 앞부분(네이비), 색상코드는 끝 숫자(29)로 분리. 옵션 link_image 우선, 없으면 색상 버튼 img.src를 검사. 실제 파일500px 미만이면 Chrome에서 확인한 갤러리 원본과 동일 이미지 비교.",
     "method": "자체상품코드/공식 상품 ID 대조 후 색상 option_value→link_image로 원본 자동 매핑. ProductGroup의 공통 기본사진보다 옵션 원본 연결을 우선.",
     "required_columns": [
       "품번"
@@ -80,7 +80,7 @@
     ],
     "validation_note": "여러 색상이 같은 사진을 공유해 연결을 확정할 수 없으면 명시적 실패. 상세 안 고시/사이즈 원본 유지, notice_2021 배송 안내 제외."
   },
-  "notes": "AWK 공식몰. 정상가와 판매가 독립 선택. 별도 사이즈/고시 표 없음. 첨부 배송 안내와 실제 notice_2021.jpg 대조 완료. 색상명 원문 그대로, 별도 색상 코드 추측 없음. 원본 갤러리7백픽셀이며1컷일 때5개 추가 슬롯 반복. R267B0301A처럼 JSON-LD는 공통 기본사진이지만 옵션 버튼에 개별 link_image가 있는 상품도 자동 매핑. 썸네일 크기 URL을 바꿔 원본을 발명하지 않고 명시된 원본 URL 사용.",
+  "notes": "색상/색상명/숫자코드를 각각 네이비29/네이비/29로 출력. 옵션 사진은 실제 픽셀 검사 후 사용하며 부족하면 동일한 갤러리 원본을 대조. 판매가·소비자가 독립 선택. 본문 사이즈/고시 보존, 별도 표 생성 없음. notice_2021 배송 안내 제외. 작은 옵션 파일의 원본 대조 시 Chrome 필요.",
   "fields": {
     "product_code": {
       "label": "품번",
@@ -134,7 +134,7 @@
       "label": "대표이미지",
       "supported": true,
       "status": "conditional",
-      "reason": "공식 색상 옵션 li의 option_value→link_image 원본을 최우선으로 연결. 작은 option_button 썸네일은 최종 사진으로 쓰지 않음. 없으면 색상별 독립 ProductGroup.image 또는 단일 색상 BigImage. 공유 URL은 매핑에서 제외."
+      "reason": "색상 버튼 option_value→link_image 또는 img.src의 명시적 연결을 사용. 화면 썸네일이어도 파일 자체500px 이상이면 실제 원본으로 채택. 작을 때는 Chrome 갤러리 클릭으로 얻은 실제 원본과 엄격한 픽셀 유사도 및 고유 매치 검증. 색상명으로 사진을 추측하지 않음."
     },
     "additional_images": {
       "label": "추가이미지",
@@ -164,5 +164,5 @@
     "추가이미지": "additional_images",
     "상세페이지 HTML": "detail_page"
   },
-  "code_hash": "1c3106139d7f956157bdc78d3876c812c7e3b2050d5395fe31763bb03aa13103"
+  "code_hash": "12800a33063ea03be2d4721a5d91d18204a8ce5459459f9bed3830630c69d45a"
 }

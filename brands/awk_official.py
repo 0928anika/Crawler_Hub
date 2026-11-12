@@ -13,7 +13,7 @@ import urllib.error
 import urllib.request
 from urllib.parse import urlencode,urljoin,urlsplit,parse_qs
 from bs4 import BeautifulSoup
-from PIL import Image,UnidentifiedImageError
+from PIL import Image,ImageChops,ImageStat,UnidentifiedImageError
 from crawler_rules import validate_gallery_image,gallery_slots
 SITE='https://awkmall.com'
 HOSTS=('awkmall.com','www.awkmall.com')
@@ -189,9 +189,12 @@ def choices(doc,group):
     for node in doc.select('[option_title="색상"] li[option_value][link_image]'):
         color=str(node.get('option_value') or '').strip()
         source=str(node.get('link_image') or '').strip()
+        if not source:
+            thumb=node.find('img')
+            source=str(thumb.get('src') or '') if thumb else ''
         if not source:continue
         url=urljoin(SITE,source)
-        if urlsplit(url).hostname not in HOSTS or not re.match(r'/web/product/(?:big/|extra/big/)',urlsplit(url).path):continue
+        if urlsplit(url).hostname not in HOSTS or not re.match(r'/web/product/(?:big/|extra/big/|option_button/)',urlsplit(url).path):continue
         if color not in result:raise CrawlError('사진 옵션과 공식 색상 목록 불일치: '+color)
         linked.setdefault(color,set()).add(url)
     owners={}
@@ -238,15 +241,60 @@ def picture(ctx,url,cache,gallery=False):
         except (OSError,UnidentifiedImageError) as exc:raise CrawlError('이미지 해독 오류: '+url) from exc
     info=cache[url]
     if gallery:
-        validation=validate_gallery_image(info['raw'],role='product_shot',mapping_verified=True,single_shot_verified=True,mapping_evidence='공식 자체상품코드 + ProductGroup.color/image 또는 단일 색상 상품의 BigImage',content_evidence='공식 개별 상품 갤러리 이미지, 본문/사이즈/배너 아닌 역할')
+        validation=validate_gallery_image(info['raw'],role='product_shot',mapping_verified=True,single_shot_verified=True,mapping_evidence='공식 자체상품코드 + 색상 버튼 option_value/link_image 또는 img.src + ProductGroup/단일색상 연결',content_evidence='공식 개별 상품 갤러리 이미지, 본문/사이즈/배너 아닌 역할')
         return dict(info,validation=validation)
     return info
 
 
-def gallery(ctx,item,cache):
+def color_fields(label):
+    match=re.fullmatch(r'(.*\D)(\d+)',label)
+    return (match[1].strip(),match[2]) if match else (label,'')
+
+
+def browser_gallery(ctx,link,cache):
+    if '_browser_gallery' in cache:return cache['_browser_gallery']
+    from playwright.sync_api import sync_playwright
+    urls=[]
+    with sync_playwright() as p:
+        browser=p.chromium.launch(headless=True,channel='chrome')
+        try:
+            page=browser.new_page()
+            page.route('**/*',lambda r:r.abort() if r.request.resource_type in ('image','media','font') else r.continue_())
+            response=page.goto(link,wait_until='domcontentloaded',timeout=45000)
+            if response is None or response.status>=400:raise CrawlError('원본 갤러리 화면 조회 실패')
+            thumbs=page.locator('.imgArea .ThumbImage')
+            for i in range(thumbs.count()):
+                ctx.checkpoint();thumbs.nth(i).click(force=True)
+                source=page.locator('.imgArea .BigImage').get_attribute('src') or ''
+                url=urljoin(link,source)
+                if urlsplit(url).hostname in HOSTS and re.match(r'/web/product/(?:big/|extra/big/)',urlsplit(url).path) and url not in urls:urls.append(url)
+        finally:browser.close()
+    cache['_browser_gallery']=urls
+    return urls
+
+
+def matching_original(ctx,thumb,link,cache):
+    with Image.open(io.BytesIO(thumb['raw'])) as image:sample=image.convert('RGB').resize((64,64))
+    matches=[]
+    for url in browser_gallery(ctx,link,cache):
+        info=picture(ctx,url,cache)
+        if min(info['width'],info['height'])<500:continue
+        with Image.open(io.BytesIO(info['raw'])) as image:other=image.convert('RGB').resize((64,64))
+        score=sum(ImageStat.Stat(ImageChops.difference(sample,other)).mean)/3
+        matches.append((score,url))
+    matches.sort()
+    if not matches or matches[0][0]>4 or (len(matches)>1 and matches[1][0]-matches[0][0]<6):
+        raise CrawlError('옵션 썸네일과 동일한 원본을 고유하게 확인하지 못함')
+    ctx.log('옵션 사진 동일 원본 확인: 오차 '+str(round(matches[0][0],3))+' / '+matches[0][1],'INFO')
+    return matches[0][1]
+
+
+def gallery(ctx,item,cache,doc=None,link=None):
     accepted=[];seen=set()
     for url in item['images']:
         info=picture(ctx,url,cache,True)
+        if min(info['width'],info['height'])<500 and '/option_button/' in url and link:
+            url=matching_original(ctx,info,link,cache);info=picture(ctx,url,cache,True)
         if info['validation']['passed'] and info['digest'] not in seen:
             seen.add(info['digest']);accepted.append({'url':url,'validation':info['validation']})
         else:ctx.log('상품컷 제외: '+url,'WARNING')
@@ -312,7 +360,7 @@ def crawl(ctx):
                 key=(pid,item['color'])
                 if key in emitted:continue
                 name=field(doc,'상품명');name=re.sub(r'(?i)^\s*AWK[\s_-]*','',name);name=name.replace(code,'').strip(' _-/()')
-                record={'product_code':code,'product_name':name,'product_url':link,'color':item['color'],'color_name':item['color'],'color_code':''}
+                record={'product_code':code,'product_name':name,'product_url':link,'color':item['color'],'color_name':color_fields(item['color'])[0],'color_code':color_fields(item['color'])[1]}
                 if ctx.enabled('size'):
                     if not item['sizes']:raise CrawlError('공식 사이즈 옵션 없음')
                     record['size']=','.join(item['sizes'])
@@ -325,7 +373,7 @@ def crawl(ctx):
                     cats=[a.get_text(' ',strip=True) for a in doc.select('.xans-product-headcategory li a')]
                     record['category']=' > '.join(x for x in cats if x and x not in ('홈','현재 위치'))
                 if ctx.enabled('main_image') or ctx.enabled('additional_images'):
-                    main,extra=gallery(ctx,item,cache)
+                    main,extra=gallery(ctx,item,cache,doc,link)
                     if ctx.enabled('main_image'):record['main_image']=main
                     if ctx.enabled('additional_images'):record['additional_images']=extra
                 if ctx.enabled('detail_page'):record['detail_page']=markup

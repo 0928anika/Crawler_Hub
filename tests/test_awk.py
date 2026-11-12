@@ -73,4 +73,28 @@ class AwkTests(unittest.TestCase):
   self.assertFalse(set(options[0]['images']) & set(options[1]['images']))
   self.assertTrue(all('/option_button/' not in u for o in options for u in o['images']))
 
+ def test_option_src_itself_can_be_full_resolution_without_link_image(self):
+  doc=c.parse((FIX/'R267B1101A.html').read_bytes());options=c.choices(doc,c.product_group(doc))
+  self.assertEqual([x['color'] for x in options],['멜란지그레이14','네이비29'])
+  for i,item in enumerate(options):
+   self.assertTrue(item['images']);self.assertIn('/option_button/',item['images'][0])
+   with patch.object(c,'fetch',return_value=(FIX/('option_'+str(i)+'.jpg')).read_bytes()):main,extras=c.gallery(Context(),item,{})
+   self.assertEqual(main,item['images'][0]);self.assertEqual(len(extras.split(',')),5)
+ def test_numeric_color_fields_preserve_label_and_leading_zero(self):
+  self.assertEqual(c.color_fields('네이비29'),('네이비','29'))
+  self.assertEqual(c.color_fields('멜란지그레이14'),('멜란지그레이','14'))
+  self.assertEqual(c.color_fields('화이트01'),('화이트','01'))
+  self.assertEqual(c.color_fields('네이비'),('네이비',''))
+ def test_small_option_photo_matches_unique_original_not_color_name_guess(self):
+  import io
+  from PIL import Image
+  raw=(FIX/'main.jpg').read_bytes()
+  with Image.open(io.BytesIO(raw)) as pic:
+   thumb=pic.resize((90,90));out=io.BytesIO();thumb.save(out,format='JPEG');small=out.getvalue()
+  wrong=io.BytesIO();Image.new('RGB',(700,700),'red').save(wrong,format='JPEG')
+  urls=['https://awkmall.com/web/product/big/a.jpg','https://awkmall.com/web/product/big/b.jpg']
+  def info(ctx,url,cache):return {'raw':raw if url==urls[0] else wrong.getvalue(),'width':700,'height':700}
+  with patch.object(c,'browser_gallery',return_value=urls),patch.object(c,'picture',side_effect=info):
+   self.assertEqual(c.matching_original(Context(),{'raw':small},c.SITE,{}),urls[0])
+
 if __name__=='__main__':unittest.main()
