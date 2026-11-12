@@ -51,6 +51,19 @@ class HybridMappingTests(unittest.TestCase):
             self.assertEqual(rows[1]['raw']['대표이미지'],'https://img/auto-gray.jpg')
             self.assertEqual(len(mapping.export_sheet(job)),3)
 
+    def test_optional_raw_name_code_format_for_manual_final_color(self):
+        with tempfile.TemporaryDirectory(dir=ROOT/'tests') as folder:
+            job=self.job(folder,[item(0,'AWK','60','https://img/photo.jpg',True)])
+            job.brand['color_label_format']='name_code'
+            view=mapping.snapshot(job);group=view['groups'][0]
+            for color in group['colors']:
+                view=mapping.save_color(job,dict(expected_revision=view['revision'],group_id=group['id'],color_id=color['id'],image_ids=[group['images'][0]['id']] if color['color_code']=='60' else []))
+            view=mapping.finalize(job,dict(expected_revision=view['revision']))
+            rows=mapping.final_items(job,view)
+            self.assertEqual(rows[0]['raw']['색상'],'Charcoal60')
+            self.assertEqual(rows[0]['raw']['색상명'],'Charcoal')
+            self.assertEqual(rows[0]['raw']['색상코드'],'60')
+
     def test_all_auto_job_is_complete_without_mapping_groups(self):
         with tempfile.TemporaryDirectory(dir=ROOT/'tests') as folder:
             job=self.job(folder,[item(0,'WHKAG4T35U','60','https://img/auto.jpg')])

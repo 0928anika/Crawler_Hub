@@ -222,7 +222,7 @@ def final_items(job,view):
             for header,value in base['raw'].items():
                 field=field_for(header)
                 if field not in ('color','main_image','additional_images','detail_page'):record[header]=value
-            record.update({'품번':group['code'],'상품명':group['name'],'색상':color['color_name'] or color['color_code'],
+            record.update({'품번':group['code'],'상품명':group['name'],'색상':(color['color_name']+color['color_code'] if job.brand.get('color_label_format')=='name_code' else color['color_name'] or color['color_code']),
                            '색상명':color['color_name'],'색상코드':color['color_code']})
             for header in headers:
                 if field_for(header) is not None:continue

@@ -1,0 +1,170 @@
+{
+  "id": "awk_official",
+  "name": "AWK",
+  "category": "주니어 의류",
+  "crawl_source": "공식 홈페이지",
+  "script": "awk_official.py",
+  "execution_level": 1,
+  "interface": "portal_v1",
+  "mapping_mode": "manual",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "hybrid",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data의 option_name_original/option_value_orginal, ProductGroup.size 보완. 품절/disabled도 유지."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 option_price의 색상별 공통 값, 없으면 판매가 행. 쿠폰/회원가 사용 안 함."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 기본정보 소비자가 행의 독립 정상가. 예시109900원. 선택된 경우만 파싱하며 누락/0/잘못된 값은 빈칸으로 계속."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 xans-product-headcategory 분류 경로."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상 버튼 option_value→link_image 또는 img.src의 명시적 연결을 사용. 화면 썸네일이어도 파일 자체500px 이상이면 실제 원본으로 채택. 작을 때는 Chrome 갤러리 클릭으로 얻은 실제 원본과 엄격한 픽셀 유사도 및 고유 매치 검증. 색상명으로 사진을 추측하지 않음."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "검증된 같은 색상 원본만5슬롯. 유효컷 부족 시 같은 검증컷 반복과 안내, 썸네일 크기 URL 변경 없음."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 #prdDetail .cont 이미지 순서 유지. 기존 본문·사이즈·고시 이미지 보존. 확인된 공통 notice_2021.jpg(배송/교환/환불)만 요청 전 제외. 별도 고시/사이즈 표 생성 없음."
+    }
+  },
+  "guide": {
+    "example": "R267B0101A",
+    "examples": [
+      "R267B0101A"
+    ],
+    "pattern": "^[\\s\\S]+$",
+    "format": "공식 자체상품코드 전체 입력, 형식 제한 없이 검색 후 대조.",
+    "notes": "품번 전체 색상 연결이 확인되면 자동 완료하며 매핑 화면에서 제외. 한 옵션이라도 미확정이면 해당 품번 전체 사진/색상을 한 수동 매핑 그룹으로 표시. 색상=네이비29, 색상명=네이비, 코드=29.",
+    "method": "자체상품코드/공식 상품 ID 대조 후 색상 option_value→link_image로 원본 자동 매핑. ProductGroup의 공통 기본사진보다 옵션 원본 연결을 우선.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      ""
+    ],
+    "validation_note": "여러 색상이 같은 사진을 공유해 연결을 확정할 수 없으면 명시적 실패. 상세 안 고시/사이즈 원본 유지, notice_2021 배송 안내 제외."
+  },
+  "notes": "AWK 색상 미매핑/자동완료 혼합 버전. 품번 단위 원자적 처리: 모든 색상 확정 시 자동 결과만, 일부 미확정 시 전 색상·전 사진을 수동 그룹으로만 전송. 기존 상세 원본·배송 안내 제외·독립 가격 선택 유지. Chrome 필요.",
+  "hybrid_mapping": true,
+  "color_label_format": "name_code",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data의 option_name_original/option_value_orginal, ProductGroup.size 보완. 품절/disabled도 유지."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 option_price의 색상별 공통 값, 없으면 판매가 행. 쿠폰/회원가 사용 안 함."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 기본정보 소비자가 행의 독립 정상가. 예시109900원. 선택된 경우만 파싱하며 누락/0/잘못된 값은 빈칸으로 계속."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 xans-product-headcategory 분류 경로."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상 버튼 option_value→link_image 또는 img.src의 명시적 연결을 사용. 화면 썸네일이어도 파일 자체500px 이상이면 실제 원본으로 채택. 작을 때는 Chrome 갤러리 클릭으로 얻은 실제 원본과 엄격한 픽셀 유사도 및 고유 매치 검증. 색상명으로 사진을 추측하지 않음."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "검증된 같은 색상 원본만5슬롯. 유효컷 부족 시 같은 검증컷 반복과 안내, 썸네일 크기 URL 변경 없음."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 #prdDetail .cont 이미지 순서 유지. 기존 본문·사이즈·고시 이미지 보존. 확인된 공통 notice_2021.jpg(배송/교환/환불)만 요청 전 제외. 별도 고시/사이즈 표 생성 없음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page"
+  },
+  "code_hash": "e32c402b32d183febf0f50f1d1da09d075c34ecf56b8d5a29ab9e2c4eabc395e"
+}
