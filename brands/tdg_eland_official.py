@@ -227,6 +227,8 @@ def discover(ctx, code):
         if count is None or not text(count).replace(",", "").isdigit():
             raise CrawlError("검색 응답 오류: 상품 부재와 구분 필요")
         current_total = int(text(count).replace(",", ""))
+        if current_total == 0:
+            raise CrawlError("이랜드몰 공식 검색 결과 0건: " + code + " (지정 공식 판매자 " + VENDOR_NO + "; 옵션·이미지 수집 전 검색 단계)")
         if total is None:
             total = current_total
         elif total != current_total:
@@ -256,6 +258,8 @@ def discover(ctx, code):
             fresh += 1
         offset += fresh
         if offset >= total:
+            if not links:
+                raise CrawlError("이랜드몰 검색 결과는 있으나 지정 공식 판매자 " + VENDOR_NO + " 상품이 없음: " + code)
             return links
         if not fresh:
             raise CrawlError("검색 페이지 진행 실패")

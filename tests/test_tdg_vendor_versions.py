@@ -19,6 +19,25 @@ class Context:
     def __init__(self):self.output=[]
 
 class VendorVersionTests(unittest.TestCase):
+    def test_official_zero_search_reports_search_not_image_failure(self):
+        for c in self.modules():
+            if c.VENDOR_NO!='LV17008491':continue
+            ctx=Context();ctx.product_code='TGAK25A04'
+            page=BeautifulSoup('<em data-searchresult-total>0</em><div id="searchPageList"></div>','html.parser')
+            with patch.object(c,'soup',return_value=page),patch.object(c,'api') as api,patch.object(c,'gallery') as gallery:
+                with self.assertRaises(c.CrawlError) as error:c.crawl(ctx)
+            self.assertIn('검색 결과 0건',str(error.exception))
+            self.assertNotIn('수동 매핑 불가',str(error.exception))
+            api.assert_not_called();gallery.assert_not_called()
+
+    def test_official_other_store_is_not_reported_as_global_absence(self):
+        for c in self.modules():
+            if c.VENDOR_NO!='LV17008491':continue
+            page=BeautifulSoup('<em data-searchresult-total>1</em><div id="searchPageList"><div data-item-section><a class="ui-item__link" href="/i/item?itemNo=2502724265&amp;lowerVendNo=LV19015442"></a></div></div>','html.parser')
+            with patch.object(c,'soup',return_value=page):
+                with self.assertRaises(c.CrawlError) as error:c.discover(Context(),'TGAK25A04')
+            self.assertIn('검색 결과는 있으나',str(error.exception));self.assertIn(c.VENDOR_NO,str(error.exception))
+
     def modules(self):
         for name in ['tdg_eland_ncgn','tdg_eland_official']:
             spec=importlib.util.spec_from_file_location(name,ROOT/'brands'/(name+'.py'))
