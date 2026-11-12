@@ -41,6 +41,22 @@ def document(data):
 
 
 class NCBasicTests(unittest.TestCase):
+    def test_denied_body_uses_verified_shots_and_original_size(self):
+        ctx=Context();data=source('NCJM26T05')
+        shots=['https://item.elandrs.com/r/image/item/shot1.jpg','https://item.elandrs.com/r/image/item/shot2.jpg']
+        def load(ctx,url,cache,detail=False):
+            if url.endswith('/NCJM26T05.jpg'):raise c.AccessDenied('HTTP 403')
+            return ('JPEG',780,1857,'size',False)
+        with patch.object(c,'image_info',side_effect=load):
+            urls=c.detail_images(ctx,data,'NCJM26T05',{},fallback_images=shots)
+        self.assertEqual(urls,shots+['https://img-studio.elandmall.com/Winstudio/UI-SIZE.jpg'])
+        self.assertTrue(any('상품컷 전체' in log[0] for log in ctx.logs))
+
+    def test_transient_detail_failure_does_not_trigger_fallback(self):
+        with patch.object(c,'image_info',side_effect=c.CollectionError('TLS timeout')):
+            with self.assertRaises(c.CollectionError):
+                c.detail_images(Context(),source('NCJM26T05'),'NCJM26T05',{},fallback_images=['https://item.elandrs.com/shot.jpg'])
+
     def test_official_shared_size_filename_is_preserved(self):
         ctx=Context();data=source('NCCK26T02')
         with patch.object(c,'image_info',return_value={}) as image:

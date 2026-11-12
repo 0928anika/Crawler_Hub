@@ -31,6 +31,10 @@ class MissingResource(CollectionError):
     """Permanent HTTP 404; site itself removes these gallery slots on error."""
 
 
+class AccessDenied(CollectionError):
+    """Official public source returned HTTP 403."""
+
+
 def public_opener(ctx, deadline):
     """Request-local dual-stack fallback; never change global socket settings.
 
@@ -116,6 +120,8 @@ def fetch(ctx, url, limit=4_000_000):
             ctx.log('공개 요청 완료 %.1f초: %s' % (time.monotonic()-started, url), 'INFO')
             return b''.join(chunks)
         except urllib.error.HTTPError as exc:
+            if exc.code == 403:
+                raise AccessDenied('HTTP 403: ' + url) from exc
             if exc.code == 404:
                 raise MissingResource('HTTP 404: ' + url) from exc
             if exc.code not in (429, 500, 502, 503, 504) or attempt:
@@ -396,7 +402,7 @@ def gallery(ctx, main, cache):
     return result
 
 
-def detail_images(ctx, detail, code, cache):
+def detail_images(ctx, detail, code, cache, fallback_images=()):
     desc = detail.get('itemDesc') or {}
     markup = desc.get('itemDescdocumentCon') or ''
     if not markup.strip():
@@ -409,7 +415,7 @@ def detail_images(ctx, detail, code, cache):
     for notice in desc.get('itemAnnounceList') or []:
         note=BeautifulSoup(html.unescape(notice.get('itemAnnounceCon') or ''),'html.parser')
         announce_urls.update(urljoin(SITE,n.get('src') or n.get('data-src') or '') for n in note.find_all('img'))
-    result = []
+    result = []; body_available=False; body_unavailable=False
     for image in fragment.find_all('img'):
         ctx.checkpoint()
         url = urljoin(SITE,image.get('src') or image.get('data-src') or '')
@@ -433,13 +439,20 @@ def detail_images(ctx, detail, code, cache):
         # Observed official HTTPS endpoint serves the original HTTP-authored URL.
         if parsed.scheme=='http':
             url = 'https:'+url[5:]
+        is_size=bool(re.search(r'size|사이즈',name,re.I))
         try:
             image_info(ctx,url,cache,detail=True)
-        except MissingResource as exc:
-            ctx.log('존재하지 않는 상세 원본 404 제외: '+str(exc),'WARNING')
+        except (MissingResource,AccessDenied) as exc:
+            body_unavailable=body_unavailable or not is_size
+            ctx.log('공식 상세 원본 접근 불가(403/404) 제외: '+str(exc),'WARNING')
             continue
+        body_available=body_available or not is_size
         if url not in result:
             result.append(url)
+    if body_unavailable and not body_available:
+        if not fallback_images:raise CollectionError('공식 본문 접근 불가 및 대체할 검증 상품컷 없음')
+        ctx.log('공식 본문 접근 불가: 검증된 상품컷 전체와 남아 있는 원본 사이즈 이미지로 상세 구성','WARNING')
+        result=list(dict.fromkeys(list(fallback_images)+result))
     if not result:
         raise CollectionError('본문이 있지만 허용된 상품 이미지 파싱 결과 없음')
     return result
@@ -475,7 +488,7 @@ def crawl(ctx):
             photos = gallery(ctx,main,cache)
             if not photos:
                 raise CollectionError('유효 개별 상품 사진 0장: '+link)
-            body = detail_images(ctx,data,code,cache) if ctx.enabled('detail_page') else []
+            body = detail_images(ctx,data,code,cache,fallback_images=[url for url,digest in photos]) if ctx.enabled('detail_page') else []
             products.append((record,palette,photos,body))
         except (CollectionError,KeyError,UnicodeError) as exc:
             message = link+' / '+str(exc)

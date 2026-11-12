@@ -60,7 +60,7 @@
     "detail_page": {
       "supported": true,
       "status": "conditional",
-      "reason": "공식 itemDesc.itemDescdocumentCon 상품 본문 이미지 원본만 유지. itemAnnounceList 쿠폰/행사 및 본문에 중복된 안내 이미지 제외. 이미지 내 고시·사이즈표 보존, 별도 표 생성 없음. 상세 선택 시에만 파싱/조회."
+      "reason": "공식 itemDesc.itemDescdocumentCon 상품 본문 이미지 원본만 유지. itemAnnounceList 쿠폰/행사 및 본문에 중복된 안내 이미지 제외. 이미지 내 고시·사이즈표 보존, 별도 표 생성 없음. 상세 선택 시에만 파싱/조회. 원본 본문 전체가403/404로 접근 불가하면 검증된 상품컷과 남은 원본 사이즈 이미지로 상세 구성하며 경고."
     }
   },
   "guide": {
@@ -149,7 +149,7 @@
       "label": "상세페이지",
       "supported": true,
       "status": "conditional",
-      "reason": "공식 itemDesc.itemDescdocumentCon 상품 본문 이미지 원본만 유지. itemAnnounceList 쿠폰/행사 및 본문에 중복된 안내 이미지 제외. 이미지 내 고시·사이즈표 보존, 별도 표 생성 없음. 상세 선택 시에만 파싱/조회."
+      "reason": "공식 itemDesc.itemDescdocumentCon 상품 본문 이미지 원본만 유지. itemAnnounceList 쿠폰/행사 및 본문에 중복된 안내 이미지 제외. 이미지 내 고시·사이즈표 보존, 별도 표 생성 없음. 상세 선택 시에만 파싱/조회. 원본 본문 전체가403/404로 접근 불가하면 검증된 상품컷과 남은 원본 사이즈 이미지로 상세 구성하며 경고."
     }
   },
   "column_fields": {
@@ -169,6 +169,6 @@
     "원본 상품명": null,
     "판매자번호": null
   },
-  "code_hash": "812cb6a8dfc63feb17cd4fe31656b5d95e9ccc890198b772fff105dcc9e6c6a6",
+  "code_hash": "f235799e99a3cfcd6ed32d573c0a394345bd37f662230dca9acc5b765c78510f",
   "additional_image_count": 5
 }
