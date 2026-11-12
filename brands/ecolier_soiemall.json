@@ -1,0 +1,172 @@
+{
+  "id": "ecolier_soiemall",
+  "name": "에꼴리에",
+  "category": "여성 의류",
+  "crawl_source": "소이몰",
+  "script": "ecolier_soiemall.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명"
+  ],
+  "extensions": [],
+  "official_color_codes": false,
+  "image_color_mapping": "hybrid",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품필수정보 치수(전 색상 공통값)."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 hidden 필드 set_goods_price."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 hidden 필드 set_goods_fixedPrice(정가). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .location_wrap .location_tit 경로."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 이미지(magnify→detail→main 중 가장 큰 종류). 색상 1개 상품은 자동, 다색상은 수동 매핑 후보."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "수동 후보는 자르지 않고 전달, 최종 5슬롯은 Hub가 구성."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .detail_explain_box 이미지(공통 배너 제외) + 상품필수정보 고시 표."
+    }
+  },
+  "guide": {
+    "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{3,20}$",
+    "format": "기본 품번(예: 25D0901)",
+    "notes": "품번이 비슷한 다른 상품(25D09010 등)은 제외합니다.",
+    "method": "소이몰 검색 후 상품명 끝 (품번)·모델명으로 경계 일치 대조, 공식 브랜드 표기가 있으면 에꼴리에만.",
+    "example": "25D0901",
+    "examples": [
+      "25D0901"
+    ],
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "공백"
+    ],
+    "validation_note": "입력 형식 검사이며 실제 상품 존재 확인은 실행 시 수행"
+  },
+  "notes": "소이몰(고도몰)은 소이·틴톡도 함께 판매 → 검색 목록의 공식 브랜드 표기가 있으면 에꼴리에만 수집. 색상 옵션별 사진 연결이 없어 색상 1개 상품은 자동, 여러 색상 상품 갤러리는 수동 매핑. 사이즈는 상품필수정보 치수(전 색상 공통). 상품필수정보 전체를 고시 2열 표로 재구성. 검증 범위: 사용자 단독 크롤러(ecolier_crawler_1.py)에서 운영 확인된 URL·선택자·응답 키를 Crawler Hub SDK 규약으로 이식. 이 코드를 작성한 환경은 해당 사이트 접속이 차단되어 실사이트 실행은 미검증이며, SDK 계약·선택 항목 생략·표 재구성은 오프라인 fixture 테스트(tests/test_oberon_brands.py)로만 확인함.",
+  "hybrid_mapping": true,
+  "additional_image_count": 5,
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품필수정보 치수(전 색상 공통값)."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 hidden 필드 set_goods_price."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 hidden 필드 set_goods_fixedPrice(정가). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .location_wrap .location_tit 경로."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 이미지(magnify→detail→main 중 가장 큰 종류). 색상 1개 상품은 자동, 다색상은 수동 매핑 후보."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "수동 후보는 자르지 않고 전달, 최종 5슬롯은 Hub가 구성."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .detail_explain_box 이미지(공통 배너 제외) + 상품필수정보 고시 표."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null
+  },
+  "code_hash": "055cd0a9e420ff2891bb38f07a5417f0892fb695a39c17ad5332cbc4445d2146"
+}

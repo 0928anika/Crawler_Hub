@@ -1,0 +1,173 @@
+{
+  "id": "minimum_official",
+  "name": "미니멈",
+  "category": "여성 의류",
+  "crawl_source": "공식 홈페이지",
+  "script": "minimum_official.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명"
+  ],
+  "extensions": [],
+  "official_color_codes": false,
+  "image_color_mapping": "hybrid",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상 행: 공식 option_stock_data의 해당 색상 사이즈 전체(품절 포함, 숨김 옵션 제외). 수동 후보는 모든 색상의 사이즈가 같을 때만 공통값, 다르면 빈칸."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data 색상별 option_price가 하나로 같을 때 그 값, 없으면 #span_product_price_sale/#span_product_price_text. 사이즈별 상이하면 빈칸."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 소비자가 #span_product_price_custom 또는 product_custom(regular_price cafe24 프로필). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 .xans-product-headcategory 경로."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상 옵션 1개 페이지는 해당 색상 자동, 다색상 페이지는 공식 link_image(색상 연결 사진)만 자동, 나머지 갤러리 개별 컷은 수동 색상 매핑 후보. og:image 원본 우선, 공개 접근·JPEG/PNG/정지 WebP·500px·10MB·비율 1.8 검사."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "자동 색상은 공식 연결 사진으로 5슬롯, 수동 후보는 갤러리 전체를 자르지 않고 전달. 최종 개수는 Hub가 적용."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상세 영역 이미지(공통 배너·배송·로고 경로는 요청 제외)와 HTML 고시/사이즈표가 있으면 표로 재구성. 이미지 안 고시·사이즈표는 원본 유지."
+    }
+  },
+  "guide": {
+    "example": "M1DAHL0030",
+    "examples": [
+      "M1DAHL0030"
+    ],
+    "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{2,24}(?:_[A-Za-z0-9]{1,4})?$",
+    "format": "색상코드를 제외한 기본 품번(영문 대문자·숫자). 자체상품코드에 색상코드가 있는 상품만 품번_색상코드 지정 가능",
+    "notes": "기본 품번은 모든 색상. 공식 연결 사진은 자동 저장, 연결 없는 사진은 색상 매핑하기에서 분류합니다. 없는 색상은 옵션 추가로 입력할 수 있습니다.",
+    "method": "공식 검색(/product/search.html) 후 상세페이지의 자체상품코드·모델명·상품명 끝 품번을 경계 일치로 대조. 상품명에 브랜드명이 없어도 수집.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "공백",
+      "M1DAHL0030_"
+    ],
+    "validation_note": "입력 형식 검사이며 실제 상품 존재 확인은 실행 시 수행"
+  },
+  "notes": "미니멈몰 Cafe24. 상품명 끝 품번으로 정확히 대조. 갤러리가 2장 미만이면 공식 확대 이미지 페이지(image_zoom2)에서 보완. HTML 상품정보고시(#desctable)는 2열 표로 재구성. 인트로·스튜디오 공통·상세 공지 이미지는 요청 제외. 검증 범위: 사용자 단독 크롤러(미니멈 크롤러)에서 운영 확인된 URL·선택자·응답 키를 Crawler Hub SDK 규약으로 이식. 이 코드를 작성한 환경은 해당 사이트 접속이 차단되어 실사이트 실행은 미검증이며, SDK 계약·선택 항목 생략·표 재구성은 오프라인 fixture 테스트(tests/test_oberon_brands.py)로만 확인함.",
+  "hybrid_mapping": true,
+  "additional_image_count": 5,
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상 행: 공식 option_stock_data의 해당 색상 사이즈 전체(품절 포함, 숨김 옵션 제외). 수동 후보는 모든 색상의 사이즈가 같을 때만 공통값, 다르면 빈칸."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data 색상별 option_price가 하나로 같을 때 그 값, 없으면 #span_product_price_sale/#span_product_price_text. 사이즈별 상이하면 빈칸."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 소비자가 #span_product_price_custom 또는 product_custom(regular_price cafe24 프로필). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 .xans-product-headcategory 경로."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상 옵션 1개 페이지는 해당 색상 자동, 다색상 페이지는 공식 link_image(색상 연결 사진)만 자동, 나머지 갤러리 개별 컷은 수동 색상 매핑 후보. og:image 원본 우선, 공개 접근·JPEG/PNG/정지 WebP·500px·10MB·비율 1.8 검사."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "자동 색상은 공식 연결 사진으로 5슬롯, 수동 후보는 갤러리 전체를 자르지 않고 전달. 최종 개수는 Hub가 적용."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상세 영역 이미지(공통 배너·배송·로고 경로는 요청 제외)와 HTML 고시/사이즈표가 있으면 표로 재구성. 이미지 안 고시·사이즈표는 원본 유지."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null
+  },
+  "code_hash": "198c85865f05ab1530f5a5ec6c58502ee2d5f56cfb5fde97f5df833912eff877"
+}

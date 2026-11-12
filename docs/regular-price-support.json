@@ -1,9 +1,27 @@
 [
   {
+    "id": "adhoc_official",
+    "profile": "cafe24",
+    "supported": true,
+    "reason": "공식 소비자가 #span_product_price_custom 또는 product_custom(regular_price cafe24 프로필). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "adidas_official",
+    "profile": "adidas_api",
+    "supported": true,
+    "reason": "공식 pricing_information.standard_price. 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
     "id": "allforyou_official",
     "profile": "cafe24",
     "supported": true,
     "reason": "공식 상품의 소비자가 #span_product_price_custom 또는 product_custom. 미표시·0·파싱 실패는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "bangbang_official",
+    "profile": "cafe24",
+    "supported": true,
+    "reason": "공식 소비자가 #span_product_price_custom 또는 product_custom(regular_price cafe24 프로필). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
   },
   {
     "id": "beentrill_official",
@@ -16,6 +34,36 @@
     "profile": "cafe24",
     "supported": true,
     "reason": "공식 상품의 소비자가 #span_product_price_custom 또는 product_custom. 미표시·0·파싱 실패는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "brentwood_kolonmall",
+    "profile": "kolonmall_api",
+    "supported": true,
+    "reason": "공식 price.wishPrice(독립 가격 필드). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "dawnfield_official",
+    "profile": "cafe24",
+    "supported": true,
+    "reason": "공식 소비자가 #span_product_price_custom 또는 product_custom(regular_price cafe24 프로필). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "decoand_official",
+    "profile": "cafe24",
+    "supported": true,
+    "reason": "공식 소비자가 #span_product_price_custom 또는 product_custom(regular_price cafe24 프로필). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "disneygolf_smfashion",
+    "profile": "cafe24",
+    "supported": true,
+    "reason": "공식 소비자가 #span_product_price_custom 또는 product_custom(regular_price cafe24 프로필). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "ecolier_soiemall",
+    "profile": "godomall",
+    "supported": true,
+    "reason": "공식 hidden 필드 set_goods_fixedPrice(정가). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
   },
   {
     "id": "egoist_naver_ncys",
@@ -60,6 +108,12 @@
     "reason": "공식 itemMain.orgSellprice. 링크별 값이 다르거나 누락되면 공통 정상가는 빈칸이며 실패 처리하지 않음."
   },
   {
+    "id": "minimum_official",
+    "profile": "cafe24",
+    "supported": true,
+    "reason": "공식 소비자가 #span_product_price_custom 또는 product_custom(regular_price cafe24 프로필). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
     "id": "nbakids_official",
     "profile": "style24",
     "supported": true,
@@ -72,10 +126,22 @@
     "reason": "현재 공식 공개 응답에서 판매가와 구분되는 독립 정상가 필드를 확인하지 못해 수집 불가. 임의 추정·판매가 대체 없음."
   },
   {
+    "id": "ping_bucketstore",
+    "profile": "bucketstore_api",
+    "supported": true,
+    "reason": "공식 검색 API price.tag(정가 필드). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
     "id": "renomagolf_official",
     "profile": "cafe24",
     "supported": true,
     "reason": "공식 상품의 소비자가 #span_product_price_custom 또는 product_custom. 미표시·0·파싱 실패는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "renomakids_official",
+    "profile": "cafe24",
+    "supported": true,
+    "reason": "공식 소비자가 #span_product_price_custom 또는 product_custom(regular_price cafe24 프로필). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
   },
   {
     "id": "roem_official",
