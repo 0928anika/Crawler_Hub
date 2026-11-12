@@ -69,7 +69,19 @@ SEJXC01NSB used an img src ending in /promotion/ without a filename. This
 directory placeholder returned 404 and incorrectly failed the whole article.
 Skip empty-filename directory URLs on the official image hosts, including the
 root placeholder. Actual image-file 404s still fail, preserving the complete
-body requirement. Real source excerpt added as a regression fixture.
+body requirement at that revision. Real source excerpt added as a regression fixture.
 Live worker SEJXC01NSB: exit 0, one row, no item failures; 블랙 / NSB,
 95,100,105,110,115; five real body images including SIZESEJXF01.jpg and eight
 notice rows. All 15 regression tests and the 50-brand registry check passed.
+
+Removed-body follow-up — 2026-11-12 (supersedes earlier fail-on-file-404 rule):
+SSJXC61CSD has a missing _0.jpg. SSJXC63CSK has a missing _t.jpg and a
+950x1 _0.jpg placeholder. Both still have real product body and original size
+charts. Skip confirmed HTTP 404 body files and one-pixel placeholders with
+explicit warning logs, retaining all accessible real images in source order.
+Do not suppress TLS errors, transient errors, invalid image bytes, missing
+notice or a body containing only banners/size charts. Gallery rules unchanged.
+Live worker both SKUs: exit 0, one row each, no item failures.
+SSJXC61CSD: 베이지/CSD, four retained body images, SIZESSJXF01.jpg.
+SSJXC63CSK: 카키/CSK, three retained body images, SIZESSJXF03.jpg.
+Both include eight notice rows. 17 tests and 50-brand registry check passed.

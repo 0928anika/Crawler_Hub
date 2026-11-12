@@ -274,10 +274,20 @@ def notice_html(doc):
 
 
 def detail(ctx,doc,link,cache):
-    parts=[]
+    parts=[];has_product_body=False
     for url in body_urls(doc,link):
-        image(ctx,url,cache)  # Every real body source is checked; no truncation.
+        try:info=image(ctx,url,cache)
+        except MissingResource:
+            ctx.log('공식 원본에서 삭제된 상세 이미지(404) 제외: '+url,'WARNING')
+            continue
+        if min(info['width'],info['height'])<=1:
+            ctx.log('공식 상세의 1픽셀 빈 이미지 제외: '+url,'WARNING')
+            continue
+        path=urlsplit(url).path
+        if '/promotion/' not in path.lower() and not path.rsplit('/',1)[-1].upper().startswith('SIZE'):
+            has_product_body=True
         parts.append('<img src="'+html.escape(url,quote=True)+'" alt="상품 상세 본문" style="max-width:100%;height:auto"><br>')
+    if not has_product_body:raise CrawlError('사용 가능한 실제 상품 상세 본문 이미지 없음(배너/사이즈표만으로 성공 처리하지 않음)')
     result='<div>'+''.join(parts)+notice_html(doc)+'</div>'
     if len(result.encode('utf-16-le'))//2>32767:raise CrawlError('상세 HTML 엑셀 셀 한도 초과: 원문을 임의 절단하지 않습니다')
     return result

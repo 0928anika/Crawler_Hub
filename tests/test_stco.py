@@ -30,7 +30,7 @@ class StcoTests(unittest.TestCase):
         self.assertEqual(len(urls),5)
         self.assertTrue(urls[0].endswith('SEJXC01NSB_t.jpg'))
         self.assertTrue(urls[-1].endswith('SIZESEJXF01.jpg'))
-        with patch.object(c,'image',return_value={}) as loader:
+        with patch.object(c,'image',return_value={'width':950,'height':1000}) as loader:
             result=c.detail(Context(),doc,c.SITE,{})
         self.assertEqual([call.args[1] for call in loader.call_args_list],urls)
         self.assertNotIn('src="https://image.codigallery.com/promotion/"',result)
@@ -76,7 +76,7 @@ class StcoTests(unittest.TestCase):
         self.assertEqual(len(urls),6)
         self.assertTrue(urls[0].endswith('DIEMS_brand_bn.jpg'))
         self.assertTrue(urls[-1].endswith('SIZEDDSXF04.jpg'))
-        with patch.object(c,'image',return_value={}) as fetch:
+        with patch.object(c,'image',return_value={'width':950,'height':1000}) as fetch:
             result=c.detail(Context(),doc,c.SITE,{})
         self.assertEqual([call.args[1] for call in fetch.call_args_list],urls)
         parsed=c.parse(result)
@@ -96,9 +96,29 @@ class StcoTests(unittest.TestCase):
         doc=source();doc.select_one('#targetProdInfoNotice').decompose()
         with self.assertRaises(c.CrawlError):c.notice_html(doc)
 
-    def test_removed_body_image_does_not_silently_truncate(self):
+    def test_no_real_body_fails_even_when_files_removed(self):
         with patch.object(c,'image',side_effect=c.MissingResource('404')):
-            with self.assertRaises(c.MissingResource):c.detail(Context(),source(),c.SITE,{})
+            with self.assertRaises(c.CrawlError):c.detail(Context(),source(),c.SITE,{})
+
+    def test_removed_files_and_one_pixel_placeholders_keep_remaining_body(self):
+        removed={'SSJXC61CSD':'SSJXC61CSD_0.jpg','SSJXC63CSK':'SSJXC63CSK_t.jpg'}
+        for sku,missing in removed.items():
+            ctx=Context()
+            def loader(ctx,url,cache):
+                if url.endswith(missing):raise c.MissingResource('404')
+                return {'width':950,'height':1 if url.endswith('SSJXC63CSK_0.jpg') else 1000}
+            with patch.object(c,'image',side_effect=loader):result=c.detail(ctx,source(sku),c.SITE,{})
+            images=[node['src'] for node in c.parse(result).select('img')]
+            self.assertEqual(len(images),4 if sku=='SSJXC61CSD' else 3)
+            self.assertTrue(any(url.endswith(sku+'_1.jpg') for url in images))
+            self.assertFalse(any(url.endswith(missing) for url in images))
+            self.assertTrue(any('SIZESSJXF' in url for url in images))
+            self.assertEqual(len(c.parse(result).select('table tr')),8)
+            self.assertTrue(ctx.logs)
+
+    def test_transient_body_error_is_not_discarded(self):
+        with patch.object(c,'image',side_effect=c.CrawlError('TLS timeout')):
+            with self.assertRaises(c.CrawlError):c.detail(Context(),source(),c.SITE,{})
 
     def test_search_ignores_header_recommendations_and_accepts_base(self):
         raw=(FIX/'search.html').read_bytes()+b'<a href="/Detail/Index/JDSXZ83CSB">header</a>'
