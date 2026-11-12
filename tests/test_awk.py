@@ -1,0 +1,62 @@
+import copy
+import importlib.util
+from pathlib import Path
+import sys
+import unittest
+from unittest.mock import patch
+ROOT=Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(ROOT/'app'))
+spec=importlib.util.spec_from_file_location('awk_test',ROOT/'brands/awk_official.py')
+c=importlib.util.module_from_spec(spec);spec.loader.exec_module(c)
+FIX=ROOT/'tests/fixtures/awk'
+RAW=(FIX/'R267B0101A.html').read_bytes()
+class Context:
+ product_code='R267B0101A'
+ def __init__(self,fields=()):self.fields=set(fields);self.rows=[];self.errors=[]
+ def enabled(self,key):return key in self.fields
+ def checkpoint(self):return None
+ def stage(self,*a):return None
+ def log(self,*a):return None
+ def fail_item(self,msg):self.errors.append(msg)
+ def emit_result(self,row):self.rows.append(row)
+class AwkTests(unittest.TestCase):
+ def test_actual_option_stock_json_and_original_labels(self):
+  doc=c.parse(RAW);options=c.choices(doc,c.product_group(doc))
+  self.assertEqual(len(options),1);self.assertEqual(options[0]['color'],'네이비29')
+  self.assertEqual(options[0]['sizes'],['145','155','165','175'])
+  self.assertEqual(c.field(doc,'자체상품코드'),'R267B0101A')
+ def test_independent_price_selections_skip_unselected_image_detail_work(self):
+  for fields in [[],['price'],['regular_price'],['price','regular_price']]:
+   ctx=Context(fields)
+   with patch.object(c,'search',return_value=[c.SITE+'/product/detail.html?product_no=5157']),patch.object(c,'fetch',return_value=RAW),patch.object(c,'gallery',side_effect=AssertionError('unselected gallery')),patch.object(c,'detail',side_effect=AssertionError('unselected detail')):
+    c.crawl(ctx)
+   self.assertEqual(len(ctx.rows),1);self.assertFalse(ctx.errors)
+   r=ctx.rows[0];self.assertEqual('price' in r,'price' in fields);self.assertEqual('regular_price' in r,'regular_price' in fields)
+   if 'price' in fields:self.assertEqual(r['price'],49900)
+   if 'regular_price' in fields:self.assertEqual(r['regular_price'],109900)
+ def test_missing_zero_invalid_or_source_error_normal_price_keeps_product(self):
+  for value in ['', '0원','알수없음']:
+   doc=c.parse(RAW)
+   for tr in doc.select('.infoArea tr'):
+    if tr.find('th') and tr.find('th').get_text(strip=True)=='소비자가':tr.find('td').string=value
+   ctx=Context(['regular_price'])
+   with patch.object(c,'search',return_value=[c.SITE+'/product/detail.html?product_no=5157']),patch.object(c,'fetch',return_value=str(doc).encode()):c.crawl(ctx)
+   self.assertIsNone(ctx.rows[0]['regular_price']);self.assertFalse(ctx.errors)
+  with patch.object(c,'field',side_effect=OSError('source error')):self.assertIsNone(c.regular_price(Context(),c.parse(RAW)))
+ def test_shipping_notice_never_requested_and_size_images_kept(self):
+  requested=[]
+  def picture(ctx,url,cache):requested.append(url);return {'height':1 if url.endswith('/1.jpg') else 1000}
+  with patch.object(c,'picture',side_effect=picture):result=c.detail(Context(),c.parse(RAW),c.SITE,{})
+  self.assertNotIn('notice_2021',result);self.assertFalse(any('notice_2021' in u for u in requested))
+  self.assertIn('/aw/R267B0101A.jpg',result);self.assertIn('size-info.jpg',result);self.assertIn('kc.jpg',result)
+  self.assertNotIn('<table',result);self.assertLess(result.index('R267B0101A.jpg'),result.index('size-info.jpg'))
+ def test_actual_gallery_cut_is_valid_and_repeat_slots_use_same_verified_image(self):
+  ctx=Context();doc=c.parse(RAW);item=c.choices(doc,c.product_group(doc))[0]
+  with patch.object(c,'fetch',return_value=(FIX/'main.jpg').read_bytes()):main,extra=c.gallery(ctx,item,{})
+  self.assertTrue(main);self.assertEqual(extra.split(','),[main]*5)
+ def test_multi_color_shared_photo_is_not_guessed(self):
+  group={'hasVariant':[{'color':name,'size':'M','image':['https://awkmall.com/web/product/big/shared.jpg']} for name in ['블랙','레드']]}
+  with patch.object(c,'stock_options',return_value=[]):options=c.choices(c.parse('<html></html>'),group)
+  self.assertEqual([o['images'] for o in options],[[],[]])
+  with self.assertRaises(c.CrawlError):c.gallery(Context(),options[0],{})
+if __name__=='__main__':unittest.main()
