@@ -53,3 +53,19 @@ all four price selection combinations and invalid normal prices, and safe
 multi-color manual mapping. 64-brand registry/hash/syntax check passed.
 Live source files and worker results are outside repo as abs*.html and
 absorba-verification/ in the task workspace. No app/ changes required.
+
+New detail CDN follow-up — 2026-11-13:
+AB27A5RT01 (1000001334), A1510604 (1000000765), A1A10303 (7944) use the
+officially embedded shared object store:
+pub-020c219c6a054e3ab4d8a4c1f8bd4a5c.r2.dev/a/...
+It was absent from the allowed image origins, failing all three before body
+collection. Add only that observed bucket's /a/ product path, retaining old
+sources. Do not trust unrelated r2.dev buckets.
+Its /notice/notice.jpg is a verified all-white800x35 placeholder (RGB extrema
+255..255); omit this exact placeholder without fetching it during collection.
+Do not omit notice_size.jpg, which contains original size/notice content.
+Live all-field workers: all three exit0 with one result each, no failures,
+two real body images each and no generated notice/size tables.
+AB27A5RT01: 아이보리/F, automatic. A1510604: 노랑/베이지/핑크, manual candidate
+because there is no per-color image association. A1A10303: 백IVORY, automatic.
+11 regression tests and 64-brand registry/hash/syntax check passed.

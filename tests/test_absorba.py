@@ -23,6 +23,23 @@ class Context:
     def emit_unmapped(self,record,colors,url,shared_detail_html=''):self.unmapped.append((record,colors,url))
 
 class AbsorbaTests(unittest.TestCase):
+    def test_new_official_detail_cdn_for_all_three_models(self):
+        for code in ['AB27A5RT01','A1510604','A1A10303']:
+            doc=c.parse((FIX/(code+'.html')).read_bytes());ctx=Context()
+            c.identity(doc,code)
+            with patch.object(c,'image',return_value=dict(width=800,height=3000)) as loader:
+                result=c.detail(ctx,doc,c.SITE,{})
+            urls=[n['src'] for n in c.parse(result).select('img')]
+            self.assertEqual(len(urls),2)
+            self.assertTrue(all(c.urlsplit(url).hostname==c.DETAIL_CDN for url in urls))
+            self.assertTrue(any(code+'_DC.jpg' in url for url in urls))
+            self.assertTrue(any('notice_size.jpg' in url for url in urls))
+            self.assertTrue(all('/notice/notice.jpg' not in call.args[1] for call in loader.call_args_list))
+            self.assertFalse(c.parse(result).select('table'))
+
+    def test_other_r2_bucket_is_not_trusted(self):
+        with self.assertRaises(c.CrawlError):c.source_url('https://other.r2.dev/a/2027/item.jpg')
+
     def test_official_identity_and_option_colors(self):
         row=c.identity(source(),'AB2711BU04')
         self.assertEqual(row['product_name'],'포트코튼모달바디슈트조끼모자')

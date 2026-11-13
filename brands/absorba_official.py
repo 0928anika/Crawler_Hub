@@ -20,6 +20,7 @@ SITE='https://www.happylandmall.com'
 HOSTS=('happylandmall.com','www.happylandmall.com')
 IMAGE_HOSTS=('godomall-storage.cdn-nhncommerce.com','img.efe.co.kr')
 STORE_PREFIX='/fa361ad2073a06ae52740c330ad8fb60/'
+DETAIL_CDN='pub-020c219c6a054e3ab4d8a4c1f8bd4a5c.r2.dev'
 MAX_BYTES=30000000
 REQUEST_SECONDS=45
 SOCKET_SECONDS=15
@@ -204,7 +205,8 @@ def search(ctx,code):
 
 def source_url(value,base=SITE):
     url=urljoin(base,value);p=urlsplit(url)
-    allowed=(p.hostname=='godomall-storage.cdn-nhncommerce.com' and p.path.startswith(STORE_PREFIX) or p.hostname=='img.efe.co.kr' and p.path.startswith('/a/'))
+    allowed=(p.hostname=='godomall-storage.cdn-nhncommerce.com' and p.path.startswith(STORE_PREFIX)
+             or p.hostname in ('img.efe.co.kr',DETAIL_CDN) and p.path.startswith('/a/'))
     if p.scheme not in ('http','https') or not allowed or p.username or p.password:raise CrawlError('공식 압소바 이미지 출처 확인 실패: '+url)
     return url
 
@@ -261,6 +263,9 @@ def detail(ctx,doc,link,cache):
     for node in area.select('img'):
         src=node.get('data-src') or node.get('src')
         if not src:continue
+        parsed=urlsplit(urljoin(link,src))
+        if parsed.hostname==DETAIL_CDN and parsed.path=='/notice/notice.jpg':
+            ctx.log('공통 빈 공지 자리표시자 제외: '+src,'INFO');continue
         url=source_url(src,link)
         if re.search(r'delivery|shipping|coupon|배송|교환|반품',url,re.I):continue
         if url not in urls:urls.append(url)
