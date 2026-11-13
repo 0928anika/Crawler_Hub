@@ -197,7 +197,8 @@ def gallery_ok(image):
                            else (0, pos, im.width, pos + 1))
             stat = ImageStat.Stat(line)
             blank.append(min(stat.mean) > 247 and max(stat.stddev) < 5)
-        runs.append(sum(value and (i == 0 or not blank[i - 1])
+        # 바깥 여백은 사진 분할선이 아니다. 띠의 양쪽에 실제 사진 영역이 있어야 한다.
+        runs.append(sum(value and i > 0 and not blank[i - 1] and any(not v for v in blank[i+1:])
                         for i, value in enumerate(blank)))
     if max(runs) >= 2:
         return False, '복수 내부 구분선/콜라주 신호'
@@ -314,7 +315,7 @@ def color_parts(value):
     return {'color_name': value, 'color_code': ''}
 
 
-def options(ctx, link, include_size, doc=None, code=""):
+def options(ctx, link, include_size, doc=None, code="", raw_options=None):
     payload = json.loads(fetch(ctx, link + '/fetch-option-data').decode('utf-8-sig'))
     if not isinstance(payload, list) or not payload:
         raise CollectionError('옵션 JSON 형식 변경/비어 있음: ' + link)
@@ -331,14 +332,20 @@ def options(ctx, link, include_size, doc=None, code=""):
             label = str(entry.get('_name') or '').strip()
             match = re.fullmatch(r'(.+?)[\s/]+(FREE|FR|F|ONE\s*SIZE|\d{2,3}|S|M|L|XL|XXL)',
                                  label, re.I)
+            if not label:continue
+            if raw_options is not None and label not in raw_options:raw_options.append(label)
             if not match:
-                raise CollectionError('색상/사이즈 구분 불명확: ' + label)
+                # 판매처가 색상만 쓰거나 구분자를 달리 써도 원본 후보를 보존한다.
+                color_label=re.sub(r'^(?:색상|컬러|COLOR)\s*[:：]?\s*','',label,flags=re.I).strip() or label
+                candidate=color_parts(color_label)
+                if candidate not in colors:colors.append(candidate)
+                ctx.log('옵션 원문 유지(사이즈 추측 안 함): '+label,'INFO')
+                continue
             if match[1].strip() in ('사이즈','SIZE','size'):
                 title=doc.select_one('.m__product-info .text_product') if doc else None
                 value=title.get_text(' ',strip=True) if title else ''
                 suffix=re.search(re.escape(code)+r'-([A-Z0-9]{3})(?![A-Z0-9])',value,re.I)
-                if not suffix:raise CollectionError('사이즈 전용 옵션의 공식 상품 색상코드 확인 불가: '+link)
-                colors.append({'color_name':'','color_code':suffix[1]})
+                colors.append({'color_name':'','color_code':suffix[1]} if suffix else color_parts(label))
             else:colors.append(color_parts(match[1]))
             if include_size:
                 color_key = (colors[-1]['color_name'], colors[-1]['color_code'])
@@ -346,7 +353,7 @@ def options(ctx, link, include_size, doc=None, code=""):
     if not colors:
         raise CollectionError('실제 색상 후보 없음: ' + link)
     groups = list(size_groups.values())
-    sizes = sorted(groups[0]) if groups and all(g == groups[0] for g in groups) else []
+    sizes = sorted(set().union(*groups)) if groups else []
     return colors, sizes
 
 
@@ -411,12 +418,14 @@ def crawl(ctx):
             name = clean_name(name, code)
             if not name:
                 raise CollectionError('필수 상품명 없음: ' + link)
-            colors, sizes = options(ctx, link, ctx.enabled('size'),doc=soup,code=code)
+            raw_options=[]
+            colors, sizes = options(ctx, link, ctx.enabled('size'),doc=soup,code=code,raw_options=raw_options)
             record = {'product_code': code, 'product_name': name, 'product_url': link}
+            if raw_options:record['원본 옵션']='\n'.join(raw_options)
             if ctx.enabled('size'):
                 record['size'] = ','.join(sizes) if sizes else None
                 if not sizes:
-                    ctx.log('색상별 사이즈가 달라 공통 사이즈 빈칸: ' + link, 'WARNING')
+                    ctx.log('사이즈 분리 불가: 원본 옵션은 그대로 보존 / ' + link, 'INFO')
             if ctx.enabled('price'):
                 record['price'] = read_price(soup)
                 if record['price'] is None:
@@ -471,9 +480,20 @@ def crawl(ctx):
             sources.setdefault(url, record['product_url'])
         details.extend(u for u in detail_list if u not in details)
     record = {'product_code': code, 'product_name': products[0][0]['product_name']}
+    raw_options=[]
+    for product in products:
+        for label in str(product[0].get('원본 옵션') or '').splitlines():
+            if label and label not in raw_options:raw_options.append(label)
+    if raw_options:record['원본 옵션']='\n'.join(raw_options)
     for field in ('size', 'price', 'regular_price'):
         if ctx.enabled(field):
-            record[field] = common([p[0].get(field) for p in products])
+            if field=='size':
+                values=[]
+                for product in products:
+                    for value in str(product[0].get('size') or '').split(','):
+                        if value and value not in values:values.append(value)
+                record[field]=','.join(values)
+            else:record[field] = common([p[0].get(field) for p in products])
             if record[field] is None:
                 ctx.log({'size': '사이즈', 'price': '판매가', 'regular_price': '정상가'}[field] +
                         ' 공통값 미확정: 빈칸으로 수집 계속', 'WARNING')
@@ -486,7 +506,7 @@ def crawl(ctx):
         record['detail_page'] = markup
     for url in photos:
         ctx.checkpoint()
-        ctx.emit_unmapped(dict(record, product_url=sources[url]), colors, url,
+        ctx.emit_unmapped(dict(record, product_url=products[0][0]['product_url']), colors, url,
                           shared_detail_html=record.get('detail_page', ''))
     if errors:
         raise CollectionError('일부 링크 수집 실패. 성공 후보 보존, 입력 행 미완료: ' + '; '.join(errors))

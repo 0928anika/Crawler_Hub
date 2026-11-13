@@ -28,7 +28,7 @@
     "size": {
       "supported": true,
       "status": "conditional",
-      "reason": "공개 fetch-option-data의 options[]._name 마지막 사이즈 토큰을 선택 시에만 수집. 같은 링크의 모든 색상 및 모든 채택 링크의 사이즈 집합이 동일할 때만 공통 size 문자열을 제공. 색상별로 다르거나 공통값 불명확하면 빈칸과 안내 로그. 상세 본문의 사이즈표 이미지는 별도 유지."
+      "reason": "선택된 경우 실제 분리 가능한 사이즈를 모든 채택 상품 링크에서 합쳐 쉼표 한 줄로 제공. 분리 불가 옵션은 원본 옵션 열과 수동 후보에 보존하며 사이즈를 추측하지 않음."
     },
     "price": {
       "supported": true,
@@ -80,10 +80,10 @@
     ],
     "validation_note": "상세는 본문 이미지만. 매장/배송/행사 배너 제외, 고시·사이즈표 별도 생성 없음."
   },
-  "notes": "기존 renomagolf_official과 독립. 대표 배경 균일성으로 스튜디오컷 선별. 상품 본문 이미지 원본만 보존하고 매장전경/배송/모다아울렛 안내를 제외. 모든 색상 사진은 수동 매핑 후보로 제공.",
+  "notes": "기존 renomagolf_official과 독립. 대표 배경 균일성으로 스튜디오컷 선별. 상품 본문 이미지 원본만 보존하고 매장전경/배송/모다아울렛 안내를 제외. 모든 색상 사진은 수동 매핑 후보로 제공.\n색상/사이즈 분리 불가 옵션은 원문 후보로 유지. 품번별 옵션·사이즈를 합치며 매핑 전 품번당 한 행 표시. 원본 사진 후보는 별도로 모두 유지하고 매핑 후 품번·색상당 한 행으로 출력.",
   "image_mode": "url",
   "interface": "portal_v1",
-  "code_hash": "fa35eaf70a132c6c79482e250c352822fd42da0a3ce88e832d92c981fa43570c",
+  "code_hash": "63fabcafc0a645c6efa586be1d8558fca8eec7eaa133ca6cd4c323382ddd4e2a",
   "fields": {
     "product_code": {
       "label": "품번",
@@ -113,7 +113,7 @@
       "label": "사이즈",
       "supported": true,
       "status": "conditional",
-      "reason": "공개 fetch-option-data의 options[]._name 마지막 사이즈 토큰을 선택 시에만 수집. 같은 링크의 모든 색상 및 모든 채택 링크의 사이즈 집합이 동일할 때만 공통 size 문자열을 제공. 색상별로 다르거나 공통값 불명확하면 빈칸과 안내 로그. 상세 본문의 사이즈표 이미지는 별도 유지."
+      "reason": "선택된 경우 실제 분리 가능한 사이즈를 모든 채택 상품 링크에서 합쳐 쉼표 한 줄로 제공. 분리 불가 옵션은 원본 옵션 열과 수동 후보에 보존하며 사이즈를 추측하지 않음."
     },
     "price": {
       "label": "판매가",
@@ -166,5 +166,6 @@
     "대표이미지": "main_image",
     "추가이미지": "additional_images",
     "상세페이지 HTML": "detail_page"
-  }
+  },
+  "group_manual_pending": true
 }

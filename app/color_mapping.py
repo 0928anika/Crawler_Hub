@@ -317,7 +317,28 @@ def finalize(job,data):
 def visible_items(job):
     if not is_manual(job):return job.items
     view=snapshot(job)
-    return final_items(job,view) if view['finalized'] else job.items
+    if view['finalized']:return final_items(job,view)
+    return grouped_pending_items(job) if job.brand.get('group_manual_pending') else job.items
+
+
+def grouped_pending_items(job):
+    """Optional one-row preview/export per model; keep original photo rows for mapping."""
+    headers=result_headers(job);by_id={item['id']:item for item in job.items};result=[]
+    for group in source_groups(job):
+        if not group['images']:continue
+        base=by_id[group['images'][0]['item_id']];raw=dict(base['raw'])
+        urls=[image['url'] for image in group['images']]
+        for header in headers:
+            field=field_for(header)
+            if field=='color':raw[header]=','.join(c['label'] for c in group['colors'])
+            elif field=='main_image':raw[header]=urls[0]
+            elif field=='additional_images':raw[header]=','.join(urls[1:])
+            elif field=='product_url':raw[header]=first_product_link(job,group['code'])
+        values=[raw.get(h) for h in headers]
+        item=preview(headers,values,job.selected,allow_empty_product_name=bool(job.brand.get('allow_empty_product_name',False)))
+        item.update(id=base['id'],index=len(result),task_id=base.get('task_id'),raw=dict(zip(headers,values)))
+        result.append(item)
+    return result
 
 
 def export_sheet(job):
@@ -325,6 +346,9 @@ def export_sheet(job):
     if view['finalized']:
         rows=final_items(job,view);headers=result_headers(job)
         return [headers]+[[item['raw'].get(h) for h in headers] for item in rows]
+    if job.brand.get('group_manual_pending'):
+        headers=result_headers(job)
+        return [headers]+[[item['raw'].get(h) for h in headers] for item in grouped_pending_items(job)]
     if is_hybrid(job):
         headers=result_headers(job)+['매핑상태']
         return [headers]+[[item['raw'].get(h) for h in headers[:-1]]+['색상 매핑 대기' if item.get('unmapped') else '공식 색상 자동 매핑 완료'] for item in successful_items(job)]

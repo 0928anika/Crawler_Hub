@@ -27,6 +27,17 @@ def shot():
     draw.rectangle((240,180,560,850),fill='black');return image
 
 class RenomaFashionplusTests(unittest.TestCase):
+    def test_color_only_and_ambiguous_options_keep_originals(self):
+        import json
+        payload=[dict(options=[dict(_name='색상 BR'),dict(_name='사이즈구분없는 옵션'),dict(_name='BLACK 095'),dict(_name='BLACK 100')])]
+        raw=[]
+        with patch.object(c,'fetch',return_value=json.dumps(payload).encode()):
+            colors,sizes=c.options(Context(),c.BASE,True,raw_options=raw)
+        self.assertIn(dict(color_name='BR',color_code=''),colors)
+        self.assertIn(dict(color_name='사이즈구분없는 옵션',color_code=''),colors)
+        self.assertEqual(sizes,['095','100'])
+        self.assertEqual(len(raw),4)
+
     def test_uniform_background_and_foreground_without_logo(self):
         for color in ['white','#dedede','#b0b090']:
             image=Image.new('RGB',(400,536),color);ImageDraw.Draw(image).rectangle((130,100,270,430),fill='black')
