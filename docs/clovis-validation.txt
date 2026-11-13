@@ -105,3 +105,18 @@ Both adapters updated. Actual representative regression fixture retained.
 Live ANPM26A17 worker exit0,zero failures,all4 seller links accepted,6 unique
 manual photo candidates,original two-image body includes AN-SIZE.jpg.
 29 regression tests passed (8 shared studio,8 Anybody,13 Clovis).
+
+CVVKG4T13Q mixed-gallery detail repair — 2026-11-13
+Inspect all gallery010/030 photos,not only the representative. Nonstudio photos
+are removed from manual candidates and mark their entire link detail unsafe.
+Explicit seller-photo labels and undecodable assets also prohibit that detail.
+Do not fetch description of an unsafe link. Continue to the next link until
+one has an entirely studio gallery;use that link's complete original body only.
+If none is safe,keep accepted photographs/options but leave detail empty with
+a warning,as requested;do not synthesize a description or use mixed source.
+Actual first link2609577296/LV17006173:primary passes,three additional assets
+fail(one long composite). Its description not requested. Second link2609559494/
+LV16003611:all3 photos pass. Use its BASE and GOSI body only,also its product URL.
+Worker exit0,three deduplicated manual photographs,no failures.15 Clovis and
+8 shared studio regression tests pass,including mixed-first/clean-second and
+all-mixed/no-detail outcomes. Source-specific change;Anybody adapter unchanged.

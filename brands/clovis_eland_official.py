@@ -451,14 +451,24 @@ def studio_product(ctx, main, cache):
     return result[4]
 
 
+class GalleryPhotos(list):
+    def __init__(self):
+        super().__init__()
+        self.detail_safe = True
+
+
 def gallery(ctx, main, cache):
-    result, white, complex_count = [],0,0
+    result, white, complex_count = GalleryPhotos(),0,0
     for item in main.get('itemImage',[]):
         ctx.checkpoint()
         if str(item.get('imageDcode')) not in ('010','030') or not item.get('imagePath'):
             continue
         url = image_url(urljoin('https://item.elandrs.com/',item['imagePath']))
         label = ' '.join(str(item.get(k) or '') for k in ('imageName','imageFileName'))+' '+unquote(urlsplit(url).path)
+        if SELLER_PHOTO.search(label):
+            result.detail_safe = False
+            ctx.log('명시적 셀러컷 제외 및 해당 링크 상세 사용 금지: '+url,'WARNING')
+            continue
         if NEGATIVE.search(label) or re.search(r'사이즈표|실측표|size.?chart|size.?guide|collage|콜라주',label,re.I):
             ctx.log('공통 안내/명시적 셀러 촬영/표 이미지 제외: '+url,'WARNING')
             continue
@@ -468,16 +478,21 @@ def gallery(ctx, main, cache):
             ctx.log('갤러리 원본 404 제외: '+str(exc),'WARNING')
             continue
         except ImageRejected as exc:
+            result.detail_safe = False
             ctx.log('사용할 수 없는 갤러리 파일 제외: '+str(exc),'WARNING')
+            continue
+        if not plain:
+            complex_count += 1
+            result.detail_safe = False
+            ctx.log('상품사진 스튜디오컷 미통과: 사진 제외 및 해당 링크 상세 사용 금지 / '+url,'WARNING')
             continue
         if min(w,h)<500 or max(w,h)/min(w,h)>1.8:
             ctx.log('개별 사진 픽셀/비율 기준 제외: %sx%s / %s'%(w,h,url),'WARNING')
             continue
-        white += bool(plain)
-        complex_count += not plain
+        white += 1
         result.append((url,digest))
     if complex_count:
-        ctx.log('갤러리 배경 보조 검사: 균일 배경 %s장, 장면형/복잡 배경 %s장. 배경으로 탈락시키지 않고 공식 장면형·디테일 컷 유지. 색상 매핑 시 확인하세요.'%(white,complex_count),'INFO')
+        ctx.log('스튜디오컷 %s장 채택, 미통과 %s장 제외. 이 링크의 상세 본문은 사용하지 않음.'%(white,complex_count),'WARNING')
     return result
 
 
@@ -530,6 +545,7 @@ def crawl(ctx):
     products,errors,cache = [],[],{}
     diagnostics=[]
     rejected = 0
+    detail_source_link = None
     for link in links:
         ctx.checkpoint()
         try:
@@ -551,7 +567,14 @@ def crawl(ctx):
             photos = gallery(ctx,main,cache)
             if not photos:
                 raise CollectionError('유효 개별 상품 사진 0장: '+link)
-            body = detail_images(ctx,data,code,cache) if ctx.enabled('detail_page') and not products else []
+            body = []
+            if ctx.enabled('detail_page') and detail_source_link is None:
+                if getattr(photos, 'detail_safe', True):
+                    body = detail_images(ctx,data,code,cache)
+                    detail_source_link = link
+                    ctx.log('전체 상품사진 검사 통과 링크의 상세 본문만 사용: '+link,'INFO')
+                else:
+                    ctx.log('셀러컷 혼입 링크 상세 제외: '+link,'WARNING')
             products.append((record,palette,photos,body))
         except (CollectionError,KeyError,UnicodeError) as exc:
             message = link+' / '+str(exc)
@@ -587,6 +610,8 @@ def crawl(ctx):
             if record[field] is None:
                 ctx.log(field+' 공통값 미확정: 빈칸으로 수집 계속','WARNING')
     if ctx.enabled('detail_page'):
+        if detail_source_link is None:
+            ctx.log('전체 상품사진 스튜디오컷 검사 통과 링크가 없어 상세페이지는 빈칸으로 수집','WARNING')
         markup = ''.join('<img src="%s" alt="상품 상세" style="max-width:100%%;height:auto">'%html.escape(u,quote=True) for u in bodies)
         if len(markup)>32767:
             ctx.fail_item('공통 상세 HTML Excel 셀 한도 초과')
@@ -594,7 +619,7 @@ def crawl(ctx):
         record['detail_page'] = markup
     for url,link in photos:
         ctx.checkpoint()
-        ctx.emit_unmapped(dict(record,product_url=products[0][0]['product_url']),palette,url,shared_detail_html=record.get('detail_page',''))
+        ctx.emit_unmapped(dict(record,product_url=detail_source_link or products[0][0]['product_url']),palette,url,shared_detail_html=record.get('detail_page',''))
     if errors:
         raise CollectionError('일부 링크 실패. 성공 후보 보존, 입력 행 미완료: '+'; '.join(errors))
     ctx.log('%s: %s개 링크, %s개 색상, %s장 사진 수집'%(code,len(products),len(palette),len(photos)),'SUCCESS')

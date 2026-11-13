@@ -62,6 +62,26 @@ class ClovisTests(unittest.TestCase):
             self.assertEqual(c.product(Context(),LINK,'CVJHG4V06M')['itemMain']['brandNo'],c.BRAND_NO)
         self.assertEqual(page.call_count,2)
 
+    def test_mixed_gallery_filters_seller_photos_and_marks_detail_unsafe(self):
+        main=source()['itemMain'];main['itemImage']=[dict(imageDcode=kind,imagePath=name+'.jpg') for kind,name in [('010','studio'),('030','seller'),('030','studio2')]]
+        def inspect(ctx,url,cache):return ('JPEG',1000,1000,url,'seller' not in url)
+        with patch.object(c,'image_info',side_effect=inspect):photos=c.gallery(Context(),main,{})
+        self.assertEqual(len(photos),2);self.assertFalse(photos.detail_safe)
+        self.assertFalse(any('seller' in url for url,_ in photos))
+
+    def test_mixed_first_link_uses_second_clean_link_detail_only(self):
+        for clean_second in [True,False]:
+            ctx=Context(['main_image','detail_page']);first=c.GalleryPhotos();first.append(('photo1','hash1'));first.detail_safe=False
+            second=c.GalleryPhotos();second.append(('photo2','hash2'));second.detail_safe=clean_second
+            links=[LINK,LINK+'&test=second']
+            with patch.object(c,'studio_product',return_value=True),patch.object(c,'search',return_value=links),patch.object(c,'product',return_value=source()),patch.object(c,'options',side_effect=options),patch.object(c,'gallery',side_effect=[first,second]),patch.object(c,'detail_images',return_value=['clean-body']) as detail:
+                c.crawl(ctx)
+            self.assertFalse(ctx.errors);self.assertEqual(len(ctx.rows),2)
+            self.assertEqual(detail.call_count,1 if clean_second else 0)
+            for row in ctx.rows:
+                self.assertEqual(row[3].count('<img'),1 if clean_second else 0)
+                self.assertEqual(row[0]['product_url'],links[1] if clean_second else links[0])
+
     def test_actual_two_digit_color_codes(self):
         colors,actual=c.colors(Context(),source('colors'))
         self.assertEqual(colors,[dict(color_name='Gray',color_code='15'),dict(color_name='Navy',color_code='59')])
