@@ -1,0 +1,11 @@
+2026-11-14 Result lookup fix
+Grouped manual previews retain original photo row IDs,which are not visible
+list offsets. GET /items/:id used array indexing,causing IndexError for sparse
+IDs and incorrect model selection when an index happened to be valid.
+Find visible result by its actual ID. Before mapping finalization only,resolve
+hidden original photo IDs to the grouped result for the same task and code.
+Unknown IDs return404. Finalized result IDs remain exact,no raw-photo fallback.
+Actual saved job7100642d234b4a8297471487de884058:7 raw photos,2 visible rows
+IDs0 and4. IDs0..3 resolve ANPM27A17;IDs4..6 resolve ANPM27A18.
+4 tests passed including actual localhost HTTP GET/detail/raw404 checks.
+Existing grouped preview/export regression passed.No saved job data modified.

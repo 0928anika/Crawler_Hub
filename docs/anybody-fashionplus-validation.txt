@@ -1,0 +1,23 @@
+2026-11-14 Anybody Fashionplus studio crawler
+Independent brand ID:anybody_fashionplus;source:패션플러스 스튜디오컷.
+Existing Eland source and Renoma source unchanged.Manual grouped color mapping.
+Sample https://www.fashionplus.co.kr/goods/detail/442640957
+Actual model ANJS26N68,title 공용 밍크극세사 파자마 세트_모던 ANJS26N68 EIC.
+Public rendered search requires matching 애니바디 brand and exact model token.
+Fresh isolated headless Chrome search;public GET product/options/description.
+No model format gate before search.Uniform-background check includes narrow
+outer borders for large packshots. Representative and all gallery photographs
+checked;only studio photos emitted as candidates.Mixed-gallery links never
+supply shared description.Use one first clean link's original body,or blank
+with warning if none is clean.No generated size/notice tables.
+Options78네이비 L/M/S/XL ->code78,name네이비,actual sizes,no inferred codes.
+Raw ambiguous labels preserved for manual review and all sizes are unioned.
+Price/normal independently selected from 판매가/희망소비자가 table rows;
+missing normal price stays blank.Collect model-level option/photo candidates.
+Title removes brand,model,observed EIC/EPC source suffixes and branch suffix.
+Live all-field worker ANJS26N68 exit0,10 photo candidates,zero failures.
+Shared body source448095414,one description request (not concatenated links).
+Original ANJS26N68.jpg and AN-SIZE.jpg preserved with original product body imgs.
+8 regression tests passed;69-brand metadata/hash/syntax validation passed.
+Fixtures:actual public example HTML/detail/options in tests/fixtures/anybody_fashionplus.
+Live evidence in workspace:anybody_fp_live.txt and anybody_fashionplus-verification/.

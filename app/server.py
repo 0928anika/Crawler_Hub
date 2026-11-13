@@ -39,6 +39,18 @@ def page_rows(rows,query):
     offset=max(0,int(query.get('offset',['0'])[0]));limit=min(300,max(1,int(query.get('limit',['100'])[0])))
     return dict(total=len(rows),rows=rows[offset:offset+limit],offset=offset,limit=limit)
 
+def find_result_item(job, items, item_id, grouped_pending=False):
+    """Result IDs belong to source rows, not offsets in a grouped view."""
+    item = next((row for row in items if str(row['id']) == str(item_id)), None)
+    if item is None and grouped_pending:
+        source = next((row for row in job.items if str(row['id']) == str(item_id)), None)
+        if source is not None:
+            item = next((row for row in items
+                         if row.get('task_id') == source.get('task_id')
+                         and row.get('code') == source.get('code')), None)
+    return item
+
+
 class Handler(BaseHTTPRequestHandler):
     def log_message(self,*_):pass
     def send(self,body,mime='application/json',status=200,attachment=None):
@@ -110,7 +122,8 @@ class Handler(BaseHTTPRequestHandler):
                     manual_pending=color_mapping.is_manual(job) and not color_mapping.snapshot(job)['finalized']
                     if len(parts)>4:
                         if not re.fullmatch(r'\d+',parts[4]):raise ValueError('올바른 결과 ID가 필요합니다.')
-                        item=items[int(parts[4])]
+                        item=find_result_item(job,items,parts[4],manual_pending and job.brand.get('group_manual_pending',False))
+                        if item is None:return self.send({'error':'결과를 찾을 수 없습니다. 목록을 새로고침해주세요.'},status=404)
                         if len(parts)>5 and parts[5]=='html':return self.send({'error':'찾을 수 없습니다'},status=404)
                         if len(parts)>5 and parts[5]=='raw':return self.send(item['raw'])
                         task=next((x for x in job.queue if x['id']==item['task_id']),None)

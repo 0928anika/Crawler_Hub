@@ -1,0 +1,170 @@
+{
+  "id": "anybody_fashionplus",
+  "name": "애니바디",
+  "category": "이너웨어",
+  "crawl_source": "패션플러스 스튜디오컷",
+  "script": "anybody_fashionplus.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_color_mapping": "manual",
+  "official_color_codes": true,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "선택된 경우 실제 분리 가능한 사이즈를 모든 채택 상품 링크에서 합쳐 쉼표 한 줄로 제공. 분리 불가 옵션은 원본 옵션 열과 수동 후보에 보존하며 사이즈를 추측하지 않음."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 페이지 .discount-detail__row의 dt가 판매가(위탁판매자 공급가)인 dd. 상단 쿠폰할인가와 구분한다. 여러 채택 링크의 값이 같을 때만 공통 판매가를 기록한다."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 페이지 .discount-detail__row dt 희망소비자가(택가)의 dd를 독립 정상가로 사용. 선택된 경우에만 파싱. 누락/0/형식 불명확/링크 간 불일치는 빈칸과 안내 로그로 계속 수집한다. 역산/판매가 복사 없음."
+    },
+    "category": {
+      "supported": false,
+      "status": "unsupported",
+      "reason": "상품별 분류 파싱 미검증. 브랜드 분류를 상품 카테고리에 대입하지 않음."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "검색 브랜드·품번 대조 후 대표사진 균일 배경 검사. 테두리 재검사로 크게 촬영된 상품컷도 지원."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "전체 갤러리 사진을 검사해 스튜디오컷만 수동 후보로 수집. 혼입 링크는 상세 사용 금지."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "전체 갤러리 통과 첫 링크의 상세 본문 이미지 한 세트만 사용. 셀러컷 혼입 링크 제외. 원본 고시·사이즈 유지, 별도 표 생성 없음."
+    }
+  },
+  "guide": {
+    "example": "ANJS26N68",
+    "examples": [
+      "ANJS26N68",
+      "ANPM26A17"
+    ],
+    "pattern": "^[\\s\\S]+$",
+    "format": "기본 품번(색상 접미사 제외)을 권장. 실제 검색 후 브랜드·품번 대조.",
+    "notes": "이랜드몰과 독립적인 패션플러스 스튜디오컷 소스. 색상 수동 매핑. 대표·추가사진 전체의 균일 배경 검사, 혼입 링크 상세 제외.",
+    "method": "패션플러스 공개 검색에서 애니바디·품번 대조 후 대표 및 전체 갤러리 검사.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      ""
+    ],
+    "validation_note": "상세는 본문 이미지만. 매장/배송/행사 배너 제외, 고시·사이즈표 별도 생성 없음."
+  },
+  "notes": "애니바디 이랜드몰과 별개. 대표사진 배경이 균일한 상품의 스튜디오컷만 수집해 품번별 옵션·사진을 수동 매핑. 추가사진에 셀러컷이 있으면 해당 링크 상세를 사용하지 않음. 전체 갤러리가 통과한 첫 링크의 본문 이미지만 공통 사용. 없으면 상세 빈칸과 경고. 별도 사이즈표·고시 생성 없음. 원본에 있는 숫자 색상코드만 분리.",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "group_manual_pending": true,
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "선택된 경우 실제 분리 가능한 사이즈를 모든 채택 상품 링크에서 합쳐 쉼표 한 줄로 제공. 분리 불가 옵션은 원본 옵션 열과 수동 후보에 보존하며 사이즈를 추측하지 않음."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 페이지 .discount-detail__row의 dt가 판매가(위탁판매자 공급가)인 dd. 상단 쿠폰할인가와 구분한다. 여러 채택 링크의 값이 같을 때만 공통 판매가를 기록한다."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 페이지 .discount-detail__row dt 희망소비자가(택가)의 dd를 독립 정상가로 사용. 선택된 경우에만 파싱. 누락/0/형식 불명확/링크 간 불일치는 빈칸과 안내 로그로 계속 수집한다. 역산/판매가 복사 없음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": false,
+      "status": "unsupported",
+      "reason": "상품별 분류 파싱 미검증. 브랜드 분류를 상품 카테고리에 대입하지 않음."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "검색 브랜드·품번 대조 후 대표사진 균일 배경 검사. 테두리 재검사로 크게 촬영된 상품컷도 지원."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "전체 갤러리 사진을 검사해 스튜디오컷만 수동 후보로 수집. 혼입 링크는 상세 사용 금지."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "전체 갤러리 통과 첫 링크의 상세 본문 이미지 한 세트만 사용. 셀러컷 혼입 링크 제외. 원본 고시·사이즈 유지, 별도 표 생성 없음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page"
+  },
+  "code_hash": "b89461d3c4c66aaf64374490b4de1a048af8b9059aeb412873f97164a03feb1e"
+}
