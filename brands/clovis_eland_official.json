@@ -1,0 +1,174 @@
+{
+  "id": "clovis_eland_official",
+  "name": "클라비스",
+  "category": "여성의류",
+  "crawl_source": "이랜드몰 공식",
+  "script": "clovis_eland_official.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_color_mapping": "manual",
+  "official_color_codes": true,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명",
+    "판매자번호"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 API의 색상 하위 실제 사이즈. 지정판매자 행만 채택, 품절 유지. 모든 색상 사이즈 집합이 같을 때만 공통값, 다르면 빈칸과 로그."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "itemMain.sellprice와 지정판매자 옵션.sellPrice 독립 판매가. 모든 채택 색상/사이즈/링크가 같은 값일 때만 공통 기록. 예시199000."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.orgSellprice 독립 최초출시/정상가. 예시199000 확인. 선택 시에만 파싱, 누락/0/잘못된 형식은 빈칸과 경고로 수집 계속. 판매가 복사/역산 없음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.depth4StandardCategoryName. 브랜드 분류를 대신 넣지 않음."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "지정 판매자·브랜드·모델을 검증한 itemMain.itemImage의 실제010/030 주상품 원본. 배경으로 탈락시키지 않으며 수동 색상 매핑 후보 전달."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "동일 주상품의 검증된 실제 원본 사진 전체 수동 매핑 후보. 색상 자동 추측/후보 임의 자르기 없음."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "첫 채택 공식 상품의 itemDesc.itemDescdocumentCon 본문 img 전체를 원문 순서로 유지. item-imghub의 detail/BASE/GOSI와 사이즈 이미지 모두 보존. 행사·배송 안내 제외, 별도 고시/사이즈표 생성 없음. 실제 본문 조회·해독 오류는 누락 성공 처리하지 않고 실패."
+    }
+  },
+  "guide": {
+    "example": "CVJHG4V06M",
+    "examples": [
+      "CVJHG4V06M",
+      "cvjhg4v06m"
+    ],
+    "pattern": "^[A-Za-z0-9-]+$",
+    "format": "공식 기본 품번. 대소문자 구분 없이 조회.",
+    "notes": "공식 판매자LV16003596, 브랜드1690000333, 모델명 정확 대조. 색상은 수동 매핑. (15)Gray,(59)Navy 등의 공식2자리 숫자 코드를 분리.",
+    "method": "공식 이랜드몰 검색 후 판매자·브랜드·품번 원문 검증. 지정 판매자 외 링크와 옵션 행 제외.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      ""
+    ],
+    "validation_note": "원본 본문·기본상세·고시 이미지 빠짐없이 보존. 별도 표 생성 없음."
+  },
+  "notes": "클라비스 이랜드몰 공식 LV16003596 상품만. 검색 링크/상세 응답/옵션 행 판매자 재검증. 공식2자리 숫자 색상코드를 보존하고 원본 갤러리 전체를 수동 매핑 후보로 제공. 첫 채택 상품의 원본 본문 전체(기본상세·GOSI·사이즈 포함)를 모든 색상에 공통 적용하며 새 표를 생성하지 않음.",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "code_hash": "ff43238b240b2c1384a998e14cd1735cdb1c94d8aec52e6798c6f0731202cdde",
+  "additional_image_count": 5,
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 API의 색상 하위 실제 사이즈. 지정판매자 행만 채택, 품절 유지. 모든 색상 사이즈 집합이 같을 때만 공통값, 다르면 빈칸과 로그."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "itemMain.sellprice와 지정판매자 옵션.sellPrice 독립 판매가. 모든 채택 색상/사이즈/링크가 같은 값일 때만 공통 기록. 예시199000."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.orgSellprice 독립 최초출시/정상가. 예시199000 확인. 선택 시에만 파싱, 누락/0/잘못된 형식은 빈칸과 경고로 수집 계속. 판매가 복사/역산 없음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.depth4StandardCategoryName. 브랜드 분류를 대신 넣지 않음."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "지정 판매자·브랜드·모델을 검증한 itemMain.itemImage의 실제010/030 주상품 원본. 배경으로 탈락시키지 않으며 수동 색상 매핑 후보 전달."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "동일 주상품의 검증된 실제 원본 사진 전체 수동 매핑 후보. 색상 자동 추측/후보 임의 자르기 없음."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "첫 채택 공식 상품의 itemDesc.itemDescdocumentCon 본문 img 전체를 원문 순서로 유지. item-imghub의 detail/BASE/GOSI와 사이즈 이미지 모두 보존. 행사·배송 안내 제외, 별도 고시/사이즈표 생성 없음. 실제 본문 조회·해독 오류는 누락 성공 처리하지 않고 실패."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null,
+    "판매자번호": null
+  }
+}

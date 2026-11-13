@@ -1,0 +1,49 @@
+Clovis Eland official crawler — 2026-11-13
+ID: clovis_eland_official / 클라비스 / 이랜드몰 공식 / manual color mapping
+Independent files; no existing brand adapter or app/ modification.
+
+Actual public source:
+https://clovis.elandmall.co.kr/i/item?itemNo=2609584409&lowerVendNo=LV16003596
+https://www.elandmall.co.kr/s/srch?q=CVJHG4V06M&size=100&page=1&from=0
+Official main data: modelNo CVJHG4V06M, brandNo1690000333,
+lowerVendNo LV16003596, title 벨티드 미디 코트_CVJHG4V06M.
+Search accepts actual www/clovis Eland item links, counts every seller for
+pagination, but only selects LV16003596. Before requesting a detail and again
+in its JSON, verify vendor; also verify brand, model and requested item ID.
+
+Official color options: (15)Gray and (59)Navy. Preserve color names from source
+and split only explicitly present two-digit numeric codes, including leading
+zero codes. No colors inferred from photos; all valid primary gallery files
+are sent as manual candidates. Sold-out colors and sizes remain eligible.
+
+Option API revalidates itemNo and filters vendor on each returned row. Observed
+Navy child response contains an S row marked LV16003611; exclude that row and
+warn rather than mixing other-seller options into the official result. M/L
+rows are marked LV16003596. Gray response has S/M/L from the target vendor.
+Common size is consequently blank rather than falsely giving every color S.
+If all returned option rows belong to another vendor, fail clearly.
+
+Prices: itemMain.sellprice and actual selected-vendor option sellPrice199000.
+Independent normal price itemMain.orgSellprice199000. Each field independently
+selected. Missing/zero/invalid/normal parse errors remain blank and nonfatal;
+normal price is never copied from selling price or reverse-calculated.
+
+Read itemDesc.itemDescdocumentCon body images in original order, including:
+1 item-imghub /manual/.../CVJHG4V06M_detail.jpg:1080x11816 JPEG
+2 item-imghub /detail-pages/...-BASE-....jpg:1080x11896 JPEG
+3 item-imghub /detail-pages/...-GOSI-....jpg:1080x2107 JPEG
+Do not require a model code in every filename; BASE/GOSI/shared size images
+must remain. Do not generate any extra size table or notice table. Exclude
+separate itemAnnounceList coupon/event URLs and explicit shipping banners.
+Use first accepted official product's complete body for the common detail;
+other photo links do not cause duplicate full descriptions. If a required
+body source fails requests/decoding, report incomplete collection, not a
+silently shortened body or a gallery-generated replacement.
+
+Live all-field worker CVJHG4V06M: exit0, seven manual candidate rows, zero
+item failures, palette Gray/15,Navy/59, selling199000/normal199000; all three
+body images including GOSI preserved. Original public relevant source JSON
+and options fixtures under tests/fixtures/clovis.
+10 regression tests passed;67-brand metadata/hash/syntax check passed.
+Raw live evidence is outside repo in clovis_*.html/json and
+clovis_eland-verification/CVJHG4V06M.log in the shared task workspace.
