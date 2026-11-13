@@ -1,5 +1,5 @@
 Absorba official crawler — 2026-11-13
-Brand ID: absorba_official / 압소바 / 공식 홈페이지
+Brand ID: happyland_official / 해피랜드/압소바 / 공식 홈페이지
 
 User-provided mobile product:
 https://m.happylandmall.com/goods/goods_view.php?goodsNo=1000001384

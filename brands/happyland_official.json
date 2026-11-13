@@ -1,9 +1,9 @@
 {
-  "id": "absorba_official",
-  "name": "압소바",
+  "id": "happyland_official",
+  "name": "해피랜드/압소바",
   "category": "유아동",
   "crawl_source": "공식 홈페이지",
-  "script": "absorba_official.py",
+  "script": "happyland_official.py",
   "execution_level": 1,
   "mapping_mode": "manual",
   "image_color_mapping": "verified",

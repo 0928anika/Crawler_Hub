@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'app'))
-spec=importlib.util.spec_from_file_location('absorba_test',ROOT/'brands/absorba_official.py')
+spec=importlib.util.spec_from_file_location('absorba_test',ROOT/'brands/happyland_official.py')
 c=importlib.util.module_from_spec(spec);spec.loader.exec_module(c)
 FIX=ROOT/'tests/fixtures/absorba'
 def source():return c.parse((FIX/'product.html').read_bytes())
