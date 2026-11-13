@@ -145,6 +145,17 @@ def shared_image_identity(filename):
     return bases, match[2].upper()
 
 
+def product_name(title, base, code):
+    # 공통 정리 함수의 strip('[]()')는 [남성양모]의 여는 괄호까지 지운다.
+    value = re.sub(r'\[\s*(?:잠뱅이|JAMBANGEE)\s*\]', '', title, flags=re.I)
+    for token in sorted({'잠뱅이', 'JAMBANGEE', base, base+'-'+code}, key=len, reverse=True):
+        value = re.sub(r'(?<![\w])'+re.escape(token)+r'(?![\w])', '', value, flags=re.I)
+    value = re.sub(r'\s+', ' ', value).strip(' -_/')
+    # 상품명 뒤 영문/숫자 품번 묶음, 색상코드, 괄호 사이즈를 통째로 제거한다.
+    value = re.sub(r'[\s_/-]+[\[(]?[A-Za-z0-9][A-Za-z0-9\s_&/+.,()\[\]-]*$', '', value)
+    return value.strip(' -_/&')
+
+
 def identity(doc, number, base, search_verified=False):
     node = doc.select_one('.infoArea .prdName')
     title = node.get_text(' ',strip=True) if node else ''
@@ -187,9 +198,7 @@ def identity(doc, number, base, search_verified=False):
     colors = options(doc,'색상',number)
     if len(colors) != 1:
         raise ColorMappingError('개별 상품의 단일 색상 옵션 확인 실패: ' + str(colors))
-    name = clean_product_name(name_text,['잠뱅이','JAMBANGEE'],[base,base+'-'+code])
-    # 원문 TG(L) 및 닫는 괄호가 빠진 TG(L 모두 상품명 끝의 사이즈만 제거.
-    name = re.sub(r'\s*[\[(]\s*(?:[2-6]?X{0,3}[SML]|FREE|F|ONE\s*SIZE)\s*[\])]?\s*$', '', name, flags=re.I).strip()
+    name = product_name(name_text, base, code)
     if not name:
         raise ValueError('정리 후 상품명 없음')
     return dict(product_code=base,product_name=name,color=colors[0],color_name=colors[0],color_code=code)

@@ -47,4 +47,12 @@ class YaleTests(unittest.TestCase):
   d=BeautifulSoup((FIX/'search_YGS1JK304A.html').read_bytes(),'html.parser')
   with patch.object(c,'fetch',return_value=(d,c.SITE)):
    self.assertEqual(set(c.search(Context(),'YGS1JK304A')),{'18204','18203','18202'})
+ def test_sep_body_kept_without_intro_and_common_end(self):
+  d=BeautifulSoup((FIX/'sep_detail.html').read_bytes(),'html.parser')
+  with patch.object(c,'checked',return_value=True):result=c.detail(Context(),d,c.SITE,{})
+  urls=[n['src'] for n in BeautifulSoup(result,'html.parser').select('img')]
+  self.assertEqual(len(urls),6)
+  self.assertTrue(all('/sep/25.03.17/SFS1SH201ABR/' in u for u in urls))
+  self.assertNotIn('sep_top',result);self.assertNotIn('sep_end',result)
+  self.assertEqual(c.image_url('https://unknown.example/sep/product.jpg',c.SITE),'')
 if __name__=='__main__':unittest.main()

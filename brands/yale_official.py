@@ -239,7 +239,7 @@ def search(ctx,base,diagnostics=None):
 def image_url(raw,final):
     if not raw:return ''
     u=urljoin(final,raw);p=urlsplit(u)
-    allowed=(p.hostname in HOSTS and p.path.startswith('/web/')) or (p.hostname=='yalerecords.phyps.co.kr' and p.path.startswith('/yale/'))
+    allowed=(p.hostname in HOSTS and p.path.startswith('/web/')) or p.hostname=='yalerecords.phyps.co.kr'
     return quote(u,safe=':/?&=%+#') if p.scheme=='https' and allowed else ''
 
 
@@ -291,7 +291,7 @@ def detail(ctx,doc,final,cache):
         u=image_url(node.get('ec-data-src') or node.get('data-src') or node.get('src'),final)
         if not u or u in seen:continue
         seen.add(u)
-        if re.search(r'banner|coupon|shipping|delivery|review|/intro/|배송|교환|반품|쿠폰',unquote(urlsplit(u).path),re.I):continue
+        if re.search(r'banner|coupon|shipping|delivery|review|intro|(?:_top|_end)\.|배송|교환|반품|쿠폰',unquote(urlsplit(u).path),re.I):continue
         try:
             available=checked(ctx,u,cache,detail=True)
         except ImageLookupError:

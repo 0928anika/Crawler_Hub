@@ -60,7 +60,7 @@
     "detail_page": {
       "supported": true,
       "status": "conditional",
-      "reason": "공식 #prdDetailContent 본문 이미지. 공통 브랜드 소개 제외. 고시/사이즈표 별도 생성 없음."
+      "reason": "공식 #prdDetailContent 본문 이미지. 공식 CDN의 yale/sep 등 경로 지원. INTRO·공통 top/end 배너 제외. 고시/사이즈표 별도 생성 없음."
     }
   },
   "guide": {
@@ -147,7 +147,7 @@
       "label": "상세페이지",
       "supported": true,
       "status": "conditional",
-      "reason": "공식 #prdDetailContent 본문 이미지. 공통 브랜드 소개 제외. 고시/사이즈표 별도 생성 없음."
+      "reason": "공식 #prdDetailContent 본문 이미지. 공식 CDN의 yale/sep 등 경로 지원. INTRO·공통 top/end 배너 제외. 고시/사이즈표 별도 생성 없음."
     }
   },
   "column_fields": {
@@ -165,5 +165,5 @@
     "추가이미지": "additional_images",
     "상세페이지 HTML": "detail_page"
   },
-  "code_hash": "71ca1e2c76aa7567d380741751228568726f7d46749eea331c5eb9c85df0d679"
+  "code_hash": "f9ef66f50fa9a0ae7a69b83029434a3e05b4651cacdfead2e8a975e28045caed"
 }
