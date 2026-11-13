@@ -25,6 +25,7 @@ MAX_BYTES=30000000
 REQUEST_SECONDS=45
 SOCKET_SECONDS=15
 REQUEST_ATTEMPTS=3
+BRANDS={'004':'압소바','002':'해피랜드'}
 class CrawlError(RuntimeError):
     """Official collection could not be completed."""
 class MissingResource(CrawlError):
@@ -82,19 +83,20 @@ def public_opener(ctx, deadline):
     return urllib.request.build_opener(HTTP(), HTTPS())
 
 
-def fetch(ctx, url, limit=4_000_000):
+def fetch(ctx, url, limit=4_000_000, request_seconds=REQUEST_SECONDS, attempt_seconds=None):
     """Anonymous GET. No cookies, credentials or Referer, including images."""
     if urlsplit(url).scheme not in ('http','https'):
         raise CrawlError('공개 HTTP/HTTPS 주소가 아님: '+url)
-    deadline = time.monotonic() + REQUEST_SECONDS
     started = time.monotonic()
+    total_deadline=started+request_seconds
     ctx.log('공개 요청: ' + url, 'INFO')
     for attempt in range(REQUEST_ATTEMPTS):
         ctx.checkpoint()
+        deadline=min(total_deadline,time.monotonic()+(attempt_seconds or request_seconds))
         try:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
-                raise TimeoutError('공개 요청 전체 %s초 제한 초과' % REQUEST_SECONDS)
+                raise TimeoutError('공개 요청 전체 %s초 제한 초과' % request_seconds)
             request = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
             # Retry with a fresh connection after TLS/temporary network failures.
             opener = public_opener(ctx, deadline)
@@ -102,15 +104,19 @@ def fetch(ctx, url, limit=4_000_000):
                 if int(response.headers.get('Content-Length', '0')) > limit:
                     raise CrawlError('응답 크기 초과: ' + url)
                 chunks, size = [], 0
+                last_progress=time.monotonic()
                 while True:
                     ctx.checkpoint()
                     if time.monotonic() >= deadline:
-                        raise TimeoutError('공개 응답 전체 %s초 제한 초과' % REQUEST_SECONDS)
+                        raise TimeoutError('공개 응답 다운로드 시도 %s초 제한 초과' % (attempt_seconds or request_seconds))
                     block = response.read1(min(65536, limit + 1 - size))
                     if not block:
                         break
                     chunks.append(block)
                     size += len(block)
+                    if time.monotonic()-last_progress>=5:
+                        ctx.log('원본 다운로드 진행: %sKB / %.0f초 / %s' % (size//1024,time.monotonic()-started,url),'INFO')
+                        last_progress=time.monotonic()
                     if size > limit:
                         raise CrawlError('응답 크기 초과: ' + url)
             ctx.checkpoint()
@@ -123,7 +129,7 @@ def fetch(ctx, url, limit=4_000_000):
             if exc.code not in (429, 500, 502, 503, 504) or attempt == REQUEST_ATTEMPTS-1:
                 raise CrawlError('HTTP %s: %s' % (exc.code, url)) from exc
         except (urllib.error.URLError, TimeoutError, socket.timeout, OSError) as exc:
-            if attempt == REQUEST_ATTEMPTS-1 or time.monotonic() >= deadline:
+            if attempt == REQUEST_ATTEMPTS-1 or time.monotonic() >= total_deadline:
                 raise CrawlError('통신 실패: %s / %s' % (url, exc)) from exc
         ctx.log('일시적인 연결/응답 실패, 새 연결로 재시도 %s/%s: %s' % (attempt+2, REQUEST_ATTEMPTS, url),'WARNING')
         for _ in range(5):
@@ -161,8 +167,9 @@ def identity(doc,code):
     brand=doc.select_one('#frmView input[name="brandCd"]')
     title=text(doc.select_one('.item_detail_tit h3'))
     if model!=code:raise CrawlError('공식 모델명 불일치: 요청 '+code+' / 실제 '+model)
-    if not brand or brand.get('value')!='004' or '[압소바]' not in title:raise CrawlError('공식 압소바 브랜드 ID/상품명 확인 실패')
-    name=re.sub(r'^\s*\[압소바\]\s*','',title)
+    brand_name=BRANDS.get(brand.get('value')) if brand else None
+    if not brand_name or '['+brand_name+']' not in title:raise CrawlError('공식 해피랜드/압소바 브랜드 ID와 상품명 불일치')
+    name=re.sub(r'^\s*\['+re.escape(brand_name)+r'\]\s*','',title)
     name=re.sub(r'\s*'+re.escape(model)+r'\s*$','',name).strip()
     if not name:raise CrawlError('정리 후 공식 상품명 없음')
     return dict(product_name=name,**{'원본 상품명':title})
@@ -206,14 +213,16 @@ def search(ctx,code):
 def source_url(value,base=SITE):
     url=urljoin(base,value);p=urlsplit(url)
     allowed=(p.hostname=='godomall-storage.cdn-nhncommerce.com' and p.path.startswith(STORE_PREFIX)
-             or p.hostname in ('img.efe.co.kr',DETAIL_CDN) and p.path.startswith('/a/'))
+             or p.hostname in ('img.efe.co.kr',DETAIL_CDN) and p.path.startswith(('/a/','/h/')))
     if p.scheme not in ('http','https') or not allowed or p.username or p.password:raise CrawlError('공식 압소바 이미지 출처 확인 실패: '+url)
     return url
 
 def image(ctx,url,cache):
     source_url(url)
     if url not in cache:
-        raw=fetch(ctx,url,MAX_BYTES)
+        # Image transfers may stall temporarily. Keep document requests bounded
+        # at45s, but give images a90s attempt and180s shared retry budget.
+        raw=fetch(ctx,url,MAX_BYTES,request_seconds=180,attempt_seconds=90)
         try:
             with Image.open(io.BytesIO(raw)) as pic:
                 if pic.width*pic.height>80000000:raise CrawlError('이미지 최대 픽셀 초과')
@@ -315,5 +324,5 @@ def crawl(ctx):
                 if ctx.enabled('size'):row['size']=','.join(group['sizes'])
                 ctx.emit_result(row);rows+=1
         except Exception as exc:errors.append(str(exc));ctx.fail_item(str(exc))
-    if not rows and not errors:errors.append('공식 압소바 일치 모델 검색 결과 없음: '+code);ctx.fail_item(errors[-1])
+    if not rows and not errors:errors.append('공식 해피랜드/압소바 일치 모델 검색 결과 없음: '+code);ctx.fail_item(errors[-1])
     if errors:raise CrawlError('수집 미완료: '+' / '.join(errors))

@@ -83,3 +83,27 @@ Live A1510604: exit0, three rows 노랑/베이지/핑크, one common main and ad
 image set, zero unmapped events, sizes70,75,80 for each actual option color.
 12 regression tests and65-brand registry/hash/syntax check passed.
 New jobs use automatic mode; previously started jobs retain frozen old scripts.
+
+Both official brands and transfer retry follow-up — 2026-11-13:
+H1110306 and HL2651AN06 were rejected because renaming metadata alone left
+the original adapter's brand004/title압소바 and image /a/ restrictions intact.
+Observed H1110306 (8017) and HL2651AN06 (1000000870) both declare brand002,
+title prefix[해피랜드], and original detail URLs under the same official R2
+bucket /h/. Accept only the two verified brand-ID/title pairs002해피랜드 and
+004압소바, matching the requested actual model. Accept both /h/ and /a/ on
+the known official body hosts. Wrong ID/title pairings still fail. No arbitrary
+other brand, CDN bucket or model is accepted.
+Live H1110306: two automatic colors 연노랑/연핑크, no failures.
+Live HL2651AN06: two automatic colors 베이지/핑크, no failures.
+
+AB26D3SS04's reported45s response deadline could not be reproduced: direct
+public GET returned584691-byte800x5700JPEG in about1s. It was a temporary
+transfer delay rather than an absent product. Image requests now have a90s
+attempt cap within180s shared budget, allowing a fresh retry after one slow
+attempt. Ordinary document/search requests retain45s. Socket waits remain15s;
+progress logs every5s while bytes arrive, byte/pixel bounds and checkpoints
+remain. Never skip a timed-out original image and report a complete body.
+Regression test advances a fake clock past the first90s attempt and verifies
+a fresh connection can still succeed within the overall budget.
+Live AB26D3SS04 all-field worker succeeds with오프화이트 and no failures.
+15 tests and65-brand registry/hash/syntax check passed.

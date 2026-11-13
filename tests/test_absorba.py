@@ -3,7 +3,7 @@ import itertools
 from pathlib import Path
 import sys
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch,MagicMock
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'app'))
@@ -23,6 +23,37 @@ class Context:
     def emit_unmapped(self,record,colors,url,shared_detail_html=''):self.unmapped.append((record,colors,url))
 
 class AbsorbaTests(unittest.TestCase):
+    def test_happyland_identity_and_original_h_body_for_both_models(self):
+        for code in ['H1110306','HL2651AN06']:
+            doc=c.parse((FIX/(code+'.html')).read_bytes())
+            row=c.identity(doc,code)
+            self.assertNotIn('[해피랜드]',row['product_name'])
+            with patch.object(c,'image',return_value=dict(width=800,height=3000)):
+                result=c.detail(Context(),doc,c.SITE,{})
+            urls=[n['src'] for n in c.parse(result).select('img')]
+            self.assertEqual(len(urls),2)
+            self.assertTrue(all('/h/' in url for url in urls))
+            self.assertTrue(any(code+'_DC.jpg' in url for url in urls))
+            self.assertTrue(any('notice_size.jpg' in url for url in urls))
+
+    def test_brand_id_and_title_must_agree(self):
+        doc=source();doc.select_one('input[name="brandCd"]')['value']='002'
+        with self.assertRaises(c.CrawlError):c.identity(doc,'AB2711BU04')
+
+    def test_image_attempt_timeout_still_has_fresh_retry_budget(self):
+        now=[0.0];first=MagicMock();second=MagicMock();ctx=Context()
+        def stalled(*args,**kwargs):
+            now[0]=91.0
+            raise TimeoutError('slow image attempt')
+        first.open.side_effect=stalled
+        response=second.open.return_value.__enter__.return_value
+        response.headers={};response.read1.side_effect=[b'complete image bytes',b'']
+        with patch.object(c.time,'monotonic',side_effect=lambda:now[0]),patch.object(c.time,'sleep'),patch.object(c,'public_opener',side_effect=[first,second]) as opener:
+            result=c.fetch(ctx,'https://img.efe.co.kr/a/image.jpg',request_seconds=180,attempt_seconds=90)
+        self.assertEqual(result,b'complete image bytes')
+        self.assertEqual([call.args[1] for call in opener.call_args_list],[90,180])
+        self.assertTrue(any('재시도' in log[0] for log in ctx.logs))
+
     def test_new_official_detail_cdn_for_all_three_models(self):
         for code in ['AB27A5RT01','A1510604','A1A10303']:
             doc=c.parse((FIX/(code+'.html')).read_bytes());ctx=Context()
