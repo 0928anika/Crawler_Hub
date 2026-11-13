@@ -21,3 +21,19 @@ Original ANJS26N68.jpg and AN-SIZE.jpg preserved with original product body imgs
 8 regression tests passed;69-brand metadata/hash/syntax validation passed.
 Fixtures:actual public example HTML/detail/options in tests/fixtures/anybody_fashionplus.
 Live evidence in workspace:anybody_fp_live.txt and anybody_fashionplus-verification/.
+
+2026-11-14 ANVB26S72 closeup repair
+User entered ANVB26572 (digit5),which exact official search returns0 for.
+Broader official ANVB26 search identifies ANVB26S72 (letterS),item407382770.
+Reproduced empty detail there:fourth gallery photo is a white-background fabric
+closeup,not a seller/store photograph. Inset patches6/10,border8/12;strict
+all-side test incorrectly blocked description. Representative check unchanged.
+Additional-only closeup path requires8matching border patches,opposite sides
+and >=3 sides covered,very-flat background and >=25% matching background pixels
+across full image. Foreground variation still required;busy/blank photos and
+mixed-gallery detail exclusions remain tested. No unconditional fallback.
+Also parse actual bra cup sizes75A/75B/80A/80B/85A/85B separately from colors;
+retain BEIGE/BLACK/WHITE. Remove observed ECJ seller suffix from title.
+Actual worker ANVB26S72 exit0,four photos,nine original body imgs inclAN-SIZE.jpg.
+Source links remain original;never rewrite input5 toS or invent model matches.
+10 regression tests pass;new real closeup fixture added.

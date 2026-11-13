@@ -145,7 +145,7 @@ def exact_code(text, code):
                           text.upper()))
 
 
-def studio_background(image):
+def studio_background(image, allow_closeup=False):
     """Uniform perimeter color; no brand logo requirement or color guessing."""
     im=image.convert('RGB').resize((200,268))
     boxes=[(.04,.04,.14,.12),(.86,.04,.96,.12),(.04,.88,.14,.96),(.86,.88,.96,.96)]
@@ -172,6 +172,7 @@ def studio_background(image):
             border.append((side,stat.mean,max(stat.stddev)))
     border_best=0
     border_ok=False
+    closeup_ok=False
     for _,center,variance in border:
         if variance>14:continue
         matched=[side for side,mean,spread in border
@@ -179,8 +180,19 @@ def studio_background(image):
         border_best=max(border_best,len(matched))
         if len(matched)>=10 and all(matched.count(side)>=2 for side in range(4)):
             border_ok=True
+        # Additional product closeups can reach two borders. Require very flat
+        # matching background on opposite edges plus a third edge, and >=25%
+        # matching pixels in the whole photograph; representative stays strict.
+        if allow_closeup and not closeup_ok and len(matched)>=8 and (
+                (matched.count(0)>=2 and matched.count(1)>=2) or
+                (matched.count(2)>=2 and matched.count(3)>=2)) and len(set(matched))>=3:
+            if variance<=8:
+                rgb=im.tobytes()
+                background_pixels=sum(max(abs(pixel[i]-center[i]) for i in range(3))<=15
+                                      for pixel in zip(rgb[0::3],rgb[1::3],rgb[2::3]))
+                closeup_ok = closeup_ok or background_pixels>=im.width*im.height*.25
     foreground=ImageStat.Stat(im.crop((30,35,170,233)))
-    accepted=(best>=7 or border_ok) and max(foreground.stddev)>=6
+    accepted=(best>=7 or border_ok or closeup_ok) and max(foreground.stddev)>=6
     return accepted,'배경 패치 %s/10, 외곽 테두리 %s/12(4방향 확인)'%(best,border_best)
 
 
@@ -322,7 +334,7 @@ def clean_name(name, code):
     name=re.sub(r'^\s*\[(?:본사공식[^\]]*|애니바디)\]\s*','',name)
     name=re.sub(r'(?<![A-Z0-9])'+re.escape(code)+r'(?:[-_][A-Z0-9]+)*(?![A-Z0-9])','',name,flags=re.I)
     name=re.sub(r'애니바디|ANYBODY','',name,flags=re.I)
-    name=re.sub(r'[\s_]+(?:EIC|EPC)\s*$','',name,flags=re.I)
+    name=re.sub(r'[\s_]+(?:EIC|EPC|ECJ)\s*$','',name,flags=re.I)
     name=re.sub(r'[_\s]+(?:NC|뉴코아)?[^_\s]{1,20}(?:지점|점)\s*$','',name)
     return re.sub(r'\s+',' ',name).strip(' _-[]()')
 
@@ -352,7 +364,7 @@ def options(ctx, link, include_size, doc=None, code="", raw_options=None):
         for entry in entries:
             ctx.checkpoint()
             label = str(entry.get('_name') or '').strip()
-            match = re.fullmatch(r'(.+?)[\s/]+(FREE|FR|F|ONE\s*SIZE|\d{2,3}|S|M|L|XL|XXL)',
+            match = re.fullmatch(r'(.+?)[\s/]+(FREE|FR|F|ONE\s*SIZE|\d{2,3}[A-F]|\d{2,3}|S|M|L|XL|XXL)',
                                  label, re.I)
             if not label:continue
             if raw_options is not None and label not in raw_options:raw_options.append(label)
@@ -470,7 +482,7 @@ def crawl(ctx):
                     continue
                 try:
                     image = image_get(ctx, url)
-                    studio, background_reason = studio_background(image)
+                    studio, background_reason = studio_background(image, allow_closeup=True)
                     if not studio:
                         detail_safe = False
                         ctx.log('스튜디오컷 미통과 사진 제외 및 해당 링크 상세 사용 금지: '+background_reason+' / '+url,'INFO')

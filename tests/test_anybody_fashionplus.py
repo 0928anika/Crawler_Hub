@@ -23,6 +23,13 @@ class AnybodyFashionplusTests(unittest.TestCase):
    colors,sizes=c.options(C(),LINK,True,doc=doc(),code='ANJS26N68')
   self.assertTrue(all(x==dict(color_name='네이비',color_code='78') for x in colors));self.assertEqual(set(sizes),{'S','M','L','XL'})
  def test_clean_title(self):self.assertEqual(c.clean_name('공용 밍크극세사 파자마 세트_모던 ANJS26N68 EIC','ANJS26N68'),'공용 밍크극세사 파자마 세트_모던')
+ def test_real_studio_closeup_passes_additional_inspection(self):
+  with Image.open(FIX/'ANVB26S72_closeup.jpg') as im:
+   self.assertFalse(c.studio_background(im)[0]);self.assertTrue(c.studio_background(im,allow_closeup=True)[0])
+ def test_bra_cup_sizes_are_not_color_names(self):
+  payload=[dict(options=[dict(_name=x) for x in ['BEIGE 75B','BLACK 85A','WHITE 85B']])]
+  with patch.object(c,'fetch',return_value=json.dumps(payload).encode()):colors,sizes=c.options(C(),LINK,True)
+  self.assertEqual([x['color_name'] for x in colors],['BEIGE','BLACK','WHITE']);self.assertEqual(set(sizes),{'75B','85A','85B'})
  def test_seller_epc_suffix_removed(self):self.assertEqual(c.clean_name('공용 밍크극세사 파자마세트-모던 ANJS26N68 _epc','ANJS26N68'),'공용 밍크극세사 파자마세트-모던')
  def test_large_white_packshot_accepted_busy_background_rejected(self):
   with Image.open(ROOT/'tests/fixtures/anybody/ANPM26A17_representative.jpg') as im:self.assertTrue(c.studio_background(im)[0])
