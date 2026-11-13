@@ -1,0 +1,172 @@
+{
+  "id": "absorba_official",
+  "name": "압소바",
+  "category": "유아동",
+  "crawl_source": "공식 홈페이지",
+  "script": "absorba_official.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_color_mapping": "verified",
+  "official_color_codes": false,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 #frmView optionSnoInput의 색상:사이즈 옵션 원문. 품절/disabled도 유지."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .item_detail_tit .prd-price 판매가 또는 주상품 판매가 항목. 옵션별 추가금이0으로 공통임을 확인한 경우만. 쿠폰가 제외. 예시99000."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 독립 정가 input[name=set_goods_fixedPrice] 및 정가 항목. 예시99000. 누락/0/형식오류는 None과 경고로 나머지 계속."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .location_cont .location_tit 실제 선택 분류."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "브랜드004/모델명 검증 주상품의 공식 magnifyKeyID 원본 우선. 단일색상 자동, 여러색상 미연결은 수동 후보."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "동일 주상품의 명시적 확대 원본 전체를 검증하고 단일색상은5슬롯. 여러색상은 전체 후보 전달 후 수동 매핑."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "#detail .detail_explain_box의 원본 본문 이미지 순서 보존. notice_size.jpg 등 사이즈·고시 이미지 유지. 별도 표 생성 없음. 리뷰·배송·반품·추천 제외."
+    }
+  },
+  "guide": {
+    "example": "AB2711BU04",
+    "examples": [
+      "AB2711BU04",
+      "ab2711bu04"
+    ],
+    "pattern": "^[\\s\\S]+$",
+    "format": "공식 모델명(예: AB2711BU04). 대소문자 구분 없이 검색.",
+    "notes": "공식 브랜드004와 모델명 정확 대조. 색상코드는 원문에서 확인되지 않아 빈칸. 단일색상 자동, 여러색상 상품컷은 수동 매핑.",
+    "method": "해피랜드몰 공식 검색에서 실제 상품 링크를 확인한 뒤 주상품 모델명·브랜드 검증.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      ""
+    ],
+    "validation_note": "원본 상세의 사이즈표·고시를 유지하며 별도 표는 만들지 않음."
+  },
+  "notes": "압소바 공식 해피랜드몰. 단일색상 자동 매핑, 여러색상이며 사진 연결이 불분명한 경우 수동 매핑 후보 전달. 공식 색상코드를 임의 생성하지 않음. 원본 상세 이미지의 사이즈표/고시 유지.",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "code_hash": "13b13a8209065bf1f760dd5d4da6fa66b0ac6e267636fece226f6371c0ccb5d0",
+  "hybrid_mapping": true,
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 #frmView optionSnoInput의 색상:사이즈 옵션 원문. 품절/disabled도 유지."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .item_detail_tit .prd-price 판매가 또는 주상품 판매가 항목. 옵션별 추가금이0으로 공통임을 확인한 경우만. 쿠폰가 제외. 예시99000."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 독립 정가 input[name=set_goods_fixedPrice] 및 정가 항목. 예시99000. 누락/0/형식오류는 None과 경고로 나머지 계속."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .location_cont .location_tit 실제 선택 분류."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "브랜드004/모델명 검증 주상품의 공식 magnifyKeyID 원본 우선. 단일색상 자동, 여러색상 미연결은 수동 후보."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "동일 주상품의 명시적 확대 원본 전체를 검증하고 단일색상은5슬롯. 여러색상은 전체 후보 전달 후 수동 매핑."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "#detail .detail_explain_box의 원본 본문 이미지 순서 보존. notice_size.jpg 등 사이즈·고시 이미지 유지. 별도 표 생성 없음. 리뷰·배송·반품·추천 제외."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null
+  }
+}

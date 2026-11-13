@@ -1,0 +1,55 @@
+Absorba official crawler — 2026-11-13
+Brand ID: absorba_official / 압소바 / 공식 홈페이지
+
+User-provided mobile product:
+https://m.happylandmall.com/goods/goods_view.php?goodsNo=1000001384
+Verified desktop official source:
+https://www.happylandmall.com/goods/goods_view.php?goodsNo=1000001384
+Verified actual search form GET:
+https://www.happylandmall.com/goods/goods_search.php?keyword=AB2711BU04
+
+Source identity: .item_detail_list dl 모델명=AB2711BU04 and #frmView
+input[name=brandCd]=004, title prefix [압소바]. Product identity must match
+the requested model. Search card links and real pagination links only.
+Do not follow recommendation/social/review links or infer goodsNo values.
+
+Option source: #frmView select[name=optionSnoInput]. Nonempty options have
+alt 브라운:75 / 브라운:80, plus declared values with option ID, price delta0
+and stock3. Sizes include disabled/sold-out entries. There is no confirmed
+official color code, so color_name=브라운 and color_code is blank, rather
+than splitting digits off the model. One-color page maps automatically.
+Multi-color pages send validated primary shots and real color labels for
+manual mapping; no visual color guesses. SDK hybrid mode permits automatic
+completion for already mapped pages.
+
+Selling price: primary .item_detail_tit .prd-price=99000; independent regular
+price: #frmView input[name=set_goods_fixedPrice]=99000.00 and 정가 row.
+Each field is independently selected. Missing/zero/malformed regular price
+stays blank with warning and does not fail collection. Coupon/member totals
+are not used. Nonzero/differing option additional prices leave common selling
+price blank with an explanation rather than guessing a shared price.
+
+Declared gallery originals come from gd_change_image magnifyKeyID strings,
+then detailKeyID or actual main image elements. No directory substitution.
+Sample magnify image is a real730x730 JPEG, declared explicitly by official
+HTML. It is the only distinct gallery shot; five additional output slots reuse
+that valid shot with the standard helper warning. Never pad with tiny icons.
+Allowed image storage is the observed store-owned NHN prefix or img.efe.co.kr/a/.
+
+Body scope: #detail .detail_explain_box, not the whole detail tab. Preserve:
+https://img.efe.co.kr/a/2027/AB2711BU04_DC.jpg (800x6321)
+https://img.efe.co.kr/a/2026/notice_size.jpg (800x3498)
+Keep the original size/notice images; do not append an HTML notice table or
+generated size guide. Shipping, exchanges, reviews and recommendation images
+outside this body are not copied. Real body image failures are reported rather
+than silently truncating the body or replacing it with gallery photos.
+
+Actual all-field worker ab2711bu04: exit0, one automatic row, no item failures.
+Name: 포트코튼모달바디슈트조끼모자 / 브라운 / 75,80 / price99000 / regular99000.
+Original relevant public fixture excerpts: tests/fixtures/absorba.
+9 regression tests passed, covering identity, official search links, declared
+originals, source ownership, disabled sizes, original detail preservation,
+all four price selection combinations and invalid normal prices, and safe
+multi-color manual mapping. 64-brand registry/hash/syntax check passed.
+Live source files and worker results are outside repo as abs*.html and
+absorba-verification/ in the task workspace. No app/ changes required.
