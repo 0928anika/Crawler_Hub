@@ -1,5 +1,6 @@
 import copy
 import json
+import io
 import sys
 import unittest
 from pathlib import Path
@@ -39,6 +40,42 @@ class ClovisTests(unittest.TestCase):
                 self.assertIsNone(c.product(Context(),LINK,'CVJHG4V06M'))
         with patch.object(c,'page',return_value=document(source())):
             self.assertEqual(c.product(Context(),LINK,'CVJHG4V06M')['itemMain']['brandNo'],c.BRAND_NO)
+
+    def test_original_gif_detail_is_preserved_but_not_gallery_candidate(self):
+        raw=io.BytesIO();c.Image.new('RGB',(600,800),'white').save(raw,format='GIF')
+        url='https://item.elandrs.com/body.gif'
+        with patch.object(c,'fetch',return_value=raw.getvalue()):
+            self.assertEqual(c.image_info(Context(),url,{},detail=True)[0],'GIF')
+            with self.assertRaises(c.ImageRejected):c.image_info(Context(),url,{})
+
+    def test_unicode_image_urls_preserve_existing_escapes(self):
+        url='https://item.elandrs.com/r/클라비스/상품%20사진.jpg?size=1000'
+        encoded=c.image_url(url)
+        self.assertTrue(encoded.isascii())
+        self.assertIn('%20',encoded);self.assertNotIn('%2520',encoded)
+        d=source();d['itemDesc']['itemDescdocumentCon']='<img src="'+url+'">'
+        with patch.object(c,'image_info',return_value=('JPEG',1080,2200,'hash',False)) as loader:
+            self.assertEqual(c.detail_images(Context(),d,'CODE',{}),[encoded])
+        self.assertEqual(loader.call_args.args[1],encoded)
+
+    def test_search_rechecks_main_mall_but_keeps_vendor_filter(self):
+        empty=c.BeautifulSoup('<em data-searchresult-total>0</em>','html.parser')
+        found=c.BeautifulSoup('<em data-searchresult-total>1</em><a class="ui-item__link" href="'+LINK+'"></a>','html.parser')
+        with patch.object(c,'page',side_effect=[empty,found]) as page:
+            self.assertEqual(c.search(Context(),'CODE'),[LINK])
+        self.assertTrue(page.call_args.args[1].startswith('https://www.elandmall.co.kr/'))
+
+    def test_search_transport_failure_uses_other_official_host(self):
+        with patch.object(c,'search_site',side_effect=[c.CollectionError('timeout'),[LINK]]):
+            self.assertEqual(c.search(Context(),'CODE'),[LINK])
+        with patch.object(c,'search_site',side_effect=[c.CollectionError('timeout'),[]]):
+            with self.assertRaisesRegex(c.CollectionError,'재확인 미완료'):
+                c.search(Context(),'CODE')
+
+    def test_transient_missing_product_json_is_retried(self):
+        with patch.object(c,'page',side_effect=[c.BeautifulSoup('<html></html>','html.parser'),document(source())]) as page:
+            self.assertEqual(c.product(Context(),LINK,'CVJHG4V06M')['itemMain']['brandNo'],c.BRAND_NO)
+        self.assertEqual(page.call_count,2)
 
     def test_actual_two_digit_color_codes(self):
         colors,actual=c.colors(Context(),source('colors'))

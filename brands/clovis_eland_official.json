@@ -84,7 +84,7 @@
   "notes": "클라비스 이랜드몰 공식 LV16003596 상품만. 검색 링크/상세 응답/옵션 행 판매자 재검증. 공식2자리 숫자 색상코드를 보존하고 원본 갤러리 전체를 수동 매핑 후보로 제공. 첫 채택 상품의 원본 본문 전체(기본상세·GOSI·사이즈 포함)를 모든 색상에 공통 적용하며 새 표를 생성하지 않음.",
   "image_mode": "url",
   "interface": "portal_v1",
-  "code_hash": "ff43238b240b2c1384a998e14cd1735cdb1c94d8aec52e6798c6f0731202cdde",
+  "code_hash": "57cd5b5661f2312ab9b246413c4f3efbcf969a997797accdd3a094617c4ea736",
   "additional_image_count": 5,
   "fields": {
     "product_code": {

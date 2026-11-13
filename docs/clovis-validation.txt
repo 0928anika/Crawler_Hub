@@ -47,3 +47,32 @@ and options fixtures under tests/fixtures/clovis.
 10 regression tests passed;67-brand metadata/hash/syntax check passed.
 Raw live evidence is outside repo in clovis_*.html/json and
 clovis_eland-verification/CVJHG4V06M.log in the shared task workspace.
+
+
+Failure repair audit — 2026-11-13
+Job de2b428127cd4db9950417b2dd568466: 254 inputs,63 previous successes,
+191 previous failures. Rechecked every failed code against live public sources.
+45 previously failed inputs now collected successfully, including gallery and
+complete original body images. Zero remaining collection exceptions among these.
+146 have no selected-vendor result after brand shop and main Eland search:
+76 have other vendors only;70 have no current search result in either source.
+Keep LV16003596 restriction; do not claim these are absent from all catalogs.
+
+Root causes:35 Unicode URL errors;10 transient transport errors;2 transient
+missing detail JSON responses. Four Unicode/JSON cases also exposed original
+GIF body assets after the first fix. Two previous transport failures currently
+have no selected-vendor result (one other-vendor-only,one zero search result).
+Encode Unicode URL paths without double-escaping existing percent escapes,
+retaining encoded URLs in output HTML. Accept original GIF body images without
+conversion; gallery JPEG/PNG/WebP requirements stay separate. Preserve Korean
+banner filename filtering by decoding the URL path before label checks.
+Allow three transport attempts within60s overall with15s socket timeout;
+retry a missing detail JSON once. Search main Eland after missing/failed brand
+shop result, keeping actual vendor/brand/model checks at every stage. An
+incomplete search is never reported as proof that a product does not exist.
+
+15 regression tests passed.67-brand registration/hash/syntax check passed.
+Actual app worker CVAMG4T01N exit0/5photo candidates and CVTJG4T01N exit0/
+10photo candidates,zero item failures. Audit evidence in shared workspace
+clovis-failure-audit/*.json; original-size and GOSI body assets remain present.
+No app files or other brand adapters changed as part of this repair.

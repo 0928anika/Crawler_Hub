@@ -8,7 +8,7 @@ import json
 import re
 import socket
 import time
-from urllib.parse import parse_qs, urlencode, urljoin, urlsplit
+from urllib.parse import parse_qs, quote, unquote, urlencode, urljoin, urlsplit
 import urllib.error
 import urllib.request
 
@@ -58,7 +58,7 @@ def public_opener(ctx, deadline):
                 if source_address:
                     connection.bind(source_address)
                 connection.connect(target)
-                connection.settimeout(min(5, max(.01, deadline-time.monotonic())))
+                connection.settimeout(min(15, max(.01, deadline-time.monotonic())))
                 return connection
             except OSError as exc:
                 connection.close()
@@ -90,25 +90,26 @@ def fetch(ctx, url, limit=4_000_000):
     """Anonymous GET. No cookies, credentials or Referer, including images."""
     if urlsplit(url).scheme not in ('http','https'):
         raise CollectionError('공개 HTTP/HTTPS 주소가 아님: '+url)
-    deadline = time.monotonic() + 20
+    url = image_url(url)
+    deadline = time.monotonic() + 60
     started = time.monotonic()
     ctx.log('공개 요청: ' + url, 'INFO')
     opener = public_opener(ctx, deadline)
-    for attempt in range(2):
+    for attempt in range(3):
         ctx.checkpoint()
         try:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
-                raise TimeoutError('공개 요청 전체 20초 제한 초과')
+                raise TimeoutError('공개 요청 전체 60초 제한 초과')
             request = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-            with opener.open(request, timeout=min(5, remaining)) as response:
+            with opener.open(request, timeout=min(15, remaining)) as response:
                 if int(response.headers.get('Content-Length', '0')) > limit:
                     raise CollectionError('응답 크기 초과: ' + url)
                 chunks, size = [], 0
                 while True:
                     ctx.checkpoint()
                     if time.monotonic() >= deadline:
-                        raise TimeoutError('공개 응답 전체 20초 제한 초과')
+                        raise TimeoutError('공개 응답 전체 60초 제한 초과')
                     block = response.read1(min(65536, limit + 1 - size))
                     if not block:
                         break
@@ -124,10 +125,10 @@ def fetch(ctx, url, limit=4_000_000):
                 raise AccessDenied('HTTP 403: ' + url) from exc
             if exc.code == 404:
                 raise MissingResource('HTTP 404: ' + url) from exc
-            if exc.code not in (429, 500, 502, 503, 504) or attempt:
+            if exc.code not in (429, 500, 502, 503, 504) or attempt == 2:
                 raise CollectionError('HTTP %s: %s' % (exc.code, url)) from exc
         except (urllib.error.URLError, TimeoutError, socket.timeout, OSError) as exc:
-            if attempt:
+            if attempt == 2:
                 raise CollectionError('통신 실패: %s / %s' % (url, exc)) from exc
         for _ in range(5):
             ctx.checkpoint()
@@ -135,15 +136,20 @@ def fetch(ctx, url, limit=4_000_000):
     raise CollectionError('요청 실패: ' + url)
 
 
+def image_url(url):
+    # Preserve existing percent escapes and URL delimiters, encode Unicode paths.
+    return quote(url, safe=":/?#[]@!$&'()*+,;=%")
+
+
 def page(ctx, url):
     return BeautifulSoup(fetch(ctx, url, 6_000_000).decode('utf-8-sig'), 'html.parser')
 
 
-def search(ctx, code):
+def search_site(ctx, code, site):
     links, seen, signatures = {}, set(), set()
     for number in range(1, 101):
         ctx.stage('클라비스 공개 검색 %s페이지' % number)
-        soup = page(ctx, SITE+'/s/srch?'+urlencode(
+        soup = page(ctx, site+'/s/srch?'+urlencode(
             {'q':code,'size':100,'page':number,'from':(number-1)*100}))
         counter = soup.select_one('[data-searchresult-total]')
         if not counter or not re.fullmatch(r'[\d,]+',counter.get_text(strip=True)):
@@ -176,7 +182,24 @@ def search(ctx, code):
     raise CollectionError('검색 100페이지 안전 한도 초과: 미완료')
 
 
-def product(ctx, url, code, diagnostics=None):
+def search(ctx, code):
+    errors = []
+    for site in (SITE, 'https://www.elandmall.co.kr'):
+        try:
+            links = search_site(ctx, code, site)
+            if links:
+                return links
+        except CollectionError as exc:
+            errors.append(str(exc))
+            ctx.log('공식 검색 응답 실패: 다른 공식 검색에서 재확인 / '+str(exc), 'WARNING')
+        if site == SITE:
+            ctx.log('브랜드몰 지정 판매자 검색 결과 없음: 이랜드몰 전체 검색 재확인', 'INFO')
+    if errors:
+        raise CollectionError('공식 검색 재확인 미완료(상품 없음으로 단정하지 않음): '+'; '.join(errors))
+    return []
+
+
+def product_once(ctx, url, code, diagnostics=None):
     params = parse_qs(urlsplit(url).query)
     if params.get('lowerVendNo') != [VENDOR_NO]:
         ctx.log('지정 판매자 외 상세 조회 생략: '+url,'INFO')
@@ -207,6 +230,16 @@ def product(ctx, url, code, diagnostics=None):
             raise CollectionError('필수 상품명 없음: '+url)
         return detail
     raise CollectionError('공식 상품 JSON 없음: '+url)
+
+
+def product(ctx, url, code, diagnostics=None):
+    for attempt in range(2):
+        try:
+            return product_once(ctx, url, code, diagnostics)
+        except CollectionError as exc:
+            if attempt or '공식 상품 JSON 없음' not in str(exc):
+                raise
+            ctx.log('일시적 상세 응답 누락: 공식 상품 재요청', 'WARNING')
 
 
 def options(ctx, main, parent=None):
@@ -366,7 +399,7 @@ def image_info(ctx, url, cache, detail=False):
     try:
         with Image.open(io.BytesIO(raw)) as image:
             fmt,w,h = image.format,image.width,image.height
-            if fmt not in ('JPEG','PNG','WEBP') or getattr(image,'is_animated',False):
+            if fmt not in (('JPEG','PNG','WEBP','GIF') if detail else ('JPEG','PNG','WEBP')) or (not detail and getattr(image,'is_animated',False)):
                 raise ImageRejected('정지 JPEG/PNG/WebP가 아닌 이미지: '+url)
             if w*h>(80_000_000 if detail else 40_000_000):
                 raise ImageRejected('이미지 해독 픽셀 한도 초과: '+url)
@@ -388,8 +421,8 @@ def gallery(ctx, main, cache):
         ctx.checkpoint()
         if str(item.get('imageDcode')) not in ('010','030') or not item.get('imagePath'):
             continue
-        url = urljoin('https://item.elandrs.com/',item['imagePath'])
-        label = ' '.join(str(item.get(k) or '') for k in ('imageName','imageFileName'))+' '+urlsplit(url).path
+        url = image_url(urljoin('https://item.elandrs.com/',item['imagePath']))
+        label = ' '.join(str(item.get(k) or '') for k in ('imageName','imageFileName'))+' '+unquote(urlsplit(url).path)
         if NEGATIVE.search(label) or re.search(r'사이즈표|실측표|size.?chart|size.?guide|collage|콜라주',label,re.I):
             ctx.log('공통 안내/명시적 셀러 촬영/표 이미지 제외: '+url,'WARNING')
             continue
@@ -422,16 +455,16 @@ def detail_images(ctx, detail, code, cache):
         note=BeautifulSoup(html.unescape(notice.get('itemAnnounceCon') or ''),'html.parser')
         for node in note.select('img'):
             source=node.get('data-src') or node.get('src')
-            if source:announce_urls.add(urljoin(SITE,source))
+            if source:announce_urls.add(image_url(urljoin(SITE,source)))
     result=[]
     for node in fragment.select('img'):
         ctx.checkpoint()
         source=node.get('ec-data-src') or node.get('data-original') or node.get('data-src') or node.get('src')
         if not source or source.startswith('data:'):continue
-        url=urljoin(SITE,source)
+        url=image_url(urljoin(SITE,source))
         if url in announce_urls:
             ctx.log('공통 행사/쿠폰 안내 제외(요청 안 함): '+url,'INFO');continue
-        name=urlsplit(url).path.rsplit('/',1)[-1]
+        name=unquote(urlsplit(url).path.rsplit('/',1)[-1])
         context=name+' '+str(node.get('alt') or '')+' '+str(node.get('title') or '')
         if re.search(r'banner|shipping|delivery|refund|coupon|copyright|배송|교환|반품|쿠폰|저작권',context,re.I):
             ctx.log('공통 배송/행사 안내 제외(요청 안 함): '+url,'INFO');continue
