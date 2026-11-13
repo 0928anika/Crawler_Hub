@@ -63,3 +63,17 @@ seller-declared plgw files were genuinely404 and recorded as warnings.
 Fixtures contain actual relevant DOM/option excerpts from the three public
 products. Live source/worker evidence is outside the repo in renoma_fp_*.html
 and renomagolf_fashionplus-verification/ under the shared workspace.
+
+Single source detail follow-up — 2026-11-13:
+User clarified that every product detail already includes all colors. Do not
+merge descriptions across discovered product links. After representative,
+identity, option and gallery validation, use only products[0]'s source link
+for the description request. Reuse that one body HTML for all photo candidates
+and final colors, independently of selected color/photo. Other product links
+remain eligible for gallery/option collection but their descriptions are not
+requested. Original body-image order and notice/banner exclusions unchanged.
+Regression test retains photos from two source links but asserts exactly one
+detail request for the first accepted link and identical HTML for every row.
+Live RMDVM4382: exit0,12 candidates, no failures; one description request for
+432217746, one retained body image, one common HTML across all candidates.
+12 tests and adapter-specific metadata/hash/syntax verification passed.

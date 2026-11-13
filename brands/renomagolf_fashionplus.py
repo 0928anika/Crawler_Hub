@@ -459,8 +459,7 @@ def crawl(ctx):
                     raise
             if not photos:
                 raise CollectionError('유효 개별 상품 사진 0장: ' + link)
-            details = detail_images(ctx, link, code) if ctx.enabled('detail_page') else []
-            products.append((record, colors, photos, details))
+            products.append((record, colors, photos))
         except (CollectionError, json.JSONDecodeError, UnicodeError) as exc:
             message = '%s / %s' % (link, exc)
             errors.append(message)
@@ -470,15 +469,14 @@ def crawl(ctx):
         ctx.fail_item(message)
         raise CollectionError(message + (' / ' + '; '.join(errors) if errors else ''))
     # Merge all metadata BEFORE deduplicating image URLs.
-    colors, photos, details, sources = [], [], [], {}
-    for record, options_list, photo_list, detail_list in products:
+    colors, photos, sources = [], [], {}
+    for record, options_list, photo_list in products:
         for option in options_list:
             if option not in colors:
                 colors.append(option)
         photos.extend(u for u in photo_list if u not in photos)
         for url in photo_list:
             sources.setdefault(url, record['product_url'])
-        details.extend(u for u in detail_list if u not in details)
     record = {'product_code': code, 'product_name': products[0][0]['product_name']}
     raw_options=[]
     for product in products:
@@ -498,6 +496,11 @@ def crawl(ctx):
                 ctx.log({'size': '사이즈', 'price': '판매가', 'regular_price': '정상가'}[field] +
                         ' 공통값 미확정: 빈칸으로 수집 계속', 'WARNING')
     if ctx.enabled('detail_page'):
+        detail_link=products[0][0]['product_url']
+        ctx.log('공통 상세 기준: 첫 번째 채택 상품 링크 하나만 사용 / '+detail_link,'INFO')
+        try:details=detail_images(ctx,detail_link,code)
+        except (CollectionError,json.JSONDecodeError,UnicodeError) as exc:
+            ctx.fail_item(detail_link+' / '+str(exc));raise
         markup = ''.join('<img src="%s" alt="상품 상세" style="max-width:100%%;height:auto">' %
                          html.escape(url, quote=True) for url in details)
         if len(markup.encode('utf-16-le'))//2 > 32767:

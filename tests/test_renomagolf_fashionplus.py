@@ -27,6 +27,24 @@ def shot():
     draw.rectangle((240,180,560,850),fill='black');return image
 
 class RenomaFashionplusTests(unittest.TestCase):
+    def test_all_photo_links_use_only_first_accepted_link_detail(self):
+        ctx=Context(['main_image','detail_page'])
+        first=c.BASE+'/goods/detail/432217746';second=c.BASE+'/goods/detail/432217825'
+        def product(ctx,url):
+            doc=source('432217746')
+            if url==second:
+                for node in doc.select('[data-preload]'):
+                    node['data-preload']=node['data-preload'].replace('.jpg?','.jpg?second=1&')
+            return doc
+        first_body='https://hansungimall.openhost.cafe24.com/renoma/detail/RMDVM4382-199.jpg'
+        with patch.object(c,'search',return_value=[(first,'RMDVM4382','https://example.com/first.jpg'),(second,'RMDVM4382','https://example.com/second.jpg')]),patch.object(c,'soup_get',side_effect=product),patch.object(c,'image_get',return_value=shot()),patch.object(c,'options',return_value=([dict(color_name='BLACK',color_code='')],[])),patch.object(c,'detail_images',return_value=[first_body]) as detail:
+            c.crawl(ctx)
+        detail.assert_called_once_with(ctx,first,'RMDVM4382')
+        self.assertGreater(len(ctx.rows),1)
+        self.assertTrue(any('second=1' in row[2] for row in ctx.rows))
+        self.assertEqual(len({row[3] for row in ctx.rows}),1)
+        self.assertTrue(all([n['src'] for n in c.BeautifulSoup(row[3],'html.parser').select('img')]==[first_body] for row in ctx.rows))
+
     def test_color_only_and_ambiguous_options_keep_originals(self):
         import json
         payload=[dict(options=[dict(_name='색상 BR'),dict(_name='사이즈구분없는 옵션'),dict(_name='BLACK 095'),dict(_name='BLACK 100')])]
