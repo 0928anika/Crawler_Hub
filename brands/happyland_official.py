@@ -247,10 +247,11 @@ def gallery(ctx,doc,link,cache,mapped):
         if mapped:
             valid=validate_gallery_image(info['raw'],role='product_shot',mapping_verified=True,single_shot_verified=True,mapping_evidence='공식 모델명/브랜드 검증 주상품 갤러리 및 단일색상 옵션',content_evidence='공식 확대보기 magnifyKeyID 또는 mainImage 개별 상품컷, 본문/배너/추천 제외')
         else:
-            # Manual candidates have no claimed color assignment.
+            # User confirmed these official shots show every color together;
+            # validate the source file without claiming a single-color photo.
             with Image.open(io.BytesIO(info['raw'])) as pic:
                 passed=pic.format in ('JPEG','PNG','WEBP') and not getattr(pic,'is_animated',False) and min(pic.size)>=500 and max(pic.size)/min(pic.size)<=1.8 and len(info['raw'])<=10000000
-            valid=dict(passed=passed,reasons=[] if passed else ['수동 후보 파일/규격 불일치'])
+            valid=dict(passed=passed,reasons=[] if passed else ['공통 색상 이미지 파일/규격 불일치'])
         if valid['passed'] and info['digest'] not in seen:seen.add(info['digest']);photos.append(dict(url=url,validation=valid))
         elif not valid['passed']:ctx.log('갤러리 규격 제외: '+url+' / '+','.join(valid['reasons']),'WARNING')
     if not photos:raise CrawlError('검증된 공식 개별 상품컷 없음')
@@ -283,7 +284,6 @@ def detail(ctx,doc,link,cache):
 def crawl(ctx):
     code=str(ctx.product_code).strip().upper()
     if not code:raise CrawlError('품번이 비어 있습니다')
-    ctx.allow_automatic_results=True
     rows=0;errors=[]
     try:links=search(ctx,code)
     except Exception as exc:ctx.fail_item(str(exc));raise
@@ -301,23 +301,19 @@ def crawl(ctx):
                 deltas=set(v for group in groups.values() for v in group['deltas'])
                 record['price']=base if deltas=={0} else None
                 if record['price'] is None:ctx.log('옵션별 추가금/공통 판매가 미확정: 빈칸','WARNING')
-            if ctx.enabled('size'):record['size']=','.join(dict.fromkeys(s for group in groups.values() for s in group['sizes']))
             cache={};photos=[]
             if ctx.enabled('main_image') or ctx.enabled('additional_images'):photos=gallery(ctx,doc,link,cache,len(groups)==1)
             if ctx.enabled('detail_page'):record['detail_page']=detail(ctx,doc,link,cache)
-            if len(groups)==1:
-                color=next(iter(groups));record.update(color=color,color_name=color,color_code='')
-                if photos:
-                    main,extras,warning=gallery_slots(photos)
-                    if warning:ctx.log(warning,'WARNING')
-                    if ctx.enabled('main_image'):record['main_image']=main
-                    if ctx.enabled('additional_images'):record['additional_images']=','.join(extras)
-                ctx.emit_result(record);rows+=1
-            elif photos:
-                palette=[dict(color_name=color,color_code='') for color in groups]
-                for photo in photos:ctx.emit_unmapped(dict(record),palette,photo['url'],shared_detail_html=record.get('detail_page',''));rows+=1
-            else:
-                for color in groups:ctx.emit_result(dict(record,color=color,color_name=color,color_code=''));rows+=1
+            if photos:
+                main,extras,warning=gallery_slots(photos)
+                if warning:ctx.log(warning,'WARNING')
+                if ctx.enabled('main_image'):record['main_image']=main
+                if ctx.enabled('additional_images'):record['additional_images']=','.join(extras)
+                if len(groups)>1:ctx.log('사용자 확인에 따라 전색상 공통 상품컷을 모든 공식 색상에 동일 사용','INFO')
+            for color,group in groups.items():
+                row=dict(record,color=color,color_name=color,color_code='')
+                if ctx.enabled('size'):row['size']=','.join(group['sizes'])
+                ctx.emit_result(row);rows+=1
         except Exception as exc:errors.append(str(exc));ctx.fail_item(str(exc))
     if not rows and not errors:errors.append('공식 압소바 일치 모델 검색 결과 없음: '+code);ctx.fail_item(errors[-1])
     if errors:raise CrawlError('수집 미완료: '+' / '.join(errors))

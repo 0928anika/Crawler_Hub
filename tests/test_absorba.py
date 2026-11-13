@@ -87,12 +87,26 @@ class AbsorbaTests(unittest.TestCase):
             else:n['value']=value
             self.assertIsNone(c.regular_price(ctx,d));self.assertTrue(ctx.logs)
 
-    def test_multiple_colors_are_not_guessed(self):
+    def test_multiple_colors_use_same_photos_and_own_sizes(self):
         d=source();node=d.new_tag('option',value='1122993||0||||0^|^아이보리:75');node['alt']='아이보리:75';d.select_one('select[name="optionSnoInput"]').append(node)
-        ctx=Context(['main_image']);photo=dict(url='https://img.efe.co.kr/a/photo.jpg',validation=dict(passed=True))
+        ctx=Context(['main_image','additional_images','size']);photo=dict(url='https://img.efe.co.kr/a/photo.jpg',validation=dict(passed=True))
         with patch.object(c,'search',return_value=[c.SITE+'/goods/goods_view.php?goodsNo=1000001384']),patch.object(c,'fetch',return_value=str(d).encode()),patch.object(c,'gallery',return_value=[photo]):c.crawl(ctx)
-        self.assertFalse(ctx.rows);self.assertEqual(len(ctx.unmapped),1)
-        self.assertEqual([p['color_name'] for p in ctx.unmapped[0][1]],['브라운','아이보리'])
+        self.assertFalse(ctx.unmapped);self.assertEqual(len(ctx.rows),2)
+        self.assertEqual([p['color_name'] for p in ctx.rows],['브라운','아이보리'])
+        self.assertEqual([p['size'] for p in ctx.rows],['75,80','75'])
+        self.assertEqual(ctx.rows[0]['main_image'],ctx.rows[1]['main_image'])
+        self.assertEqual(ctx.rows[0]['additional_images'],ctx.rows[1]['additional_images'])
+
+    def test_actual_multicolor_product_finishes_without_manual_mapping(self):
+        raw=(FIX/'A1510604.html').read_bytes();ctx=Context(['main_image','additional_images','detail_page','size'])
+        ctx.product_code='A1510604'
+        shared='<img src="https://img.efe.co.kr/a/shared.jpg">'
+        photo=dict(url='https://img.efe.co.kr/a/photo.jpg',validation=dict(passed=True))
+        with patch.object(c,'search',return_value=[c.SITE+'/goods/goods_view.php?goodsNo=1000000765']),patch.object(c,'fetch',return_value=raw),patch.object(c,'gallery',return_value=[photo]),patch.object(c,'detail',return_value=shared):c.crawl(ctx)
+        self.assertEqual([row['color_name'] for row in ctx.rows],['노랑','베이지','핑크'])
+        self.assertEqual(len({row['main_image'] for row in ctx.rows}),1)
+        self.assertEqual({row['detail_page'] for row in ctx.rows},{shared})
+        self.assertFalse(ctx.unmapped);self.assertFalse(ctx.failures)
 
     def test_unknown_image_owner_is_not_trusted(self):
         with self.assertRaises(c.CrawlError):c.source_url('https://godomall-storage.cdn-nhncommerce.com/other-store/goods/1.jpg')

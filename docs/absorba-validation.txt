@@ -69,3 +69,17 @@ two real body images each and no generated notice/size tables.
 AB27A5RT01: 아이보리/F, automatic. A1510604: 노랑/베이지/핑크, manual candidate
 because there is no per-color image association. A1A10303: 백IVORY, automatic.
 11 regression tests and 64-brand registry/hash/syntax check passed.
+
+Shared-color automatic output follow-up — 2026-11-13:
+Current adapter ID is happyland_official (해피랜드/압소바), renamed separately.
+User confirmed previously unmapped photos show every color together and
+requested identical image use for all colors. Supersedes manual/hybrid rules
+above: mapping_mode=automatic, no emit_unmapped path. Each real option color
+gets the same primary/additional image set and body HTML. Keep its own exact
+size options, rather than assigning the union of sizes from all colors.
+Multi-color shared photos are file/format/size checked without pretending they
+are single-color pictures. No inferred color code or separate size/notice table.
+Live A1510604: exit0, three rows 노랑/베이지/핑크, one common main and additional
+image set, zero unmapped events, sizes70,75,80 for each actual option color.
+12 regression tests and65-brand registry/hash/syntax check passed.
+New jobs use automatic mode; previously started jobs retain frozen old scripts.
