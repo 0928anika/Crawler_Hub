@@ -123,7 +123,9 @@ def colors(doc, index, mapping):
             matches = [(code, value) for code, value in official.items()
                        if normal(label) in (normal(code), normal(value.get('name')))]
         if len(matches) != 1:
-            raise ValueError('공식 옵션과 색상 이미지 연결 확인 실패: ' + label)
+            result.append(dict(code=candidates[0] if len(candidates) == 1 else '', label=label, data={},
+                               error='[색상 이미지 연결 불가] ' + label + ' / 공식 옵션은 있으나 이미지 인덱스에서 대응 색상을 확인할 수 없습니다.'))
+            continue
         code, value = matches[0]
         result.append(dict(code=code, label=label, data=value))
     return result
@@ -313,7 +315,13 @@ def crawl(ctx):
         index = json.loads(source)
     except HTTPError as exc:
         if exc.code == 404:
-            raise ValueError('해당 품번의 공식 상품 인덱스가 없습니다: ' + base) from exc
+            message = '[공식 상품 인덱스 없음] ' + base + ' / 공식 이미지·색상 인덱스 HTTP 404. 상품 검색 0건이나 색상 매핑 오류와는 별개입니다.'
+            ctx.fail_item(message)
+            raise ValueError(message) from exc
+        ctx.fail_item('[공식 인덱스 접근 실패] ' + base + ' / HTTP ' + str(exc.code))
+        raise
+    except (OSError, ValueError) as exc:
+        ctx.fail_item('[공식 인덱스 조회 실패] ' + base + ' / ' + str(exc))
         raise
     try:
         source, final = product_page(ctx, index, base)
@@ -346,6 +354,8 @@ def crawl(ctx):
     for color in chosen:
         try:
             ctx.stage('리스트 색상 수집: ' + color['label'])
+            if color.get('error') and any(ctx.enabled(key) for key in ('main_image','additional_images','detail_page')):
+                raise ValueError(color['error'])
             record = dict(common, color=color['label'], color_name=color['label'], color_code=color['code'])
             rows = color_stocks(option_rows, color['label']) if option_rows else []
             if ctx.enabled('size'):
