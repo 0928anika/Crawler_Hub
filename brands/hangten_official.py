@@ -211,12 +211,15 @@ def identity(soup, no, base):
     return own, code, names[0], options, name
 
 
-def clean_name(name, own, base):
+def clean_name(name, own, base, color_name=""):
     patterns = [r"행텐\s*틴즈", r"HANG\s*TEN\s*TEENS", r"HANG\s*TEN", r"행텐"]
     patterns += [re.escape(v) for v in (own, base, base.replace("-", ""))]
     for pattern in patterns:
         name = re.sub(r"(?<![A-Za-z0-9가-힣])(?:" + pattern + r")(?![A-Za-z0-9가-힣])", " ", name, flags=re.I)
     name = re.sub(r"\s+", " ", name).strip(" _-/()[]")
+    if color_name:
+        color = re.escape(color_name.strip())
+        name = re.sub(r"(?:[\s_/\-]+" + color + r"|\s*[\[(]\s*" + color + r"\s*[\])])$", "", name, flags=re.I).strip(" _-/()[]")
     if not name:
         raise ValueError("브랜드/품번 제거 후 실제 상품명이 없음")
     return name
@@ -476,7 +479,7 @@ def crawl(ctx):
                 continue
             if code in emitted:
                 raise ValueError("동일 색상에 공식 상품 ID가 중복됨: " + code)
-            record = dict(product_code=base, product_name=clean_name(raw_name, own, base), product_url=final,
+            record = dict(product_code=base, product_name=clean_name(raw_name, own, base, color_name), product_url=final,
                           color=color_name or code, color_name=color_name, color_code=code)
             if ctx.enabled("size"):
                 record["size"] = sizes(options)
