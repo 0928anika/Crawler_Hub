@@ -71,6 +71,19 @@ class AbsorbaTests(unittest.TestCase):
     def test_other_r2_bucket_is_not_trusted(self):
         with self.assertRaises(c.CrawlError):c.source_url('https://other.r2.dev/a/2027/item.jpg')
 
+    def test_missing_size_image_keeps_product_body(self):
+        ctx=Context()
+        def load(ctx,url,cache):
+            if 'notice_size.jpg' in url:raise c.MissingResource('HTTP 404')
+            return dict(width=800,height=3000)
+        with patch.object(c,'image',side_effect=load):
+            result=c.detail(ctx,source(),c.SITE,{})
+        urls=[n['src'] for n in c.parse(result).select('img')]
+        self.assertEqual(urls,['https://img.efe.co.kr/a/2027/AB2711BU04_DC.jpg'])
+        self.assertTrue(any('404' in log[0] for log in ctx.logs))
+        with patch.object(c,'image',side_effect=c.CrawlError('connection failed')):
+            with self.assertRaises(c.CrawlError):c.detail(ctx,source(),c.SITE,{})
+
     def test_official_identity_and_option_colors(self):
         row=c.identity(source(),'AB2711BU04')
         self.assertEqual(row['product_name'],'포트코튼모달바디슈트조끼모자')

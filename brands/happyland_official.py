@@ -282,7 +282,10 @@ def detail(ctx,doc,link,cache):
     if not urls:raise CrawlError('공식 상세 본문 이미지 없음')
     parts=[]
     for url in urls:
-        info=image(ctx,url,cache)
+        try:info=image(ctx,url,cache)
+        except MissingResource:
+            ctx.log('공식 원본에 없는 상세/사이즈 안내 이미지 404: 해당 이미지만 생략 / '+url,'WARNING')
+            continue
         if min(info['width'],info['height'])<=1:ctx.log('1픽셀 빈 상세 제외: '+url,'WARNING');continue
         parts.append('<img src="'+html.escape(url,quote=True)+'" alt="상품 상세" style="max-width:100%;height:auto"><br>')
     if not parts:raise CrawlError('유효 상세 본문 이미지 없음')
