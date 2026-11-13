@@ -76,3 +76,32 @@ Actual app worker CVAMG4T01N exit0/5photo candidates and CVTJG4T01N exit0/
 10photo candidates,zero item failures. Audit evidence in shared workspace
 clovis-failure-audit/*.json; original-size and GOSI body assets remain present.
 No app files or other brand adapters changed as part of this repair.
+
+
+2026-11-13 UPDATED SOURCE POLICY (supersedes official-only rules above)
+Source display:이랜드몰 스튜디오컷. Existing brand ID retained for compatibility.
+Search every seller; if CN003546(anybody)/LV16003596(clovis) appears, collect
+only that official seller. Official source photos are retained even when staged
+backgrounds are complex. When official seller absent, require a uniform-color
+representative background (same 10-patch metric as Renoma Fashionplus,7 matches).
+Then merge all accepted links' gallery photos and actual option labels,including
+freeform option type99; revalidate each response against its requested vendor.
+Retain raw options for manual editing;do not invent color codes. Sizes use union.
+Group pending review by model via group_manual_pending:true. Shared description
+is only the first accepted source link,independent of color-mapping choices.
+No generated size or notice table. Seller detail file1.partnerbk.com confirmed
+embedded in live item2609556364; allow for original body images only.
+Live workers:ANJS26165 exit0/5photos,CVJHG4V06M exit0/7photos,
+CVBWG3701M fallback vendorLV17006173 exit0/4photos/colors아이보리,네이비,
+size unionS,M,L,one original body image. All no item failures.
+27 regression tests (8 Anybody,13 Clovis,6 shared studio) passed.
+
+ANPM26A17 packshot repair: broad inset background patches overlapped the large
+product, matching only6/10 despite a white studio background. Retain the existing
+rule and add narrow2% outer-border patches:10/12 matches required,at least2
+on each of4 sides,same variance/distance thresholds and foreground variation.
+This supports large product shots without accepting busy borders or blank files.
+Both adapters updated. Actual representative regression fixture retained.
+Live ANPM26A17 worker exit0,zero failures,all4 seller links accepted,6 unique
+manual photo candidates,original two-image body includes AN-SIZE.jpg.
+29 regression tests passed (8 shared studio,8 Anybody,13 Clovis).

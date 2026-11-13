@@ -31,15 +31,14 @@ class ClovisTests(unittest.TestCase):
         doc=c.BeautifulSoup('<em data-searchresult-total>2</em><a class="ui-item__link" href="https://clovis.elandmall.co.kr/i/item?itemNo=2609584409&amp;lowerVendNo=LV16003596"></a><a class="ui-item__link" href="/i/item?itemNo=2&amp;lowerVendNo=OTHER"></a>','html.parser')
         with patch.object(c,'page',return_value=doc):self.assertEqual(c.search(Context(),'CVJHG4V06M'),[LINK])
 
-    def test_wrong_vendor_not_requested_and_detail_ids_rechecked(self):
-        with patch.object(c,'page') as page:
-            self.assertIsNone(c.product(Context(),LINK.replace(c.VENDOR_NO,'OTHER'),'CVJHG4V06M'));page.assert_not_called()
-        for field,value in [('lowerVendNo','OTHER'),('brandNo','OTHER'),('modelNo','WRONG')]:
+    def test_detail_ids_rechecked_and_brand_model_mismatch_excluded(self):
+        for field,value in [('brandNo','OTHER'),('modelNo','WRONG')]:
             d=source();d['itemMain'][field]=value
             with patch.object(c,'page',return_value=document(d)):
                 self.assertIsNone(c.product(Context(),LINK,'CVJHG4V06M'))
-        with patch.object(c,'page',return_value=document(source())):
-            self.assertEqual(c.product(Context(),LINK,'CVJHG4V06M')['itemMain']['brandNo'],c.BRAND_NO)
+        d=source();d['itemMain']['lowerVendNo']='OTHER'
+        with patch.object(c,'page',return_value=document(d)):
+            with self.assertRaises(c.CollectionError):c.product(Context(),LINK,'CVJHG4V06M')
 
     def test_original_gif_detail_is_preserved_but_not_gallery_candidate(self):
         raw=io.BytesIO();c.Image.new('RGB',(600,800),'white').save(raw,format='GIF')
@@ -57,20 +56,6 @@ class ClovisTests(unittest.TestCase):
         with patch.object(c,'image_info',return_value=('JPEG',1080,2200,'hash',False)) as loader:
             self.assertEqual(c.detail_images(Context(),d,'CODE',{}),[encoded])
         self.assertEqual(loader.call_args.args[1],encoded)
-
-    def test_search_rechecks_main_mall_but_keeps_vendor_filter(self):
-        empty=c.BeautifulSoup('<em data-searchresult-total>0</em>','html.parser')
-        found=c.BeautifulSoup('<em data-searchresult-total>1</em><a class="ui-item__link" href="'+LINK+'"></a>','html.parser')
-        with patch.object(c,'page',side_effect=[empty,found]) as page:
-            self.assertEqual(c.search(Context(),'CODE'),[LINK])
-        self.assertTrue(page.call_args.args[1].startswith('https://www.elandmall.co.kr/'))
-
-    def test_search_transport_failure_uses_other_official_host(self):
-        with patch.object(c,'search_site',side_effect=[c.CollectionError('timeout'),[LINK]]):
-            self.assertEqual(c.search(Context(),'CODE'),[LINK])
-        with patch.object(c,'search_site',side_effect=[c.CollectionError('timeout'),[]]):
-            with self.assertRaisesRegex(c.CollectionError,'재확인 미완료'):
-                c.search(Context(),'CODE')
 
     def test_transient_missing_product_json_is_retried(self):
         with patch.object(c,'page',side_effect=[c.BeautifulSoup('<html></html>','html.parser'),document(source())]) as page:
@@ -117,7 +102,7 @@ class ClovisTests(unittest.TestCase):
     def test_price_combinations_and_unselected_detail(self):
         for selling,normal in [(True,False),(False,True),(True,True),(False,False)]:
             ctx=Context(['main_image']+[key for key,yes in [('price',selling),('regular_price',normal)] if yes])
-            with patch.object(c,'search',return_value=[LINK]),patch.object(c,'product',return_value=source()),patch.object(c,'options',side_effect=options),patch.object(c,'gallery',return_value=[('https://item.elandrs.com/r/image/item/photo.jpg','hash')]),patch.object(c,'detail_images') as detail:
+            with patch.object(c,'studio_product',return_value=True),patch.object(c,'search',return_value=[LINK]),patch.object(c,'product',return_value=source()),patch.object(c,'options',side_effect=options),patch.object(c,'gallery',return_value=[('https://item.elandrs.com/r/image/item/photo.jpg','hash')]),patch.object(c,'detail_images') as detail:
                 c.crawl(ctx)
             self.assertFalse(ctx.errors);row=ctx.rows[0][0];detail.assert_not_called()
             self.assertEqual(row.get('price'),199000 if selling else None)
@@ -135,7 +120,7 @@ class ClovisTests(unittest.TestCase):
 
     def test_detail_output_contains_only_original_images_no_generated_tables(self):
         ctx=Context(['main_image','detail_page'])
-        with patch.object(c,'search',return_value=[LINK]),patch.object(c,'product',return_value=source()),patch.object(c,'options',side_effect=options),patch.object(c,'gallery',return_value=[('https://item.elandrs.com/r/image/item/photo.jpg','hash')]),patch.object(c,'image_info',return_value=('JPEG',1080,2200,'digest',False)):
+        with patch.object(c,'studio_product',return_value=True),patch.object(c,'search',return_value=[LINK]),patch.object(c,'product',return_value=source()),patch.object(c,'options',side_effect=options),patch.object(c,'gallery',return_value=[('https://item.elandrs.com/r/image/item/photo.jpg','hash')]),patch.object(c,'image_info',return_value=('JPEG',1080,2200,'digest',False)):
             c.crawl(ctx)
         markup=ctx.rows[0][3];self.assertEqual(markup.count('<img'),3);self.assertNotIn('<table',markup)
         self.assertEqual([row['color_code'] for row in ctx.rows[0][1]],['15','59'])

@@ -15,7 +15,7 @@ import urllib.request
 from bs4 import BeautifulSoup
 from PIL import Image, ImageStat, UnidentifiedImageError
 
-SITE = 'https://clovis.elandmall.co.kr'
+SITE = 'https://www.elandmall.co.kr'
 BRAND_NO = '1690000333'
 VENDOR_NO = 'LV16003596'
 DETAIL_MAX_BYTES = 64 * 1024 * 1024
@@ -145,6 +145,13 @@ def page(ctx, url):
     return BeautifulSoup(fetch(ctx, url, 6_000_000).decode('utf-8-sig'), 'html.parser')
 
 
+class SearchResults(list):
+    def __init__(self, links, total, vendors):
+        super().__init__(links)
+        self.total = total
+        self.vendors = vendors
+
+
 def search_site(ctx, code, site):
     links, seen, signatures = {}, set(), set()
     for number in range(1, 101):
@@ -167,10 +174,6 @@ def search_site(ctx, code, site):
             key = params['itemNo'][0],params['lowerVendNo'][0]
             if key not in current:
                 current.append(key)
-            # 검색 전체 건수는 모든 판매자를 세되 수집 링크는 지정 계정만 허용.
-            if key[1] != VENDOR_NO:
-                ctx.log('지정 판매자 외 검색 결과 제외: '+key[1], 'INFO')
-                continue
             links[key] = SITE+'/i/item?'+urlencode({'itemNo':key[0],'lowerVendNo':key[1]})
         signature = tuple(current)
         if total and (not current or signature in signatures):
@@ -178,32 +181,24 @@ def search_site(ctx, code, site):
         signatures.add(signature)
         seen.update(current)
         if len(seen)>=total:
-            return list(links.values())
+            return SearchResults(links.values(), total, sorted({vendor for _, vendor in seen}))
     raise CollectionError('검색 100페이지 안전 한도 초과: 미완료')
 
 
 def search(ctx, code):
-    errors = []
-    for site in (SITE, 'https://www.elandmall.co.kr'):
-        try:
-            links = search_site(ctx, code, site)
-            if links:
-                return links
-        except CollectionError as exc:
-            errors.append(str(exc))
-            ctx.log('공식 검색 응답 실패: 다른 공식 검색에서 재확인 / '+str(exc), 'WARNING')
-        if site == SITE:
-            ctx.log('브랜드몰 지정 판매자 검색 결과 없음: 이랜드몰 전체 검색 재확인', 'INFO')
-    if errors:
-        raise CollectionError('공식 검색 재확인 미완료(상품 없음으로 단정하지 않음): '+'; '.join(errors))
-    return []
+    result = search_site(ctx, code, SITE)
+    if not result:
+        raise CollectionError('이랜드몰 검색 결과 0건: '+code)
+    official = [url for url in result if parse_qs(urlsplit(url).query).get('lowerVendNo') == [VENDOR_NO]]
+    if official:
+        ctx.log('공식 판매자 상품 존재: %s 링크만 수집(다른 판매자 제외)' % VENDOR_NO, 'INFO')
+        return official
+    ctx.log('공식 판매자 상품 없음: 전체 판매자 %s개 링크를 스튜디오컷 검사' % len(result), 'INFO')
+    return result
 
 
 def product_once(ctx, url, code, diagnostics=None):
     params = parse_qs(urlsplit(url).query)
-    if params.get('lowerVendNo') != [VENDOR_NO]:
-        ctx.log('지정 판매자 외 상세 조회 생략: '+url,'INFO')
-        return None
     soup = page(ctx,url)
     for script in soup.find_all('script',src=False):
         text = script.get_text()
@@ -215,9 +210,6 @@ def product_once(ctx, url, code, diagnostics=None):
             main = detail['itemMain']
         except (KeyError,ValueError,TypeError) as exc:
             raise CollectionError('공식 상품 JSON 형식 변경: '+url) from exc
-        if str(main.get('lowerVendNo'))!=VENDOR_NO:
-            ctx.log('공식 응답의 판매자번호 불일치 제외: '+url,'WARNING')
-            return None
         if str(main.get('brandNo'))!=BRAND_NO or str(main.get('modelNo','')).strip().upper()!=code:
             reason='검색 결과는 있으나 실제 공식 품번/브랜드 불일치: 요청 %s, 실제 %s, 브랜드 %s / %s' % (code, main.get('modelNo'), main.get('brandNo'), url)
             if diagnostics is not None:diagnostics.append(reason)
@@ -256,11 +248,11 @@ def options(ctx, main, parent=None):
         selected=[]
         for row in rows:
             if str(row.get('itemNo'))!=str(main['itemNo']):raise CollectionError('옵션 상품 ID 불일치')
-            if str(row.get('lowerVendNo'))!=VENDOR_NO:
+            if str(row.get('lowerVendNo'))!=str(main['lowerVendNo']):
                 ctx.log('지정 판매자 외 옵션 행 제외: '+str(row.get('lowerVendNo'))+' / '+str(row.get('itemOptionName')),'WARNING')
                 continue
             selected.append(row)
-        if rows and not selected:raise CollectionError('지정 공식 판매자 옵션 행 없음')
+        if rows and not selected:raise CollectionError('조회 상품 판매자와 일치하는 옵션 행 없음')
         return selected
     except (KeyError,ValueError,TypeError) as exc:
         raise CollectionError('공식 옵션 JSON 형식 변경') from exc
@@ -270,7 +262,7 @@ def colors(ctx, rows):
     palette, actual = [], []
     for row in rows:
         ctx.checkpoint()
-        if str(row.get('itemOptionTcode'))!='10':
+        if str(row.get('itemOptionTcode')) not in ('10','99'):
             raise CollectionError('확인되지 않은 첫 옵션 유형: 색상 후보 확인 불가')
         label = str(row.get('itemOptionName') or '').strip()
         if not label:
@@ -317,11 +309,15 @@ def optional_values(ctx, main, actual, record):
     if not (ctx.enabled('size') or ctx.enabled('price')):
         return
     size_groups, price_values = [], []
+    raw_labels = list(dict.fromkeys(str(row.get('itemOptionName') or '').strip() for row in actual))
     for color in actual:
         ctx.checkpoint()
         children = options(ctx,main,color['itemOptionNo'])
-        if any(str(row.get('itemOptionTcode'))!='20' for row in children):
+        if any(str(row.get('itemOptionTcode')) not in ('20','99') for row in children):
             raise CollectionError('확인되지 않은 색상 하위 사이즈 옵션 유형')
+        for row in children:
+            raw = str(color.get('itemOptionName') or '')+' / '+str(row.get('itemOptionName') or '')
+            if raw not in raw_labels:raw_labels.append(raw)
         if ctx.enabled('size'):
             names = list(dict.fromkeys(str(row.get('itemOptionName') or '').strip() for row in children))
             size_groups.append(names if names and all(names) else None)
@@ -330,11 +326,12 @@ def optional_values(ctx, main, actual, record):
             # values must agree before one common manual-mapping price is used.
             price_values.append(money(color.get('sellPrice')))
             price_values.extend(money(row.get('sellPrice')) for row in children)
+    record['원본 옵션'] = '\n'.join(raw_labels)
     if ctx.enabled('size'):
         valid = bool(size_groups) and all(v and set(v)==set(size_groups[0] or []) for v in size_groups)
-        record['size'] = ','.join(size_groups[0]) if valid else None
+        record['size'] = ','.join(dict.fromkeys(v for group in size_groups if group for v in group)) or None
         if not valid:
-            ctx.log('색상별 공통 사이즈 미확정: 빈칸','WARNING')
+            ctx.log('색상별 사이즈가 달라 전체 옵션 사이즈를 합집합으로 수집','WARNING')
     if ctx.enabled('price'):
         record['price'] = common([money(main.get('sellprice'))]+price_values)
         if record['price'] is None:
@@ -373,16 +370,43 @@ def clean_name(name, code):
     return re.sub(r'\s+',' ',name).strip(' _-')
 
 
-def white_background(image):
-    # A corroborating gallery signal only. A seasonal model set or fabric detail
-    # may have a complex background; never reject such images for this metric.
-    im = image.convert('RGB').resize((120,120))
-    count = 0
-    for box in ((0,0,15,15),(105,0,120,15),(0,45,12,65),(108,45,120,65),
-                (0,90,12,110),(108,90,120,110),(0,105,15,120),(105,105,120,120)):
-        stat = ImageStat.Stat(im.crop(box))
-        count += min(stat.mean)>=225 and max(stat.stddev)<=18
-    return count>=5
+def studio_background(image):
+    """Uniform perimeter color; no brand logo requirement or color guessing."""
+    im=image.convert('RGB').resize((200,268))
+    boxes=[(.04,.04,.14,.12),(.86,.04,.96,.12),(.04,.88,.14,.96),(.86,.88,.96,.96)]
+    for y in (.20,.46,.72):boxes.extend([(.02,y,.10,y+.08),(.90,y,.98,y+.08)])
+    patches=[]
+    for x1,y1,x2,y2 in boxes:
+        stat=ImageStat.Stat(im.crop((int(x1*im.width),int(y1*im.height),int(x2*im.width),int(y2*im.height))))
+        patches.append((stat.mean,max(stat.stddev)))
+    best=0
+    for center,variance in patches:
+        if variance>14:continue
+        count=sum(spread<=14 and sum((a-b)**2 for a,b in zip(mean,center))<=35**2 for mean,spread in patches)
+        best=max(best,count)
+    # Large packshots may overlap the broad inset patches. Confirm the actual
+    # outer border independently, requiring matching background on every side.
+    border=[]
+    for side in range(4):
+        for pos in (.20,.46,.72):
+            box=((pos,0,pos+.08,.02) if side==0 else
+                 (pos,.98,pos+.08,1) if side==1 else
+                 (0,pos,.02,pos+.08) if side==2 else (.98,pos,1,pos+.08))
+            x1,y1,x2,y2=box
+            stat=ImageStat.Stat(im.crop((int(x1*im.width),int(y1*im.height),int(x2*im.width),int(y2*im.height))))
+            border.append((side,stat.mean,max(stat.stddev)))
+    border_best=0
+    border_ok=False
+    for _,center,variance in border:
+        if variance>14:continue
+        matched=[side for side,mean,spread in border
+                 if spread<=14 and sum((a-b)**2 for a,b in zip(mean,center))<=35**2]
+        border_best=max(border_best,len(matched))
+        if len(matched)>=10 and all(matched.count(side)>=2 for side in range(4)):
+            border_ok=True
+    foreground=ImageStat.Stat(im.crop((30,35,170,233)))
+    accepted=(best>=7 or border_ok) and max(foreground.stddev)>=6
+    return accepted,'배경 패치 %s/10, 외곽 테두리 %s/12(4방향 확인)'%(best,border_best)
 
 
 class ImageRejected(CollectionError):
@@ -390,7 +414,7 @@ class ImageRejected(CollectionError):
 
 
 def image_info(ctx, url, cache, detail=False):
-    if urlsplit(url).hostname not in ('item.elandrs.com','img-studio.elandmall.com','item-imghub.eland.co.kr'):
+    if urlsplit(url).hostname not in ('item.elandrs.com','img-studio.elandmall.com','item-imghub.eland.co.kr') and not (detail and urlsplit(url).hostname == 'file1.partnerbk.com'):
         raise CollectionError('확인되지 않은 이미지 호스트: '+url)
     key=('detail',url) if detail else url
     if key in cache:
@@ -404,7 +428,7 @@ def image_info(ctx, url, cache, detail=False):
             if w*h>(80_000_000 if detail else 40_000_000):
                 raise ImageRejected('이미지 해독 픽셀 한도 초과: '+url)
             image.load()
-            info = (fmt,w,h,hashlib.sha256(raw).hexdigest(),white_background(image))
+            info = (fmt,w,h,hashlib.sha256(raw).hexdigest(),studio_background(image)[0])
     except (UnidentifiedImageError,OSError,Image.DecompressionBombError) as exc:
         raise ImageRejected('손상 또는 이미지가 아닌 응답: '+url) from exc
     cache[key] = info
@@ -413,6 +437,18 @@ def image_info(ctx, url, cache, detail=False):
 
 NEGATIVE = re.compile(r'저작권|무단.?사용|배너|배송|교환|반품|쿠폰|copyright|banner|shipping|delivery|refund|care_',re.I)
 SELLER_PHOTO = re.compile(r'매장.?촬영|직접.?촬영|셀러.?컷|매장.?컷|seller.?photo|store.?photo',re.I)
+
+
+def studio_product(ctx, main, cache):
+    primary = next((row for row in main.get('itemImage', [])
+                    if str(row.get('imageDcode')) == '010' and row.get('imagePath')), None)
+    if primary is None:
+        raise CollectionError('대표사진 주소 없음: 스튜디오컷 판별 불가')
+    url = image_url(urljoin('https://item.elandrs.com/', primary['imagePath']))
+    result = image_info(ctx, url, cache)
+    if not result[4]:
+        ctx.log('대표사진 배경이 균일하지 않아 상품 제외: '+url, 'INFO')
+    return result[4]
 
 
 def gallery(ctx, main, cache):
@@ -441,7 +477,7 @@ def gallery(ctx, main, cache):
         complex_count += not plain
         result.append((url,digest))
     if complex_count:
-        ctx.log('갤러리 배경 보조 검사: 흰 배경 %s장, 장면형/복잡 배경 %s장. 배경으로 탈락시키지 않고 공식 장면형·디테일 컷 유지. 색상 매핑 시 확인하세요.'%(white,complex_count),'INFO' if white else 'WARNING')
+        ctx.log('갤러리 배경 보조 검사: 균일 배경 %s장, 장면형/복잡 배경 %s장. 배경으로 탈락시키지 않고 공식 장면형·디테일 컷 유지. 색상 매핑 시 확인하세요.'%(white,complex_count),'INFO')
     return result
 
 
@@ -493,6 +529,7 @@ def crawl(ctx):
         ctx.fail_item(str(exc));raise
     products,errors,cache = [],[],{}
     diagnostics=[]
+    rejected = 0
     for link in links:
         ctx.checkpoint()
         try:
@@ -501,11 +538,15 @@ def crawl(ctx):
             if data is None:
                 continue
             main = data['itemMain']
+            if str(main['lowerVendNo']) != VENDOR_NO and not studio_product(ctx, main, cache):
+                rejected += 1
+                continue
             name = clean_name(main['itemName'],code)
             if not name:
                 raise CollectionError('정리 후 필수 상품명 없음')
             palette,actual = colors(ctx,options(ctx,main))
-            record = {'product_code':code,'product_name':name,'product_url':link,'원본 상품명':main['itemName'],'판매자번호':VENDOR_NO}
+            record = {'product_code':code,'product_name':name,'product_url':link,'원본 상품명':main['itemName'],'판매자번호':str(main['lowerVendNo'])}
+            record['원본 옵션'] = '\n'.join(str(row.get('itemOptionName') or '') for row in actual)
             optional_values(ctx,main,actual,record)
             photos = gallery(ctx,main,cache)
             if not photos:
@@ -518,6 +559,7 @@ def crawl(ctx):
     if not products:
         if diagnostics:message=' / '.join(dict.fromkeys(diagnostics))
         elif errors:message='공식 검색 상품은 있으나 수집 처리 실패: '+code
+        elif rejected:message='검색 결과는 있으나 대표사진 스튜디오컷 조건 통과 상품 없음: '+code
         elif links:message='검색 결과가 있으나 지정 브랜드/품번 검증 불일치: '+code
         else:message='공식 검색에서 지정 판매자 상품 조회 안 됨(전체 사이트 미등록으로 단정하지 않음): '+code
         ctx.fail_item(message)
@@ -534,10 +576,14 @@ def crawl(ctx):
         for url in body:
             if url not in bodies:
                 bodies.append(url)
-    record = {'product_code':code,'product_name':products[0][0]['product_name'],'원본 상품명':'\n'.join(dict.fromkeys(p[0]['원본 상품명'] for p in products)),'판매자번호':VENDOR_NO}
+    record = {'product_code':code,'product_name':products[0][0]['product_name'],'원본 상품명':'\n'.join(dict.fromkeys(p[0]['원본 상품명'] for p in products)),'판매자번호':','.join(dict.fromkeys(p[0]['판매자번호'] for p in products))}
+    record['원본 옵션'] = '\n'.join(dict.fromkeys(line for p in products for line in str(p[0].get('원본 옵션') or '').splitlines() if line))
     for field in ('size','price','regular_price','category'):
         if ctx.enabled(field):
-            record[field] = common([p[0].get(field) for p in products])
+            if field == 'size':
+                record[field] = ','.join(dict.fromkeys(value for p in products for value in str(p[0].get(field) or '').split(',') if value)) or None
+            else:
+                record[field] = common([p[0].get(field) for p in products])
             if record[field] is None:
                 ctx.log(field+' 공통값 미확정: 빈칸으로 수집 계속','WARNING')
     if ctx.enabled('detail_page'):
@@ -548,7 +594,7 @@ def crawl(ctx):
         record['detail_page'] = markup
     for url,link in photos:
         ctx.checkpoint()
-        ctx.emit_unmapped(dict(record,product_url=link),palette,url,shared_detail_html=record.get('detail_page',''))
+        ctx.emit_unmapped(dict(record,product_url=products[0][0]['product_url']),palette,url,shared_detail_html=record.get('detail_page',''))
     if errors:
         raise CollectionError('일부 링크 실패. 성공 후보 보존, 입력 행 미완료: '+'; '.join(errors))
     ctx.log('%s: %s개 링크, %s개 색상, %s장 사진 수집'%(code,len(products),len(palette),len(photos)),'SUCCESS')

@@ -2,7 +2,7 @@
   "id": "clovis_eland_official",
   "name": "클라비스",
   "category": "여성의류",
-  "crawl_source": "이랜드몰 공식",
+  "crawl_source": "이랜드몰 스튜디오컷",
   "script": "clovis_eland_official.py",
   "execution_level": 1,
   "mapping_mode": "manual",
@@ -23,19 +23,20 @@
     "추가이미지",
     "상세페이지 HTML",
     "원본 상품명",
-    "판매자번호"
+    "판매자번호",
+    "원본 옵션"
   ],
   "extensions": [],
   "capabilities": {
     "size": {
       "supported": true,
       "status": "conditional",
-      "reason": "공식 옵션 API의 색상 하위 실제 사이즈. 지정판매자 행만 채택, 품절 유지. 모든 색상 사이즈 집합이 같을 때만 공통값, 다르면 빈칸과 로그."
+      "reason": "조회 상품과 같은 판매자의 실제 색상 하위 사이즈 옵션(품절 포함)을 합집합으로 수집."
     },
     "price": {
       "supported": true,
       "status": "conditional",
-      "reason": "itemMain.sellprice와 지정판매자 옵션.sellPrice 독립 판매가. 모든 채택 색상/사이즈/링크가 같은 값일 때만 공통 기록. 예시199000."
+      "reason": "판매가 itemMain.sellprice 및 조회 판매자 옵션.sellPrice 공통값. 링크/옵션별 가격이 다르면 빈칸."
     },
     "regular_price": {
       "supported": true,
@@ -50,12 +51,12 @@
     "main_image": {
       "supported": true,
       "status": "conditional",
-      "reason": "지정 판매자·브랜드·모델을 검증한 itemMain.itemImage의 실제010/030 주상품 원본. 배경으로 탈락시키지 않으며 수동 색상 매핑 후보 전달."
+      "reason": "대표사진의 주변 배경색 균일성을 판별해 통과 상품의 원본 사진을 수동 매핑 후보로 수집."
     },
     "additional_images": {
       "supported": true,
       "status": "conditional",
-      "reason": "동일 주상품의 검증된 실제 원본 사진 전체 수동 매핑 후보. 색상 자동 추측/후보 임의 자르기 없음."
+      "reason": "통과 상품들의 전체 유효 갤러리 원본을 중복 제거하여 품번별 수동 매핑 후보로 수집."
     },
     "detail_page": {
       "supported": true,
@@ -71,8 +72,8 @@
     ],
     "pattern": "^[A-Za-z0-9-]+$",
     "format": "공식 기본 품번. 대소문자 구분 없이 조회.",
-    "notes": "공식 판매자LV16003596, 브랜드1690000333, 모델명 정확 대조. 색상은 수동 매핑. (15)Gray,(59)Navy 등의 공식2자리 숫자 코드를 분리.",
-    "method": "공식 이랜드몰 검색 후 판매자·브랜드·품번 원문 검증. 지정 판매자 외 링크와 옵션 행 제외.",
+    "notes": "공식 판매자 LV16003596 검색 상품이 있으면 해당 판매자만 수집. 공식 판매자 이미지는 배경 검사로 제외하지 않음. 없으면 전체 판매자 중 대표사진 배경이 균일한 상품의 사진과 색상/사이즈 옵션을 모두 수동 매핑 후보로 수집. 상세는 첫 채택 링크 하나의 원본 본문만 공통 사용. 별도 고시/사이즈표 생성 없음.",
+    "method": "이랜드몰 품번 검색 → 공식 판매자 상품은 그대로 우선 수집 → 공식 판매자가 없으면 타 판매자 대표사진 균일 배경 검사 → 사진·원본 옵션 통합 수동 매핑",
     "required_columns": [
       "품번"
     ],
@@ -81,11 +82,12 @@
     ],
     "validation_note": "원본 본문·기본상세·고시 이미지 빠짐없이 보존. 별도 표 생성 없음."
   },
-  "notes": "클라비스 이랜드몰 공식 LV16003596 상품만. 검색 링크/상세 응답/옵션 행 판매자 재검증. 공식2자리 숫자 색상코드를 보존하고 원본 갤러리 전체를 수동 매핑 후보로 제공. 첫 채택 상품의 원본 본문 전체(기본상세·GOSI·사이즈 포함)를 모든 색상에 공통 적용하며 새 표를 생성하지 않음.",
+  "notes": "공식 판매자 LV16003596 검색 상품이 있으면 해당 판매자만 수집. 공식 판매자 이미지는 배경 검사로 제외하지 않음. 없으면 전체 판매자 중 대표사진 배경이 균일한 상품의 사진과 색상/사이즈 옵션을 모두 수동 매핑 후보로 수집. 상세는 첫 채택 링크 하나의 원본 본문만 공통 사용. 별도 고시/사이즈표 생성 없음.",
   "image_mode": "url",
   "interface": "portal_v1",
-  "code_hash": "57cd5b5661f2312ab9b246413c4f3efbcf969a997797accdd3a094617c4ea736",
+  "code_hash": "2a2e52b824a77549b2fdbe330696833a380bc2bcf79bdf789c983666296c1fb5",
   "additional_image_count": 5,
+  "group_manual_pending": true,
   "fields": {
     "product_code": {
       "label": "품번",
@@ -115,13 +117,13 @@
       "label": "사이즈",
       "supported": true,
       "status": "conditional",
-      "reason": "공식 옵션 API의 색상 하위 실제 사이즈. 지정판매자 행만 채택, 품절 유지. 모든 색상 사이즈 집합이 같을 때만 공통값, 다르면 빈칸과 로그."
+      "reason": "조회 상품과 같은 판매자의 실제 색상 하위 사이즈 옵션(품절 포함)을 합집합으로 수집."
     },
     "price": {
       "label": "판매가",
       "supported": true,
       "status": "conditional",
-      "reason": "itemMain.sellprice와 지정판매자 옵션.sellPrice 독립 판매가. 모든 채택 색상/사이즈/링크가 같은 값일 때만 공통 기록. 예시199000."
+      "reason": "판매가 itemMain.sellprice 및 조회 판매자 옵션.sellPrice 공통값. 링크/옵션별 가격이 다르면 빈칸."
     },
     "regular_price": {
       "label": "정상가",
@@ -139,13 +141,13 @@
       "label": "대표이미지",
       "supported": true,
       "status": "conditional",
-      "reason": "지정 판매자·브랜드·모델을 검증한 itemMain.itemImage의 실제010/030 주상품 원본. 배경으로 탈락시키지 않으며 수동 색상 매핑 후보 전달."
+      "reason": "대표사진의 주변 배경색 균일성을 판별해 통과 상품의 원본 사진을 수동 매핑 후보로 수집."
     },
     "additional_images": {
       "label": "추가이미지",
       "supported": true,
       "status": "conditional",
-      "reason": "동일 주상품의 검증된 실제 원본 사진 전체 수동 매핑 후보. 색상 자동 추측/후보 임의 자르기 없음."
+      "reason": "통과 상품들의 전체 유효 갤러리 원본을 중복 제거하여 품번별 수동 매핑 후보로 수집."
     },
     "detail_page": {
       "label": "상세페이지",
@@ -169,6 +171,7 @@
     "추가이미지": "additional_images",
     "상세페이지 HTML": "detail_page",
     "원본 상품명": null,
-    "판매자번호": null
+    "판매자번호": null,
+    "원본 옵션": null
   }
 }

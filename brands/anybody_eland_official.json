@@ -1,0 +1,177 @@
+{
+  "id": "anybody_eland_official",
+  "name": "애니바디",
+  "category": "여성의류",
+  "crawl_source": "이랜드몰 스튜디오컷",
+  "script": "anybody_eland_official.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_color_mapping": "manual",
+  "official_color_codes": true,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명",
+    "판매자번호",
+    "원본 옵션"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "조회 상품과 같은 판매자의 실제 색상 하위 사이즈 옵션(품절 포함)을 합집합으로 수집."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "판매가 itemMain.sellprice 및 조회 판매자 옵션.sellPrice 공통값. 링크/옵션별 가격이 다르면 빈칸."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.orgSellprice 독립 최초출시/정상가. 예시 판매가35900/정상가39900 확인. 선택 시에만 파싱, 누락/0/잘못된 형식은 빈칸과 경고로 수집 계속. 판매가 복사/역산 없음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.depth4StandardCategoryName. 브랜드 분류를 대신 넣지 않음."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "대표사진의 주변 배경색 균일성을 판별해 통과 상품의 원본 사진을 수동 매핑 후보로 수집."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "통과 상품들의 전체 유효 갤러리 원본을 중복 제거하여 품번별 수동 매핑 후보로 수집."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "첫 채택 공식 상품의 itemDesc.itemDescdocumentCon 본문 img 전체를 원문 순서로 유지. item-imghub의 detail/BASE/GOSI와 사이즈 이미지 모두 보존. 행사·배송 안내 제외, 별도 고시/사이즈표 생성 없음. 실제 본문 조회·해독 오류는 누락 성공 처리하지 않고 실패."
+    }
+  },
+  "guide": {
+    "example": "ANJS26165",
+    "examples": [
+      "ANJS26165",
+      "anjs26165"
+    ],
+    "pattern": "^[A-Za-z0-9-]+$",
+    "format": "공식 기본 품번. 대소문자 구분 없이 조회.",
+    "notes": "공식 판매자 CN003546 검색 상품이 있으면 해당 판매자만 수집. 공식 판매자 이미지는 배경 검사로 제외하지 않음. 없으면 전체 판매자 중 대표사진 배경이 균일한 상품의 사진과 색상/사이즈 옵션을 모두 수동 매핑 후보로 수집. 상세는 첫 채택 링크 하나의 원본 본문만 공통 사용. 별도 고시/사이즈표 생성 없음.",
+    "method": "이랜드몰 품번 검색 → 공식 판매자 상품은 그대로 우선 수집 → 공식 판매자가 없으면 타 판매자 대표사진 균일 배경 검사 → 사진·원본 옵션 통합 수동 매핑",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      ""
+    ],
+    "validation_note": "원본 본문·기본상세·고시 이미지 빠짐없이 보존. 별도 표 생성 없음."
+  },
+  "notes": "공식 판매자 CN003546 검색 상품이 있으면 해당 판매자만 수집. 공식 판매자 이미지는 배경 검사로 제외하지 않음. 없으면 전체 판매자 중 대표사진 배경이 균일한 상품의 사진과 색상/사이즈 옵션을 모두 수동 매핑 후보로 수집. 상세는 첫 채택 링크 하나의 원본 본문만 공통 사용. 별도 고시/사이즈표 생성 없음.",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "additional_image_count": 5,
+  "code_hash": "984a7ed1e02f867538ce7dd27e24daab402088edaf9a8cee1ed50d12106b7cbf",
+  "group_manual_pending": true,
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "조회 상품과 같은 판매자의 실제 색상 하위 사이즈 옵션(품절 포함)을 합집합으로 수집."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "판매가 itemMain.sellprice 및 조회 판매자 옵션.sellPrice 공통값. 링크/옵션별 가격이 다르면 빈칸."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.orgSellprice 독립 최초출시/정상가. 예시 판매가35900/정상가39900 확인. 선택 시에만 파싱, 누락/0/잘못된 형식은 빈칸과 경고로 수집 계속. 판매가 복사/역산 없음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.depth4StandardCategoryName. 브랜드 분류를 대신 넣지 않음."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "대표사진의 주변 배경색 균일성을 판별해 통과 상품의 원본 사진을 수동 매핑 후보로 수집."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "통과 상품들의 전체 유효 갤러리 원본을 중복 제거하여 품번별 수동 매핑 후보로 수집."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "첫 채택 공식 상품의 itemDesc.itemDescdocumentCon 본문 img 전체를 원문 순서로 유지. item-imghub의 detail/BASE/GOSI와 사이즈 이미지 모두 보존. 행사·배송 안내 제외, 별도 고시/사이즈표 생성 없음. 실제 본문 조회·해독 오류는 누락 성공 처리하지 않고 실패."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null,
+    "판매자번호": null,
+    "원본 옵션": null
+  }
+}
