@@ -1,0 +1,170 @@
+{
+  "id": "renomagolf_fashionplus",
+  "name": "레노마골프",
+  "category": "골프웨어",
+  "crawl_source": "패션플러스 스튜디오컷",
+  "script": "renomagolf_fashionplus.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_color_mapping": "manual",
+  "official_color_codes": false,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 fetch-option-data의 options[]._name 마지막 사이즈 토큰을 선택 시에만 수집. 같은 링크의 모든 색상 및 모든 채택 링크의 사이즈 집합이 동일할 때만 공통 size 문자열을 제공. 색상별로 다르거나 공통값 불명확하면 빈칸과 안내 로그. 상세 본문의 사이즈표 이미지는 별도 유지."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 페이지 .discount-detail__row의 dt가 판매가(위탁판매자 공급가)인 dd. 상단 쿠폰할인가와 구분한다. 여러 채택 링크의 값이 같을 때만 공통 판매가를 기록한다."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 페이지 .discount-detail__row dt 희망소비자가(택가)의 dd를 독립 정상가로 사용. 선택된 경우에만 파싱. 누락/0/형식 불명확/링크 간 불일치는 빈칸과 안내 로그로 계속 수집한다. 역산/판매가 복사 없음."
+    },
+    "category": {
+      "supported": false,
+      "status": "unsupported",
+      "reason": "상품별 공식 분류명 파싱 미검증. 브랜드 골프웨어 분류를 상품 카테고리로 대입하지 않음."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 검색 목록의 레노마골프 브랜드·품번을 확인하고 대표사진 가장자리10패치 중7개 이상 단색 일치(표준편차14/색차35 이내) 및 실제 전경 확인 후 상세 진입. 로고 요구 없음. 통과 링크의 원본 갤러리만 수동 매핑 후보로 전달."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "대표이미지와 같은 실제 상품 갤러리를 원래 순서로 모두 수집. 색상 추측/후보 수 제한 없음. 통짜와 복수 내부 구분선 콜라주 신호는 제외. 최종 대표/추가 수 제한은 허브에 위임."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "description-iframe 본문 영역의 img만 실제 파일 검사 후 순서대로 보존. 모다 매장/브랜드 공통/배송/행사 배너 경로와 공통 top/bottom 제외. 상품 고시·사이즈 이미지 유지, 텍스트·표 재생성 없음."
+    }
+  },
+  "guide": {
+    "example": "RMDVM4382",
+    "examples": [
+      "RMDVM4382",
+      "RWSCN8208",
+      "RWSCO8209"
+    ],
+    "pattern": "^[\\s\\S]+$",
+    "format": "기본 품번(색상 접미사 제외)을 권장. 실제 검색 후 브랜드·품번 대조.",
+    "notes": "기존 레노마골프 공홈과 별개인 패션플러스 소스. 대표 배경 단색 검사 후 수동 색상 매핑. 옵션이 사이즈만인 상품은 공식 제목의 색상3자리 코드 후보를 사용.",
+    "method": "패션플러스 공개 검색 DOM에서 레노마골프 브랜드·품번 대조, 대표배경 검사 후 해당 상품 상세만 진입.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      ""
+    ],
+    "validation_note": "상세는 본문 이미지만. 매장/배송/행사 배너 제외, 고시·사이즈표 별도 생성 없음."
+  },
+  "notes": "기존 renomagolf_official과 독립. 대표 배경 균일성으로 스튜디오컷 선별. 상품 본문 이미지 원본만 보존하고 매장전경/배송/모다아울렛 안내를 제외. 모든 색상 사진은 수동 매핑 후보로 제공.",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "code_hash": "fa35eaf70a132c6c79482e250c352822fd42da0a3ce88e832d92c981fa43570c",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 fetch-option-data의 options[]._name 마지막 사이즈 토큰을 선택 시에만 수집. 같은 링크의 모든 색상 및 모든 채택 링크의 사이즈 집합이 동일할 때만 공통 size 문자열을 제공. 색상별로 다르거나 공통값 불명확하면 빈칸과 안내 로그. 상세 본문의 사이즈표 이미지는 별도 유지."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 페이지 .discount-detail__row의 dt가 판매가(위탁판매자 공급가)인 dd. 상단 쿠폰할인가와 구분한다. 여러 채택 링크의 값이 같을 때만 공통 판매가를 기록한다."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 페이지 .discount-detail__row dt 희망소비자가(택가)의 dd를 독립 정상가로 사용. 선택된 경우에만 파싱. 누락/0/형식 불명확/링크 간 불일치는 빈칸과 안내 로그로 계속 수집한다. 역산/판매가 복사 없음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": false,
+      "status": "unsupported",
+      "reason": "상품별 공식 분류명 파싱 미검증. 브랜드 골프웨어 분류를 상품 카테고리로 대입하지 않음."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 검색 목록의 레노마골프 브랜드·품번을 확인하고 대표사진 가장자리10패치 중7개 이상 단색 일치(표준편차14/색차35 이내) 및 실제 전경 확인 후 상세 진입. 로고 요구 없음. 통과 링크의 원본 갤러리만 수동 매핑 후보로 전달."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "대표이미지와 같은 실제 상품 갤러리를 원래 순서로 모두 수집. 색상 추측/후보 수 제한 없음. 통짜와 복수 내부 구분선 콜라주 신호는 제외. 최종 대표/추가 수 제한은 허브에 위임."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "description-iframe 본문 영역의 img만 실제 파일 검사 후 순서대로 보존. 모다 매장/브랜드 공통/배송/행사 배너 경로와 공통 top/bottom 제외. 상품 고시·사이즈 이미지 유지, 텍스트·표 재생성 없음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page"
+  }
+}

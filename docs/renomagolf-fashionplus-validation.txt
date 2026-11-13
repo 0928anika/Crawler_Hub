@@ -1,0 +1,65 @@
+Renoma Golf Fashionplus studio source — 2026-11-13
+ID: renomagolf_fashionplus
+Name/source: 레노마골프 / 패션플러스 스튜디오컷
+Separate adapter/metadata from renomagolf_official. Existing official crawler
+files were not modified. Mode: manual color mapping, public image URLs.
+
+Actual public source investigation:
+https://www.fashionplus.co.kr/search/goods/result?searchWord=레노마골프
+https://www.fashionplus.co.kr/goods/detail/432217746
+https://www.fashionplus.co.kr/goods/detail/313560764
+https://www.fashionplus.co.kr/goods/detail/381140025
+Corresponding /fetch-option-data and /description-iframe URLs were observed.
+Public search uses a fresh isolated headless Chrome context because normal
+product cards are rendered dynamically. No user browser profile/cookies.
+
+Search verifies text-brand=레노마골프 and exact input code token in product
+title. Before opening any product detail, classify the representative image:
+10 perimeter patches; at least7 locally flat patches (RGB standard deviation
+<=14) matching one color within Euclidean35, plus nonempty product foreground.
+No wordmark/logo prerequisite and no clothing-color guesses. Eight observed
+clean studio thumbs passed. Synthetic uniform beige/gray/white backgrounds
+passed; blank placeholders and a complex store-like pattern were rejected.
+This is a background-uniformity heuristic, not an identity/content model.
+
+Primary gallery URLs are the explicit .m_prodetail-head-thumbnail preload
+sources. Public image decode, >=500px short side, aspect<=1.8 and collage
+signals checked. All valid candidate shots are sent to manual mapping;
+none are arbitrarily assigned to a color or cut down before user selection.
+
+Options: actual flat option data BLACK100, BLACK105, BLACK110. Some seller
+options contain only 사이즈100; those use the exact three-character color
+suffix in the verified official product title (RWSCO8209-509_IC => code509),
+not a color name inferred from the photo. Missing size-only color evidence
+fails clearly. Shared sizes/prices are blank with logs if selected product
+links disagree. Selling price is the actual 판매가(위탁판매자 공급가), separate
+from displayed coupon price. Normal price is 희망소비자가(택가), independently
+selected; missing/zero/parse failure/uncertain common value stays blank.
+
+Detail output contains only img tags from the actual description iframe body.
+No store text, table, generated size chart or generated notice table. Preserve
+the original body image order, including size/notice images embedded in it.
+Observed excluded sources (never requested as body images):
+- Hansung /renoma/img/top.jpg, winter_top.jpg, bottom.jpg common banners.
+- Platform /mall/assets/brand_info/brandImagebar.jpg.
+- /mall/md_image/moda/modaCC.jpg store guidance banner.
+- /mall/event/220413/moda_Incheon_banner_3_v1.jpg, matching the supplied Moda
+  Incheon store/shipping/exchange banner.
+- Other explicit delivery/shipping/return/copyright/store-view banner paths.
+The supplied text-only store/shipping notice is excluded because the output
+extracts images only, not arbitrary HTML or text from the seller's iframe.
+Every retained body image is actually fetched/decoded; only confirmed404 and
+one-pixel placeholders are warned and skipped. Transient image errors fail.
+
+Live worker tests with images/detail/size/both prices selected:
+RMDVM4382: exit0, six manual candidate rows, no item failures; BLACK/SAND,
+two retained original long Hansung body images, no seasonal top/bottom banners.
+Shared selling price/size uncertain across sellers => blank, normal319000.
+RWSCO8209 final run: exit0, ten candidate rows, no item failures,28 retained
+body image URLs, no /mall/event, /mall/md_image or brandImagebar URLs. Some
+seller-declared plgw files were genuinely404 and recorded as warnings.
+10 regression tests and65-brand registry/hash/syntax check passed.
+
+Fixtures contain actual relevant DOM/option excerpts from the three public
+products. Live source/worker evidence is outside the repo in renoma_fp_*.html
+and renomagolf_fashionplus-verification/ under the shared workspace.
