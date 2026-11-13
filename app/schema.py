@@ -76,7 +76,8 @@ def sanitized_html(markup):
         if src and (urlparse(src).scheme in ('http','https') or src.startswith('/sample/')):
             tag['src'] = src
             tag['referrerpolicy'] = 'no-referrer'
-    return str(soup)
+    from detail_store import registration_layout
+    return registration_layout(str(soup))
 
 def preview(headers, row, selected=None, allow_empty_product_name=False):
     selected = selection(selected)

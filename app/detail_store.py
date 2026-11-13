@@ -8,6 +8,35 @@ EXCEL_TEXT_LIMIT = 32767
 OVERFLOW_NOTICE = ''  # Oversized content is a registration error, never a download placeholder.
 
 
+DETAIL_WIDTH = 860
+
+
+def registration_layout(markup):
+    """Apply our own responsive layout after removing untrusted source styles."""
+    soup = BeautifulSoup(str(markup or ''), 'html.parser')
+    if not soup.find('img'):
+        return str(soup).strip()
+    # Unwrap outer layout containers to keep repeated exports idempotent.
+    while True:
+        roots = [node for node in soup.contents if str(node).strip()]
+        if len(roots) != 1 or getattr(roots[0], 'name', None) != 'div':
+            break
+        roots[0].unwrap()
+    for image in soup.find_all('img'):
+        image.attrs.pop('height', None)
+        image['width'] = str(DETAIL_WIDTH)
+        image['style'] = ('display:block;width:100%%;max-width:%spx;height:auto;margin:0 auto'
+                          % DETAIL_WIDTH)
+    wrapper = soup.new_tag('div')
+    wrapper['align'] = 'center'
+    wrapper['style'] = ('width:100%%;max-width:%spx;margin:0 auto;text-align:center'
+                        % DETAIL_WIDTH)
+    for node in list(soup.contents):
+        wrapper.append(node.extract())
+    soup.append(wrapper)
+    return str(soup).strip()
+
+
 def excel_detail(markup):
     """Produce compact registration HTML without cutting product content.
 
@@ -56,7 +85,7 @@ def excel_detail(markup):
         content=str(tag)
         if content in seen_blocks:tag.decompose()
         else:seen_blocks.add(content)
-    compact=str(soup).strip()
+    compact=registration_layout(str(soup))
     return (compact,False) if len(compact)<=EXCEL_TEXT_LIMIT else ('',True)
 
 
