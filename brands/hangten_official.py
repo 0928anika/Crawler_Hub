@@ -390,9 +390,9 @@ def gallery(ctx, soup, url, no, code, own):
 
 def detail_page(ctx, soup, url, base, code):
     ctx.stage("색상 " + code + " 상세 원본 이미지 수집")
-    # 실제 확인한 상품 상세 영역의 직접 자식 이미지만 조사한다.
+    # 공식 상세 영역 내부를 조사한다. 일부 상품은 빈 center 뒤에 이미지가 있다.
     # URL을 생성하지 않고 이 영역에 실제 있는 공식 링크만 선택한다.
-    images = soup.select("#prdDetail > .cont > center > img")
+    images = soup.select("#prdDetail > .cont img")
     prefix = base + "-" + code
     product_path = re.compile(
         r"^/Product/HTN/[^/]+/detail/" + re.escape(prefix) + r"_[^/]+\.(?:jpe?g|png|webp)$",
