@@ -27,4 +27,14 @@ class GroupedPendingTests(unittest.TestCase):
    rows=mapping.visible_items(job);self.assertEqual(len(rows),2)
    self.assertTrue(all(row['raw']['사이즈']=='095,100' for row in rows))
    self.assertEqual(len(job.items),2)
+ def test_hybrid_pending_view_and_export_keep_automatic_results(self):
+  palette=normalize_palette([dict(color_name='RED',color_code='')]);items=[]
+  for i,code in [(0,'AUTO'),(4,'MANUAL'),(5,'MANUAL')]:
+   values=[code,'상품','RED','https://example.com/item','M','https://example.com/'+str(i)+'.jpg','']
+   row=preview(HEADERS,values,['main_image']);row.update(id=str(i),task_id='0' if i==0 else '1',raw=dict(zip(HEADERS,values)))
+   if i:row['unmapped']=dict(colors=palette,image_url=values[5],shared_detail_html='')
+   items.append(row)
+  with tempfile.TemporaryDirectory(dir=ROOT/'tests') as folder:
+   job=SimpleNamespace(brand=dict(mapping_mode='manual',hybrid_mapping=True,group_manual_pending=True,output_headers=HEADERS),items=items,selected=['main_image'],queue=[dict(id='0',status='SUCCESS'),dict(id='1',status='SUCCESS')],dir=Path(folder),state='completed')
+   visible=mapping.visible_items(job);self.assertEqual([row['id'] for row in visible],['0','4']);self.assertEqual([row['code'] for row in visible],['AUTO','MANUAL']);self.assertEqual(len(mapping.export_sheet(job)),3)
 if __name__=='__main__':unittest.main()

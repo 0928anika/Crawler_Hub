@@ -1,0 +1,86 @@
+2026-11-14 Laughingchild official crawler
+ID laughingchild_official;display 래핑차일드 / 공식 홈페이지;automatic single-color.
+Source looxloo.com/product/detail.html?product_no=14555.
+Normalize 86c1916070 and86c19-160-70 to86C19-160-70 before official search;
+normalized SKU also output. Identity requires official laughing child brand and
+exact SKU in actual title; internal 자체상품코드316664 is not model86C19-160-70.
+Color PINK is read from scoped live option markup,not unrelated hidden stock
+popup. Exactly one color required.No invented numeric color code. All sizes
+100,110,120,130,140 retained despite disabled/soldout flags.
+Selling111300 from 할인판매가,normal159000 independently from 소비자가.
+Do not use 최적할인가100170 or coupon147870.Category 겨울아우터 is source path.
+Gallery7 actual CDN product images verified;main and5 additional slots provided.
+Detail selects original data-origin-src URLs in #prdDetail > .cont,11 product
+photos and original descriptions. Exclude brand intro/shipping notice images
+and small purchasing-tip/KC icons;do not create false certification digits.
+Preserve recommended size HTML table,source GOSI table with real manufacturing,
+fabric,origin,washing and AS text. Convert div-based brand-common size grid to
+an actual HTML table with original row labels,values and empty cells unchanged.
+Do not mistake recommendation150/160 for selectable option sizes100..140.
+Source general chart contains23~17 at one cell;preserved,not silently corrected.
+Total3 tables in original body order. Common APP centers output at860px.
+Actual all-field worker for both input formats:exit0,one automatic result each,
+identical normalized row contents. Exported HTML6019chars,11imgs,3tables.
+7 regression tests pass;70-brand registry/hash/syntax check passes.
+Fixtures relevant product regions and search card under tests/fixtures/laughingchild.
+Live evidence outside repo:laughingchild_live.txt,laughingchild-verification/.
+
+
+2026-11-14 FAILURE AUDIT AND PRESENTATION UPDATE (supersedes assumptions above)
+Actual80-input job:24success,56failure. Failures included32zero-result alert
+scripts misread as missing count,23multiple-color guards,and1missing widget.
+Source does in fact have multi-color options. Remove single-color gate:
+single-color automatic;all actual multi-color options/photos to model-level
+manual mapping,never invent photo-to-color assignment. Hybrid metadata supported.
+Exact0 alert is parsed;fallback to style prefix search and require requested
+SKU explicitly in original body image URL/alt,with same-family title/brand.
+No widgets:use explicit product notice color/size lists only,not recommendation
+sizes. All CrawlError failures are reported with actual reason instead of exit1.
+Normal live source responses captured for66/80;47were previously failed.
+All66passed reprocessing with image validation mocked (NOT live image/download
+proof).14remain unconfirmed because source started returning Cafe24 access
+checks;includes9previous failures. Do not label these absent.No challenge bypass.
+
+Detail rebuilt as title,color/material information table,all original product
+images,recommended size table,notice table,andbrand-common size table.
+Remove promotional prose,AI disclaimers,purchase TIP,anddetached COLOR/FABRIC
+spans.13brand regression tests pass.6common layout tests pass,including table
+borders,padding,header shading,heading size and idempotent export/preview.
+Common table appearance implemented in app/detail_store.py after sanitizing.
+Real Chrome tables rendered at1440and375px without horizontal overflow.
+Presentation preview in workspace laughingchild_clean_preview.html;
+source audit in laughingchild-failure-audit/summary.json and reparsed.json.
+
+
+FINAL RECHECK / SDK AND REVIEW REPAIR
+After source returned normal responses,all14previously unconfirmed codes were
+rechecked sequentially and found. All80input SKUs exist in source;none confirmed
+absent. Original56failures were source parsing/option handling bugs,not absence.
+Single-color automatic emission in manual/hybrid metadata requires the SDK
+allow_automatic_results flag;previous adapter omitted it. Fixed and tested using
+actual CrawlContext.finish(),not only fake contexts or automatic-mode workers.
+Live manual-mode worker86C1916172 exit0/1automatic row;86C1916230 exit0/7manual
+photo candidates. Both no failures,including source text/table detail.
+APP pending grouped hybrid view/export now includes automatic results too,
+keeping original stable row IDs. Archived rows from FAILED tasks can be opened
+for review even when not eligible for mapping/export.Real saved job checks:
+86C1916070 and86C1916172 FAILED rows open,86C1916230 SUCCESS row opens.
+Explicit 2-letter source codes are preserved as codes;do not infer BR fromBROWN.
+15adapter tests,6layout tests,2grouped-hybrid tests,5result-ID tests passed.
+Live evidence laughingchild_hybrid_fixed.txt;actual worker used mapping_mode
+from brand metadata,not a hardcoded automatic-mode verification setting.
+
+
+2026-11-14 Product text restoration and mapping photo expansion
+User clarified:retain actual product introduction and photo-specific captions;
+only remove purchase TIP,AI disclaimers and common banners. Restore paragraphs
+from the title introduction section and captions from syn_*prdImageDe blocks.
+Keep color/material information as separated table rows. APP applies14px muted
+paragraphs with1.8line-height and14px vertical spacing;source prose stays intact.
+For multi-color manual mapping only,include original SKU-labelled detail packshots
+from all colors in the same8-character style family. Require actual SKU in
+source URL/alt;do not harvest unrelated editorial looks,icons,banners,tables,
+long composite images or low-resolution assets. Deduplicate URLs/byte digests.
+Actual manual-mode worker86C1916230 exit0,19candidate rows,no failures:
+7gallery plus12detail packshots. Product introduction and captions restored.
+17brand tests and6layout tests passed. Other adapters unchanged.

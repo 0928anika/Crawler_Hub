@@ -48,6 +48,11 @@ def find_result_item(job, items, item_id, grouped_pending=False):
             item = next((row for row in items
                          if row.get('task_id') == source.get('task_id')
                          and row.get('code') == source.get('code')), None)
+    if item is None:
+        source = next((row for row in job.items if str(row['id']) == str(item_id)), None)
+        if source is not None and any(str(q['id']) == str(source.get('task_id')) and q['status'] == 'FAILED' for q in job.queue):
+            # Failed collection may still have a real archived result to inspect.
+            item = source
     return item
 
 

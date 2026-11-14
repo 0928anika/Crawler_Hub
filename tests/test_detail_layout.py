@@ -19,6 +19,11 @@ class DetailLayoutTests(unittest.TestCase):
  def test_tables_text_and_original_image_order_preserved(self):
   source='<h2>사이즈표</h2><table><tr><td colspan="2">95</td></tr></table><img src="https://example.com/1.jpg"><img src="https://example.com/2.jpg">'
   output,_=excel_detail(source);soup=BeautifulSoup(output,'html.parser');self.assertEqual(soup.td['colspan'],'2');self.assertIn('사이즈표',soup.get_text());self.assertEqual([x['src'] for x in soup.select('img')],['https://example.com/1.jpg','https://example.com/2.jpg'])
+ def test_readable_tables_and_headings_survive_export_and_preview(self):
+  output,_=excel_detail('<h2>소재</h2><table><tr><th>색상</th><td>IVORY</td></tr></table><img src="https://example.com/a.jpg">')
+  soup=BeautifulSoup(output,'html.parser');self.assertIn('border-collapse:collapse',soup.table['style']);self.assertIn('background:#f6f6f6',soup.th['style']);self.assertIn('padding:10px',soup.td['style']);self.assertIn('font-size:20px',soup.h2['style'])
+  again,_=excel_detail(output);self.assertEqual(again,output)
+  self.assertIn('border-collapse:collapse',sanitized_html(output))
  def test_overflow_checked_after_layout_added_and_empty_stays_empty(self):
   self.assertEqual(excel_detail(''),('',False));output,overflow=excel_detail('<p>'+('x'*EXCEL_TEXT_LIMIT)+'</p><img src="https://example.com/a.jpg">');self.assertEqual(output,'');self.assertTrue(overflow)
 if __name__=='__main__':unittest.main()

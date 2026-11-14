@@ -27,6 +27,18 @@ def registration_layout(markup):
         image['width'] = str(DETAIL_WIDTH)
         image['style'] = ('display:block;width:100%%;max-width:%spx;height:auto;margin:0 auto'
                           % DETAIL_WIDTH)
+    for table in soup.find_all('table'):
+        table['border'] = '1'
+        table['cellpadding'] = '8'
+        table['cellspacing'] = '0'
+        table['style'] = 'width:100%;border-collapse:collapse;margin:16px auto;font-size:14px;line-height:1.6;color:#333'
+        for cell in table.find_all(['th','td']):
+            cell['style'] = 'border:1px solid #ddd;padding:10px;text-align:left;vertical-align:top;overflow-wrap:anywhere'
+            if cell.name == 'th':cell['style'] += ';background:#f6f6f6;font-weight:bold'
+    for paragraph in soup.find_all('p'):
+        paragraph['style'] = 'font-size:14px;line-height:1.8;color:#444;margin:14px auto;text-align:left'
+    for heading in soup.find_all(['h1','h2','h3']):
+        heading['style'] = 'font-size:20px;line-height:1.5;margin:28px 0 14px'
     wrapper = soup.new_tag('div')
     wrapper['align'] = 'center'
     wrapper['style'] = ('width:100%%;max-width:%spx;margin:0 auto;text-align:center'

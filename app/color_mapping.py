@@ -318,7 +318,13 @@ def visible_items(job):
     if not is_manual(job):return job.items
     view=snapshot(job)
     if view['finalized']:return final_items(job,view)
-    return grouped_pending_items(job) if job.brand.get('group_manual_pending') else job.items
+    if job.brand.get('group_manual_pending'):
+        rows=grouped_pending_items(job)
+        if is_hybrid(job):
+            rows=automatic_items(job)+rows
+            rows.sort(key=lambda row:int(row['id']))
+        return rows
+    return job.items
 
 
 def grouped_pending_items(job):
@@ -348,7 +354,7 @@ def export_sheet(job):
         return [headers]+[[item['raw'].get(h) for h in headers] for item in rows]
     if job.brand.get('group_manual_pending'):
         headers=result_headers(job)
-        return [headers]+[[item['raw'].get(h) for h in headers] for item in grouped_pending_items(job)]
+        return [headers]+[[item['raw'].get(h) for h in headers] for item in visible_items(job)]
     if is_hybrid(job):
         headers=result_headers(job)+['매핑상태']
         return [headers]+[[item['raw'].get(h) for h in headers[:-1]]+['색상 매핑 대기' if item.get('unmapped') else '공식 색상 자동 매핑 완료'] for item in successful_items(job)]

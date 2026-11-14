@@ -15,6 +15,10 @@ class ResultIdTests(unittest.TestCase):
   self.assertIs(server.find_result_item(self.job,self.rows,'1',True),self.rows[0]);self.assertIs(server.find_result_item(self.job,self.rows,'5',True),self.rows[1])
  def test_unknown_or_finalized_hidden_id_not_substituted(self):
   self.assertIsNone(server.find_result_item(self.job,self.rows,'999',True));self.assertIsNone(server.find_result_item(self.job,self.rows,'5',False))
+ def test_failed_collected_row_can_be_opened_even_if_hidden_from_mapping(self):
+  self.job.queue[0]['status']='FAILED'
+  self.assertIs(server.find_result_item(self.job,[],'1',True),self.job.items[1])
+  self.assertIsNone(server.find_result_item(self.job,[],'5',True))
  def test_http_detail_and_raw_for_grouped_ids(self):
   with patch.object(server,'job_for',return_value=self.job),patch.object(server.color_mapping,'visible_items',return_value=self.rows),patch.object(server.color_mapping,'snapshot',return_value=dict(finalized=False)):
    hub=server.ThreadingHTTPServer(('127.0.0.1',0),server.Handler);thread=threading.Thread(target=hub.serve_forever,daemon=True);thread.start()
