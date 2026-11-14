@@ -17,7 +17,7 @@ from crawler_rules import check_public_image, validate_gallery_image, gallery_sl
 
 SITE = 'https://www.giordano.co.kr'
 HOSTS = ('www.giordano.co.kr', 'giordano.co.kr')
-REVISION = '2026-11-14-giordano-4'
+REVISION = '2026-11-14-giordano-5'
 # 인명 표기 상품의 갤러리 전용 보수적 휴리스틱. 사람 신원/AI 여부 판별 아님.
 # 양쪽 상단 12.5% 영역의 채널별 표준편차 <= 8, 평균색 차이 <= 32 (스튜디오 조명 그라데이션 허용).
 BACKGROUND_MAX_NOISE = 8.0
@@ -113,7 +113,10 @@ def identity(doc, base):
     title = doc.select_one('form[name="prdFrm"] input[name="product_name"]')
     raw = title.get('value', '').strip() if title else ''
     # 원본을 먼저 보존하고, 표준 상품명에서만 광고 표기와 인명 제거.
-    title_text = re.sub(r'\[[가-힣]{2,4}\]', lambda m: '' if named_campaign(m[0]) else m[0], raw)
+    people=campaign_names(raw)
+    title_text=re.sub(r'\[[^\]]+\]',lambda m:'' if any(person in m[0] for person in people) else m[0],raw)
+    for person in people:
+        title_text=re.sub(r'(?<![가-힣])'+re.escape(person)+r'(?![가-힣])','',title_text)
     title_text = re.sub(r'(?<!\w)NEW(?!\w)', '', title_text, flags=re.I)
     name = clean_product_name(title_text, ['지오다노', 'GIORDANO'], [base])
     if not name:
@@ -197,21 +200,25 @@ def gallery_urls(ctx, doc, option_id):
     return result
 
 
-def detail_urls(doc, final):
-    result = []
-    # 상세 본문 + 실측 이미지 + 상품정보고시 이미지만. 별도 소재정보 ch는 제외.
-    nodes = list(doc.select('#detail .detail_info .wing-detail-more-contents img'))
-    nodes.extend(doc.select('#det_size_info .size_img img'))
-    nodes.extend(n for n in doc.select('.prd_detail_content_gio img') if '상품정보고시' in n.get('data-layer_title', ''))
-    for node in nodes:
-        url = urljoin(final, node.get('data-src') or node.get('src') or '')
-        if not official(url) or not urlsplit(url).path.startswith(('/_gio_on/', '/_data/')):
-            continue
-        if re.search(r'review|shipping|delivery|banner|coupon|care|배송|교환|반품|쿠폰', url + ' ' + node.get('alt', ''), re.I):
-            continue
-        if url not in result:
-            result.append(url)
-    return result
+def skip_first_campaign_image(urls, has_person):
+    return urls[1:] if has_person and len(urls)>1 else urls
+
+
+def detail_urls(doc, final, exclude_first=False):
+    def gather(nodes):
+        result=[]
+        for node in nodes:
+            url=urljoin(final,node.get('data-src') or node.get('src') or '')
+            if not official(url) or not urlsplit(url).path.startswith(('/_gio_on/','/_data/')):continue
+            if re.search(r'review|shipping|delivery|banner|coupon|care|배송|교환|반품|쿠폰',url+' '+node.get('alt',''),re.I):continue
+            if url not in result:result.append(url)
+        return result
+    # Count product body pictures separately; a size/notice image is not a second product picture.
+    body=gather(doc.select('#detail .detail_info .wing-detail-more-contents img'))
+    body=skip_first_campaign_image(body,exclude_first)
+    extra=list(doc.select('#det_size_info .size_img img'))
+    extra.extend(n for n in doc.select('.prd_detail_content_gio img') if '상품정보고시' in n.get('data-layer_title',''))
+    return list(dict.fromkeys(body+gather(extra)))
 
 
 def public_image(ctx, url, cache):
@@ -238,11 +245,18 @@ def prefetch(ctx, urls, cache):
             ctx.checkpoint()
 
 
+def campaign_names(raw_name):
+    labels=re.findall(r'\[([가-힣]{2,4})\]',raw_name)
+    exclusions={'남성','여성','공용','키즈','주니어','온라인','신상품','남성용','여성용','한정','단독','한정특가','특가','신상','기획','기모'}
+    names=[label for label in labels if label not in exclusions]
+    # Also observed without brackets in the official title of 01026980.
+    for name in ('변우석','문가영','박현지'):
+        if re.search(r'(?<![가-힣])'+name+r'(?![가-힣])',raw_name) and name not in names:names.append(name)
+    return names
+
+
 def named_campaign(raw_name):
-    # 실제 공식 제목 [박현지], [변우석], [문가영]과 같은 인명형 표기.
-    # 상품 제목의 다른 대괄호 분류는 인명으로 취급하지 않는다.
-    labels = re.findall(r'\[([가-힣]{2,4})\]', raw_name)
-    return any(label not in {'남성', '여성', '공용', '키즈', '주니어', '온라인', '신상품', '남성용', '여성용', '한정', '단독'} for label in labels)
+    return bool(campaign_names(raw_name))
 
 
 def uniform_background(data):
@@ -328,7 +342,8 @@ def collect(ctx, doc, final, base, requested, emitted, cache):
         return []
     options = [c for c in colors(doc, base) if not requested or c['color_code'] == requested]
     # 선택된 데이터만 파싱/요청. 공통 상세는 품번당 한 번 확인한다.
-    details = detail_urls(doc, final) if ctx.enabled('detail_page') else []
+    has_person=named_campaign(common['원본 상품명'])
+    details = detail_urls(doc, final, exclude_first=has_person) if ctx.enabled('detail_page') else []
     if ctx.enabled('detail_page'):
         if not doc.select('#det_size_info .size_img img'):
             ctx.log('공식 실측 사이즈 이미지 없음: 별도 표 생성 없이 진행', 'WARNING')
@@ -351,6 +366,7 @@ def collect(ctx, doc, final, base, requested, emitted, cache):
             if ctx.enabled('category'):
                 record['category'] = ' > '.join(n.get_text(' ', strip=True) for n in doc.select('.navi a[class^="prdpath"]') if '/shop/big_section.php' in n.get('href', ''))
             photos = gallery_urls(ctx, doc, option['option_id']) if ctx.enabled('main_image') or ctx.enabled('additional_images') else []
+            photos=skip_first_campaign_image(photos,has_person)
             prefetch(ctx, photos + details, cache)
             if ctx.enabled('main_image') or ctx.enabled('additional_images'):
                 main, extras, warning = gallery(ctx, photos, code, cache, filter_background=named_campaign(common['원본 상품명']))

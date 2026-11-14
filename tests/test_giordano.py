@@ -186,5 +186,31 @@ class GiordanoTests(unittest.TestCase):
             c.detail(Context(),[original],{original:dict(status='unknown',reasons=['timeout'])})
         self.assertEqual(image.call_count,1)
 
+    def test_person_names_with_or_without_brackets_are_removed(self):
+        for raw in ('[변우석] 기모 테리 맨투맨','변우석 기모 테리 맨투맨','[문가영] 기모 테리 맨투맨'):
+            self.doc.select_one('input[name=product_name]')['value']=raw
+            self.assertEqual(c.identity(self.doc,'05586901')['product_name'],'기모 테리 맨투맨')
+            self.assertTrue(c.named_campaign(raw))
+        self.assertFalse(c.named_campaign('[남성] 기모 테리 맨투맨'))
+
+    def test_campaign_first_gallery_is_skipped_only_when_multiple(self):
+        self.assertEqual(c.skip_first_campaign_image(['first','second'],True),['second'])
+        self.assertEqual(c.skip_first_campaign_image(['first'],True),['first'])
+        self.assertEqual(c.skip_first_campaign_image(['first','second'],False),['first','second'])
+        self.doc.select_one('input[name=product_name]')['value']='[변우석] 기모 맨투맨'
+        urls=[c.SITE+'/_data/attach/first.jpg',c.SITE+'/_data/attach/second.jpg']
+        with patch.object(c,'gallery_urls',return_value=urls),patch.object(c,'gallery',return_value=('second',['second']*5,'')) as gallery:
+            c.collect(Context(('main_image','additional_images')),self.doc,c.SITE+'/shop/detail.php?pno=x','05586901','01',set(),{})
+        self.assertEqual(gallery.call_args.args[1],urls[1:])
+
+    def test_campaign_detail_keeps_single_body_plus_size_and_notice(self):
+        def doc(count):
+            body=''.join('<img src="/_gio_on/2026/body'+str(n)+'.jpg">' for n in range(count))
+            return c.parse('<div id="detail"><div class="detail_info"><div class="wing-detail-more-contents">'+body+'</div></div></div><div id="det_size_info"><div class="size_img"><img src="/_gio_on/2026/size.png"></div></div><div class="prd_detail_content_gio"><img data-layer_title="상품정보고시" src="/_gio_on/2026/notice.png"></div>')
+        one=c.detail_urls(doc(1),c.SITE,exclude_first=True)
+        self.assertEqual(one,[c.SITE+'/_gio_on/2026/body0.jpg',c.SITE+'/_gio_on/2026/size.png',c.SITE+'/_gio_on/2026/notice.png'])
+        two=c.detail_urls(doc(2),c.SITE,exclude_first=True)
+        self.assertEqual(two,[c.SITE+'/_gio_on/2026/body1.jpg',c.SITE+'/_gio_on/2026/size.png',c.SITE+'/_gio_on/2026/notice.png'])
+
 if __name__ == '__main__':
     unittest.main()
