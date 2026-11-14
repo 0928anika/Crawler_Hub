@@ -17,11 +17,11 @@ from crawler_rules import check_public_image, validate_gallery_image, gallery_sl
 
 SITE = 'https://www.giordano.co.kr'
 HOSTS = ('www.giordano.co.kr', 'giordano.co.kr')
-REVISION = '2026-11-10-giordano-3'
+REVISION = '2026-11-14-giordano-4'
 # 인명 표기 상품의 갤러리 전용 보수적 휴리스틱. 사람 신원/AI 여부 판별 아님.
-# 양쪽 상단 12.5% 영역의 채널별 표준편차 <= 8, 평균색 차이 <= 10.
+# 양쪽 상단 12.5% 영역의 채널별 표준편차 <= 8, 평균색 차이 <= 32 (스튜디오 조명 그라데이션 허용).
 BACKGROUND_MAX_NOISE = 8.0
-BACKGROUND_MAX_DIFFERENCE = 10.0
+BACKGROUND_MAX_DIFFERENCE = 32.0
 POLICY = dict(checked_on='2026-11-10', source='https://marketplace.coupang.com/mba/listing',
               route='WING 웹/엑셀', min_side=500, max_bytes=10000000,
               formats=['JPEG', 'PNG', 'WEBP'], max_aspect=1.8)
@@ -258,8 +258,13 @@ def uniform_background(data):
     right = ImageStat.Stat(image.crop((140, 0, 160, 25)))
     noise = max(left.stddev + right.stddev)
     difference = max(abs(a - b) for a, b in zip(left.mean, right.mean))
-    passed = noise <= BACKGROUND_MAX_NOISE and difference <= BACKGROUND_MAX_DIFFERENCE
-    return passed, f'가장자리 배경 질감={noise:.1f}/8, 좌우 색차={difference:.1f}/10'
+    passed = noise <= BACKGROUND_MAX_NOISE and difference <= 10
+    if not passed and noise <= BACKGROUND_MAX_NOISE and difference <= BACKGROUND_MAX_DIFFERENCE:
+        # A lighting gradient is safe only when both side backgrounds remain smooth.
+        side_noise=max(max(ImageStat.Stat(image.crop((x,y,x+20,y+20))).stddev)
+                       for x in (0,140) for y in (25,50,75,100))
+        passed=side_noise<=BACKGROUND_MAX_NOISE
+    return passed, f'가장자리 배경 질감={noise:.1f}/8, 좌우 색차={difference:.1f}/32'
 
 
 def gallery(ctx, urls, code, cache, filter_background=False):
@@ -292,6 +297,17 @@ def detail(ctx, urls, cache):
     for url in urls:
         ctx.checkpoint()
         if not public_image(ctx, url, cache):
+            # Some official size links point to JPG while the same asset is PNG.
+            # Only try the exact same official size/notice basename; validate bytes.
+            replacement=None
+            if re.search(r'/_gio_on/.*(?:size|gosi)\.(?:jpg|jpeg|png)$',url,re.I) and cache.get(url,{}).get('status')=='inaccessible':
+                for extension in ('.png','.jpg','.jpeg'):
+                    candidate=re.sub(r'\.(?:jpg|jpeg|png)$',extension,url,flags=re.I)
+                    if candidate!=url and public_image(ctx,candidate,cache):
+                        replacement=candidate;break
+            if replacement:
+                ctx.log('공식 상세 이미지 확장자 보정: '+url+' → '+replacement,'WARNING')
+                parts.append('<p><img src="'+html.escape(replacement,quote=True)+'" alt="상품 상세정보"></p>');continue
             if any(re.search(r'HTTP (404|410)\b', r) for r in cache.get(url, {}).get('reasons', [])):
                 ctx.log('없는 상세 원본 이미지 생략: ' + url, 'WARNING')
                 continue
@@ -318,7 +334,7 @@ def collect(ctx, doc, final, base, requested, emitted, cache):
             ctx.log('공식 실측 사이즈 이미지 없음: 별도 표 생성 없이 진행', 'WARNING')
         if not any('상품정보고시' in n.get('data-layer_title', '') for n in doc.select('.prd_detail_content_gio img')):
             ctx.log('공식 상품정보고시 이미지 없음: 별도 표 생성 없이 진행', 'WARNING')
-    failures = []
+    failures = [];detail_html=None
     for option in options:
         code = option['color_code']
         if code in emitted:
@@ -345,7 +361,8 @@ def collect(ctx, doc, final, base, requested, emitted, cache):
                 if ctx.enabled('additional_images'):
                     record['additional_images'] = ','.join(extras)
             if ctx.enabled('detail_page'):
-                record['detail_page'] = detail(ctx, details, cache)
+                if detail_html is None:detail_html=detail(ctx, details, cache)
+                record['detail_page'] = detail_html
             ctx.emit_result(record)
             emitted.add(code)
         except Exception as exc:

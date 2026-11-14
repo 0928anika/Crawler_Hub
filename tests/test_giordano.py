@@ -168,5 +168,23 @@ class GiordanoTests(unittest.TestCase):
             background.assert_not_called()
 
 
+    def test_studio_lighting_gradient_does_not_remove_real_gallery(self):
+        for name in ('studio_gradient_white.jpg','studio_gradient_blue.jpg'):
+            self.assertTrue(c.uniform_background((ROOT/'tests/fixtures/giordano/background'/name).read_bytes())[0])
+
+    def test_wrong_size_extension_uses_verified_same_basename_png(self):
+        original=c.SITE+'/_gio_on/2026/01026980size.jpg';correct=original[:-4]+'.png';cache={}
+        def image(ctx,url,cache):
+            if url==correct:return {'data':b'validated'}
+            cache[url]=dict(status='inaccessible',reasons=['로그인·오류 HTML 응답']);return None
+        with patch.object(c,'public_image',side_effect=image):result=c.detail(Context(),[original],cache)
+        self.assertIn(correct,result);self.assertNotIn(original,result)
+
+    def test_transient_detail_failure_does_not_guess_another_extension(self):
+        original=c.SITE+'/_gio_on/2026/01026980size.jpg'
+        with patch.object(c,'public_image',return_value=None) as image,self.assertRaises(ValueError):
+            c.detail(Context(),[original],{original:dict(status='unknown',reasons=['timeout'])})
+        self.assertEqual(image.call_count,1)
+
 if __name__ == '__main__':
     unittest.main()
