@@ -135,7 +135,7 @@ class GiordanoTests(unittest.TestCase):
         ctx = Context(('main_image',))
         with patch.object(c, 'gallery_urls', return_value=[]), patch.object(c, 'gallery', return_value=('', [], '')) as gallery:
             c.collect(ctx, self.doc, c.SITE + '/shop/detail.php?pno=verified', '05586901', '01', set(), {})
-            self.assertTrue(gallery.call_args.kwargs['filter_background'])
+            self.assertFalse(gallery.call_args.kwargs['filter_background'])
         self.assertEqual(ctx.rows[0]['product_name'], '울캐시 발마칸 코트')
 
     def test_real_scene_backgrounds_are_rejected_and_plain_shots_remain(self):
@@ -211,6 +211,23 @@ class GiordanoTests(unittest.TestCase):
         self.assertEqual(one,[c.SITE+'/_gio_on/2026/body0.jpg',c.SITE+'/_gio_on/2026/size.png',c.SITE+'/_gio_on/2026/notice.png'])
         two=c.detail_urls(doc(2),c.SITE,exclude_first=True)
         self.assertEqual(two,[c.SITE+'/_gio_on/2026/body1.jpg',c.SITE+'/_gio_on/2026/size.png',c.SITE+'/_gio_on/2026/notice.png'])
+
+    def test_missing_year_uses_year_from_same_product_body(self):
+        doc=c.parse('<div id="detail"><div class="detail_info"><div class="wing-detail-more-contents"><img src="/_gio_on/2026/01076921_.jpg"></div></div></div><div class="prd_detail_content_gio"><img data-layer_title="상품정보고시" src="/_gio_on//01076921info.jpg"></div>')
+        self.assertIn(c.SITE+'/_gio_on/2026/01076921info.jpg',c.detail_urls(doc,c.SITE))
+
+    def test_official_soft_error_image_is_omitted_but_valid_body_remains(self):
+        good=c.SITE+'/_gio_on/2026/body.jpg';bad=c.SITE+'/_gio_on/2026/01026957size.jpg';cache={}
+        def image(ctx,url,cache):
+            if url==good:return {'data':b'validated'}
+            cache[url]=dict(status='inaccessible',reasons=['로그인·오류 HTML 응답']);return None
+        with patch.object(c,'public_image',side_effect=image),patch.object(c,'fetch',return_value=('<!-- ERROR PAGE -->[페이지 접근 불가]',bad)):
+            result=c.detail(Context(),[good,bad],cache)
+        self.assertIn(good,result);self.assertNotIn(bad,result)
+
+    def test_login_html_is_not_silently_omitted(self):
+        bad=c.SITE+'/_gio_on/2026/body.jpg';cache={bad:dict(status='inaccessible',reasons=['로그인·오류 HTML 응답'])}
+        with patch.object(c,'public_image',return_value=None),patch.object(c,'fetch',return_value=('<html>로그인</html>',bad)),self.assertRaises(ValueError):c.detail(Context(),[bad],cache)
 
 if __name__ == '__main__':
     unittest.main()

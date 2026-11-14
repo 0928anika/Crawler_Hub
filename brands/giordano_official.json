@@ -51,12 +51,12 @@
     "main_image": {
       "supported": true,
       "status": "conditional",
-      "reason": "STYLE과 colorchip_auto 전체 SKU 일치 후 ppno + 색상 option ID로 getAddImgList 조회. 공식 색상별 갤러리의 실제 공개 파일 검사. 인명 표기 상품은 양쪽 상단 배경 균일도 검사 후 채택."
+      "reason": "공식 STYLE/색상 SKU 대조 후 색상별 공개 갤러리 수집. 사람 이름 상품은 첫 컷 제외, 한 컷뿐이면 유지. 추가 배경 필터 없음."
     },
     "additional_images": {
       "supported": true,
       "status": "conditional",
-      "reason": "동일 색상 갤러리의 유효 컷만 5슬롯. 추가 컷 부족 시 통과 컷 반복. 배경 검사에서 제외된 사진은 반복 슬롯에도 사용하지 않음."
+      "reason": "동일 색상 갤러리의 실제 공개 사진. 첫 컷 제외 규칙 적용 후 부족한 추가 슬롯은 남은 컷 반복."
     },
     "detail_page": {
       "supported": true,
@@ -84,7 +84,7 @@
     ],
     "validation_note": "실제 상품과 색상 존재는 실행 시 검증."
   },
-  "notes": "공식 홈페이지 공개 응답 직접 조회. 상품명에서 브랜드·품번 제거, 원본 상품명 보존. 사이즈표·고시는 원본 이미지 유지하며 별도 표를 만들지 않음. 회원 쿠폰가가 아닌 명시적 판매가 수집. 정상가는 독립 소비자가 확인 시에만 제공. WING 등록 자체는 검증하지 않음. 표준 상품명에서 NEW와 인명형 대괄호 표기를 제거하며 원본 상품명은 보존합니다. 인명형 대괄호 표기 상품은 대표·추가 사진의 상단 양쪽 배경 질감/색차를 검사해 비균일·불명확 컷을 제외합니다. 사람 신원이나 AI 여부를 판별하는 기능은 아니며 일부 클로즈업도 보수적으로 제외될 수 있습니다.",
+  "notes": "공식 STYLE/색상 SKU 검증. 사람 이름 제거, 원본 상품명 보존. 이름 있는 상품은 갤러리/상세 본문 각각 첫 사진 제외(한 장뿐이면 유지). 사이즈/고시는 제외 대상 아님. 고장난 연도/확장자는 검증 후 보정, 공식 오류페이지 원본만 경고 후 제외. 통신 실패/로그인 HTML은 실패 유지.",
   "fields": {
     "product_code": {
       "label": "품번",
@@ -138,13 +138,13 @@
       "label": "대표이미지",
       "supported": true,
       "status": "conditional",
-      "reason": "STYLE과 colorchip_auto 전체 SKU 일치 후 ppno + 색상 option ID로 getAddImgList 조회. 공식 색상별 갤러리의 실제 공개 파일 검사. 인명 표기 상품은 양쪽 상단 배경 균일도 검사 후 채택."
+      "reason": "공식 STYLE/색상 SKU 대조 후 색상별 공개 갤러리 수집. 사람 이름 상품은 첫 컷 제외, 한 컷뿐이면 유지. 추가 배경 필터 없음."
     },
     "additional_images": {
       "label": "추가이미지",
       "supported": true,
       "status": "conditional",
-      "reason": "동일 색상 갤러리의 유효 컷만 5슬롯. 추가 컷 부족 시 통과 컷 반복. 배경 검사에서 제외된 사진은 반복 슬롯에도 사용하지 않음."
+      "reason": "동일 색상 갤러리의 실제 공개 사진. 첫 컷 제외 규칙 적용 후 부족한 추가 슬롯은 남은 컷 반복."
     },
     "detail_page": {
       "label": "상세페이지",
@@ -169,5 +169,5 @@
     "상세페이지 HTML": "detail_page",
     "원본 상품명": null
   },
-  "code_hash": "3886eae4bb64df1869407cf7c14f5986563a62119ac62d860d80bb48b40ba6da"
+  "code_hash": "c73c38c3765514176a109615378911ca799b0c1e95aed987329b4718c0a721df"
 }

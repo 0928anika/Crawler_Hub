@@ -17,7 +17,7 @@ from crawler_rules import check_public_image, validate_gallery_image, gallery_sl
 
 SITE = 'https://www.giordano.co.kr'
 HOSTS = ('www.giordano.co.kr', 'giordano.co.kr')
-REVISION = '2026-11-14-giordano-5'
+REVISION = '2026-11-14-giordano-6'
 # 인명 표기 상품의 갤러리 전용 보수적 휴리스틱. 사람 신원/AI 여부 판별 아님.
 # 양쪽 상단 12.5% 영역의 채널별 표준편차 <= 8, 평균색 차이 <= 32 (스튜디오 조명 그라데이션 허용).
 BACKGROUND_MAX_NOISE = 8.0
@@ -218,7 +218,11 @@ def detail_urls(doc, final, exclude_first=False):
     body=skip_first_campaign_image(body,exclude_first)
     extra=list(doc.select('#det_size_info .size_img img'))
     extra.extend(n for n in doc.select('.prd_detail_content_gio img') if '상품정보고시' in n.get('data-layer_title',''))
-    return list(dict.fromkeys(body+gather(extra)))
+    urls=list(dict.fromkeys(body+gather(extra)))
+    years=list(dict.fromkeys(re.findall(r'/_gio_on/(\d{4})/', ' '.join(urls))))
+    if len(years)==1:
+        urls=[u.replace('/_gio_on//','/_gio_on/'+years[0]+'/') for u in urls]
+    return list(dict.fromkeys(urls))
 
 
 def public_image(ctx, url, cache):
@@ -325,6 +329,11 @@ def detail(ctx, urls, cache):
             if any(re.search(r'HTTP (404|410)\b', r) for r in cache.get(url, {}).get('reasons', [])):
                 ctx.log('없는 상세 원본 이미지 생략: ' + url, 'WARNING')
                 continue
+            # The site's soft error page is a permanent unusable source, not a timeout.
+            if cache.get(url,{}).get('status')=='inaccessible' and '로그인·오류 HTML 응답' in cache.get(url,{}).get('reasons',[]):
+                source,_=fetch(ctx,url)
+                if '<!-- ERROR PAGE -->' in source and '[페이지 접근 불가]' in source:
+                    ctx.log('공식 오류페이지를 반환하는 상세 원본 제외: '+url,'WARNING');continue
             raise ValueError('상세 이미지 조회 미완료: ' + url)
         parts.append('<p><img src="' + html.escape(url, quote=True) + '" alt="상품 상세정보"></p>')
     if not parts:
@@ -369,7 +378,7 @@ def collect(ctx, doc, final, base, requested, emitted, cache):
             photos=skip_first_campaign_image(photos,has_person)
             prefetch(ctx, photos + details, cache)
             if ctx.enabled('main_image') or ctx.enabled('additional_images'):
-                main, extras, warning = gallery(ctx, photos, code, cache, filter_background=named_campaign(common['원본 상품명']))
+                main, extras, warning = gallery(ctx, photos, code, cache, filter_background=False)
                 if warning:
                     ctx.log(warning, 'WARNING')
                 if ctx.enabled('main_image'):
