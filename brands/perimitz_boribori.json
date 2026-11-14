@@ -1,0 +1,174 @@
+{
+  "id": "perimitz_boribori",
+  "name": "페리미츠",
+  "category": "아동복",
+  "crawl_source": "보리보리 스튜디오컷",
+  "script": "perimitz_boribori.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_color_mapping": "manual",
+  "official_color_codes": true,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명",
+    "원본 옵션"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "실제 치수 옵션, 품절 포함."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 상품 가격 데이터 selPrc. 쿠폰/카드 혜택 제외."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 상품 가격 데이터 normPrc. 선택 시만 사용, 누락은 빈칸."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 stdCtgrNm3."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "균일 배경 검사 통과 원본 상품사진."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "통과 상품사진 수동 매핑. 같은 사진을 여러 색상에 사용 가능."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "한 링크의 본문 이미지만, popup_img 배송/교환 및 공통 타이틀 제외. 별도 표 생성 없음."
+    }
+  },
+  "guide": {
+    "example": "P2545P293",
+    "examples": [
+      "P2545P293"
+    ],
+    "pattern": "^.+$",
+    "format": "페리미츠 품번, 대소문자 구분 없음",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      ""
+    ],
+    "notes": "품번 검색 후 페리미츠 동일 모델만 수집. 간단한 균일 배경 검사. 실제 옵션 수동 매핑. 본문 이미지는 한 링크만 사용하며 배송/교환/공통 타이틀 제외. 고시/사이즈표 생성 없음.",
+    "method": "보리보리 공개 검색 → 동일 모델 확인 → 균일 배경 검사 → 실제 색상 수동 매핑",
+    "validation_note": "고시/사이즈표를 포함한 상품 본문 이미지만 수집"
+  },
+  "notes": "품번 검색 후 페리미츠 동일 모델만 수집. 간단한 균일 배경 검사. 실제 옵션 수동 매핑. 본문 이미지는 한 링크만 사용하며 배송/교환/공통 타이틀 제외. 고시/사이즈표 생성 없음. 전체 갤러리 중 셀러컷 혼입 링크 제외, 본문은 브랜드 원본 이미지 링크 우선.",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "additional_image_count": 5,
+  "group_manual_pending": true,
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "실제 치수 옵션, 품절 포함."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 상품 가격 데이터 selPrc. 쿠폰/카드 혜택 제외."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 상품 가격 데이터 normPrc. 선택 시만 사용, 누락은 빈칸."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 stdCtgrNm3."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "균일 배경 검사 통과 원본 상품사진."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "통과 상품사진 수동 매핑. 같은 사진을 여러 색상에 사용 가능."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "한 링크의 본문 이미지만, popup_img 배송/교환 및 공통 타이틀 제외. 별도 표 생성 없음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null,
+    "원본 옵션": null
+  },
+  "code_hash": "0f35e2688b8ee2f733cbc14a82339491033b060b5e035680f04ca2a2b25ca6f3"
+}

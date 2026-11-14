@@ -1,0 +1,176 @@
+{
+  "id": "perimitz_eland",
+  "name": "페리미츠",
+  "category": "아동복",
+  "crawl_source": "이랜드몰 스튜디오컷",
+  "script": "perimitz_eland.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_color_mapping": "manual",
+  "official_color_codes": true,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명",
+    "판매자번호",
+    "원본 옵션"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "조회 상품과 같은 판매자의 실제 색상 하위 사이즈 옵션(품절 포함)을 합집합으로 수집."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "판매가 itemMain.sellprice 및 조회 판매자 옵션.sellPrice 공통값. 링크/옵션별 가격이 다르면 빈칸."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.orgSellprice 독립 최초출시/정상가. 예시199000 확인. 선택 시에만 파싱, 누락/0/잘못된 형식은 빈칸과 경고로 수집 계속. 판매가 복사/역산 없음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.depth4StandardCategoryName. 브랜드 분류를 대신 넣지 않음."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "전체 갤러리 스튜디오컷 통과 상품 원본. 단독 혼합 상품은 통과 컷만 수집."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "채택한 모든 링크의 통과 사진과 실제 옵션 통합 수동 매핑."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "선택한 한 링크의 본문 이미지만. 공통 보증/매장/배송 배너 제외. 단독 혼합 링크는 셀러컷·판별 불가 통짜 제외하고 명확한 표 이미지만 보존. 고시·사이즈표 생성 없음."
+    }
+  },
+  "guide": {
+    "example": "P2632B310",
+    "examples": [
+      "P2632B310"
+    ],
+    "pattern": "^[A-Za-z0-9-]+$",
+    "format": "공식 기본 품번. 대소문자 구분 없이 조회.",
+    "notes": "공식 판매자 LV23003771이 검색되면 그 상품만 수집, 없으면 전체 판매자 대상. 전체 상품사진이 스튜디오컷인 링크만 채택. 혼합 링크만 한 개 있으면 셀러컷을 빼고 남은 스튜디오컷·옵션 수집. 상세는 선택된 한 링크만. 공통 이랜드 보증·매장·배송 배너 제외. 고시/사이즈표 별도 생성 없음.",
+    "method": "이랜드몰 검색 → 공식 판매자 우선 → 전체 갤러리 균일 배경 검사 → 깨끗한 링크만 또는 단독 혼합 링크의 통과 컷만 수동 매핑.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      ""
+    ],
+    "validation_note": "원본 본문·기본상세·고시 이미지 빠짐없이 보존. 별도 표 생성 없음."
+  },
+  "notes": "공식 판매자 LV23003771이 검색되면 그 상품만 수집, 없으면 전체 판매자 대상. 전체 상품사진이 스튜디오컷인 링크만 채택. 혼합 링크만 한 개 있으면 셀러컷을 빼고 남은 스튜디오컷·옵션 수집. 상세는 선택된 한 링크만. 공통 이랜드 보증·매장·배송 배너 제외. 고시/사이즈표 별도 생성 없음.",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "additional_image_count": 5,
+  "group_manual_pending": true,
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "조회 상품과 같은 판매자의 실제 색상 하위 사이즈 옵션(품절 포함)을 합집합으로 수집."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "판매가 itemMain.sellprice 및 조회 판매자 옵션.sellPrice 공통값. 링크/옵션별 가격이 다르면 빈칸."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.orgSellprice 독립 최초출시/정상가. 예시199000 확인. 선택 시에만 파싱, 누락/0/잘못된 형식은 빈칸과 경고로 수집 계속. 판매가 복사/역산 없음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.depth4StandardCategoryName. 브랜드 분류를 대신 넣지 않음."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "전체 갤러리 스튜디오컷 통과 상품 원본. 단독 혼합 상품은 통과 컷만 수집."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "채택한 모든 링크의 통과 사진과 실제 옵션 통합 수동 매핑."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "선택한 한 링크의 본문 이미지만. 공통 보증/매장/배송 배너 제외. 단독 혼합 링크는 셀러컷·판별 불가 통짜 제외하고 명확한 표 이미지만 보존. 고시·사이즈표 생성 없음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null,
+    "판매자번호": null,
+    "원본 옵션": null
+  },
+  "code_hash": "6e4ce0dff1f064631ebe49e54ff1f20387baa40339b76aaee2b99b6c7e4461ee"
+}

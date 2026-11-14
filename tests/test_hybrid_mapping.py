@@ -41,6 +41,8 @@ class HybridMappingTests(unittest.TestCase):
             self.assertEqual(pending[1][-1],'공식 색상 자동 매핑 완료')
             group=view['groups'][0]
             for color in group['colors']:
+                if color['color_code']!='60':
+                    view=mapping.edit_options(job,dict(expected_revision=view['revision'],group_id=group['id'],action='delete',color_id=color['id']));continue
                 view=mapping.save_color(job,dict(expected_revision=view['revision'],group_id=group['id'],color_id=color['id'],image_ids=[group['images'][0]['id']] if color['color_code']=='60' else []))
             view=mapping.finalize(job,dict(expected_revision=view['revision']))
             rows=mapping.final_items(job,view)
@@ -57,6 +59,8 @@ class HybridMappingTests(unittest.TestCase):
             job.brand['color_label_format']='name_code'
             view=mapping.snapshot(job);group=view['groups'][0]
             for color in group['colors']:
+                if color['color_code']!='60':
+                    view=mapping.edit_options(job,dict(expected_revision=view['revision'],group_id=group['id'],action='delete',color_id=color['id']));continue
                 view=mapping.save_color(job,dict(expected_revision=view['revision'],group_id=group['id'],color_id=color['id'],image_ids=[group['images'][0]['id']] if color['color_code']=='60' else []))
             view=mapping.finalize(job,dict(expected_revision=view['revision']))
             rows=mapping.final_items(job,view)

@@ -26,4 +26,13 @@ class DetailLayoutTests(unittest.TestCase):
   self.assertIn('border-collapse:collapse',sanitized_html(output))
  def test_overflow_checked_after_layout_added_and_empty_stays_empty(self):
   self.assertEqual(excel_detail(''),('',False));output,overflow=excel_detail('<p>'+('x'*EXCEL_TEXT_LIMIT)+'</p><img src="https://example.com/a.jpg">');self.assertEqual(output,'');self.assertTrue(overflow)
+ def test_large_laughingchild_detail_fits_without_removing_content(self):
+  source=(ROOT/'tests/fixtures/laughingchild/large_detail.html').read_text(encoding='utf-8')
+  output,overflow=excel_detail(source);self.assertFalse(overflow);self.assertLessEqual(len(output),EXCEL_TEXT_LIMIT)
+  before=BeautifulSoup(source,'html.parser');after=BeautifulSoup(output,'html.parser')
+  self.assertEqual(before.get_text(' ',strip=True),after.get_text(' ',strip=True))
+  self.assertEqual([i['src'] for i in before.select('img')],[i['src'] for i in after.select('img')])
+  self.assertEqual(len(before.select('td,th')),len(after.select('td,th')))
+  self.assertIn('overflow-wrap:anywhere',after.table['style']);self.assertIn('text-align:left',after.table['style'])
+  self.assertEqual(excel_detail(output)[0],output)
 if __name__=='__main__':unittest.main()

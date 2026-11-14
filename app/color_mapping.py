@@ -90,13 +90,16 @@ def snapshot(job):
             if not any(same_color(c,color) for c in group['colors']):group['colors'].append(dict(color,manual=True))
         group['colors']=[c for c in group['colors'] if c['id'] not in saved.get('hidden_colors',[])]
         valid_colors={c['id'] for c in group['colors']};valid_images={i['id'] for i in group['images']}
-        assignments={iid:cid for iid,cid in saved.get('assignments',{}).items() if iid in valid_images and cid in valid_colors}
+        assignments={iid:[cid for cid in (value if isinstance(value,list) else [value]) if cid in valid_colors] for iid,value in saved.get('assignments',{}).items() if iid in valid_images}
         signature_matches=saved.get('image_signature')==group['signature'] or saved.get('signature')==legacy_signature
         confirmed=[cid for cid in saved.get('confirmed',[]) if cid in valid_colors] if signature_matches else []
         if group['id'] not in state.get('groups',{}):
-            assignments={i['id']:i['preassigned_color_id'] for i in group['images'] if i.get('preassigned_color_id') in valid_colors}
-            confirmed=sorted(set(assignments.values()))
-        for image in group['images']:image['assigned_to']=assignments.get(image['id'])
+            assignments={i['id']:[i['preassigned_color_id']] for i in group['images'] if i.get('preassigned_color_id') in valid_colors}
+            confirmed=sorted({cid for ids in assignments.values() for cid in ids})
+        for image in group['images']:
+            image['assigned_colors']=assignments.get(image['id'],[])
+            image['assigned_to']=next(iter(image['assigned_colors']),None)
+        confirmed=[cid for cid in confirmed if any(cid in ids for ids in assignments.values())]
         group['confirmed']=confirmed
         group['complete']=len(confirmed)==len(valid_colors)
         total+=len(valid_colors);done+=len(confirmed)
@@ -108,7 +111,7 @@ def snapshot(job):
 
 
 def initial_saved(group):
-    return dict(assignments={i['id']:i['assigned_to'] for i in group['images'] if i.get('assigned_to')},confirmed=list(group['confirmed']),image_signature=group['signature'])
+    return dict(assignments={i['id']:list(i['assigned_colors']) for i in group['images'] if i.get('assigned_colors')},confirmed=list(group['confirmed']),image_signature=group['signature'])
 
 
 def save_color(job,data):
@@ -122,14 +125,13 @@ def save_color(job,data):
         if color not in {c['id'] for c in group['colors']}:raise ValueError('잘못된 색상입니다.')
         selected=data.get('image_ids')
         if not isinstance(selected,list) or any(i not in {image['id'] for image in group['images']} for i in selected):raise ValueError('현재 품번의 사진만 선택할 수 있습니다.')
+        if not selected:raise ValueError('사진을 최소 1장 선택한 뒤 저장하세요. 사용하지 않는 색상은 옵션을 삭제하세요.')
         saved=state.setdefault('groups',{}).setdefault(group['id'],initial_saved(group))
         assignments=saved['assignments'];confirmed=set(saved['confirmed'])
-        # Moving a picture invalidates the previous color's confirmation.
-        for iid in selected:
-            previous=assignments.get(iid)
-            if previous and previous!=color:confirmed.discard(previous)
-        saved['assignments']={iid:cid for iid,cid in assignments.items() if cid!=color}
-        saved['assignments'].update({iid:color for iid in selected})
+        # Each color owns its selection independently; legacy scalar values migrate here.
+        assignments={iid:[cid for cid in (value if isinstance(value,list) else [value]) if cid!=color] for iid,value in assignments.items()}
+        for iid in selected:assignments.setdefault(iid,[]).append(color)
+        saved['assignments']={iid:ids for iid,ids in assignments.items() if ids}
         confirmed.add(color);saved['confirmed']=sorted(confirmed);saved['image_signature']=group['signature']
         state.update(revision=view['revision']+1,finalized=False,fingerprint=view['fingerprint'])
         atomic_json(job.dir/'color_mapping.json',state)
@@ -216,7 +218,7 @@ def final_items(job,view):
         compact,overflow=(detail['filename'],False) if detail else excel_detail(shared_detail(job,group)) if 'detail_page' in job.selected else ('',False)
         if overflow:raise ValueError(group['code']+': 공통 상세 HTML이 셀 한도를 초과합니다.')
         for color in group['colors']:
-            images=[i for i in group['images'] if i.get('assigned_to')==color['id']]
+            images=[i for i in group['images'] if color['id'] in i.get('assigned_colors',[i.get('assigned_to')])]
             if not images:continue  # Explicitly saved empty colors are omitted.
             base=by_id[images[0]['item_id']];record={}
             for header,value in base['raw'].items():
@@ -303,7 +305,7 @@ def finalize(job,data):
         view=snapshot(job)
         if data.get('expected_revision')!=view['revision']:raise ValueError('매핑이 변경되었습니다. 다시 확인하세요.')
         if not view['groups']:raise ValueError('매핑할 수집 성공 품번이 없습니다. 실패·미완료 품번은 결과에서 제외됩니다.')
-        if not all(g['complete'] for g in view['groups']):raise ValueError('수집에 성공한 품번의 색상 선택을 모두 저장하세요. 사진 0장을 저장한 색상은 결과에서 제외됩니다.')
+        if not all(g['complete'] for g in view['groups']):raise ValueError('수집에 성공한 품번의 색상 선택을 모두 저장하세요. 모든 색상에 사진을 최소 1장 선택하세요. 사용하지 않는 색상은 옵션을 삭제하세요.')
         final_items(job,view)  # Validate every row before changing final status.
         previous=read_state(job);state=dict(previous,finalized=True,fingerprint=view['fingerprint'],revision=view['revision']+1)
         if local_images.enabled(job):state['file_export']=local_images.prepare_export(job,view,state['revision'])

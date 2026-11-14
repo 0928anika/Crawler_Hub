@@ -1,4 +1,5 @@
 """UI normalization and Level 1 export selection; source values remain untouched."""
+from functools import lru_cache
 import re
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
@@ -60,6 +61,7 @@ def slots(values):
         result.append(item)
     return result
 
+@lru_cache(maxsize=128)
 def sanitized_html(markup):
     soup = BeautifulSoup(markup or '', 'html.parser')
     allowed = {'div','p','br','span','b','strong','table','caption','thead','tbody','tfoot','tr','th','td','img','ul','ol','li','h1','h2','h3','h4','h5','h6','pre','code'}

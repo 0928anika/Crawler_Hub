@@ -105,7 +105,7 @@ def plan(view,selected=None,additional_count=9):
         for color in group['colors']:
             images=[];seen=set()
             for image in group['images']:
-                if image.get('assigned_to')!=color['id']:continue
+                if color['id'] not in image.get('assigned_colors',[image.get('assigned_to')]):continue
                 digest=Path(image['asset_path']).stem
                 if digest in seen:continue
                 seen.add(digest);images.append(image)

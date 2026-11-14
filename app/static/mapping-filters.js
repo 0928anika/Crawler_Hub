@@ -5,7 +5,7 @@
   const assigned=new Set();
   for(const color of group.colors){
    const key=group.id+':'+color.id;
-   const selected=drafts[key]||new Set(group.images.filter(i=>i.assigned_to===color.id).map(i=>i.id));
+   const selected=drafts[key]||new Set(group.images.filter(i=>(i.assigned_colors||[i.assigned_to]).includes(color.id)).map(i=>i.id));
    for(const id of selected)assigned.add(id);
   }
   const complete=group.colors.length>0&&group.colors.every(c=>group.confirmed.includes(c.id)&&!dirty.has(group.id+':'+c.id));

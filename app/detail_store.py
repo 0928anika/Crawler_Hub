@@ -2,6 +2,7 @@
 from pathlib import Path
 import uuid
 import os
+from functools import lru_cache
 from bs4 import BeautifulSoup, Comment
 
 EXCEL_TEXT_LIMIT = 32767
@@ -31,9 +32,9 @@ def registration_layout(markup):
         table['border'] = '1'
         table['cellpadding'] = '8'
         table['cellspacing'] = '0'
-        table['style'] = 'width:100%;border-collapse:collapse;margin:16px auto;font-size:14px;line-height:1.6;color:#333'
+        table['style'] = 'width:100%;border-collapse:collapse;margin:16px auto;font-size:14px;line-height:1.6;color:#333;text-align:left;overflow-wrap:anywhere'
         for cell in table.find_all(['th','td']):
-            cell['style'] = 'border:1px solid #ddd;padding:10px;text-align:left;vertical-align:top;overflow-wrap:anywhere'
+            cell['style'] = 'border:1px solid #ddd;padding:10px;vertical-align:top'
             if cell.name == 'th':cell['style'] += ';background:#f6f6f6;font-weight:bold'
     for paragraph in soup.find_all('p'):
         paragraph['style'] = 'font-size:14px;line-height:1.8;color:#444;margin:14px auto;text-align:left'
@@ -50,6 +51,17 @@ def registration_layout(markup):
 
 
 def excel_detail(markup):
+    """Reuse immutable formatting results; cap both entry count and key size."""
+    value=str(markup or '')
+    return _cached_excel_detail(value) if len(value)<=65536 else _format_excel_detail(value)
+
+
+@lru_cache(maxsize=256)
+def _cached_excel_detail(markup):
+    return _format_excel_detail(markup)
+
+
+def _format_excel_detail(markup):
     """Produce compact registration HTML without cutting product content.
 
     Empty string + overflow=True means unusable for sheet registration, not a
