@@ -18,7 +18,7 @@ from crawler_rules import check_public_image,gallery_slots
 SITE='https://brand.naver.com'
 STORE='castelbajac'
 CHANNEL_UID='2sWDwtZKadOpe9nfngD2U'
-REVISION='2026-11-15-castelbajac-4-detail-proxy'
+REVISION='2026-11-15-castelbajac-5-portable-profile'
 
 def state_from(source):
     doc = BeautifulSoup(source,'html.parser')
@@ -285,8 +285,17 @@ def regular_price(ctx,product):
 
 
 def chrome_profile():
-    from local_paths import user_home
-    return user_home()/'browser-profiles'/'castelbajac-chrome'
+    # Frozen worker bundles do not include APP's local_paths module.
+    # Resolve the same local runtime path using only the standard library.
+    configured=os.environ.get('CRAWLER_HUB_HOME')
+    if configured:home=Path(configured).expanduser().resolve()
+    else:
+        base=Path(os.environ.get('LOCALAPPDATA') or Path.home()/'.local/share')
+        home=(base/'CrawlerHub').resolve()
+    roots=[Path(v).expanduser().resolve() for k,v in os.environ.items() if k.lower().startswith('onedrive') and v]
+    if str(home).startswith('\\\\') or any('onedrive' in part.lower() or 'sharepoint' in part.lower() for part in home.parts) or any(home==root or root in home.parents for root in roots):
+        raise ValueError('수집용 크롬 프로필은 동기화 폴더가 아닌 로컬 디스크에 저장해야 합니다.')
+    return home/'browser-profiles'/'castelbajac-chrome'
 
 
 @contextmanager

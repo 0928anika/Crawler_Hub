@@ -79,10 +79,20 @@ class CastelbajacTests(unittest.TestCase):
   with patch.object(c,'navigate_once',side_effect=go),patch.object(c,'pause'):
    self.assertEqual(c.load_product(C(),page,'url','1',True),({'id':1},{'renderContent':'body'}))
   self.assertEqual(page.attempts,2);self.assertEqual(page.listeners,[])
- def test_dedicated_profile_uses_stable_local_runtime_path(self):
-  with patch('local_paths.user_home',return_value=Path('local-runtime')):
-   self.assertEqual(c.chrome_profile(),Path('local-runtime/browser-profiles/castelbajac-chrome'))
-   self.assertEqual(c.chrome_profile(),c.chrome_profile())
+ def test_dedicated_profile_uses_stable_local_runtime_path_without_app_module(self):
+  import tempfile
+  with tempfile.TemporaryDirectory() as tmp:
+   with patch.dict(c.os.environ,{'LOCALAPPDATA':tmp},clear=True),patch.dict(sys.modules,{'local_paths':None}):
+    expected=Path(tmp).resolve()/'CrawlerHub/browser-profiles/castelbajac-chrome'
+    self.assertEqual(c.chrome_profile(),expected)
+    self.assertEqual(c.chrome_profile(),c.chrome_profile())
+ def test_profile_respects_custom_runtime_and_rejects_sync_path(self):
+  import tempfile
+  with tempfile.TemporaryDirectory() as tmp:
+   with patch.dict(c.os.environ,{'CRAWLER_HUB_HOME':tmp},clear=True):
+    self.assertEqual(c.chrome_profile(),Path(tmp).resolve()/'browser-profiles/castelbajac-chrome')
+   with patch.dict(c.os.environ,{'CRAWLER_HUB_HOME':str(Path(tmp)/'OneDrive'/'runtime')},clear=True):
+    with self.assertRaisesRegex(ValueError,'로컬 디스크'):c.chrome_profile()
  def test_profile_lock_blocks_duplicate_then_releases_after_error(self):
   import tempfile
   with tempfile.TemporaryDirectory() as tmp:
