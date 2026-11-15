@@ -24,4 +24,15 @@ class GalleryTests(unittest.TestCase):
    self.assertFalse(c.gallery_url(u,c.SITE),u)
  def test_missing_gallery_is_failure_instead_of_blank_success(self):
   with self.assertRaisesRegex(c.CrawlError,'수집 미완료'):c.gallery(C(),BeautifulSoup('<div class="imgArea"></div>','html.parser'),c.SITE,{})
+ def test_floral_product_photos_are_not_text_labels(self):
+  from PIL import Image
+  for i in (0,1):
+   with Image.open(ROOT/f'tests/fixtures/renomagolf_official/RWTH67109_pattern_{i}.jpg') as image:
+    self.assertEqual(c.content_signal(image),'')
+ def test_wide_repeated_text_rows_are_still_rejected(self):
+  from PIL import Image,ImageDraw
+  image=Image.new('RGB',(480,480),'white');draw=ImageDraw.Draw(image)
+  for y in range(30,430,20):
+   for x in range(30,450,10):draw.rectangle((x,y,x+2,y+4),fill='black')
+  self.assertIn('작은 글자',c.content_signal(image))
 if __name__=='__main__':unittest.main()
