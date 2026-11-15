@@ -48,6 +48,8 @@ def source_groups(job):
                 if not match['color_code'] and color['color_code']:match['color_code']=color['color_code']
                 if not match['color_name'] and color['color_name']:match['color_name']=color['color_name']
                 match['label']=color_label(match)
+                if 'size' in color:
+                    match['size']=','.join(dict.fromkeys(s for text in (match.get('size',''),color['size']) for s in text.split(',') if s))
             else:group['colors'].append(dict(color))
         iid=key(raw['image_url'])
         if not any(image['id']==iid for image in group['images']):
@@ -282,6 +284,7 @@ def final_items(job,view):
                 elif field=='product_url':value=first_link
                 elif field=='additional_images':value=','.join(extras)
                 elif field=='detail_page':value=compact
+                elif field=='size' and 'size' in job.selected and 'size' in color:value=color['size']
                 values.append(value)
             item=preview(headers,values,job.selected,allow_empty_product_name=bool(getattr(job,'brand',{}).get('allow_empty_product_name',False)))
             if entries is not None:

@@ -35,4 +35,27 @@ class DuranTests(unittest.TestCase):
  def test_gallery_urls_are_declared_by_page(self):
   groups=c.gallery_groups(C(),source(),c.CONFIG['site'],'1983');self.assertEqual(len(groups),6)
   self.assertTrue(all(len(group)==1 for group in groups));self.assertTrue(all('/web/product/' in group[0] for group in groups))
+ def test_different_sizes_survive_mapping_by_color(self):
+  import tempfile,threading
+  from types import SimpleNamespace
+  import color_mapping as mapping
+  from color_palette import normalize_palette
+  from schema import preview
+  text=(FIX/'DTF6W-3106_options.html').read_text(encoding='utf-8')
+  options=c.page_colors(c.soup(text),text,{})
+  colors=[dict(c.color_entry(name),**data) for name,data in options]
+  palette=normalize_palette(c.palette_of(colors))
+  expected={'블루':'FREE','카키':'FREE','베이지':'FREE','브라운':'FREE,L','블랙':'FREE,L'}
+  self.assertEqual({p['color_name']:p['size'] for p in palette},expected)
+  headers=['품번','상품명','색상','상품 링크','사이즈','대표이미지','추가이미지']
+  values=['DTF6W-3106','상품','전체색상','https://duran-fit.com/product/detail.html?product_no=1965','FREE,L','https://example.com/p.jpg','']
+  row=preview(headers,values,['size','main_image','additional_images'])
+  row.update(id='0',task_id='0',raw=dict(zip(headers,values)),unmapped=dict(colors=palette,image_url=values[5],shared_detail_html=''))
+  with tempfile.TemporaryDirectory(dir=ROOT/'tests') as folder:
+   job=SimpleNamespace(brand=dict(mapping_mode='manual',image_mode='url',output_headers=headers),items=[row],selected=['size','main_image','additional_images'],queue=[dict(id='0',status='SUCCESS')],dir=Path(folder),state='completed',data_lock=threading.RLock(),save_lock=threading.RLock(),checkpoint=lambda:None,save=lambda:None)
+   view=mapping.snapshot(job);group=view['groups'][0]
+   for color in group['colors']:
+    view=mapping.save_color(job,dict(expected_revision=view['revision'],group_id=group['id'],color_id=color['id'],image_ids=[group['images'][0]['id']]))
+   mapping.finalize(job,dict(expected_revision=view['revision']))
+   self.assertEqual({row['raw']['색상']:row['raw']['사이즈'] for row in mapping.visible_items(job)},expected)
 if __name__=='__main__':unittest.main()

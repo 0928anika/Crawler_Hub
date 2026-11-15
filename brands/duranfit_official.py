@@ -1,6 +1,6 @@
 PORTAL_API_VERSION = 1
 """뒤란핏 공식 홈페이지: 공식 옵션 연결 사진은 자동, 미연결 갤러리는 수동 매핑."""
-REVISION = '2026-11-15-duranfit-1'
+REVISION = '2026-11-16-duranfit-color-sizes-2'
 CONFIG = dict(site='https://duran-fit.com',hosts=('duran-fit.com','www.duran-fit.com'),brand='뒤란핏',
               aliases=['뒤란핏','뒤란','DURAN FIT','DURAN'],input=r'([A-Z0-9]+-\d{4})',format='예: DBF6W-9242 또는 DBF6W9242')
 
@@ -169,6 +169,7 @@ def palette_of(colors):
     result = []
     for color in colors:
         entry = {'color_name': color['color_name'], 'color_code': color['color_code']}
+        entry['size'] = joined(color['sizes'])
         if entry not in result:
             result.append(entry)
     if not result:
@@ -873,7 +874,7 @@ def _crawl(ctx):
             if ctx.enabled('regular_price'):
                 merge_regular_prices(ctx, common, records)
             if ctx.enabled('size'):
-                common['size'] = common_value(ctx, [joined(c['sizes']) for c in palette], '사이즈')
+                common['size'] = joined(size for color in palette for size in color['sizes'])
             if ctx.enabled('price'):
                 common['price'] = common_value(ctx, [page_price(p, c) for p in pages for c in p['colors'] if c in palette], '판매가')
             colors = palette_of(palette)
