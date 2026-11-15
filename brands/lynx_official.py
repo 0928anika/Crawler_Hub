@@ -149,7 +149,18 @@ def identity(soup):
     if len(matches) != 1:
         raise RuntimeError('상품명에서 단일 품번_색상코드를 확인할 수 없음: ' + title)
     base, color = matches[0]
-    return base, color, {'name': title, 'title_code': base + '_' + color}
+    raw_code = base + '_' + color
+    spaced = re.search(re.escape(base) + r'_([A-Z0-9]+(?:\s+[A-Z0-9]+)+)\s*$', title, re.I)
+    if spaced:
+        normalized = re.sub(r'\s+', '', spaced[1]).upper()
+        option_colors = {option_color for option_color, _ in combined_options(soup)}
+        for select in soup.select('select[label="색상"]'):
+            option_colors.update(value.upper() for value in option_values(select))
+        if normalized not in option_colors:
+            raise RuntimeError('공백이 포함된 상품명 색상코드를 공식 옵션과 연결할 수 없음: ' + spaced[1])
+        color = normalized
+        raw_code = spaced[0].strip()
+    return base, color, {'name': title, 'title_code': base + '_' + color, 'title_code_raw': raw_code}
 
 
 def notice_rows(soup):
@@ -328,7 +339,7 @@ def crawl(ctx):
         ctx.checkpoint()
         try:
             ctx.stage('색상 수집: ' + color)
-            name = clean_product_name(product['name'], brand_aliases=['링스골프', '링스 골프', '링스', 'LYNX'], product_codes=[product['title_code'], base])
+            name = clean_product_name(product['name'], brand_aliases=['링스골프', '링스 골프', '링스', 'LYNX'], product_codes=[product['title_code'], product.get('title_code_raw', ''), base])
             if not name:
                 raise RuntimeError('상품명 누락')
             record = dict(product_code=base, product_name=name, color=color,

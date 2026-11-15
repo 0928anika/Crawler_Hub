@@ -16,4 +16,13 @@ class SizeTests(unittest.TestCase):
   self.assertEqual(c.product_sizes(d,'BK'),['90','95'])
   d=c.BeautifulSoup('<select label="색상:사이즈"><option value="0">BK:78</option><option value="1">KH:82</option></select>','html.parser')
   self.assertEqual(c.product_sizes(d,'BK'),['78'])
+ def test_spaced_title_color_requires_matching_official_option(self):
+  d=c.BeautifulSoup((ROOT/'tests/fixtures/lynx/spaced_color.html').read_bytes(),'html.parser')
+  base,color,p=c.identity(d)
+  self.assertEqual((base,color),('L21D3PD156','BL'))
+  self.assertEqual(c.product_sizes(d,color),['64','67','70','73','76','79'])
+  name=c.clean_product_name(p['name'],[],[p['title_code'],p['title_code_raw'],base])
+  self.assertEqual(name,'여성 세미 테이퍼드핏 데님 팬츠')
+  for o in d.select('option[title]'):o['title']=o['title'].replace('BL_','BK_')
+  with self.assertRaises(RuntimeError):c.identity(d)
 if __name__=='__main__':unittest.main()
