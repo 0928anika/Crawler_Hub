@@ -259,6 +259,12 @@ def final_items(job,view):
         for color in group['colors']:
             images=[i for i in group['images'] if color['id'] in i.get('assigned_colors',[i.get('assigned_to')])]
             if not images:continue  # Explicitly saved empty colors are omitted.
+            if job.brand.get('mapping_detail_mode')=='selected_images_with_tail' and 'detail_page' in job.selected:
+                selected_urls=list(dict.fromkeys(i['url'] for i in images))
+                markup='<div style="width:100%;max-width:780px;margin:0 auto;text-align:center">'+''.join('<img src="'+html.escape(url,quote=True)+'" alt="상품 사진" style="display:block;width:100%;height:auto;margin:0 auto">' for url in selected_urls)+shared_detail(job,group)+'</div>'
+                compact,overflow=excel_detail(markup)
+                if overflow:raise ValueError(group['code']+': 선택 사진 상세 HTML이 셀 한도를 초과합니다.')
+
             base=by_id[images[0]['item_id']];record={}
             for header,value in base['raw'].items():
                 field=field_for(header)
