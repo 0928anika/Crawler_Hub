@@ -1,0 +1,311 @@
+{
+  "id": "5892438157",
+  "channel": {
+    "channelUid": "2sWDzOLlMZPwI9qrQFj3y"
+  },
+  "naverShoppingSearchInfo": {
+    "manufacturerName": "㈜크록스코리아",
+    "brandName": "크록스",
+    "brandId": 29750,
+    "modelName": "202651-02S"
+  },
+  "name": "[크록스 본사] 남녀공용 오프로드 스포츠 클로그 블랙 202651-02S",
+  "productImages": [
+    {
+      "order": 1,
+      "url": "https://shop-phinf.pstatic.net/20260527_299/1779845045874i47B3_JPEG/56825892020123147_1449785922.jpg",
+      "width": 1000,
+      "height": 1000,
+      "imageType": "REPRESENTATIVE"
+    },
+    {
+      "order": 1,
+      "url": "https://shop-phinf.pstatic.net/20260324_113/17743293899106X0Ii_JPEG/19713412054090993_1725142527.jpg",
+      "width": 1000,
+      "height": 1000,
+      "imageType": "OPTIONAL"
+    },
+    {
+      "order": 2,
+      "url": "https://shop-phinf.pstatic.net/20260324_1/1774329389149oMAaL_JPEG/82914984655704583_205233678.jpg",
+      "width": 750,
+      "height": 1000,
+      "imageType": "OPTIONAL"
+    }
+  ],
+  "options": [
+    {
+      "id": 11092454200,
+      "optionType": "COMBINATION",
+      "groupName": "선택"
+    },
+    {
+      "id": 9242165919,
+      "optionType": "COMBINATION",
+      "groupName": "사이즈"
+    }
+  ],
+  "optionCombinations": [
+    {
+      "optionName1": "블랙(02S)",
+      "optionName2": "220_M3W5",
+      "stockQuantity": 0,
+      "price": 0
+    },
+    {
+      "optionName1": "블랙(02S)",
+      "optionName2": "230_M4W6",
+      "stockQuantity": 87,
+      "price": 0
+    },
+    {
+      "optionName1": "블랙(02S)",
+      "optionName2": "240_M5W7",
+      "stockQuantity": 208,
+      "price": 0
+    },
+    {
+      "optionName1": "블랙(02S)",
+      "optionName2": "250_M6W8",
+      "stockQuantity": 81,
+      "price": 0
+    },
+    {
+      "optionName1": "블랙(02S)",
+      "optionName2": "260_M7W9",
+      "stockQuantity": 101,
+      "price": 0
+    },
+    {
+      "optionName1": "블랙(02S)",
+      "optionName2": "265_M8W10",
+      "stockQuantity": 34,
+      "price": 0
+    },
+    {
+      "optionName1": "블랙(02S)",
+      "optionName2": "270_M9W11",
+      "stockQuantity": 114,
+      "price": 0
+    },
+    {
+      "optionName1": "블랙(02S)",
+      "optionName2": "280_M10W12",
+      "stockQuantity": 100,
+      "price": 0
+    },
+    {
+      "optionName1": "블랙(02S)",
+      "optionName2": "290_M11",
+      "stockQuantity": 98,
+      "price": 0
+    },
+    {
+      "optionName1": "블랙(02S)",
+      "optionName2": "300_M12",
+      "stockQuantity": 47,
+      "price": 0
+    },
+    {
+      "optionName1": "블랙(02S)",
+      "optionName2": "310_M13",
+      "stockQuantity": 14,
+      "price": 0
+    }
+  ],
+  "productInfoProvidedNoticeView": {
+    "basic": {
+      "제품의 주소재": "겉감: 90%에틸린비닐아세테이트, 10%폴리에스터안감: 100%에틸렌비닐아세테이트",
+      "색상": "블랙",
+      "치수": {
+        "발길이": "M3W5,M4W6,M5W7,M6W8,M7W9,M8W10,M9W11,M10W12,M11,M12,M13",
+        "굽높이": "상세설명 참조"
+      },
+      "제조자(사)": "㈜크록스코리아",
+      "제조국": "중국",
+      "취급시 주의사항": "고온다습한 환경에서는 제품의 수축, 변형, 탈색, 이염이 발생될 수 있으니 주의해주세요.(자동차 안, 베란다 등 지속적인 직사광선 노출 등)",
+      "품질보증기준": "관련법 및 소비자분쟁해결기준에 따름",
+      "A/S 책임자와 전화번호": "********"
+    }
+  },
+  "productSize": {
+    "sizeTypeNo": 10044,
+    "sizeName": "스니커즈",
+    "sizeUnitType": "MM",
+    "sizeValueTypes": [
+      {
+        "sizeValueTypeNo": 141,
+        "sizeValueTypeName": "발길이",
+        "exposureOrder": 3
+      }
+    ],
+    "sizeAttributes": [
+      {
+        "sizeAttributeName": "M4W6",
+        "exposureOrder": 1,
+        "sizeValues": [
+          {
+            "sizeValueTypeNo": 141,
+            "value": 230
+          }
+        ]
+      },
+      {
+        "sizeAttributeName": "M5W7",
+        "exposureOrder": 2,
+        "sizeValues": [
+          {
+            "sizeValueTypeNo": 141,
+            "value": 240
+          }
+        ]
+      },
+      {
+        "sizeAttributeName": "M6W8",
+        "exposureOrder": 3,
+        "sizeValues": [
+          {
+            "sizeValueTypeNo": 141,
+            "value": 250
+          }
+        ]
+      },
+      {
+        "sizeAttributeName": "M7W9",
+        "exposureOrder": 4,
+        "sizeValues": [
+          {
+            "sizeValueTypeNo": 141,
+            "value": 260
+          }
+        ]
+      },
+      {
+        "sizeAttributeName": "M8W10",
+        "exposureOrder": 5,
+        "sizeValues": [
+          {
+            "sizeValueTypeNo": 141,
+            "value": 265
+          }
+        ]
+      },
+      {
+        "sizeAttributeName": "M9W11",
+        "exposureOrder": 6,
+        "sizeValues": [
+          {
+            "sizeValueTypeNo": 141,
+            "value": 270
+          }
+        ]
+      },
+      {
+        "sizeAttributeName": "M10W12",
+        "exposureOrder": 7,
+        "sizeValues": [
+          {
+            "sizeValueTypeNo": 141,
+            "value": 280
+          }
+        ]
+      },
+      {
+        "sizeAttributeName": "M11",
+        "exposureOrder": 8,
+        "sizeValues": [
+          {
+            "sizeValueTypeNo": 141,
+            "value": 290
+          }
+        ]
+      },
+      {
+        "sizeAttributeName": "M12",
+        "exposureOrder": 9,
+        "sizeValues": [
+          {
+            "sizeValueTypeNo": 141,
+            "value": 300
+          }
+        ]
+      },
+      {
+        "sizeAttributeName": "M13",
+        "exposureOrder": 10,
+        "sizeValues": [
+          {
+            "sizeValueTypeNo": 141,
+            "value": 310
+          }
+        ]
+      }
+    ],
+    "sizeImage": {
+      "order": 1,
+      "url": "http://shop1.phinf.naver.net/20240822_19/1724323222168DM3r3_PNG/5753425941876559_1621375774.png",
+      "width": 760,
+      "height": 760
+    }
+  },
+  "salePrice": 69900,
+  "discountedSalePrice": 43900,
+  "benefitsView": {
+    "discountedSalePrice": 43900,
+    "dispDiscountedSalePrice": 43900,
+    "sellerImmediateDiscountAmount": 0,
+    "managerImmediateDiscountAmount": 0,
+    "specialDiscountAmount": {
+      "PROMOTION": 26000
+    },
+    "discountedRatio": 37,
+    "dispDiscountedRatio": 37,
+    "sellerPurchasePoint": 0,
+    "sellerCustomerManagementPoint": 0,
+    "managerPurchasePoint": 439,
+    "managerPurchaseExtraPoint": 0,
+    "managerPaymoneyAccumulatePoint": 658,
+    "managerBankbookAccumulatePoint": 219,
+    "managerArrivalGuaranteePoint": 0,
+    "managerMembershipArrivalGuaranteePoint": 0,
+    "generalPurchaseReviewPoint": 0,
+    "premiumPurchaseReviewPoint": 0,
+    "managerGeneralPurchaseReviewPoint": 50,
+    "managerPremiumPurchaseReviewPoint": 150,
+    "textReviewPoint": 0,
+    "photoVideoReviewPoint": 0,
+    "afterUseTextReviewPoint": 0,
+    "afterUsePhotoVideoReviewPoint": 0,
+    "storeMemberReviewPoint": 0,
+    "managerTextReviewPoint": 50,
+    "managerPhotoVideoReviewPoint": 150,
+    "managerAfterUseTextReviewPoint": 0,
+    "managerAfterUsePhotoVideoReviewPoint": 0,
+    "givePresent": true
+  },
+  "category": {
+    "categoryId": "50024079",
+    "categoryName": "샌들",
+    "category1Id": "50000001",
+    "category2Id": "50000174",
+    "category3Id": "50024059",
+    "category4Id": "50024079",
+    "category1Name": "패션잡화",
+    "category2Name": "남성신발",
+    "category3Name": "샌들/슬리퍼",
+    "category4Name": "샌들",
+    "wholeCategoryId": "50000001>50000174>50024059>50024079",
+    "wholeCategoryName": "패션잡화>남성신발>샌들/슬리퍼>샌들",
+    "categoryLevel": 4,
+    "lastLevel": true,
+    "sortOrder": 1,
+    "validCategory": true,
+    "receiptIssue": true,
+    "exceptionalCategoryTypes": [
+      "GROUP_PRODUCT_MAX",
+      "MANUFACTURE_DEFINE_NO",
+      "FREE_RETURN_INSURANCE"
+    ],
+    "pointAccumulationYn": false
+  }
+}

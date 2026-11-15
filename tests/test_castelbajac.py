@@ -79,51 +79,22 @@ class CastelbajacTests(unittest.TestCase):
   with patch.object(c,'navigate_once',side_effect=go),patch.object(c,'pause'):
    self.assertEqual(c.load_product(C(),page,'url','1',True),({'id':1},{'renderContent':'body'}))
   self.assertEqual(page.attempts,2);self.assertEqual(page.listeners,[])
- def test_dedicated_profile_uses_stable_local_runtime_path_without_app_module(self):
-  import tempfile
-  with tempfile.TemporaryDirectory() as tmp:
-   with patch.dict(c.os.environ,{'LOCALAPPDATA':tmp},clear=True),patch.dict(sys.modules,{'local_paths':None}):
-    expected=Path(tmp).resolve()/'CrawlerHub/browser-profiles/castelbajac-chrome'
-    self.assertEqual(c.chrome_profile(),expected)
-    self.assertEqual(c.chrome_profile(),c.chrome_profile())
- def test_profile_respects_custom_runtime_and_rejects_sync_path(self):
-  import tempfile
-  with tempfile.TemporaryDirectory() as tmp:
-   with patch.dict(c.os.environ,{'CRAWLER_HUB_HOME':tmp},clear=True):
-    self.assertEqual(c.chrome_profile(),Path(tmp).resolve()/'browser-profiles/castelbajac-chrome')
-   with patch.dict(c.os.environ,{'CRAWLER_HUB_HOME':str(Path(tmp)/'OneDrive'/'runtime')},clear=True):
-    with self.assertRaisesRegex(ValueError,'로컬 디스크'):c.chrome_profile()
- def test_profile_lock_blocks_duplicate_then_releases_after_error(self):
-  import tempfile
-  with tempfile.TemporaryDirectory() as tmp:
-   folder=Path(tmp)/'profile'
-   with self.assertRaisesRegex(RuntimeError,'simulated'):
-    with c.profile_lease(folder):
-     with self.assertRaisesRegex(ValueError,'프로필이 사용 중'):
-      with c.profile_lease(folder):pass
-     raise RuntimeError('simulated')
-   with c.profile_lease(folder):self.assertTrue(folder.is_dir())
- def test_chrome_persistent_context_reuses_same_folder_and_closes(self):
-  import tempfile
+ def test_browser_restores_edge_execution_and_always_closes(self):
   from unittest.mock import Mock
-  with tempfile.TemporaryDirectory() as tmp:
-   folder=Path(tmp)/'profile';engine=Mock()
-   with patch.object(c,'chrome_profile',return_value=folder):
-    for _ in range(2):
-     with c.chrome_session(C(),engine) as browser:self.assertIs(browser,engine.chromium.launch_persistent_context.return_value)
-   calls=engine.chromium.launch_persistent_context.call_args_list
-   self.assertEqual(len(calls),2)
-   self.assertTrue(all(v.args==(str(folder),) and v.kwargs['channel']=='chrome' for v in calls))
-   self.assertEqual(engine.chromium.launch_persistent_context.return_value.close.call_count,2)
- def test_launch_failure_releases_profile_lock(self):
-  import tempfile
+  engine=Mock()
+  with self.assertRaisesRegex(RuntimeError,'simulated'):
+   with c.browser_session(C(),engine) as context:
+    self.assertIs(context,engine.chromium.launch.return_value.new_context.return_value)
+    raise RuntimeError('simulated')
+  engine.chromium.launch.assert_called_once_with(headless=True,channel='msedge')
+  engine.chromium.launch_persistent_context.assert_not_called()
+  engine.chromium.launch.return_value.close.assert_called_once()
+ def test_429_without_header_does_not_claim_server_provided_wait(self):
   from unittest.mock import Mock
-  with tempfile.TemporaryDirectory() as tmp:
-   folder=Path(tmp)/'profile';engine=Mock();engine.chromium.launch_persistent_context.side_effect=RuntimeError('missing browser')
-   with patch.object(c,'chrome_profile',return_value=folder):
-    with self.assertRaisesRegex(ValueError,'Chrome 실행 실패'):
-     with c.chrome_session(C(),engine):pass
-   with c.profile_lease(folder):pass
+  with patch.object(c,'pause'):
+   with self.assertRaises(c.RateLimited) as caught:c.with_backoff(C(),None,Mock(side_effect=c.RateLimited('PRODUCT','')))
+  self.assertIn('서버가 제한 해제 시각을 제공하지 않았습니다',str(caught.exception))
+  self.assertNotIn('서버 안내 대기시간',str(caught.exception))
  def test_proxy_only_bodies_from_all_failed_products_use_public_originals(self):
   import html
   observed=json.loads((ROOT/'tests/fixtures/castelbajac/proxy_details.json').read_text(encoding='utf-8'))

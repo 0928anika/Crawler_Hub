@@ -4,8 +4,6 @@ import base64
 import binascii
 import html
 import io
-import os
-from pathlib import Path
 from contextlib import contextmanager
 import json
 import re
@@ -18,7 +16,7 @@ from crawler_rules import check_public_image,gallery_slots
 SITE='https://brand.naver.com'
 STORE='castelbajac'
 CHANNEL_UID='2sWDwtZKadOpe9nfngD2U'
-REVISION='2026-11-15-castelbajac-5-portable-profile'
+REVISION='2026-11-15-castelbajac-6-edge-restore'
 
 def state_from(source):
     doc = BeautifulSoup(source,'html.parser')
@@ -59,7 +57,8 @@ def with_backoff(ctx,page,loader):
         except RateLimited as exc:
             delay=max(2.5,retry_seconds(exc.retry_after,15*(2**attempt)))
             if attempt==2 or delay>60:
-                raise RateLimited(exc.endpoint+' / 요청 중단. 서버 안내 대기시간 '+str(round(delay))+'초 후 다시 실행해주세요.',exc.retry_after) from exc
+                message='서버 Retry-After '+str(round(delay))+'초' if exc.retry_after else '서버가 제한 해제 시각을 제공하지 않았습니다.'
+                raise RateLimited(exc.endpoint+' / 요청 제한이 지속되어 자동 재시도 중단. '+message,exc.retry_after) from exc
             ctx.log('네이버 HTTP 429 요청 제한: %.1f초 대기 후 재시도 (%d/2) / %s'%(delay,attempt+1,exc.endpoint),'WARNING')
             pause(ctx,page,delay)
 
@@ -284,58 +283,13 @@ def regular_price(ctx,product):
     ctx.log('공식 독립 정상가 없음: 빈칸','INFO');return None
 
 
-def chrome_profile():
-    # Frozen worker bundles do not include APP's local_paths module.
-    # Resolve the same local runtime path using only the standard library.
-    configured=os.environ.get('CRAWLER_HUB_HOME')
-    if configured:home=Path(configured).expanduser().resolve()
-    else:
-        base=Path(os.environ.get('LOCALAPPDATA') or Path.home()/'.local/share')
-        home=(base/'CrawlerHub').resolve()
-    roots=[Path(v).expanduser().resolve() for k,v in os.environ.items() if k.lower().startswith('onedrive') and v]
-    if str(home).startswith('\\\\') or any('onedrive' in part.lower() or 'sharepoint' in part.lower() for part in home.parts) or any(home==root or root in home.parents for root in roots):
-        raise ValueError('수집용 크롬 프로필은 동기화 폴더가 아닌 로컬 디스크에 저장해야 합니다.')
-    return home/'browser-profiles'/'castelbajac-chrome'
-
-
 @contextmanager
-def profile_lease(folder):
-    folder=Path(folder);folder.mkdir(parents=True,exist_ok=True)
-    handle=(folder.parent/(folder.name+'.lock')).open('a+b');locked=False
-    try:
-        handle.seek(0,2)
-        if handle.tell()==0:handle.write(b'0');handle.flush()
-        handle.seek(0)
-        try:
-            if os.name=='nt':
-                import msvcrt
-                msvcrt.locking(handle.fileno(),msvcrt.LK_NBLCK,1)
-            else:
-                import fcntl
-                fcntl.flock(handle.fileno(),fcntl.LOCK_EX|fcntl.LOCK_NB)
-            locked=True
-        except OSError as exc:raise ValueError('까스텔바작 수집용 크롬 프로필이 사용 중입니다. 실행 중인 수집이 끝난 후 다시 실행해주세요.') from exc
-        yield folder
-    finally:
-        if locked:
-            handle.seek(0)
-            if os.name=='nt':
-                import msvcrt
-                msvcrt.locking(handle.fileno(),msvcrt.LK_UNLCK,1)
-            else:
-                import fcntl
-                fcntl.flock(handle.fileno(),fcntl.LOCK_UN)
-        handle.close()
-
-
-@contextmanager
-def chrome_session(ctx,engine):
-    with profile_lease(chrome_profile()) as folder:
-        ctx.log('까스텔바작 '+REVISION+' / Chrome 전용 프로필 재사용: '+str(folder),'INFO')
-        try:browser=engine.chromium.launch_persistent_context(str(folder),channel='chrome',headless=True,locale='ko-KR')
-        except Exception as exc:raise ValueError('수집용 Chrome 실행 실패. Chrome 설치 및 전용 프로필 사용 여부를 확인해주세요: '+str(exc)) from exc
-        try:yield browser
-        finally:browser.close()
+def browser_session(ctx,engine):
+    ctx.log('까스텔바작 '+REVISION+' / Edge 실행 (기존 성공 방식)','INFO')
+    try:browser=engine.chromium.launch(headless=True,channel='msedge')
+    except Exception as exc:raise ValueError('Microsoft Edge 실행 실패: '+str(exc)) from exc
+    try:yield browser.new_context()
+    finally:browser.close()
 
 
 def crawl(ctx):
@@ -345,7 +299,7 @@ def crawl(ctx):
     cache={};failures=[];emitted=0
     try:
         with sync_playwright() as engine:
-            with chrome_session(ctx,engine) as browser:
+            with browser_session(ctx,engine) as browser:
                 page=browser.pages[0] if browser.pages else browser.new_page();page.set_default_timeout(15000)
                 def route(request):
                     parsed=urlsplit(request.request.url);path=parsed.path

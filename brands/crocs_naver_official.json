@@ -1,0 +1,169 @@
+{
+  "id": "crocs_naver_official",
+  "name": "크록스",
+  "category": "신발",
+  "crawl_source": "네이버 공식",
+  "script": "crocs_naver_official.py",
+  "execution_level": 1,
+  "mapping_mode": "automatic",
+  "image_color_mapping": "verified",
+  "official_color_codes": true,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 조합의 사이즈 원문. 품절 포함, 220_M3W5 같은 mm/US 복합 표기 유지."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 discountedSalePrice 또는 benefitsView.discountedSalePrice의 공개 판매가. 옵션 추가금 반영. 쿠폰/회원가 제외."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 category.wholeCategoryName 경로."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 productImages의 대표/추가 상품 사진만, 리뷰·추천 사진 제외. 정확한 모델명과 단일 색상 옵션 대조."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "검사 통과한 동일 색상 공식 상품 갤러리로 추가5슬롯 구성."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 본문과 상품정보 고시 표. 확인된 배송 포함 오프로드 통짜 이미지 전체 제외(URL 방식 유지), A/S 책임자와 전화번호 행 제외. 사이즈표는 별도 생성하지 않음."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 할인 전 salePrice와 별도 할인 판매가를 대조. 실제 할인 전 가격이 독립 표시되는 경우만 정상가, 확인 불가 시 빈칸."
+    }
+  },
+  "guide": {
+    "example": "202651-02S",
+    "examples": [
+      "202651-02S"
+    ],
+    "pattern": "^[0-9]{5,6}-[A-Za-z0-9]{3}$",
+    "format": "품번-공식색상코드",
+    "notes": "예시 202651-02S. 네이버 공식 모델명과 정확히 일치하는 상품만 수집합니다.",
+    "method": "일반 Edge 새 세션에서 네이버 크록스 공식 검색·상품 응답 확인. 로그인 프로필/사용자 쿠키 주입 없음.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "202651",
+      "202651-"
+    ],
+    "validation_note": "형식 검사이며 실제 상품 존재는 실행 시 확인. 최초 요청서의 ER3CL862는 미검증. 사용자 제공 검색·상품·상세 HTML로 ES4OKL55를 검증했으며 스마트스토어 자동 접속 성공을 의미하지 않음."
+  },
+  "notes": "일반 Edge 공개 세션 사용. 공식 모델명·단일 색상 옵션 대조, 상품 갤러리만 수집. 고시 표에서 A/S 책임자와 전화번호 행 제외. 별도 사이즈표 생성 없음. 배송 안내가 포함된 확인된 통짜 PDP 파일은 전체 제외하며, 그 파일 안의 상품설명·사이즈표도 함께 생략됨. 다른 공식 상품 본문은 알려진 원본 호스트만 허용.",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": false,
+      "status": "unsupported",
+      "reason": "독립 결과 컬럼 없음"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 조합의 사이즈 원문. 품절 포함, 220_M3W5 같은 mm/US 복합 표기 유지."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 discountedSalePrice 또는 benefitsView.discountedSalePrice의 공개 판매가. 옵션 추가금 반영. 쿠폰/회원가 제외."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 category.wholeCategoryName 경로."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 productImages의 대표/추가 상품 사진만, 리뷰·추천 사진 제외. 정확한 모델명과 단일 색상 옵션 대조."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "검사 통과한 동일 색상 공식 상품 갤러리로 추가5슬롯 구성."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 본문과 상품정보 고시 표. 확인된 배송 포함 오프로드 통짜 이미지 전체 제외(URL 방식 유지), A/S 책임자와 전화번호 행 제외. 사이즈표는 별도 생성하지 않음."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 할인 전 salePrice와 별도 할인 판매가를 대조. 실제 할인 전 가격이 독립 표시되는 경우만 정상가, 확인 불가 시 빈칸."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "정상가": "regular_price",
+    "상품 링크": "product_url"
+  },
+  "image_mode": "url",
+  "code_hash": "1b0bc080d7ee50838643b7467c1a45691fb22613f8d7afcb946cf327747996a8"
+}

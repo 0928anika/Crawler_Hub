@@ -76,7 +76,7 @@
     "validation_note": "실행 시 실제 검색 결과 확인"
   },
   "crawl_source": "네이버 공식 스토어",
-  "notes": "네이버 공식 스토어의 색상별 모델명과 상품 고시 색상명으로 사진 자동 매핑. 상세는 본문에 명시된 원본 이미지로 수집하며 고시·사이즈는 원본 이미지에 보존, 별도 생성하지 않음. Google Chrome 및 Playwright 필요. 까스텔바작 전용 로컬 Chrome 프로필을 수집·작업 간 재사용. 일반 Chrome 프로필과 분리하고 동시 접근 잠금 적용. HTTP 429는 Retry-After에 맞춰 최대 2회 대기 재시도. 제한이 지속되면 다음 색상 요청도 중단하고 접근 제한 사유로 표시. 원본 링크 속성이 없는 네이버 프록시 본문도 검증된 공식 원본 경로로 복원하여 수집. 전용 프로필 경로 계산에 APP 모듈 의존성 없음: 실행 사본 및 구버전 APP 호환.",
+  "notes": "기존 성공 방식인 Microsoft Edge 기본 실행 사용. Playwright 필요. 색상별 공식 상품 모델명과 고시 색상명으로 사진 자동 매핑. 상세 원본 및 네이버 프록시 주소의 공식 원본 복원 지원. 고시·사이즈 원본 이미지 보존, 별도 생성 없음. 429는 Retry-After 존중 및 최대 2회 재시도, 계속 제한되면 중단.",
   "mapping_mode": "automatic",
   "image_mode": "url",
   "interface": "portal_v1",
@@ -163,5 +163,5 @@
     "상세페이지 HTML": "detail_page",
     "정상가": "regular_price"
   },
-  "code_hash": "1d9daa0d91699429839860b2b5b240a3fa513efa9b57fbba64a9821c32865ea5"
+  "code_hash": "276d3108a42b98a89bef09c1fe85bfbeed26b15be80febeb7619687c7d7ee76c"
 }
