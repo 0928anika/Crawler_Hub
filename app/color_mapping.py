@@ -81,7 +81,11 @@ def source_groups(job):
                     if match['id'] not in photo['preassigned_color_ids']:photo['preassigned_color_ids'].append(match['id'])
                     photo.update(preassigned_color_id=match['id'],mapping_evidence='공식 색상 자동 연결 결과')
             group['review_required']=True
-        for group in groups.values():group['images'].sort(key=lambda i:not bool(i.get('preassigned_color_id')))
+        if job.brand.get('mapping_image_order')=='source':
+            order={str(item['id']):index for index,item in enumerate(successful_items(job))}
+            for group in groups.values():group['images'].sort(key=lambda i:order.get(str(i['item_id']),len(order)))
+        else:
+            for group in groups.values():group['images'].sort(key=lambda i:not bool(i.get('preassigned_color_id')))
     return list(groups.values())
 
 

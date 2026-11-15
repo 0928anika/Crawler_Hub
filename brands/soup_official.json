@@ -1,0 +1,172 @@
+{
+  "id": "soup_official",
+  "name": "숲",
+  "category": "여성의류",
+  "crawl_source": "공식 홈페이지",
+  "script": "soup_official.py",
+  "execution_level": 1,
+  "interface": "portal_v1",
+  "mapping_mode": "manual",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "hybrid",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 색상별 ProductGroup/옵션 재고 조합에서 품절 포함 사이즈 수집."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "기본 정보 판매가 행의 공개 KRW 숫자."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "독립 소비자가 행. 누락/0/잘못된 형식은 빈칸."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 분류 경로."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 갤러리 및 본문 색상별 상품 사진 수집. 공통 variant 이미지로 색상 추정하지 않음."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "부분 미매핑 품번은 전체 사진과 사전 연결을 함께 표시. 완전 매핑 품번은 수동 화면 제외."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "배송·저작권·공통 배너를 제외한 공식 본문 원본 이미지 전체. 사이즈·고시 이미지 보존, 없으면 생성하지 않음."
+    }
+  },
+  "guide": {
+    "example": "SC1JK85",
+    "examples": [
+      "SC1JK85"
+    ],
+    "pattern": "^.+$",
+    "format": "공식 상품 품번",
+    "notes": "대소문자 무관. 일부 미매핑 사진이 있으면 품번 전체 사진과 기존 연결을 함께 표시합니다.",
+    "method": "숲 공식몰 품번 검색 및 공식 색상 옵션·본문 색상코드 연결.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [],
+    "validation_note": "품번 형식으로 선제 제외하지 않고 공식 검색 결과를 확인합니다."
+  },
+  "notes": "배송·저작권·공통 배너 제외, 상세 본문과 사이즈·고시 이미지 원본 순서 보존. 없는 사이즈표를 생성하지 않습니다. 공식 색상코드 구간 및 옵션 사진 연결만 사전 매핑. 미매핑 사진이 있으면 품번 전체 사진 표시, 완전 매핑 품번 제외. 매핑 후보는 공홈 대표·추가 썸네일 우선, 본문 디테일컷 후순위. 세로로 긴 색상 패널은 후보에서 제외하고 상세 본문에만 보존.",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 색상별 ProductGroup/옵션 재고 조합에서 품절 포함 사이즈 수집."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "기본 정보 판매가 행의 공개 KRW 숫자."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "독립 소비자가 행. 누락/0/잘못된 형식은 빈칸."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 분류 경로."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 갤러리 및 본문 색상별 상품 사진 수집. 공통 variant 이미지로 색상 추정하지 않음."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "부분 미매핑 품번은 전체 사진과 사전 연결을 함께 표시. 완전 매핑 품번은 수동 화면 제외."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "배송·저작권·공통 배너를 제외한 공식 본문 원본 이미지 전체. 사이즈·고시 이미지 보존, 없으면 생성하지 않음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null
+  },
+  "code_hash": "bfc1ca872923345c7503b384d112297ac51a04fa4523a078184d050228950a1d",
+  "hybrid_mapping": true,
+  "additional_image_count": 5,
+  "group_manual_pending": true,
+  "mapping_image_order": "source"
+}

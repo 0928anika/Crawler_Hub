@@ -31,6 +31,21 @@ class HybridMappingTests(unittest.TestCase):
             items=items,selected=['main_image','additional_images'],queue=[dict(id='0',status='SUCCESS',code='WHKAG4T35U')],dir=Path(folder),state='completed',
             data_lock=threading.RLock(),save_lock=threading.RLock(),checkpoint=lambda:None,save=lambda:None)
 
+    def test_source_order_keeps_official_cover_before_preassigned_details(self):
+        with tempfile.TemporaryDirectory(dir=ROOT/'tests') as folder:
+            job=self.job(folder,[item(0,'STYLE','60','https://img/cover.jpg',True),item(1,'STYLE','60','https://img/extra.jpg',True),item(2,'STYLE','60','https://img/detail.jpg')])
+            job.brand['mapping_image_order']='source'
+            view=mapping.snapshot(job);group=view['groups'][0]
+            self.assertEqual([i['url'] for i in group['images']],['https://img/cover.jpg','https://img/extra.jpg','https://img/detail.jpg'])
+            self.assertTrue(group['images'][2]['assigned_colors'])
+            for color in list(group['colors']):
+                if color['color_code']!='60':
+                    view=mapping.edit_options(job,dict(expected_revision=view['revision'],group_id=group['id'],action='delete',color_id=color['id']));continue
+                view=mapping.save_color(job,dict(expected_revision=view['revision'],group_id=group['id'],color_id=color['id'],image_ids=[i['id'] for i in reversed(group['images'])]))
+            view=mapping.finalize(job,dict(expected_revision=view['revision']))
+            row=mapping.final_items(job,view)[0]
+            self.assertEqual(row['raw']['대표이미지'],'https://img/cover.jpg')
+
     def test_entire_pending_code_is_visible_with_existing_assignments(self):
         with tempfile.TemporaryDirectory(dir=ROOT/'tests') as folder:
             job=self.job(folder,[item(0,'WHKAG4T35U','60','https://img/auto-black.jpg'),item(1,'WHKAG4T35U','AC','https://img/auto-gray.jpg'),item(2,'WHKAG4T35U','60','https://img/model.jpg',True),item(3,'FULLAUTO','60','https://img/full.jpg')])
