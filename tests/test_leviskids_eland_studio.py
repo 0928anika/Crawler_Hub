@@ -33,6 +33,29 @@ class LevisElandTests(unittest.TestCase):
   def info(ctx,url,cache):return ('JPEG',1000,1300,url,'front' in url)
   with patch.object(c,'image_info',side_effect=info):
    self.assertTrue(c.primary_studio(Context(),main,{}));self.assertEqual(len(c.gallery(Context(),main,{})),2)
+ def test_text_panels_are_excluded_but_short_product_lettering_is_not(self):
+  for words in ('사이즈 조견표 TODDLER 4 5 6 7 JUNIOR', '교환 및 환불안내 상품을 사용한 경우', 'REPREVE RECYCLED FIBER', 'A'*241):self.assertTrue(c.text_panel(words))
+  for words in ("Levi's 501", 'BLACK', '리바이스키즈'):self.assertFalse(c.text_panel(words))
+ def test_retail_names_removed_at_start_middle_and_end(self):
+  for title in ('NC충장점 리바이스키즈 데님 팬츠 V254DM167P', '[NC충장점] 데님 팬츠 V254DM167P', '데님 팬츠 NC충장점 V254DM167P', '데님 팬츠_V254DM167P_NC충장점'):
+   self.assertEqual(c.clean_name(title,'V254DM167P'),'데님 팬츠')
+ def test_gallery_drops_text_panel_without_rechecking_background(self):
+  main=dict(itemImage=[dict(imageDcode='010',imagePath='front.jpg'),dict(imageDcode='030',imagePath='text.jpg')])
+  with patch.object(c,'image_info',side_effect=lambda ctx,url,cache:('JPEG',1000,1300,url,False,'text' in url)):
+   self.assertEqual(len(c.gallery(Context(),main,{})),1)
+ def test_direct_link_validates_domain_and_ids(self):
+  value='https://www.elandmall.co.kr/i/item?itemNo=2611636774&lowerVendNo=LV22035480&pageId=1'
+  self.assertEqual(c.input_link(value),value.rsplit('&',1)[0])
+  for bad in ('https://evil.com/i/item?itemNo=1&lowerVendNo=LV1','https://elandmall.co.kr.evil.com/i/item?itemNo=1&lowerVendNo=LV1','https://www.elandmall.co.kr/i/item?itemNo=1'):
+   with self.assertRaises(c.CollectionError):c.input_link(bad)
+ def test_direct_link_uses_actual_code_and_never_searches(self):
+  d=json.loads((ROOT/'tests/fixtures/leviskids_eland_studio/2611636774.json').read_text('utf-8'))
+  main=d['itemMain'];link=c.SITE+'/i/item?itemNo='+str(main['itemNo'])+'&lowerVendNo='+main['lowerVendNo']
+  ctx=Context();ctx.product_code=link
+  with patch.object(c,'search',side_effect=AssertionError('must not search')),patch.object(c,'product',return_value=d) as product,patch.object(c,'image_info',return_value=('JPEG',1000,1000,'size',True)),patch.object(c,'primary_studio',return_value=True),patch.object(c,'gallery',return_value=[('https://item.elandrs.com/photo.jpg','digest')]),patch.object(c,'body_photos',return_value=[]),patch.object(c,'options',return_value=[]),patch.object(c,'colors',return_value=([dict(color_name='Black',color_code='BK')],[])):
+   c.crawl(ctx)
+  self.assertEqual(product.call_args.args[2],None)
+  self.assertEqual(ctx.rows[0][0][0]['product_code'],'V211SW122P')
  def test_selected_photos_only_and_fixed_chart_per_color(self):
   with tempfile.TemporaryDirectory(dir=ROOT/'tests') as folder:
    items=[helper.item(i,'STYLE','60','https://img/photo'+str(i)+'.jpg',True) for i in range(9)]

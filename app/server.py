@@ -136,6 +136,8 @@ class Handler(BaseHTTPRequestHandler):
                         result['review_status'],result['warnings']=review_result(item,job.selected)
                         if manual_pending:
                             result['review_status']='mapping';result['warnings']=[]
+                        if manual_pending and job.brand.get('mapping_detail_mode')=='selected_images_with_tail':
+                            result['detail_notice']='상세페이지는 색상 매핑에서 선택한 상품 사진과 공식 홈페이지의 사이즈표로 완성됩니다. 선택하지 않은 사진은 최종 상세페이지에 포함되지 않습니다. 현재는 사이즈표만 미리 표시됩니다.'
                         result.pop('detail_files',None)
                         if task and task['status']=='FAILED':result['review_status']='error'
                         return self.send(result)

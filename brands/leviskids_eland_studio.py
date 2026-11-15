@@ -1,5 +1,9 @@
 PORTAL_API_VERSION = 1
 
+import base64
+import subprocess
+import tempfile
+from pathlib import Path
 import hashlib
 from email.utils import parsedate_to_datetime
 import html
@@ -215,7 +219,7 @@ def product_once(ctx, url, code, diagnostics=None):
         except (KeyError,ValueError,TypeError) as exc:
             raise CollectionError('공식 상품 JSON 형식 변경: '+url) from exc
         model=str(main.get('modelNo') or '').strip().upper()
-        exact=bool(re.fullmatch(re.escape(code)+r'(?:[_-][A-Z0-9]+)?',model)) if model else bool(re.search(r'(?<![A-Z0-9])'+re.escape(code)+r'(?![A-Z0-9])',str(main.get('itemName') or '').upper()))
+        exact=True if code is None else bool(re.fullmatch(re.escape(code)+r'(?:[_-][A-Z0-9]+)?',model)) if model else bool(re.search(r'(?<![A-Z0-9])'+re.escape(code)+r'(?![A-Z0-9])',str(main.get('itemName') or '').upper()))
         if str(main.get('brandNo'))!=BRAND_NO or not exact:
             reason='검색 결과는 있으나 실제 공식 품번/브랜드 불일치: 요청 %s, 실제 %s, 브랜드 %s / %s' % (code, main.get('modelNo'), main.get('brandNo'), url)
             if diagnostics is not None:diagnostics.append(reason)
@@ -354,6 +358,7 @@ def clean_name(name, code):
     # Remove the model first: some sellers put it AFTER the branch suffix.
     for token in ('리바이스키즈','LEVIS KIDS',code):
         name = re.sub(r'(?<![A-Za-z0-9])'+re.escape(token)+(r'(?:[_-](?:[0-9]{2}|[A-Z]{2})(?![가-힣A-Za-z0-9]))?' if token==code else '')+r'(?![A-Za-z0-9])','',name,flags=re.I)
+    name = re.sub(r'(?<![A-Za-z])(?:NC|뉴코아|이천일|모다아울렛|롯데백화점|현대백화점|신세계백화점)\s*[가-힣]{1,12}(?:지점|점)(?![가-힣])','',name,flags=re.I)
     name = re.sub(r'\[\s*\]|\(\s*\)','',name)
     # A branch suffix does not have to start with NC/뉴코아: _충장점,
     # _중동점, [평촌점], (뉴코아 부천점), and bare " 충장점" are all retail
@@ -427,8 +432,27 @@ class ImageRejected(CollectionError):
     """A decoded asset is not a usable product photograph."""
 
 
+OCR_SCRIPT="\n$ProgressPreference='SilentlyContinue'\n$ErrorActionPreference='Stop'\nAdd-Type -AssemblyName System.Runtime.WindowsRuntime\n$null=[Windows.Storage.StorageFile,Windows.Storage,ContentType=WindowsRuntime]\n$null=[Windows.Storage.Streams.IRandomAccessStream,Windows.Storage.Streams,ContentType=WindowsRuntime]\n$null=[Windows.Graphics.Imaging.BitmapDecoder,Windows.Graphics.Imaging,ContentType=WindowsRuntime]\n$null=[Windows.Graphics.Imaging.SoftwareBitmap,Windows.Graphics.Imaging,ContentType=WindowsRuntime]\n$null=[Windows.Media.Ocr.OcrEngine,Windows.Foundation,ContentType=WindowsRuntime]\n$null=[Windows.Media.Ocr.OcrResult,Windows.Foundation,ContentType=WindowsRuntime]\n$asTask=([System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object {$_.Name -eq 'AsTask' -and $_.IsGenericMethod -and $_.GetParameters().Count -eq 1})[0]\nfunction Await($Op,$Type) { $task=$asTask.MakeGenericMethod($Type).Invoke($null,@($Op));$task.Wait();$task.Result }\n$file=Await ([Windows.Storage.StorageFile]::GetFileFromPathAsync($ImagePath)) ([Windows.Storage.StorageFile])\n$stream=Await ($file.OpenAsync([Windows.Storage.FileAccessMode]::Read)) ([Windows.Storage.Streams.IRandomAccessStream])\n$decoder=Await ([Windows.Graphics.Imaging.BitmapDecoder]::CreateAsync($stream)) ([Windows.Graphics.Imaging.BitmapDecoder])\n$bitmap=Await ($decoder.GetSoftwareBitmapAsync()) ([Windows.Graphics.Imaging.SoftwareBitmap])\n$engine=[Windows.Media.Ocr.OcrEngine]::TryCreateFromUserProfileLanguages()\n$result=Await ($engine.RecognizeAsync($bitmap)) ([Windows.Media.Ocr.OcrResult])\n[Console]::OutputEncoding=[System.Text.UTF8Encoding]::new($false)\n$result.Text\n$bitmap.Dispose();$stream.Dispose()\n"
+
+TEXT_PANEL=re.compile(r'사이즈\s*(?:조견|표|가이드)|교환.{0,5}(?:환불|반품)|배송.{0,5}(?:안내|기간)|고객센터|구매.{0,4}주의|저작권|무단.{0,5}복제|REPREVE|RECYCLED\s*(?:FIBER|POLYESTER)|TODDLER|JUNIOR.{0,12}SOCKS',re.I)
+def text_panel(words):
+    compact=re.sub(r'\s+','',words)
+    return bool(TEXT_PANEL.search(words)) or len(compact)>240
+
+def image_words(ctx,image):
+    ctx.checkpoint()
+    pic=image.convert('RGB');pic.thumbnail((1200,1800))
+    with tempfile.TemporaryDirectory(prefix='levis-ocr-') as folder:
+        path=Path(folder)/'image.png';pic.save(path)
+        script="$ImagePath='"+str(path).replace("'","''")+"'\n"+OCR_SCRIPT
+        command=base64.b64encode(script.encode('utf-16le')).decode('ascii')
+        try:run=subprocess.run(['powershell.exe','-NoProfile','-NonInteractive','-EncodedCommand',command],capture_output=True,text=True,encoding='utf-8',timeout=25,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+        except (OSError,subprocess.TimeoutExpired) as exc:raise CollectionError('상품사진 문자 검사 실행 실패: '+str(exc)) from exc
+        if run.returncode:raise CollectionError('Windows 문자 검사 실패: '+run.stderr[-300:])
+        return run.stdout
+
 def image_info(ctx, url, cache, detail=False):
-    if urlsplit(url).hostname not in ('item.elandrs.com','img-studio.elandmall.com','item-imghub.eland.co.kr') and not (detail and urlsplit(url).hostname in ('file1.partnerbk.com','cmcrftp.godohosting.com','image.style24.com','image.istyle24.com')):
+    if urlsplit(url).hostname not in ('item.elandrs.com','img-studio.elandmall.com','item-imghub.eland.co.kr') and not (detail and urlsplit(url).hostname in ('file1.partnerbk.com','cmcrftp.godohosting.com','image.style24.com','image.istyle24.com','thumbnail.coupangcdn.com')):
         raise CollectionError('확인되지 않은 이미지 호스트: '+url)
     key=('detail',url) if detail else url
     if key in cache:
@@ -442,7 +466,13 @@ def image_info(ctx, url, cache, detail=False):
             if w*h>(80_000_000 if detail else 40_000_000):
                 raise ImageRejected('이미지 해독 픽셀 한도 초과: '+url)
             image.load()
-            info = (fmt,w,h,hashlib.sha256(raw).hexdigest(),studio_background(image)[0])
+            panel=False
+            if url!=SIZE_IMAGE and min(w,h)>=300 and max(w,h)/min(w,h)<=2:
+                panel_key=('text_panel',hashlib.sha256(raw).hexdigest())
+                if panel_key not in cache:cache[panel_key]=text_panel(image_words(ctx,image))
+                panel=cache[panel_key]
+                if panel:ctx.log('글씨·표·공통안내 이미지 후보 제외: '+url,'INFO')
+            info = (fmt,w,h,hashlib.sha256(raw).hexdigest(),studio_background(image)[0],panel)
     except (UnidentifiedImageError,OSError,Image.DecompressionBombError) as exc:
         raise ImageRejected('손상 또는 이미지가 아닌 응답: '+url) from exc
     cache[key] = info
@@ -450,7 +480,7 @@ def image_info(ctx, url, cache, detail=False):
 
 
 SIZE_IMAGE='https://image.style24.com/Upload/editor/%EB%A6%AC%EB%B0%94-%EC%82%AC%EC%9D%B4%EC%A6%88%EC%A1%B0%EA%B2%AC%ED%91%9C_20240202.jpg'
-REVISION='2026-11-16-leviskids-eland-studio-1'
+REVISION='2026-11-16-leviskids-eland-studio-2'
 NEGATIVE=re.compile(r'banner|notice|shipping|delivery|refund|coupon|copyright|CCTV|/MD_buyer/|brandSizeImg|size|chart|guide|gosi|specification|고시|사이즈|배송|판매처|매장.?안내|저작권',re.I)
 
 
@@ -469,6 +499,7 @@ def gallery(ctx,main,cache):
         url=image_url(urljoin('https://item.elandrs.com/',row['imagePath']))
         try:info=image_info(ctx,url,cache)
         except (MissingResource,ImageRejected):continue
+        if len(info)>5 and info[5]:continue
         if min(info[1:3])<300 or max(info[1:3])/min(info[1:3])>2:continue
         photos.append((url,info[3]))
     return photos
@@ -489,13 +520,34 @@ def body_photos(ctx,data,cache):
         try:info=image_info(ctx,url,cache,detail=True)
         except (MissingResource,AccessDenied,ImageRejected) as exc:
             ctx.log('상세 후보 원본 제외: '+str(exc),'WARNING');continue
+        if len(info)>5 and info[5]:continue
         if info[0] not in ('JPEG','PNG','WEBP') or min(info[1:3])<300 or max(info[1:3])/min(info[1:3])>2:continue
         result.append((url,info[3]))
     return result
 
 
+
+def input_link(value):
+    parsed=urlsplit(html.unescape(value.strip()))
+    host=parsed.hostname or ''
+    if parsed.scheme not in ('http','https') or not (host=='elandmall.co.kr' or host.endswith('.elandmall.co.kr')) or parsed.username or parsed.password or parsed.port not in (None,80,443) or parsed.path!='/i/item':
+        raise CollectionError('이랜드몰 상품 링크(/i/item)를 입력해주세요.')
+    params=parse_qs(parsed.query);items=params.get('itemNo',[]);vendors=params.get('lowerVendNo',[])
+    if len(items)!=1 or not items[0].isdigit() or len(vendors)!=1 or not re.fullmatch(r'[A-Za-z0-9]+',vendors[0]):raise CollectionError('상품 링크의 itemNo 또는 lowerVendNo를 확인해주세요.')
+    return SITE+'/i/item?'+urlencode(dict(itemNo=items[0],lowerVendNo=vendors[0]))
+
+def actual_code(main):
+    model=str(main.get('modelNo') or '').strip().upper()
+    if model:return re.split(r'[_-]',model)[0]
+    found=re.search(r'(?<![A-Z0-9])([A-Z]\d{3}[A-Z]{2}\d{3}[A-Z]?)(?![A-Z0-9])',str(main.get('itemName') or '').upper())
+    if found:return found.group(1)
+    raise CollectionError('지정 링크에서 실제 품번을 확인할 수 없습니다.')
+
+
 def crawl(ctx):
-    code=str(ctx.product_code).strip().upper()
+    raw=str(ctx.product_code).strip()
+    direct=raw.lower().startswith(('http://','https://'))
+    code=raw.upper()
     if not code:raise CollectionError('품번이 비어 있습니다')
     if not(ctx.enabled('main_image') or ctx.enabled('additional_images')):raise CollectionError('색상 매핑 후보를 위해 대표/추가이미지를 선택해주세요.')
     products=[];palette=[];photos=[];digests=set();cache={};errors=[]
@@ -505,11 +557,12 @@ def crawl(ctx):
         if ctx.enabled('detail_page'):
             image_info(ctx,SIZE_IMAGE,cache,detail=True)
             tail='<img src="'+SIZE_IMAGE+'" alt="리바이스키즈 공식 사이즈표" style="display:block;width:100%;height:auto;margin:0 auto">'
-        for link in search(ctx,code):
+        for link in ([input_link(raw)] if direct else search(ctx,code)):
             try:
-                data=product(ctx,link,code)
+                data=product(ctx,link,None if direct else code)
                 if data is None:continue
                 main=data['itemMain']
+                if direct:code=actual_code(main)
                 if not primary_studio(ctx,main,cache):
                     ctx.log('대표사진 배경 스튜디오컷 조건 미통과: 해당 링크 제외 / '+link,'INFO');continue
                 main_photos=gallery(ctx,main,cache)
