@@ -3,7 +3,7 @@ import html,http.client,io,json,re,socket,time,urllib.error,urllib.parse,urllib.
 from bs4 import BeautifulSoup,NavigableString,Comment
 from PIL import Image,UnidentifiedImageError
 BASE='https://www.fashionplus.co.kr'
-REVISION='2026-11-16-fashionplus-item-1'
+REVISION='2026-11-16-fashionplus-item-2-no-image-bullets'
 MAX_BYTES=10_000_000
 class CollectionError(RuntimeError):pass
 class MissingResource(CollectionError):pass
@@ -268,6 +268,12 @@ def detail(ctx,link,cache):
         children=''.join(render(child) for child in node.children)
         if node.name not in allowed or node.name in ('a','span','div'):return children
         if node.name=='br':return '<br>'
+        # Source image galleries use ul/li with site-only list-reset CSS.
+        # Export blocks instead so WING cannot reintroduce bullet markers.
+        if node.name=='ul':return '<div style="margin:0;padding:0">'+children+'</div>' if children.strip() else ''
+        if node.name=='li':
+            if not children.strip():return ''
+            if not node.parent or node.parent.name!='ol':return '<div style="margin:0;padding:0">'+children+'</div>'
         attrs=''
         if node.name=='table':attrs=' style="width:100%;border-collapse:collapse"'
         if node.name in ('td','th'):

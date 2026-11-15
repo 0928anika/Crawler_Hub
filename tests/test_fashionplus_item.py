@@ -41,6 +41,10 @@ class FashionplusItemTests(unittest.TestCase):
   doc=c.BeautifulSoup('<div class="m_prodetail-desc"><div class="mm_pinchzoom-wrapper"><p>원본 상품 설명</p><img src="https://example.test/product.jpg"><table><tr><th>사이즈</th><td>100</td></tr></table><img src="https://example.test/shipping/banner.jpg"><script>alert(1)</script></div></div>','html.parser')
   with patch.object(c,'soup_get',return_value=doc),patch.object(c,'image_info',return_value={'width':900,'height':3000}):body=c.detail(C(),'link',{})
   self.assertIn('원본 상품 설명',body);self.assertIn('<table',body);self.assertEqual(body.count('<img'),1);self.assertNotIn('<script',body);self.assertNotIn('shipping',body)
+ def test_image_lists_do_not_export_bullet_markers_or_empty_rows(self):
+  doc=c.BeautifulSoup('<div class="m_prodetail-desc"><div class="mm_pinchzoom-wrapper"><ul><li><img src="https://img.test/product.jpg"></li><li></li><li><img src="https://img.test/shipping.jpg"></li></ul><ul><li>원본 설명</li></ul><ol><li>첫 번째 순서</li></ol></div></div>','html.parser')
+  with patch.object(c,'soup_get',return_value=doc),patch.object(c,'image_info',return_value={'width':900,'height':3000}):body=c.detail(C(),'link',{})
+  result=c.BeautifulSoup(body,'html.parser');self.assertFalse(result.select('ul'));self.assertEqual(len(result.select('li')),1);self.assertEqual(len(result.select('img')),1);self.assertIn('원본 설명',body);self.assertTrue(result.select('ol li'))
  def test_optional_fields_do_not_download_images_or_body(self):
   ctx=C();doc=c.BeautifulSoup('<div class="m__product-info"><p class="text_product">상품</p></div>','html.parser')
   with patch.object(c,'soup_get',return_value=doc),patch.object(c,'read_options',return_value=([dict(color_name='BLACK',color_code='')],['100'],[])),patch.object(c,'gallery') as images,patch.object(c,'detail') as detail:c.crawl(ctx)
