@@ -1,6 +1,7 @@
 PORTAL_API_VERSION = 1
 
 import hashlib
+import ast
 import html
 import json
 import re
@@ -15,7 +16,7 @@ from PIL import Image
 from crawler_rules import check_public_image, validate_gallery_image, gallery_slots, clean_product_name
 
 SITE = 'https://whoau.com'
-REVISION = '2026-11-12-whoau-cdn'
+REVISION = '2026-11-15-whoau-options'
 DETAIL_MAX_BYTES = 64 * 1024 * 1024
 POLICY = dict(checked_on='2026-11-10', source='https://marketplace.coupang.com/mba/listing', min_side=500, max_bytes=10000000, formats=['JPEG','PNG','WEBP'], max_aspect=1.8)
 # 실제 WHMAG4V22U 검색 결과 5696/5692와 상세 이미지의 품번 확인.
@@ -83,6 +84,31 @@ def sizes(doc,label):
     for variant in variants(doc):
         if variant.get('color')==label and variant.get('size') and variant['size'] not in result:
             result.append(str(variant['size']))
+    if not result:
+        # Cafe24 may publish Product (no hasVariant) while actual combinations
+        # remain in the page's original option stock data.
+        for script in doc.find_all('script'):
+            match=re.search(r"var\s+option_stock_data\s*=\s*('(?:\\.|[^'\\])*')",script.get_text())
+            if not match:continue
+            try:stock=json.loads(ast.literal_eval(match[1]))
+            except (ValueError,SyntaxError,TypeError):continue
+            if not isinstance(stock,dict):continue
+            for row in stock.values():
+                if not isinstance(row,dict):continue
+                names=row.get('option_name_original',[]);values=row.get('option_value_orginal',[])
+                if not isinstance(names,list) or not isinstance(values,list) or len(names)!=len(values):continue
+                option=dict(zip(names,values))
+                if option.get('Color')==label and isinstance(option.get('Size'),str) and option['Size'] not in result:result.append(option['Size'])
+    if not result:
+        # A truly single-color page can safely use its own displayed Size list.
+        actual=doc.select('ul[option_title="Color"] li[option_value]')
+        if len(actual)==1 and actual[0].get('option_value')==label:
+            product=actual[0].find_parent('ul').get('option_product_no')
+            for group in doc.select('ul[option_title="Size"]'):
+                if not product or group.get('option_product_no')!=product:continue
+                for node in group.select('li[option_value]'):
+                    value=node.get('option_value','').strip()
+                    if value and value not in ('*','**') and value not in result:result.append(value)
     if not result:
         raise ValueError('해당 색상의 공식 사이즈 조합 확인 실패')
     return ','.join(result)

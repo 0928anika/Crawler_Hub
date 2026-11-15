@@ -117,5 +117,17 @@ class WhoauTests(unittest.TestCase):
         self.assertEqual(c.manual_photos(Context(),['linked','alias','unknown'],{'linked'},cache),['unknown'])
 
 
+    def test_product_without_productgroup_uses_real_color_size_stock_pair(self):
+        doc=c.parse((ROOT/'tests/fixtures/whoau/WHWHG3741F.html').read_text('utf-8'))
+        self.assertEqual(c.variants(doc),[])
+        self.assertEqual(c.sizes(doc,'(59)Navy'),'FREE(999)')
+        with self.assertRaises(ValueError):c.sizes(doc,'(10)White')
+
+    def test_single_color_displayed_size_is_safe_fallback(self):
+        doc=c.parse('<ul option_title="Color" option_product_no="5126"><li option_value="(59)Navy"></li></ul><ul option_title="Size" option_product_no="5126"><li option_value="FREE(999)"></li></ul>')
+        self.assertEqual(c.sizes(doc,'(59)Navy'),'FREE(999)')
+        doc.select_one('[option_title="Color"]').append(c.parse('<li option_value="(10)White"></li>').li)
+        with self.assertRaises(ValueError):c.sizes(doc,'(59)Navy')
+
 if __name__ == '__main__':
     unittest.main()
