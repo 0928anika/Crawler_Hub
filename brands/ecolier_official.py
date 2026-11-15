@@ -1,12 +1,12 @@
 PORTAL_API_VERSION = 1
-"""에꼴리에 (소이몰) — 혼합 색상 매핑 크롤러
-
-검증 범위: 사용자 단독 크롤러(ecolier_crawler_1.py)에서 운영 확인된 URL·선택자·응답 키를 Crawler Hub SDK 규약으로 이식. 이 코드를 작성한 환경은 해당 사이트 접속이 차단되어 실사이트 실행은 미검증이며, SDK 계약·선택 항목 생략·표 재구성은 오프라인 fixture 테스트(tests/test_oberon_brands.py)로만 확인함.
+"""에꼴리에 소이몰 혼합 매핑: 전체 갤러리 및 공식 옵션 코드 수집.
+2026-11-15 실제 25D0152 SDK 수집(수동 사진 후보 3장) 검증.
 """
-REVISION = '2026-11-12-oberon-1'
+REVISION = '2026-11-15-soie-gallery'
 
 # ───────────────────────── 공통 도우미 (브랜드 파일마다 동일하게 포함) ─────────────────────────
 import hashlib
+import ast
 import html
 import io
 import json
@@ -423,34 +423,55 @@ def product(ctx, number):
 
 
 def colors_of(page):
-    doc, info = page['doc'], dict(page['info'])
-    select = doc.select_one('select[name="optionNo_0"]')
-    values, label = [], ''
+    doc,info=page['doc'],dict(page['info']);result=[]
+    select=doc.select_one('select[name="optionNo_0"]')
     if select:
-        first = select.select_one('option')
-        label = first.get_text(' ', strip=True) if first else ''
-        values = [o.get('value').strip() for o in select.select('option') if (o.get('value') or '').strip()]
-    if values and re.search(r'컬러|색상|COLOR', label, re.I):
-        names = list(dict.fromkeys(values))
-    else:
-        names = split_list(info.get('색상', ''))
-    return [color_entry(*split_color(n)) for n in names]
+        first=select.select_one('option');heading=first.get_text(' ',strip=True) if first else ''
+        if re.search(r'컬러|색상|COLOR',heading,re.I):
+            for option in select.select('option'):
+                value=(option.get('value') or '').strip()
+                if not value:continue
+                label=option.get_text(' ',strip=True) or value
+                name,code=split_color(label)
+                explicit=option.get('data-color-code') or option.get('data-option-code') or ''
+                if not code and explicit and re.fullmatch(r'[A-Za-z]{1,4}',explicit):code=explicit.upper()
+                if not code and value!=label:
+                    _,value_code=split_color(value)
+                    if value_code:code=value_code
+                    elif re.fullmatch(r'[A-Z]{1,4}',value):code=value
+                entry=color_entry(name,code)
+                if entry not in result:result.append(entry)
+    return result or [color_entry(*split_color(n)) for n in split_list(info.get('색상',''))]
 
 
 def gallery(page):
-    by_kind = {}
-    for img in page['doc'].select('img'):
-        for key in ('data-original', 'src', 'data-src'):
-            url = absolute(page['url'], img.get(key) or '')
-            match = re.search(r'/goods/' + page['number'] + r'/image/([a-z0-9]+)/', url)
-            if match and '/thumb/' not in url:
-                by_kind.setdefault(match[1], [])
-                if url not in by_kind[match[1]]:
-                    by_kind[match[1]].append(url)
-    for kind in KIND_ORDER:
-        if by_kind.get(kind):
-            return by_kind[kind]  # 같은 사진의 크기별 사본이 섞이지 않게 가장 큰 종류 하나만 사용
-    return []
+    arrays={'magnify':{},'detail':{}};array_urls=set();by_kind={}
+    def candidate(src):
+        url=absolute(page['url'],src)
+        match=re.search(r'/goods/'+re.escape(page['number'])+r'/image/([a-z0-9]+)/',url)
+        return (url,match[1]) if match and '/thumb/' not in url else ('','')
+    # The zoom array often contains only index 0, while detail has all colors.
+    for script in page['doc'].find_all('script'):
+        pattern=r"(magnify|detail)KeyID\[(\d+)\]\s*=\s*(\"(?:\\.|[^\"\\])*\"|'(?:\\.|[^'\\])*')"
+        for match in re.finditer(pattern,script.get_text()):
+            try:markup=ast.literal_eval(match[3])
+            except (SyntaxError,ValueError):continue
+            for image in soup(markup).select('img'):
+                url,kind=candidate(img_src(image))
+                if url:arrays[match[1]][int(match[2])]=url;array_urls.add(url)
+    result=[]
+    for index in sorted(set(arrays['magnify'])|set(arrays['detail'])):
+        url=arrays['magnify'].get(index) or arrays['detail'].get(index)
+        if url not in result:result.append(url)
+    for image in page['doc'].select('img'):
+        for key in ('data-original','src','data-src'):
+            url,kind=candidate(image.get(key) or '')
+            if url and url not in array_urls and url not in by_kind.setdefault(kind,[]):by_kind[kind].append(url)
+    kinds=[kind for kind in KIND_ORDER if kind!='list']+sorted(kind for kind in by_kind if kind not in KIND_ORDER)
+    for kind in kinds:
+        for url in by_kind.get(kind,[]):
+            if url not in result:result.append(url)
+    return result or by_kind.get('list',[])
 
 
 def crawl(ctx):

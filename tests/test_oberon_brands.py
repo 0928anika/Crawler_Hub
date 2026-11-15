@@ -297,7 +297,8 @@ class Others(unittest.TestCase):
         self.assertEqual(rows[0]['사이즈'], '55,66,77')
         self.assertIsNone(rows[0]['정상가'])
         self.assertEqual(rows[0]['상품명'], '플레어 원피스')
-        self.assertIn('<th>제조국</th><td>대한민국</td>', rows[0]['상세페이지 HTML'])
+        detail=module.soup(rows[0]['상세페이지 HTML'])
+        self.assertEqual(detail.find('th',string='제조국').find_next_sibling('td').get_text(strip=True),'대한민국')
         self.assertNotIn('top1', rows[0]['상세페이지 HTML'])
 
 
