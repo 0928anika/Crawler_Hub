@@ -358,14 +358,15 @@ def clean_name(name, code):
     # Remove the model first: some sellers put it AFTER the branch suffix.
     for token in ('리바이스키즈','LEVIS KIDS',code):
         name = re.sub(r'(?<![A-Za-z0-9])'+re.escape(token)+(r'(?:[_-](?:[0-9]{2}|[A-Z]{2})(?![가-힣A-Za-z0-9]))?' if token==code else '')+r'(?![A-Za-z0-9])','',name,flags=re.I)
-    name = re.sub(r'(?<![A-Za-z])(?:NC|뉴코아|이천일|모다아울렛|롯데백화점|현대백화점|신세계백화점)\s*[가-힣]{1,12}(?:지점|점)(?![가-힣])','',name,flags=re.I)
+    name = re.sub(r'(?<![A-Za-z])(?:NC|뉴코아|이천일|모다아울렛|롯데백화점|현대백화점|신세계백화점)\s*[가-힣]{1,12}?(?:지점|점)','',name,flags=re.I)
     name = re.sub(r'\[\s*\]|\(\s*\)','',name)
     # A branch suffix does not have to start with NC/뉴코아: _충장점,
     # _중동점, [평촌점], (뉴코아 부천점), and bare " 충장점" are all retail
     # annotations. Keep product qualifiers such as (주니어) intact.
     branch = r'(?:(?:NC|뉴코아|이천일|이랜드리테일|이랜드몰|모다아울렛)\s*)?[^\s\[\]()_|/\-]{1,35}(?:지점|점)'
     locations=r'(?:대전\s*유성|일산|유성|창원|부천|중앙로역|충장|고잔|산본|괴정|야탑|수원\s*터미널|인천|평촌|강남|신구로|순천|평택|송파|청주)'
-    retail=r'(?:(?:NC|뉴코아|이천일|이랜드리테일|이랜드몰|모다아울렛)\s*[가-힣0-9]+(?:\s+[가-힣0-9]+)?(?:지점|점)?|'+locations+r'(?:지점|점)?)'
+    name=re.sub(r'(?:NC|뉴코아|이천일|모다아울렛)\s*'+locations+r'(?:지점|점)?','',name,flags=re.I)
+    retail=r'(?:(?:NC|뉴코아|이천일|이랜드리테일|이랜드몰|모다아울렛)\s*[가-힣0-9]+(?:지점|점)|'+locations+r'(?:지점|점)?)'
     suffixes = (
         r'\s*[_|/\-]\s*'+retail+r'\s*$',
         r'\s*[\[(]\s*'+retail+r'\s*[\])]\s*$',
@@ -451,8 +452,12 @@ def image_words(ctx,image):
         if run.returncode:raise CollectionError('Windows 문자 검사 실패: '+run.stderr[-300:])
         return run.stdout
 
+def detail_image_host(host):
+    return host in ('file1.partnerbk.com','cmcrftp.godohosting.com','image.style24.com','image.istyle24.com','sitem.ssgcdn.com') or bool(re.fullmatch(r'(?:image|thumbnail)\d*\.coupangcdn\.com',host or ''))
+
+
 def image_info(ctx, url, cache, detail=False):
-    if urlsplit(url).hostname not in ('item.elandrs.com','img-studio.elandmall.com','item-imghub.eland.co.kr') and not (detail and urlsplit(url).hostname in ('file1.partnerbk.com','cmcrftp.godohosting.com','image.style24.com','image.istyle24.com','thumbnail.coupangcdn.com')):
+    if urlsplit(url).hostname not in ('item.elandrs.com','img-studio.elandmall.com','item-imghub.eland.co.kr') and not (detail and detail_image_host(urlsplit(url).hostname)):
         raise CollectionError('확인되지 않은 이미지 호스트: '+url)
     key=('detail',url) if detail else url
     if key in cache:
@@ -480,7 +485,7 @@ def image_info(ctx, url, cache, detail=False):
 
 
 SIZE_IMAGE='https://image.style24.com/Upload/editor/%EB%A6%AC%EB%B0%94-%EC%82%AC%EC%9D%B4%EC%A6%88%EC%A1%B0%EA%B2%AC%ED%91%9C_20240202.jpg'
-REVISION='2026-11-16-leviskids-eland-studio-2'
+REVISION='2026-11-16-leviskids-eland-studio-3'
 NEGATIVE=re.compile(r'banner|notice|shipping|delivery|refund|coupon|copyright|CCTV|/MD_buyer/|brandSizeImg|size|chart|guide|gosi|specification|고시|사이즈|배송|판매처|매장.?안내|저작권',re.I)
 
 

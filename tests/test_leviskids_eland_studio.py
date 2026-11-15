@@ -56,6 +56,12 @@ class LevisElandTests(unittest.TestCase):
    c.crawl(ctx)
   self.assertEqual(product.call_args.args[2],None)
   self.assertEqual(ctx.rows[0][0][0]['product_code'],'V211SW122P')
+ def test_real_branch_and_model_without_spaces_preserve_product_title(self):
+  cases=[('리바이스키즈 NC충장 V234SW310P 테이핑후드','V234SW310P','테이핑후드'),('리바이스키즈 NC충장점V234SW338P스몰배트윙플리스풀오버','V234SW338P','스몰배트윙플리스풀오버')]
+  for source,code,expected in cases:self.assertEqual(c.clean_name(source,code),expected)
+ def test_linked_public_image_cdn_families_are_supported(self):
+  for host in ('image1.coupangcdn.com','thumbnail6.coupangcdn.com','thumbnail9.coupangcdn.com','sitem.ssgcdn.com'):self.assertTrue(c.detail_image_host(host))
+  for host in ('image1.coupangcdn.com.evil.com','evilcoupangcdn.com','127.0.0.1',None):self.assertFalse(c.detail_image_host(host))
  def test_selected_photos_only_and_fixed_chart_per_color(self):
   with tempfile.TemporaryDirectory(dir=ROOT/'tests') as folder:
    items=[helper.item(i,'STYLE','60','https://img/photo'+str(i)+'.jpg',True) for i in range(9)]
