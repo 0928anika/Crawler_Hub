@@ -16,7 +16,7 @@ HOSTS = {'jambangee.co.kr', 'www.jambangee.co.kr'}
 POLICY = dict(checked_on='2026-11-12', source='https://marketplace.coupang.com/mba/listing',
               min_side=500, max_bytes=10000000, max_aspect=1.8, formats=['JPEG','PNG','WEBP'],
               note='정지 WebP는 사용자 등록 환경 정책. 비율은 프로젝트 보조 기준.')
-BUNDLE = re.compile(r'1\s*[+＋]\s*1|원\s*플러스\s*원|원\s*플\s*원|원플원|일\s*플러스\s*일', re.I)
+BUNDLE = re.compile(r'1\s*[+＋]\s*1|원\s*플러스\s*원|원\s*플\s*원|원플원|일\s*플러스\s*일|\[코디추천\].*[+＋]|\[코디세트\]|코디\s*세트', re.I)
 NEGATIVE = re.compile(r'chart|size|measur|guide|collage|banner|logo|coupon|notice|shipping|review|고시|측정|실측|사이즈|배너|배송|쿠폰|리뷰', re.I)
 # 실제 검색 AP3DNE655: 9311(1+1) 제외, 8669/BK 및 8668/GY.
 # AP3DDJ643: 8681/DB. ProductGroup과 상품명 끝의 공식 SKU, 단일 색상 옵션을 대조.
@@ -71,7 +71,7 @@ def search(ctx, base, diagnostics=None):
             found.add(target)
             if BUNDLE.search(title):
                 excluded.add(target)
-                ctx.log('1+1 상품 제외: ' + title, 'INFO')
+                ctx.log('묶음(1+1/코디세트) 상품 제외: ' + title, 'INFO')
                 continue
             parsed = urlsplit(urljoin(final, node['href']))
             number = parse_qs(parsed.query).get('product_no',[''])[0]
@@ -159,7 +159,8 @@ def product_name(title, base, code):
 def identity(doc, number, base, search_verified=False):
     node = doc.select_one('.infoArea .prdName')
     title = node.get_text(' ',strip=True) if node else ''
-    if BUNDLE.search(title):
+    option_titles={node.get('option_title','') for node in doc.select('[option_title]') if node.get('option_product_no')==number}
+    if BUNDLE.search(title) or {'상의','하의'}.issubset(option_titles):
         return None
     match = re.search(r'(?<![A-Z0-9])([A-Z0-9]+(?:&[A-Z0-9]+)*)-([A-Z0-9]{2,4})\s*$',title,re.I)
     if match:
@@ -333,7 +334,7 @@ def crawl(ctx):
         if not diagnostics['found']:
             message = '[검색 결과 없음] '+base+' / 공식 품번 검색 0건'
         elif diagnostics['bundles'] == diagnostics['found']:
-            message = '[1+1 상품 제외] '+base+' / 검색 '+str(diagnostics['found'])+'건 모두 1+1 상품이며 개별 상품 없음'
+            message = '[묶음(1+1/코디세트) 상품 제외] '+base+' / 검색 '+str(diagnostics['found'])+'건 모두 묶음 상품이며 개별 상품 없음'
         else:
             message = '[검색 링크 확인 실패] '+base+' / 검색 결과는 있으나 공식 상품 링크 추출 불가'
         ctx.fail_item(message)
@@ -346,7 +347,7 @@ def crawl(ctx):
             record = identity(doc,number,base,search_verified=True)
             if not record:
                 bundle_pages += 1
-                ctx.log('[1+1 상품 제외] '+final,'INFO')
+                ctx.log('[묶음(1+1/코디세트) 상품 제외] '+final,'INFO')
                 continue
             code = record['color_code']
             available.add(code or ('코드 미확인('+record['color']+')'))
@@ -387,7 +388,7 @@ def crawl(ctx):
         if requested and available:
             message = '[지정 색상 없음] '+raw+' / 조회된 공식 색상: '+', '.join(sorted(available))
         elif bundle_pages:
-            message = '[1+1 상품 제외] '+raw+' / 검색된 상품 상세가 1+1 상품으로 확인됨'
+            message = '[묶음(1+1/코디세트) 상품 제외] '+raw+' / 검색된 상품 상세가 묶음 상품으로 확인됨'
         else:
             message = '[상품정보 확인 실패] '+raw+' / 검색 결과는 있으나 수집 가능한 개별 상품 정보를 확정하지 못함'
         ctx.fail_item(message)
