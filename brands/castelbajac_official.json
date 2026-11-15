@@ -1,0 +1,167 @@
+{
+  "id": "castelbajac_official",
+  "name": "까스텔바작",
+  "category": "골프웨어",
+  "script": "castelbajac_official.py",
+  "execution_level": 1,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "verified",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 사이즈 옵션 조합 전체, 품절 포함 및 085 등 앞자리 0 보존."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 공개 즉시할인 판매가. 회원·쿠폰·카드혜택 미적용."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 category.wholeCategoryName"
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 색상별 모델명의 대표사진 원본."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "동일 색상 상품의 공식 추가사진 5슬롯. 부족하면 해당 사진 반복."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상세의 data-linkdata 원본 이미지. 임시 프록시 URL 제외. 고시·사이즈 이미지 포함 본문 보존, 별도 표 생성 없음."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품명에 명시된 정상가만 수집. 없으면 빈칸. 판매가를 정상가로 대체하지 않음."
+    }
+  },
+  "guide": {
+    "example": "BGFWDW702",
+    "examples": [
+      "BGFWDW702",
+      "BGFWDW702BK"
+    ],
+    "pattern": "^.+$",
+    "format": "기본 품번 또는 공식 색상 포함 모델명",
+    "notes": "공식 스토어 품번 검색으로 색상별 상품을 모아 자동 매핑. 품절 옵션도 수집.",
+    "method": "까스텔바작 공식 channelUid 및 공식 모델명 대조",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [],
+    "validation_note": "실행 시 실제 검색 결과 확인"
+  },
+  "crawl_source": "네이버 공식 스토어",
+  "notes": "네이버 공식 스토어의 색상별 모델명과 상품 고시 색상명으로 사진 자동 매핑. 상세는 본문에 명시된 원본 이미지로 수집하며 고시·사이즈는 원본 이미지에 보존, 별도 생성하지 않음. Microsoft Edge 및 Playwright 필요.",
+  "mapping_mode": "automatic",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 사이즈 옵션 조합 전체, 품절 포함 및 085 등 앞자리 0 보존."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 공개 즉시할인 판매가. 회원·쿠폰·카드혜택 미적용."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 category.wholeCategoryName"
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 색상별 모델명의 대표사진 원본."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "동일 색상 상품의 공식 추가사진 5슬롯. 부족하면 해당 사진 반복."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상세의 data-linkdata 원본 이미지. 임시 프록시 URL 제외. 고시·사이즈 이미지 포함 본문 보존, 별도 표 생성 없음."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품명에 명시된 정상가만 수집. 없으면 빈칸. 판매가를 정상가로 대체하지 않음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "정상가": "regular_price"
+  },
+  "code_hash": "6f7aa50ced6e3ab3794db2370e81c90471942d99efbda2e19c293fd7d201043d"
+}

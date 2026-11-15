@@ -1,0 +1,48 @@
+{
+  "channel": {
+    "brandUrl": "castelbajac",
+    "channelUid": "2sWDwtZKadOpe9nfngD2U"
+  },
+  "keywordSearch": {
+    "keyword": "BGFWDW702",
+    "normalizedKeywordInfo": {
+      "originQuery": "BGFWDW702"
+    },
+    "sort": "RELEVANCE",
+    "listDisplayType": "IMAGE",
+    "simpleProducts": [
+      {
+        "id": 13828048787,
+        "naverShoppingSearchInfo": {
+          "brandId": 135362,
+          "manufacturerName": "까스텔바작",
+          "brandName": "까스텔바작",
+          "modelName": "BGFWDW702BK"
+        }
+      },
+      {
+        "id": 13828048590,
+        "naverShoppingSearchInfo": {
+          "brandId": 135362,
+          "manufacturerName": "까스텔바작",
+          "brandName": "까스텔바작",
+          "modelName": "BGFWDW702DB"
+        }
+      }
+    ],
+    "simpleCatalogs": [],
+    "totalCount": 2,
+    "page": 1,
+    "pageSize": 40,
+    "filter": {
+      "filters": [],
+      "priceRange": null
+    },
+    "querySummaryInfo": {
+      "isQR": null,
+      "isPartialSearch": null,
+      "orgQueryTotal": null
+    },
+    "normalizedKeyword": null
+  }
+}
