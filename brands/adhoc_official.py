@@ -3,7 +3,7 @@ PORTAL_API_VERSION = 1
 
 검증 범위: 사용자 단독 크롤러(adhoc_crawler.py)에서 운영 확인된 URL·선택자·응답 키를 Crawler Hub SDK 규약으로 이식. 이 코드를 작성한 환경은 해당 사이트 접속이 차단되어 실사이트 실행은 미검증이며, SDK 계약·선택 항목 생략·표 재구성은 오프라인 fixture 테스트(tests/test_oberon_brands.py)로만 확인함.
 """
-REVISION = '2026-11-12-oberon-1'
+REVISION = '2026-11-15-combined-sizes-2'
 CONFIG = {'site': 'https://adhoc.co.kr',
  'hosts': ('adhoc.co.kr', 'www.adhoc.co.kr'),
  'brand': '애드호크',
@@ -434,7 +434,8 @@ def page_colors(doc, text, notice):
     result = {}
     if data:
         for item in data.values():
-            if str(item.get('is_display') or 'T') == 'F':
+            if str(item.get('is_display') or 'T') == 'F' and not (
+                    str(item.get('is_auto_soldout')) == 'T' and item.get('stock_number') == 0):
                 continue
             names = item.get('option_name_original') or item.get('option_name') or []
             if isinstance(names, str):
@@ -452,6 +453,8 @@ def page_colors(doc, text, notice):
                 si = 0
             color = str(values[ci]).strip() if ci is not None and ci < len(values) else ''
             size = str(values[si]).strip() if si is not None and si < len(values) else ''
+            if ci is not None and ci == si:
+                color, size = split_combined_option(color)
             entry = result.setdefault(color, {'sizes': [], 'prices': [], 'image': ''})
             if size and size not in entry['sizes']:
                 entry['sizes'].append(size)
@@ -464,12 +467,28 @@ def page_colors(doc, text, notice):
         colors, sizes = [], []
         for select in doc.select('select[option_title]'):
             values = [o.get_text(' ', strip=True) for o in select.select('option') if (o.get('value') or '') not in ('', '*', '**')]
+            title = select.get('option_title') or ''
+            if COLOR_TITLE.search(title) and SIZE_TITLE.search(title):
+                for value in values:
+                    color, size = split_combined_option(value)
+                    entry = result.setdefault(color, {'sizes': [], 'prices': [], 'image': ''})
+                    if size not in entry['sizes']:
+                        entry['sizes'].append(size)
+                continue
             (colors if COLOR_TITLE.search(select.get('option_title') or '') else sizes).extend(values)
-        for color in colors or ['']:
+        for color in colors or ([] if result else ['']):
             result.setdefault(color, {'sizes': list(dict.fromkeys(sizes)), 'prices': [], 'image': ''})
     if '' in result and len(result) == 1 and notice.get('색상'):
         result = {notice['색상']: result['']}
     return list(result.items())
+
+
+def split_combined_option(value):
+    # CH-GREY(37)-095 같은 색상명 내부 하이픈은 보존한다.
+    match = re.fullmatch(r'(.+?)[-_:]\s*(\d+[A-Za-z]*|[2-6]?X{0,3}[SML]|FREE|ONE\s*SIZE|F{1,3})', value.strip(), re.I)
+    if not match:
+        raise CrawlError('공식 색상·사이즈 통합 옵션 분리 실패: ' + value)
+    return match[1].strip(), match[2].strip()
 
 
 def linked_images(doc, text, final):
