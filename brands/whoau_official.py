@@ -34,7 +34,8 @@ def image_url(raw, final=SITE):
     p = urlsplit(url)
     allowed = (p.hostname == 'cafe24.poxo.com' and p.path.startswith('/ec01/whoaukr/')
                or p.hostname == 'cafe24img.poxo.com' and p.path.startswith('/whoaukr/')
-               or p.hostname == 'item-imghub.eland.co.kr')
+               or p.hostname == 'item-imghub.eland.co.kr'
+               or p.hostname == 'item.elandrs.com' and p.path.startswith('/r/image/item/'))
     if p.scheme != 'https' or not allowed or p.username or p.password:
         return ''
     return urlunsplit((p.scheme,p.netloc,quote(p.path,safe="/%:@+=$,;~!*'()"),p.query,''))
@@ -196,6 +197,7 @@ def detail_image(ctx,url,cache):
 
 
 def fetch(ctx, url):
+    url=quote(url,safe=":/?#[]@!$&'()*+,;=%")
     if not official(url):
         raise ValueError('후아유 공식 홈페이지 외부 URL')
     last = None
@@ -269,7 +271,9 @@ def crawl(ctx):
     cache={};pages=[];candidates={};failures=[];emitted=set();shots=[];all_linked=set()
     try:
         ctx.stage('후아유 공식 품번 검색: '+base)
-        for link in search(ctx,base):
+        links=search(ctx,base)
+        if not links:raise ValueError('공식 품번 검색 결과 없음: '+raw)
+        for link in links:
             source,final=fetch(ctx,link);doc=parse(source);name=field(doc,'상품명')
             if not name:raise ValueError('공식 상품명 없음: '+final)
             page=dict(doc=doc,final=final,name=name);pages.append(page)

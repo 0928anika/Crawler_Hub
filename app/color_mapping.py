@@ -24,7 +24,10 @@ def is_hybrid(job):
 
 
 def automatic_items(job):
-    return [item for item in successful_items(job) if not item.get('unmapped')] if is_hybrid(job) else []
+    if not is_hybrid(job):return []
+    items=successful_items(job)
+    pending={str(item['code']).strip().upper() for item in items if item.get('unmapped')}
+    return [item for item in items if not item.get('unmapped') and str(item['code']).strip().upper() not in pending]
 
 
 def successful_items(job):
@@ -55,6 +58,30 @@ def source_groups(job):
                 image.update(url=local_images.preview_url(job,raw['asset_path']),asset_path=raw['asset_path'],preassigned_color_id=match['id'] if match else None,mapping_evidence=raw.get('mapping_evidence',''))
                 if raw.get('detail_asset_path'):image['detail_asset_path']=raw['detail_asset_path']
             group['images'].append(image)
+    if is_hybrid(job):
+        # Include existing official mappings only for product codes that need review.
+        for item in successful_items(job):
+            if item.get('unmapped'):continue
+            group=groups.get(key(str(item['code']).strip().upper()))
+            if group is None:continue
+            raw=item.get('raw',{})
+            def value(label):return next((str(v or '') for h,v in raw.items() if h.replace(' ','')==label),'')
+            color=normalize_palette([dict(color_name=value('색상명') or item.get('color',''),color_code=value('색상코드'))])[0]
+            match=next((c for c in group['colors'] if same_color(c,color)),None)
+            if match is None:group['colors'].append(color);match=color
+            for header,url_string in raw.items():
+                if field_for(header) not in ('main_image','additional_images') or not url_string:continue
+                for url in str(url_string).split(','):
+                    url=url.strip()
+                    if not url:continue
+                    iid=key(url);photo=next((i for i in group['images'] if i['id']==iid),None)
+                    if photo is None:
+                        photo=dict(id=iid,url=url,item_id=item['id']);group['images'].append(photo)
+                    photo.setdefault('preassigned_color_ids',[])
+                    if match['id'] not in photo['preassigned_color_ids']:photo['preassigned_color_ids'].append(match['id'])
+                    photo.update(preassigned_color_id=match['id'],mapping_evidence='공식 색상 자동 연결 결과')
+            group['review_required']=True
+        for group in groups.values():group['images'].sort(key=lambda i:not bool(i.get('preassigned_color_id')))
     return list(groups.values())
 
 
@@ -93,9 +120,12 @@ def snapshot(job):
         assignments={iid:[cid for cid in (value if isinstance(value,list) else [value]) if cid in valid_colors] for iid,value in saved.get('assignments',{}).items() if iid in valid_images}
         signature_matches=saved.get('image_signature')==group['signature'] or saved.get('signature')==legacy_signature
         confirmed=[cid for cid in saved.get('confirmed',[]) if cid in valid_colors] if signature_matches else []
-        if group['id'] not in state.get('groups',{}):
-            assignments={i['id']:[i['preassigned_color_id']] for i in group['images'] if i.get('preassigned_color_id') in valid_colors}
-            confirmed=sorted({cid for ids in assignments.values() for cid in ids})
+        initial=group['id'] not in state.get('groups',{})
+        if initial or (group.get('review_required') and not saved.get('all_photos')):
+            for image in group['images']:
+                ids=[cid for cid in image.get('preassigned_color_ids',[image.get('preassigned_color_id')]) if cid in valid_colors]
+                if ids and image['id'] not in assignments:assignments[image['id']]=ids
+            if initial:confirmed=[] if group.get('review_required') else sorted({cid for ids in assignments.values() for cid in ids})
         for image in group['images']:
             image['assigned_colors']=assignments.get(image['id'],[])
             image['assigned_to']=next(iter(image['assigned_colors']),None)
@@ -111,7 +141,7 @@ def snapshot(job):
 
 
 def initial_saved(group):
-    return dict(assignments={i['id']:list(i['assigned_colors']) for i in group['images'] if i.get('assigned_colors')},confirmed=list(group['confirmed']),image_signature=group['signature'])
+    return dict(assignments={i['id']:list(i['assigned_colors']) for i in group['images'] if i.get('assigned_colors')},confirmed=list(group['confirmed']),image_signature=group['signature'],all_photos=True)
 
 
 def save_color(job,data):
@@ -127,6 +157,9 @@ def save_color(job,data):
         if not isinstance(selected,list) or any(i not in {image['id'] for image in group['images']} for i in selected):raise ValueError('현재 품번의 사진만 선택할 수 있습니다.')
         if not selected:raise ValueError('사진을 최소 1장 선택한 뒤 저장하세요. 사용하지 않는 색상은 옵션을 삭제하세요.')
         saved=state.setdefault('groups',{}).setdefault(group['id'],initial_saved(group))
+        if group.get('review_required') and not saved.get('all_photos'):
+            saved.update(initial_saved(group))
+        saved['all_photos']=True
         assignments=saved['assignments'];confirmed=set(saved['confirmed'])
         # Each color owns its selection independently; legacy scalar values migrate here.
         assignments={iid:[cid for cid in (value if isinstance(value,list) else [value]) if cid!=color] for iid,value in assignments.items()}
