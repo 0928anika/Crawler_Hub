@@ -1,5 +1,7 @@
 PORTAL_API_VERSION = 1
 import hashlib
+import base64
+import binascii
 import html
 import io
 import os
@@ -9,14 +11,14 @@ import json
 import re
 import time
 from email.utils import parsedate_to_datetime
-from urllib.parse import parse_qs,urlencode,urlsplit,urljoin
+from urllib.parse import parse_qs,urlencode,urlsplit,urljoin,unquote
 from bs4 import BeautifulSoup
 from PIL import Image
 from crawler_rules import check_public_image,gallery_slots
 SITE='https://brand.naver.com'
 STORE='castelbajac'
 CHANNEL_UID='2sWDwtZKadOpe9nfngD2U'
-REVISION='2026-11-15-castelbajac-3-chrome-profile'
+REVISION='2026-11-15-castelbajac-4-detail-proxy'
 
 def state_from(source):
     doc = BeautifulSoup(source,'html.parser')
@@ -179,10 +181,27 @@ def discover(ctx,page,code):
 def original_image(raw):
     if not isinstance(raw,str):return ''
     p=urlsplit(raw)
-    if p.scheme not in ('http','https') or p.username or p.password:return ''
+    if p.scheme not in ('http','https') or p.username or p.password or '..' in unquote(p.path).split('/'):return ''
     if p.hostname=='castelgolf.cafe24.com' and p.path.startswith('/BG/'):return re.sub(r'^http:', 'https:', raw)
     if p.hostname=='shop-phinf.pstatic.net' and p.scheme=='https':return raw
     return ''
+
+
+def detail_original(raw):
+    direct=original_image(raw)
+    if direct:return direct
+    if not isinstance(raw,str):return ''
+    parsed=urlsplit(raw)
+    if parsed.scheme!='https' or parsed.hostname!='proxy-smartstore.naver.net' or parsed.username or parsed.password or not parsed.path.startswith('/img/'):return ''
+    encoded=unquote(parsed.path[len('/img/'):])
+    if len(encoded)>16000:return ''
+    try:
+        decoded=base64.b64decode(encoded+'='*(-len(encoded)%4),altchars=b'-_',validate=True).decode('utf-8')
+    except (ValueError,UnicodeError,binascii.Error):return ''
+    # The proxy path contains the source URL. Use only our verified public
+    # original hosts; never export the expiring proxy query/token.
+    decoded=decoded if decoded.startswith(('http://','https://')) else 'https://'+decoded
+    return original_image(decoded)
 
 
 def checked(ctx,url,cache,detail=False):
@@ -220,7 +239,11 @@ def detail_urls(contents,model):
             try:raw=json.loads(anchor['data-linkdata']).get('src') or ''
             except (ValueError,TypeError):pass
         if not raw:raw=node.get('data-src') or node.get('src') or ''
-        url=original_image(raw)
+        url=detail_original(raw)
+        if not url:
+            for candidate in (node.get('data-src'),node.get('src')):
+                url=detail_original(candidate)
+                if url:break
         if not url:raise ValueError('상세 원본 주소 미확인: '+raw[:180])
         p=urlsplit(url)
         if re.search(r'banner|shipping|delivery|coupon|notice|/event/|배송|교환|반품',p.path,re.I):continue

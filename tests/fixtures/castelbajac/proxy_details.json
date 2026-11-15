@@ -1,0 +1,26 @@
+[
+  {
+    "code": "BGFWPT707",
+    "proxy": "https://proxy-smartstore.naver.net/img/Y2FzdGVsZ29sZi5jYWZlMjQuY29tL0JHL0RCL0JHRldQVDcwN0JFL0JHRldQVDcwN0JFLmpwZw==?token=expired-fixture",
+    "original": "https://castelgolf.cafe24.com/BG/DB/BGFWPT707BE/BGFWPT707BE.jpg",
+    "model": "BGFWPT707BE"
+  },
+  {
+    "code": "BGFWPT707",
+    "proxy": "https://proxy-smartstore.naver.net/img/Y2FzdGVsZ29sZi5jYWZlMjQuY29tL0JHL0RCL0JHRldQVDcwN0JLL0JHRldQVDcwN0JLLmpwZw==?token=expired-fixture",
+    "original": "https://castelgolf.cafe24.com/BG/DB/BGFWPT707BK/BGFWPT707BK.jpg",
+    "model": "BGFWPT707BK"
+  },
+  {
+    "code": "BGFWPT708",
+    "proxy": "https://proxy-smartstore.naver.net/img/Y2FzdGVsZ29sZi5jYWZlMjQuY29tL0JHL0RCL0JHRldQVDcwOEJFL0JHRldQVDcwOEJFLmpwZw==?token=expired-fixture",
+    "original": "https://castelgolf.cafe24.com/BG/DB/BGFWPT708BE/BGFWPT708BE.jpg",
+    "model": "BGFWPT708BE"
+  },
+  {
+    "code": "BGFWPT712",
+    "proxy": "https://proxy-smartstore.naver.net/img/Y2FzdGVsZ29sZi5jYWZlMjQuY29tL0JHL0RCL0JHRldQVDcxMkJLL0JHRldQVDcxMkJLLmpwZw==?token=expired-fixture",
+    "original": "https://castelgolf.cafe24.com/BG/DB/BGFWPT712BK/BGFWPT712BK.jpg",
+    "model": "BGFWPT712BK"
+  }
+]

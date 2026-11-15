@@ -114,6 +114,25 @@ class CastelbajacTests(unittest.TestCase):
     with self.assertRaisesRegex(ValueError,'Chrome 실행 실패'):
      with c.chrome_session(C(),engine):pass
    with c.profile_lease(folder):pass
+ def test_proxy_only_bodies_from_all_failed_products_use_public_originals(self):
+  import html
+  observed=json.loads((ROOT/'tests/fixtures/castelbajac/proxy_details.json').read_text(encoding='utf-8'))
+  self.assertEqual({r['code'] for r in observed},{'BGFWPT707','BGFWPT708','BGFWPT712'})
+  for row in observed:
+   body={'renderContent':'<img src="data:image/png;base64,placeholder" data-src="'+html.escape(row['proxy'],quote=True)+'">'}
+   self.assertEqual(c.detail_urls(body,row['model']),[row['original']])
+   with patch.object(c,'checked',return_value={}):markup=c.detail(C(),body,row['model'],{})
+   self.assertIn(row['original'],markup);self.assertNotIn('token=',markup);self.assertNotIn('proxy-smartstore',markup)
+ def test_proxy_fallback_when_link_metadata_has_no_valid_source(self):
+  from bs4 import BeautifulSoup
+  row=json.loads((ROOT/'tests/fixtures/castelbajac/proxy_details.json').read_text(encoding='utf-8'))[0]
+  markup='<a data-linkdata="{}"><img data-src="'+row['proxy']+'"></a>'
+  self.assertEqual(c.detail_urls({'renderContent':markup},row['model']),[row['original']])
+ def test_proxy_decoder_rejects_invalid_and_foreign_urls(self):
+  import base64
+  def proxy(text):return 'https://proxy-smartstore.naver.net/img/'+base64.urlsafe_b64encode(text.encode()).decode()
+  for url in ('https://proxy-smartstore.naver.net/img/INVALID!','https://evil.test/img/123',proxy('evil.test/BG/photo.jpg'),proxy('castelgolf.cafe24.com/BG/../private.jpg')):
+   self.assertFalse(c.detail_original(url),url)
  def test_store_data_from_another_brand_is_rejected(self):
   with self.assertRaisesRegex(ValueError,'공식 스토어'):c.state_from('<script>window.__PRELOADED_STATE__={"channel":{"brandUrl":"other"}}</script>')
 if __name__=='__main__':unittest.main()
