@@ -42,6 +42,32 @@ class CrocsTests(unittest.TestCase):
         self.assertTrue(calls)
         self.assertEqual(set(calls),{threading.get_ident()})
 
+    def test_backend_shuffled_images_follow_displayed_gallery_cover_and_order(self):
+        base='10126';color='001'
+        def url(cid,pose):return 'https://media.crocs.com/images/f_auto%2Cw_900/products/'+base+'_'+cid+'_ALT'+pose+'/crocs'
+        doc=BeautifulSoup('<figure data-slot="pdp-gallery">'+''.join('<img src="'+url('100',pose)+'">' for pose in ('100','110','120','130','140','160'))+'</figure>','html.parser')
+        product={'id':base,'imageGroups':[{'viewType':'standard','variationAttributes':[{'id':'color','values':[{'value':color}]}],
+          'images':[{'link':url(color,pose)} for pose in ('140','160','110','120','130','100')]}]}
+        cache={}
+        for index,pose in enumerate(('100','110','120','130','140','160')):
+            data=io.BytesIO();Image.new('RGB',(900,900),(index*20,50,60)).save(data,format='PNG')
+            cache[url(color,pose)]={'status':'accessible','data':data.getvalue(),'width':900,'height':900,'format':'PNG','reasons':[]}
+        main,extras,_=c.gallery(Context('.'),product,color,cache,doc)
+        self.assertIn('_001_ALT100/',main)
+        self.assertEqual([__import__('re').search(r'_ALT(\d+)',u)[1] for u in extras],['110','120','130','140','160'])
+        self.assertTrue(all('_001_' in u for u in [main]+extras))
+
+    def test_official_first_pose_is_used_even_when_not_numeric_first(self):
+        url=lambda pose:'https://media.crocs.com/images/f_auto%2Cw_900/products/11016_001_ALT'+pose+'/crocs'
+        doc=BeautifulSoup('<figure data-slot="pdp-gallery"><img src="'+url('110')+'"><img src="'+url('100')+'"></figure>','html.parser')
+        product={'id':'11016','imageGroups':[{'viewType':'standard','variationAttributes':[{'id':'color','values':[{'value':'001'}]}],'images':[{'link':url(p)} for p in ('100','110')]}]}
+        cache={}
+        for i,pose in enumerate(('100','110')):
+            data=io.BytesIO();Image.new('RGB',(900,900),(i*30,10,20)).save(data,format='PNG')
+            cache[url(pose)]={'status':'accessible','data':data.getvalue(),'width':900,'height':900,'format':'PNG','reasons':[]}
+        main,extras,_=c.gallery(Context('.'),product,'001',cache,doc)
+        self.assertIn('_ALT110/',main);self.assertIn('_ALT100/',extras[0])
+
     def test_official_sku_includes_hidden_colors_but_rejects_wrong_base(self):
         product={'variationAttributes':[{'id':'color','values':[{'value':'001','name':'블랙'}, {'value':'6MB','name':'펄핑크'}]}]}
         text='"variants":'+json.dumps([{'productId':'11016-'+cid+'-M4W6','variationValues':{'color':cid,'size':'M4W6'}} for cid in ('001','6MB')])
