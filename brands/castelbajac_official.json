@@ -76,7 +76,7 @@
     "validation_note": "실행 시 실제 검색 결과 확인"
   },
   "crawl_source": "네이버 공식 스토어",
-  "notes": "네이버 공식 스토어의 색상별 모델명과 상품 고시 색상명으로 사진 자동 매핑. 상세는 본문에 명시된 원본 이미지로 수집하며 고시·사이즈는 원본 이미지에 보존, 별도 생성하지 않음. Microsoft Edge 및 Playwright 필요.",
+  "notes": "네이버 공식 스토어의 색상별 모델명과 상품 고시 색상명으로 사진 자동 매핑. 상세는 본문에 명시된 원본 이미지로 수집하며 고시·사이즈는 원본 이미지에 보존, 별도 생성하지 않음. Microsoft Edge 및 Playwright 필요. HTTP 429는 Retry-After에 맞춰 최대 2회 대기 재시도. 제한이 지속되면 다음 색상 요청도 중단하고 접근 제한 사유로 표시.",
   "mapping_mode": "automatic",
   "image_mode": "url",
   "interface": "portal_v1",
@@ -163,5 +163,5 @@
     "상세페이지 HTML": "detail_page",
     "정상가": "regular_price"
   },
-  "code_hash": "6f7aa50ced6e3ab3794db2370e81c90471942d99efbda2e19c293fd7d201043d"
+  "code_hash": "90ea7857989e4cfc251178fd86a7e6cbdcf4aa4289a51d95c7e49ca3887e4b06"
 }

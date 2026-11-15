@@ -42,6 +42,43 @@ class CastelbajacTests(unittest.TestCase):
    self.assertEqual(set(c.discover(C(),page,'BGFWDW702')),{'13828048787','13828048590'})
    state['keywordSearch'].update(simpleProducts=[],totalCount=0)
    with self.assertRaisesRegex(ValueError,'검색 결과 0건'):c.discover(C(),page,'BGFWDW702')
+ def test_429_waits_retry_after_then_recovers(self):
+  from types import SimpleNamespace
+  loader=__import__('unittest.mock',fromlist=['Mock']).Mock(side_effect=[c.RateLimited('PRODUCT','7'),{'id':1}])
+  with patch.object(c,'pause') as pause:
+   self.assertEqual(c.with_backoff(C(),SimpleNamespace(),loader),{'id':1})
+  pause.assert_called_once();self.assertEqual(pause.call_args.args[2],7)
+ def test_persistent_429_has_bounded_retries_and_explicit_reason(self):
+  from unittest.mock import Mock
+  loader=Mock(side_effect=c.RateLimited('PRODUCT',''))
+  with patch.object(c,'pause') as pause:
+   with self.assertRaisesRegex(c.RateLimited,'상품 미조회가 아닙니다'):c.with_backoff(C(),None,loader)
+  self.assertEqual(loader.call_count,3);self.assertEqual([v.args[2] for v in pause.call_args_list],[15,30])
+ def test_long_server_cooldown_does_not_retry_early(self):
+  from unittest.mock import Mock
+  loader=Mock(side_effect=c.RateLimited('PRODUCT','3600'))
+  with patch.object(c,'pause') as pause:
+   with self.assertRaises(c.RateLimited):c.with_backoff(C(),None,loader)
+  self.assertEqual(loader.call_count,1);pause.assert_not_called()
+ def test_retry_after_http_date_and_invalid_value(self):
+  with patch.object(c.time,'time',return_value=0):self.assertEqual(c.retry_seconds('Thu, 01 Jan 1970 00:00:12 GMT',15),12)
+  self.assertEqual(c.retry_seconds('invalid',15),15)
+ def test_api_retry_discards_failed_attempt_and_detaches_listeners(self):
+  from types import SimpleNamespace
+  class Page:
+   def __init__(self):self.listeners=[];self.attempts=0
+   def on(self,event,fn):self.listeners.append(fn)
+   def remove_listener(self,event,fn):self.listeners.remove(fn)
+  page=Page();expected=c.SITE+'/n/v2/channels/'+c.CHANNEL_UID+'/products/1'
+  def go(ctx,p,url):
+   p.attempts+=1
+   response=SimpleNamespace(url=expected,status=429 if p.attempts==1 else 200,headers={'retry-after':'5'},body=lambda:json.dumps({'id':1}).encode())
+   for fn in list(p.listeners):fn(response)
+   if p.attempts>1:
+    for fn in list(p.listeners):fn(SimpleNamespace(url=expected+'/contents/1/PC',status=200,headers={},body=lambda:b'{"renderContent":"body"}'))
+  with patch.object(c,'navigate_once',side_effect=go),patch.object(c,'pause'):
+   self.assertEqual(c.load_product(C(),page,'url','1',True),({'id':1},{'renderContent':'body'}))
+  self.assertEqual(page.attempts,2);self.assertEqual(page.listeners,[])
  def test_store_data_from_another_brand_is_rejected(self):
   with self.assertRaisesRegex(ValueError,'공식 스토어'):c.state_from('<script>window.__PRELOADED_STATE__={"channel":{"brandUrl":"other"}}</script>')
 if __name__=='__main__':unittest.main()

@@ -5,6 +5,7 @@ import io
 import json
 import re
 import time
+from email.utils import parsedate_to_datetime
 from urllib.parse import parse_qs,urlencode,urlsplit,urljoin
 from bs4 import BeautifulSoup
 from PIL import Image
@@ -12,7 +13,7 @@ from crawler_rules import check_public_image,gallery_slots
 SITE='https://brand.naver.com'
 STORE='castelbajac'
 CHANNEL_UID='2sWDwtZKadOpe9nfngD2U'
-REVISION='2026-11-15-castelbajac-1'
+REVISION='2026-11-15-castelbajac-2-backoff'
 
 def state_from(source):
     doc = BeautifulSoup(source,'html.parser')
@@ -27,26 +28,90 @@ def state_from(source):
             return data
     raise ValueError('공개 스토어 데이터가 없습니다. 접근 제한/페이지 구조를 확인하세요.')
 
+class RateLimited(ValueError):
+    def __init__(self,endpoint,retry_after=''):
+        self.endpoint=endpoint;self.retry_after=retry_after
+        super().__init__('네이버 일시적 요청 제한 HTTP 429: '+endpoint+' / 상품 미조회가 아닙니다.')
+
+
+def retry_seconds(value,fallback):
+    try:return max(0,float(value))
+    except (ValueError,TypeError):
+        try:return max(0,parsedate_to_datetime(value).timestamp()-time.time())
+        except (ValueError,TypeError,OverflowError):return fallback
+
+
+def pause(ctx,page,seconds):
+    deadline=time.monotonic()+seconds
+    while time.monotonic()<deadline:
+        ctx.checkpoint();page.wait_for_timeout(min(250,max(1,(deadline-time.monotonic())*1000)))
+    ctx.checkpoint()
+
+
+def with_backoff(ctx,page,loader):
+    for attempt in range(3):
+        try:return loader()
+        except RateLimited as exc:
+            delay=max(2.5,retry_seconds(exc.retry_after,15*(2**attempt)))
+            if attempt==2 or delay>60:
+                raise RateLimited(exc.endpoint+' / 요청 중단. 서버 안내 대기시간 '+str(round(delay))+'초 후 다시 실행해주세요.',exc.retry_after) from exc
+            ctx.log('네이버 HTTP 429 요청 제한: %.1f초 대기 후 재시도 (%d/2) / %s'%(delay,attempt+1,exc.endpoint),'WARNING')
+            pause(ctx,page,delay)
+
+
+def navigate_once(ctx,page,url):
+    # Pace normal navigation as well as retries. No proxy/session rotation.
+    pause(ctx,page,max(0,getattr(page,'_castel_next_request',0)-time.monotonic()))
+    ctx.checkpoint();response=page.goto(url,wait_until='domcontentloaded',timeout=30000)
+    page._castel_next_request=time.monotonic()+2.5
+    ctx.checkpoint()
+    if response and response.status==429:raise RateLimited('페이지 '+url,response.headers.get('retry-after',''))
+    if response and response.status in (401,403):raise ValueError('네이버 접근 제한 HTTP '+str(response.status)+' / '+url)
+    if response and response.status>=400:raise ValueError('네이버 페이지 HTTP '+str(response.status)+' / '+url)
+    parsed=urlsplit(page.url)
+    if parsed.hostname!='brand.naver.com' or not parsed.path.startswith('/'+STORE+'/'):raise ValueError('지정한 공식 스토어 외부로 이동했습니다.')
+
+
 def navigate(ctx,page,url):
-    ctx.checkpoint()
-    response = page.goto(url,wait_until='domcontentloaded',timeout=30000)
-    ctx.checkpoint()
-    if response and response.status in (401,403,429):
-        raise ValueError('네이버 접근 제한 HTTP '+str(response.status)+' / 제한을 우회하지 않고 중단합니다.')
-    if response and response.status >= 400:
-        raise ValueError('네이버 페이지 HTTP '+str(response.status)+' / '+url)
-    parsed = urlsplit(page.url)
-    if parsed.hostname != 'brand.naver.com' or not parsed.path.startswith('/'+STORE+'/'):
-        raise ValueError('지정한 공식 스토어 외부로 이동했습니다.')
+    return with_backoff(ctx,page,lambda:navigate_once(ctx,page,url))
+
 
 def wait_data(ctx,page,captured,key):
-    deadline = time.monotonic()+25
-    while key not in captured:
+    deadline=time.monotonic()+25
+    while True:
         ctx.checkpoint()
+        if captured.get('rate_limit'):raise RateLimited(**captured['rate_limit'])
         if captured.get('error'):raise ValueError(captured['error'])
+        if key in captured:return captured[key]
         if time.monotonic()>deadline:raise ValueError('공식 '+key+' 응답 로딩 시간 초과')
         page.wait_for_timeout(100)
-    return captured[key]
+
+
+def load_product(ctx,page,url,number,wants_detail):
+    expected='/n/v2/channels/'+CHANNEL_UID+'/products/'+number
+    def attempt():
+        captured={}
+        def receive(response):
+            path=urlsplit(response.url).path
+            key='product' if path==expected else 'contents' if path.startswith(expected+'/contents/') and wants_detail else None
+            if not key:return
+            if response.status==429:
+                captured['rate_limit']=dict(endpoint=key.upper()+' '+number,retry_after=response.headers.get('retry-after',''));return
+            try:
+                if response.status!=200:raise ValueError('공식 '+key+' HTTP '+str(response.status))
+                data=response.body()
+                if len(data)>6000000:raise ValueError('공식 응답 크기 한도 초과')
+                captured[key]=json.loads(data)
+            except Exception as exc:captured['error']=str(exc)
+        page.on('response',receive)
+        try:
+            navigate_once(ctx,page,url)
+            product=wait_data(ctx,page,captured,'product')
+            contents=wait_data(ctx,page,captured,'contents') if wants_detail else None
+            return product,contents
+        finally:page.remove_listener('response',receive)
+    return with_backoff(ctx,page,attempt)
+
 
 def money(value):
     if isinstance(value,bool):return None
@@ -213,21 +278,9 @@ def crawl(ctx):
                 page.route('**/*',route);ctx.stage('까스텔바작 공식 품번 검색: '+code)
                 links=discover(ctx,page,code)
                 for number,url in links.items():
-                    captured={};expected='/n/v2/channels/'+CHANNEL_UID+'/products/'+number
-                    def receive(response):
-                        path=urlsplit(response.url).path
-                        key='product' if path==expected else 'contents' if path.startswith(expected+'/contents/') and ctx.enabled('detail_page') else None
-                        if not key:return
-                        try:
-                            data=response.body()
-                            if response.status!=200:raise ValueError('공식 '+key+' HTTP '+str(response.status))
-                            if len(data)>6000000:raise ValueError('공식 응답 크기 한도 초과')
-                            captured[key]=json.loads(data)
-                        except Exception as exc:captured['error']=str(exc)
-                    page.on('response',receive)
                     try:
-                        ctx.stage('공식 색상별 상품 조회: '+number);navigate(ctx,page,url)
-                        product=wait_data(ctx,page,captured,'product');model=model_of(product)
+                        ctx.stage('공식 색상별 상품 조회: '+number)
+                        product,contents=load_product(ctx,page,url,number,ctx.enabled('detail_page'));model=model_of(product)
                         if str(product.get('id'))!=number or (product.get('channel') or {}).get('channelUid')!=CHANNEL_UID or not matches(model,code):raise ValueError('공식 상품번호·스토어·품번 불일치')
                         color=color_info(product,code)
                         record=dict(product_code=code,product_name=product_name(str(product.get('name') or ''),model),product_url=url,**color)
@@ -240,10 +293,10 @@ def crawl(ctx):
                             if ctx.enabled('main_image'):record['main_image']=photos[0]
                             extras=photos[1:6] or photos[:1]
                             if ctx.enabled('additional_images'):record['additional_images']=','.join(extras[i%len(extras)] for i in range(5))
-                        if ctx.enabled('detail_page'):record['detail_page']=detail(ctx,wait_data(ctx,page,captured,'contents'),model,cache)
+                        if ctx.enabled('detail_page'):record['detail_page']=detail(ctx,contents,model,cache)
                         ctx.emit_result(record);emitted+=1
+                    except RateLimited:raise
                     except Exception as exc:failures.append(number+' / '+str(exc))
-                    finally:page.remove_listener('response',receive)
         if failures:raise RuntimeError('일부 상품 수집 미완료: '+' / '.join(failures))
         if not emitted:raise ValueError('공식 동일 품번 수집 결과 없음')
     except Exception as exc:ctx.fail_item(str(exc));raise
