@@ -27,6 +27,28 @@ def shot():
     draw.rectangle((240,180,560,850),fill='black');return image
 
 class RenomaFashionplusTests(unittest.TestCase):
+    def test_search_waits_past_hidden_empty_placeholder_and_skeleton(self):
+        from unittest.mock import MagicMock
+        page=MagicMock();loaded=[False]
+        markup='<b class="goods-count">1</b><ul class="product-list"><li class="product-item"><a href="/goods/detail/123"><img class="image-product" src="https://example.com/product.jpg"></a><b class="text-brand">레노마골프</b><p class="text-product">RMACO4803 상품</p></li></ul>'
+        def locate(selector):
+            node=MagicMock()
+            if 'a[href]' in selector:node.count.return_value=int(loaded[0])
+            elif 'skeleton' in selector:node.count.return_value=int(not loaded[0])
+            elif ':visible' in selector:node.count.return_value=0
+            elif 'mm_text-none' in selector:node.count.return_value=1
+            else:node.count.return_value=0
+            node.inner_text.return_value='Loading...'
+            node.inner_html.return_value=markup
+            return node
+        page.locator.side_effect=locate
+        page.wait_for_timeout.side_effect=lambda ms:loaded.__setitem__(0,True)
+        page.goto.return_value.status=200
+        with patch('playwright.sync_api.sync_playwright') as factory:
+            factory.return_value.__enter__.return_value.chromium.launch.return_value.new_context.return_value.new_page.return_value=page
+            rows=c.search(Context(),'RMACO4803')
+        self.assertEqual(len(rows),1);self.assertTrue(loaded[0])
+
     def test_all_photo_links_use_only_first_accepted_link_detail(self):
         ctx=Context(['main_image','detail_page'])
         first=c.BASE+'/goods/detail/432217746';second=c.BASE+'/goods/detail/432217825'

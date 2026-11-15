@@ -239,11 +239,13 @@ def search(ctx, code):
                     while time.monotonic() < deadline:
                         ctx.checkpoint()
                         if (page.locator(SEARCH_SELECTOR + ' .product-item a[href]').count()
-                                or page.locator(SEARCH_SELECTOR + ' .mm_text-none').count()):
+                                or (page.locator(SEARCH_SELECTOR + ' .mm_text-none:visible').count()
+                                    and not page.locator(SEARCH_SELECTOR + ' .skeleton').count())):
                             markup = page.locator(SEARCH_SELECTOR).inner_html()
                             break
                         body = page.locator('body').inner_text(timeout=1500)
-                        if '검색 결과가 없습니다' in body or '검색결과가 없습니다' in body:
+                        if (not page.locator(SEARCH_SELECTOR + ' .skeleton').count()
+                                and ('검색 결과가 없습니다' in body or '검색결과가 없습니다' in body)):
                             return list(results.values())
                         page.wait_for_timeout(200)
                     if not markup:
