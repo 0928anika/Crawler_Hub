@@ -30,10 +30,10 @@ class CrocsNaverTests(unittest.TestCase):
  def test_notice_nested_values_are_preserved(self):
   d=c.BeautifulSoup(c.notice_table(C(),product()),'html.parser')
   self.assertEqual(len(d.select('tr')),7);self.assertIn('발길이:',d.get_text());self.assertIn('제조국',d.get_text());self.assertIn('중국',d.get_text());self.assertNotIn('A/S 책임자와 전화번호',d.get_text())
- def test_detail_excludes_shipping_composite_and_has_notice_only(self):
+ def test_detail_restores_original_with_embedded_size_and_notice_only(self):
   contents={'renderContent':(FIX/'contents.html').read_text(encoding='utf-8')}
   with patch.object(c,'public_image',return_value={'data':b'valid'}):text=c.detail(C(),product(),contents,{})
-  d=c.BeautifulSoup(text,'html.parser');self.assertEqual(len(d.select('table')),1);self.assertFalse(d.select('img'));self.assertNotIn('trace.smartwiz',text);self.assertNotIn('crocs_img_notice',text);self.assertNotIn('10126_NEW',text);self.assertNotIn('PDP_FULL',text);self.assertNotIn('사이즈 안내',text);self.assertNotIn('A/S 책임자와 전화번호',text)
+  d=c.BeautifulSoup(text,'html.parser');self.assertEqual(len(d.select('table')),1);self.assertEqual(len(d.select('img')),1);self.assertNotIn('trace.smartwiz',text);self.assertNotIn('crocs_img_notice',text);self.assertNotIn('10126_NEW',text);self.assertIn('PDP_FULL',text);self.assertNotIn('사이즈 안내',text);self.assertNotIn('A/S 책임자와 전화번호',text)
  def test_external_body_images_from_both_missing_detail_cases(self):
   for number,code,count in [('12355848141','206935-1FS',3),('12282842984','212333-41S',5)]:
    p=product();p['naverShoppingSearchInfo']['modelName']=code;p.pop('productSize',None)

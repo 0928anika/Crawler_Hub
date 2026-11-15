@@ -6,7 +6,7 @@ from PIL import Image
 from crawler_rules import check_public_image, gallery_slots
 SITE = 'https://brand.naver.com'
 STORE = 'crocs'
-REVISION = '2026-11-16-crocs-naver-4-no-delivery-size-table'
+REVISION = '2026-11-16-crocs-naver-5-restore-body'
 POLICY = dict(min_side=500,max_bytes=10000000,max_aspect=1.8,formats=['JPEG','PNG','WEBP'])
 
 
@@ -221,7 +221,7 @@ def body_original(value):
 
 
 def detail(ctx, product, contents, cache):
-    doc=BeautifulSoup(contents.get('renderContent') or '','html.parser');parts=[];seen=set();body_count=0;excluded_body_count=0
+    doc=BeautifulSoup(contents.get('renderContent') or '','html.parser');parts=[];seen=set();body_count=0
     model=str((product.get('naverShoppingSearchInfo') or {}).get('modelName') or '').strip().upper();base=model.split('-',1)[0]
     for component in doc.select('.se-component'):
         if 'se-image' in component.get('class',[]):
@@ -231,10 +231,6 @@ def detail(ctx, product, contents, cache):
             url=body_original(declared.get('src')) or body_original(node.get('data-src') if node else '') or body_original(node.get('src') if node else '')
             if not url:continue
             p=urlsplit(url)
-            if '크록스_오프로드_스포츠_클로그pdp_full' in unquote(p.path).casefold():
-                ctx.log('배송 안내가 포함된 통짜 상세 이미지 전체 제외: '+url,'INFO')
-                excluded_body_count+=1
-                continue
             if p.hostname in ('toossa.com','www.toossa.com'):
                 filename=unquote(p.path).rsplit('/',1)[-1]
                 if not base or not re.match(re.escape(base)+r'(?:[-_.]|$)',filename,re.I):continue
@@ -248,7 +244,7 @@ def detail(ctx, product, contents, cache):
             for paragraph in component.select('p'):
                 text=paragraph.get_text(' ',strip=True).replace('\u200b','').strip()
                 if text:parts.append('<p>'+html.escape(text)+'</p>')
-    if not body_count and not excluded_body_count:raise ValueError('상세 본문 이미지 수집 0장: 고시·사이즈표만으로 성공 처리하지 않습니다.')
+    if not body_count:raise ValueError('상세 본문 이미지 수집 0장: 고시·사이즈표만으로 성공 처리하지 않습니다.')
     parts.append(notice_table(ctx,product))
     return '<div>'+''.join(parts)+'</div>'
 
