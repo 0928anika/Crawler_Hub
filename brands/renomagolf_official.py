@@ -14,7 +14,7 @@ from bs4 import BeautifulSoup
 from PIL import Image, UnidentifiedImageError
 
 SITE = 'https://hansungmall.net'
-CRAWLER_REVISION = '2026-11-09-renomagolf-v1'
+CRAWLER_REVISION = '2026-11-15-renomagolf-v2-cdn'
 POLICY = {'checked': '2026-11-09', 'source': 'https://marketplace.coupang.com/mba/listing',
           'route': 'WING 웹/엑셀', 'min_side': 500, 'max_bytes': 10000000,
           'formats': ('JPEG', 'PNG', 'WEBP'), 'max_aspect': 1.8,
@@ -217,6 +217,20 @@ def price(ctx, doc):
     return int(match[1].replace(',',''))
 
 
+def gallery_url(raw,final):
+    if not raw:return ''
+    url=urljoin(final,raw);parsed=urlsplit(url)
+    if parsed.scheme not in ('http','https') or parsed.username or parsed.password:return ''
+    path=unquote(parsed.path)
+    if parsed.hostname in ('hansungmall.net','www.hansungmall.net'):
+        prefix='/web/product/'
+    elif parsed.hostname=='cafe24img.poxo.com':
+        prefix='/hansungimall/web/product/'
+    else:return ''
+    if '..' in path.split('/') or not re.match(re.escape(prefix)+r'(?:big/|extra/big/)',path):return ''
+    return url
+
+
 def gallery(ctx, doc, final, cache):
     urls = []
     # HTML이 제공하는 실제 big 원본만 사용. small URL의 경로를 임의 변조하지 않는다.
@@ -224,10 +238,8 @@ def gallery(ctx, doc, final, cache):
         src = image.get('ec-data-src') or image.get('data-src') or image.get('src')
         if not src:
             continue
-        url = urljoin(final,src)
-        parsed = urlsplit(url)
-        if parsed.hostname not in ('hansungmall.net','www.hansungmall.net') or not re.match(r'/web/product/(?:big/|extra/big/)',parsed.path):
-            continue
+        url = gallery_url(src,final)
+        if not url:continue
         if url not in urls:
             urls.append(url)
     accepted, hashes = [], set()
@@ -250,8 +262,7 @@ def gallery(ctx, doc, final, cache):
         if len(accepted)==6:
             break
     if not accepted:
-        ctx.log('통과한 갤러리 사진 0장: 이미지 빈칸, 필수 상품정보 유지','WARNING')
-        return '', ''
+        raise CrawlError('대표·추가이미지 수집 미완료: 공식 갤러리에서 통과한 사진 0장')
     extras = accepted[1:] or accepted[:1]
     if len(accepted)==1:
         ctx.log('유효한 사진 1장만 있어 추가에도 재사용합니다.','WARNING')
