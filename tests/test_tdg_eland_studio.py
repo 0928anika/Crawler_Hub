@@ -97,4 +97,18 @@ class TdgStudioTests(unittest.TestCase):
   self.assertFalse(any('seller.jpg' in u for u in urls))
  def test_branch_name_removed(self):
   self.assertEqual(c.clean_name('힙해 트렌디 맨투맨 TGMA25T09_강서점','TGMA25T09'),'힙해 트렌디 맨투맨')
+class DirectLinkTests(unittest.TestCase):
+ def test_tracking_query_removed_and_ids_preserved(self):
+  self.assertEqual(c.input_link('https://www.elandmall.co.kr/i/item?itemNo=2512217779&lowerVendNo=LV19015810&srsltid=tracking'),'https://www.elandmall.co.kr/i/item?itemNo=2512217779&lowerVendNo=LV19015810')
+ def test_external_missing_and_ambiguous_links_rejected(self):
+  for u in ('https://evil.test/i/item?itemNo=1&lowerVendNo=A','https://www.elandmall.co.kr/i/item?itemNo=1','https://www.elandmall.co.kr/i/item?itemNo=1&itemNo=2&lowerVendNo=A'):
+   with self.assertRaises(c.CollectionError):c.input_link(u)
+ def test_direct_link_skips_search_and_outputs_real_model(self):
+  d=data();ctx=C(['main_image','detail_page']);ctx.product_code=LINK+'&srsltid=tracking'
+  with patch.object(c,'search',side_effect=AssertionError('direct URL must not search')),patch.object(c,'product',return_value=d) as product,patch.object(c,'gallery',return_value=photos()),patch.object(c,'options',return_value=[dict(itemOptionTcode='10',itemOptionName='09 BLACK',itemOptionNo='1')]),patch.object(c,'detail_images',return_value=['https://img-studio.elandmall.com/Winstudio/TGMA25T09.jpg']):c.crawl(ctx)
+  self.assertEqual(product.call_count,1);self.assertIsNone(product.call_args.args[2])
+  self.assertEqual(ctx.rows[0][0][0]['product_code'],'TGMA25T09');self.assertEqual(ctx.rows[0][0][0]['product_url'],LINK)
+ def test_direct_wrong_brand_is_not_adopted(self):
+  ctx=C(['main_image']);ctx.product_code=LINK
+  with patch.object(c,'product',return_value=None),self.assertRaisesRegex(c.CollectionError,'더데이걸 상품이 아닙니다'):c.crawl(ctx)
 if __name__=='__main__':unittest.main()

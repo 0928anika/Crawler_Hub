@@ -220,7 +220,7 @@ def product_once(ctx, url, code, diagnostics=None):
             main = detail['itemMain']
         except (KeyError,ValueError,TypeError) as exc:
             raise CollectionError('공식 상품 JSON 형식 변경: '+url) from exc
-        if str(main.get('brandNo'))!=BRAND_NO or not re.fullmatch(re.escape(code)+r'(?:[_-][A-Z0-9]+)?',str(main.get('modelNo','')).strip().upper()):
+        if str(main.get('brandNo'))!=BRAND_NO or (code is not None and not re.fullmatch(re.escape(code)+r'(?:[_-][A-Z0-9]+)?',str(main.get('modelNo','')).strip().upper())):
             reason='검색 결과는 있으나 실제 공식 품번/브랜드 불일치: 요청 %s, 실제 %s, 브랜드 %s / %s' % (code, main.get('modelNo'), main.get('brandNo'), url)
             if diagnostics is not None:diagnostics.append(reason)
             ctx.log(reason,'WARNING')
@@ -599,18 +599,37 @@ def choose_products(products):
     return [product for product in products if product[2]]
 
 
+def input_link(value):
+    value=html.unescape(value.strip());parsed=urlsplit(value)
+    if parsed.scheme not in ('http','https') or parsed.hostname!='www.elandmall.co.kr' or parsed.username or parsed.password or parsed.path!='/i/item':
+        raise CollectionError('이랜드몰 상품 링크(/i/item)만 입력할 수 있습니다.')
+    params=parse_qs(parsed.query)
+    items=params.get('itemNo',[]);vendors=params.get('lowerVendNo',[])
+    if len(items)!=1 or not items[0].isdigit() or len(vendors)!=1 or not re.fullmatch(r'[A-Za-z0-9]+',vendors[0]):
+        raise CollectionError('상품 링크에 itemNo와 lowerVendNo가 하나씩 필요합니다.')
+    return SITE+'/i/item?'+urlencode({'itemNo':items[0],'lowerVendNo':vendors[0]})
+
+
 def crawl_impl(ctx):
-    code=str(ctx.product_code).strip().upper()
-    if not code:raise CollectionError('검색 품번이 비어 있습니다')
+    raw=str(ctx.product_code).strip()
+    if not raw:raise CollectionError('품번 또는 상품 링크가 비어 있습니다')
+    direct=raw.lower().startswith(('http://','https://'))
+    code=raw.upper();prefetched={}
     if not (ctx.enabled('main_image') or ctx.enabled('additional_images')):
         raise CollectionError('수동 매핑에는 대표/추가이미지 선택이 필요합니다')
-    try:links=search(ctx,code)
-    except CollectionError:raise
+    if direct:
+        link=input_link(raw);data=product(ctx,link,None)
+        if data is None:raise CollectionError('입력 링크는 더데이걸 상품이 아닙니다.')
+        code=str(data['itemMain'].get('modelNo') or '').strip().upper()
+        if not code:raise CollectionError('입력 링크에서 실제 품번을 확인하지 못했습니다.')
+        links=[link];prefetched[link]=data
+        ctx.log('직접 링크 수집: 검색·공식판매자 우선 선택 없이 해당 링크만 사용 / '+code+' / '+link,'INFO')
+    else:links=search(ctx,code)
     candidates=[];errors=[];cache={};diagnostics=[]
     for link in links:
         ctx.checkpoint()
         try:
-            data=product(ctx,link,code,diagnostics)
+            data=prefetched[link] if link in prefetched else product(ctx,link,code,diagnostics)
             if data is None:continue
             photos=gallery(ctx,data['itemMain'],cache)
             candidates.append((link,data,photos))
