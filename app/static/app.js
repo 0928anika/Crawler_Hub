@@ -138,7 +138,7 @@ function mappingProduct(group){
  const actions=el('div',undefined,'inline');
  const remaining=group.colors.filter(c=>!group.confirmed.includes(c.id)||S.mappingDirty.has(mappingKey(group.id,c.id)));
  if(group.colors.length===1||(remaining.length===1&&remaining[0].id===cid))actions.append(button('남은 사진 모두 선택',()=>{for(const image of group.images){const owner=mappingOwner(group,image.id);if(!owner||owner===cid)draft.add(image.id)}S.mappingDirty.add(mappingKey(group.id,cid));refreshMappingProduct(group.id)},'secondary'));
- const save=button('선택 저장 ('+draft.size+'장)',async()=>{await saveMappingColor(group.id,cid);const current=mappingGroup(group.id);S.mappingActive[group.id]=current.colors.find(c=>!current.confirmed.includes(c.id))?.id||cid;renderMapping();toast('색상 선택을 로컬에 저장했습니다.');},'primary');save.dataset.emptySelection=String(!draft.size);save.disabled=S.mappingBusy||!draft.size;actions.append(save);tools.append(actions);head.append(tools);
+ const save=button('선택 저장 ('+draft.size+'장)',async()=>{await saveMappingColor(group.id,cid);const current=mappingGroup(group.id);S.mappingActive[group.id]=current.colors.find(c=>!current.confirmed.includes(c.id))?.id||cid;refreshMappingProduct(group.id);toast('색상 선택을 로컬에 저장했습니다.');},'primary');save.dataset.emptySelection=String(!draft.size);save.disabled=S.mappingBusy||!draft.size;actions.append(save);tools.append(actions);head.append(tools);
  }
  if(chosen&&!draft.size)box.append(el('p','사진을 최소 1장 선택해야 저장할 수 있습니다. 사용하지 않는 색상은 옵션을 삭제하세요.','description'));
  const grid=el('div',undefined,'mapping-photo-grid');

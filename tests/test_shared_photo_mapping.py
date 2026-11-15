@@ -4,6 +4,7 @@ ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'app'))
 import test_hybrid_mapping as helper
 import color_mapping as m
 import local_images
+from unittest.mock import patch
 class SharedPhotoMappingTests(unittest.TestCase):
  def make_job(self,folder):return helper.HybridMappingTests().job(folder,[helper.item(0,'STYLE','60','https://img/shared.jpg',True)])
  def test_shared_photo_survives_save_reopen_finalize_and_export(self):
@@ -27,4 +28,16 @@ class SharedPhotoMappingTests(unittest.TestCase):
  def test_local_file_plan_includes_shared_asset_for_each_color(self):
   view=dict(groups=[dict(id='g',code='STYLE',colors=[dict(id='a',color_code='01',color_name='red'),dict(id='b',color_code='02',color_name='blue')],images=[dict(id='x',assigned_to='a',assigned_colors=['a','b'],asset_path='images/hash.jpg')])])
   plan=local_images.plan(view,['main_image'],5);self.assertEqual(len(plan[('g','a')]),1);self.assertEqual(len(plan[('g','b')]),1);self.assertNotEqual(plan[('g','a')][0]['filename'],plan[('g','b')][0]['filename'])
+ def test_color_save_groups_once_and_persists_without_rewriting_progress(self):
+  with tempfile.TemporaryDirectory(dir=ROOT/'tests') as folder:
+   job=self.make_job(folder);v=m.snapshot(job);g=v['groups'][0]
+   job.checkpoint=lambda: self.fail('Color save must not rewrite collection progress')
+   with patch.object(m,'source_groups',wraps=m.source_groups) as build:
+    saved=m.save_color(job,dict(group_id=g['id'],color_id=g['colors'][0]['id'],image_ids=[g['images'][0]['id']],expected_revision=v['revision']))
+   self.assertEqual(build.call_count,1)
+   self.assertEqual(saved,m.snapshot(job))
+   self.assertEqual(saved['saved_colors'],1)
+   with self.assertRaisesRegex(ValueError,'다른 창'):
+    m.save_color(job,dict(group_id=g['id'],color_id=g['colors'][1]['id'],image_ids=[g['images'][0]['id']],expected_revision=v['revision']))
+   self.assertEqual(m.snapshot(job),saved)
 if __name__=='__main__':unittest.main()

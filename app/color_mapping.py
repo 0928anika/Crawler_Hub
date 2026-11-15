@@ -109,9 +109,10 @@ def read_state(job):
     except (ValueError,OSError):raise ValueError('색상 매핑 저장 파일을 읽을 수 없습니다. 파일을 확인하세요.')
 
 
-def snapshot(job):
+def snapshot(job, *, groups=None, state=None):
     if not is_manual(job):raise ValueError('색상 자동 매핑 작업에는 수동 매핑이 필요하지 않습니다.')
-    groups=source_groups(job);state=read_state(job)
+    groups=source_groups(job) if groups is None else groups
+    state=read_state(job) if state is None else state
     fingerprint=key(json.dumps(groups,ensure_ascii=False,sort_keys=True))
     total=done=0
     for group in groups:
@@ -153,14 +154,16 @@ def initial_saved(group):
 def save_color(job,data):
     if job.state in ('running','pausing','paused','stopping','saving'):raise ValueError('수집을 완료하거나 중지한 뒤 매핑하세요.')
     with job.data_lock:
-        view=snapshot(job);state=read_state(job)
+        groups=source_groups(job);state=read_state(job)
+        view=snapshot(job,groups=deepcopy(groups),state=state)
         if data.get('expected_revision')!=view['revision']:raise ValueError('다른 창에서 매핑이 변경되었습니다. 매핑 화면을 다시 열어주세요.')
         group=next((g for g in view['groups'] if g['id']==data.get('group_id')),None)
         if not group:raise ValueError('품번을 찾을 수 없습니다.')
         color=data.get('color_id')
         if color not in {c['id'] for c in group['colors']}:raise ValueError('잘못된 색상입니다.')
         selected=data.get('image_ids')
-        if not isinstance(selected,list) or any(i not in {image['id'] for image in group['images']} for i in selected):raise ValueError('현재 품번의 사진만 선택할 수 있습니다.')
+        valid_images={image['id'] for image in group['images']}
+        if not isinstance(selected,list) or any(i not in valid_images for i in selected):raise ValueError('현재 품번의 사진만 선택할 수 있습니다.')
         if not selected:raise ValueError('사진을 최소 1장 선택한 뒤 저장하세요. 사용하지 않는 색상은 옵션을 삭제하세요.')
         saved=state.setdefault('groups',{}).setdefault(group['id'],initial_saved(group))
         if group.get('review_required') and not saved.get('all_photos'):
@@ -174,8 +177,8 @@ def save_color(job,data):
         confirmed.add(color);saved['confirmed']=sorted(confirmed);saved['image_signature']=group['signature']
         state.update(revision=view['revision']+1,finalized=False,fingerprint=view['fingerprint'])
         atomic_json(job.dir/'color_mapping.json',state)
-    job.checkpoint()
-    return snapshot(job)
+        # Mapping has its own durable file; progress/queue did not change.
+        return snapshot(job,groups=groups,state=state)
 
 
 def edit_options(job,data):
