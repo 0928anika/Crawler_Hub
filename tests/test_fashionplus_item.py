@@ -52,13 +52,30 @@ class FashionplusItemTests(unittest.TestCase):
  def test_multicolor_keeps_every_photo_for_manual_mapping(self):
   ctx=C(['main_image']);doc=c.BeautifulSoup('<div class="m__product-info"><p class="text_product">다른 브랜드 상품</p></div>','html.parser')
   palette=[dict(color_name='BLACK',color_code=''),dict(color_name='WHITE',color_code='')]
-  with patch.object(c,'soup_get',return_value=doc),patch.object(c,'read_options',return_value=(palette,[],[])),patch.object(c,'gallery',return_value=['https://img.test/a.jpg','https://img.test/b.jpg']):c.crawl(ctx)
+  with patch.object(c,'soup_get',return_value=doc),patch.object(c,'read_options',return_value=(palette,[],[])),patch.object(c,'gallery',return_value=['https://img.test/a.jpg','https://img.test/b.jpg']),patch.object(c,'detail_candidates',return_value=[]):c.crawl(ctx)
   self.assertEqual(len(ctx.unmapped),2);self.assertEqual(ctx.unmapped[0][0][1],palette);self.assertIn('a.jpg',ctx.unmapped[0][0][0]['전체 상품사진'])
  def test_multicolor_metadata_only_does_not_require_photo_mapping(self):
   ctx=C();doc=c.BeautifulSoup('<div class="m__product-info"><p class="text_product">상품</p></div>','html.parser')
   palette=[dict(color_name='BLACK',color_code=''),dict(color_name='WHITE',color_code='')]
   with patch.object(c,'soup_get',return_value=doc),patch.object(c,'read_options',return_value=(palette,[],[])),patch.object(c,'gallery') as images:c.crawl(ctx)
   self.assertEqual(len(ctx.rows),2);images.assert_not_called()
+ def test_body_candidates_keep_individual_cuts_but_not_long_panels_or_charts(self):
+  from io import BytesIO
+  from PIL import Image
+  doc=c.BeautifulSoup('<div class="m_prodetail-desc"><div class="mm_pinchzoom-wrapper">'+''.join('<img src="https://img.test/'+name+'">' for name in ('cut.jpg','portrait.jpg','long.jpg','size.jpg','shipping.jpg'))+'</div></div>','html.parser')
+  def info(ctx,url,cache,detail=False):
+   w,h=(900,4000) if 'long' in url else (900,1600) if 'portrait' in url else (900,900)
+   b=BytesIO();Image.new('RGB',(w,h)).save(b,format='JPEG');return dict(width=w,height=h,data=b.getvalue(),format='JPEG')
+  with patch.object(c,'soup_get',return_value=doc),patch.object(c,'image_info',side_effect=info):photos=c.detail_candidates(C(),'link',{})
+  self.assertEqual([u.rsplit('/',1)[-1] for u in photos],['cut.jpg','portrait.jpg'])
+ def test_cover_stays_first_and_resized_duplicate_is_not_added_again(self):
+  cover='https://img.fashionplus.co.kr/product.jpg?RS=800x1000&AR=0';extra='https://img.test/extra.jpg';body='https://img.fashionplus.co.kr/product.jpg';new='https://img.test/detail-cut.jpg'
+  self.assertEqual(c.merge_photos([cover,extra],[body,new],{}),[cover,extra,new])
+ def test_body_document_requested_once_for_detail_and_mapping(self):
+  doc=c.BeautifulSoup('<div class="m_prodetail-desc"><div class="mm_pinchzoom-wrapper"><p>상품 설명</p></div></div>','html.parser');cache={}
+  with patch.object(c,'soup_get',return_value=doc) as request:
+   c.detail(C(),'link',cache);self.assertEqual(c.detail_candidates(C(),'link',cache),[])
+  self.assertEqual(request.call_count,1)
  def test_long_options_are_preserved_without_excel_cell_truncation(self):
   text='옵션😀'*10000;record={};c.preserve_text(record,'원본 옵션',text)
   self.assertEqual(''.join(record.values()),text)

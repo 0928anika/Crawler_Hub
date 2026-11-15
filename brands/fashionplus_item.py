@@ -1,9 +1,9 @@
 PORTAL_API_VERSION = 1
-import html,http.client,io,json,re,socket,time,urllib.error,urllib.parse,urllib.request
+import html,http.client,io,json,re,socket,time,hashlib,urllib.error,urllib.parse,urllib.request
 from bs4 import BeautifulSoup,NavigableString,Comment
 from PIL import Image,UnidentifiedImageError
 BASE='https://www.fashionplus.co.kr'
-REVISION='2026-11-16-fashionplus-item-2-no-image-bullets'
+REVISION='2026-11-16-fashionplus-item-3-detail-candidates'
 MAX_BYTES=10_000_000
 class CollectionError(RuntimeError):pass
 class MissingResource(CollectionError):pass
@@ -217,12 +217,18 @@ def image_info(ctx,url,cache,detail=False):
     if p.scheme not in ('http','https') or not p.hostname or p.username or p.password:raise CollectionError('공개 이미지 URL 확인 실패: '+url)
     key=(url,detail)
     if key not in cache:
-        data=fetch(ctx,url,limit=64*1024*1024 if detail else 10000000)
+        prior=cache.get((url,not detail))
+        if isinstance(prior,MissingResource):raise prior
+        if isinstance(prior,dict) and (detail or len(prior['data'])<=10000000):
+            cache[key]=prior;return prior
+        try:data=fetch(ctx,url,limit=64*1024*1024 if detail else 10000000)
+        except MissingResource as exc:cache[key]=exc;raise
         try:
             with Image.open(io.BytesIO(data)) as im:
                 fmt=im.format;width,height=im.size;im.verify()
         except (UnidentifiedImageError,OSError,ValueError,Image.DecompressionBombError) as exc:raise CollectionError('상품 이미지 해독 실패: '+url) from exc
         cache[key]=dict(data=data,width=width,height=height,format=fmt)
+    if isinstance(cache[key],MissingResource):raise cache[key]
     return cache[key]
 
 
@@ -246,9 +252,53 @@ def common_banner(url,node):
     return bool(re.search(r'/mall/(?:event|md_image)/|/brand_info/|/(?:notice|delivery|shipping|banner|coupon)/',path,re.I) or re.search(r'delivery|shipping|refund|copyright|(?:^|[/_-])banner|배송|교환.?반품|저작권',context,re.I))
 
 
-def detail(ctx,link,cache):
-    doc=soup_get(ctx,link+'/description-iframe');area=doc.select_one('.m_prodetail-desc .mm_pinchzoom-wrapper')
+def detail_document(ctx,link,cache):
+    key=('detail-document',link)
+    if key not in cache:cache[key]=soup_get(ctx,link+'/description-iframe')
+    area=cache[key].select_one('.m_prodetail-desc .mm_pinchzoom-wrapper')
     if area is None:raise CollectionError('상품 상세 본문 영역 확인 실패')
+    return area
+
+
+def detail_candidates(ctx,link,cache):
+    area=detail_document(ctx,link,cache);photos=[]
+    for node in area.select('img'):
+        url=source_url(node)
+        if not url or url in photos or common_banner(url,node):continue
+        context=urllib.parse.unquote(urllib.parse.urlsplit(url).path)+' '+str(node.get('alt') or '')+' '+str(node.get('title') or '')
+        if re.search(r'(?:^|[/_\s-])(?:size|chart|measure|gosi|spec|guide)(?:[._\s-]|$)|사이즈|고시|실측|측정|관리방법',context,re.I):continue
+        try:image=image_info(ctx,url,cache,True)
+        except MissingResource:continue
+        w,h=image['width'],image['height']
+        # Keep individual portrait/product cuts, not long composite descriptions.
+        if min(w,h)<300 or max(w,h)/min(w,h)>2 or len(image['data'])>10000000 or image['format'] not in ('JPEG','PNG','WEBP'):continue
+        with Image.open(io.BytesIO(image['data'])) as im:
+            if getattr(im,'is_animated',False):continue
+        photos.append(url)
+    return photos
+
+
+def photo_asset(url):
+    p=urllib.parse.urlsplit(url)
+    query=urllib.parse.parse_qsl(p.query,keep_blank_values=True)
+    if p.hostname=='img.fashionplus.co.kr':query=[(k,v) for k,v in query if k.upper() not in ('RS','AR')]
+    return (p.netloc.lower(),p.path,tuple(query))
+
+
+def merge_photos(gallery_photos,body_photos,cache):
+    result=[];assets=set();digests=set()
+    for url in gallery_photos+body_photos:
+        asset=photo_asset(url);info=cache.get((url,False)) or cache.get((url,True))
+        digest=hashlib.sha256(info['data']).hexdigest() if isinstance(info,dict) and info.get('data') else None
+        if asset in assets or digest and digest in digests:continue
+        assets.add(asset)
+        if digest:digests.add(digest)
+        result.append(url)
+    return result
+
+
+def detail(ctx,link,cache):
+    area=detail_document(ctx,link,cache)
     seen=set()
     allowed={'div','p','span','br','strong','b','em','i','h1','h2','h3','h4','h5','ul','ol','li','table','thead','tbody','tfoot','tr','th','td','caption','a'}
     blocked={'script','style','iframe','object','embed','form','input','button','link','meta','noscript'}
@@ -315,7 +365,7 @@ def crawl(ctx):
             record['category']=' > '.join(n.get_text(' ',strip=True) for n in doc.select('.mm_breadcrumb a[href*="/goods/category/"]')) or None
         if ctx.enabled('detail_page'):record['detail_page']=detail(ctx,link,cache)
         wants=ctx.enabled('main_image') or ctx.enabled('additional_images')
-        photos=gallery(ctx,doc,cache) if wants else []
+        photos=merge_photos(gallery(ctx,doc,cache),detail_candidates(ctx,link,cache),cache) if wants else []
         if wants:record['전체 상품사진']='\n'.join(photos)
         if not wants:
             for color in palette:ctx.emit_result(dict(record,color=color['color_name'] or color['color_code'],**color))
