@@ -79,6 +79,41 @@ class CastelbajacTests(unittest.TestCase):
   with patch.object(c,'navigate_once',side_effect=go),patch.object(c,'pause'):
    self.assertEqual(c.load_product(C(),page,'url','1',True),({'id':1},{'renderContent':'body'}))
   self.assertEqual(page.attempts,2);self.assertEqual(page.listeners,[])
+ def test_dedicated_profile_uses_stable_local_runtime_path(self):
+  with patch('local_paths.user_home',return_value=Path('local-runtime')):
+   self.assertEqual(c.chrome_profile(),Path('local-runtime/browser-profiles/castelbajac-chrome'))
+   self.assertEqual(c.chrome_profile(),c.chrome_profile())
+ def test_profile_lock_blocks_duplicate_then_releases_after_error(self):
+  import tempfile
+  with tempfile.TemporaryDirectory() as tmp:
+   folder=Path(tmp)/'profile'
+   with self.assertRaisesRegex(RuntimeError,'simulated'):
+    with c.profile_lease(folder):
+     with self.assertRaisesRegex(ValueError,'프로필이 사용 중'):
+      with c.profile_lease(folder):pass
+     raise RuntimeError('simulated')
+   with c.profile_lease(folder):self.assertTrue(folder.is_dir())
+ def test_chrome_persistent_context_reuses_same_folder_and_closes(self):
+  import tempfile
+  from unittest.mock import Mock
+  with tempfile.TemporaryDirectory() as tmp:
+   folder=Path(tmp)/'profile';engine=Mock()
+   with patch.object(c,'chrome_profile',return_value=folder):
+    for _ in range(2):
+     with c.chrome_session(C(),engine) as browser:self.assertIs(browser,engine.chromium.launch_persistent_context.return_value)
+   calls=engine.chromium.launch_persistent_context.call_args_list
+   self.assertEqual(len(calls),2)
+   self.assertTrue(all(v.args==(str(folder),) and v.kwargs['channel']=='chrome' for v in calls))
+   self.assertEqual(engine.chromium.launch_persistent_context.return_value.close.call_count,2)
+ def test_launch_failure_releases_profile_lock(self):
+  import tempfile
+  from unittest.mock import Mock
+  with tempfile.TemporaryDirectory() as tmp:
+   folder=Path(tmp)/'profile';engine=Mock();engine.chromium.launch_persistent_context.side_effect=RuntimeError('missing browser')
+   with patch.object(c,'chrome_profile',return_value=folder):
+    with self.assertRaisesRegex(ValueError,'Chrome 실행 실패'):
+     with c.chrome_session(C(),engine):pass
+   with c.profile_lease(folder):pass
  def test_store_data_from_another_brand_is_rejected(self):
   with self.assertRaisesRegex(ValueError,'공식 스토어'):c.state_from('<script>window.__PRELOADED_STATE__={"channel":{"brandUrl":"other"}}</script>')
 if __name__=='__main__':unittest.main()

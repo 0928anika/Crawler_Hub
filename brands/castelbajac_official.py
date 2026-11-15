@@ -2,6 +2,9 @@ PORTAL_API_VERSION = 1
 import hashlib
 import html
 import io
+import os
+from pathlib import Path
+from contextlib import contextmanager
 import json
 import re
 import time
@@ -13,7 +16,7 @@ from crawler_rules import check_public_image,gallery_slots
 SITE='https://brand.naver.com'
 STORE='castelbajac'
 CHANNEL_UID='2sWDwtZKadOpe9nfngD2U'
-REVISION='2026-11-15-castelbajac-2-backoff'
+REVISION='2026-11-15-castelbajac-3-chrome-profile'
 
 def state_from(source):
     doc = BeautifulSoup(source,'html.parser')
@@ -258,6 +261,51 @@ def regular_price(ctx,product):
     ctx.log('공식 독립 정상가 없음: 빈칸','INFO');return None
 
 
+def chrome_profile():
+    from local_paths import user_home
+    return user_home()/'browser-profiles'/'castelbajac-chrome'
+
+
+@contextmanager
+def profile_lease(folder):
+    folder=Path(folder);folder.mkdir(parents=True,exist_ok=True)
+    handle=(folder.parent/(folder.name+'.lock')).open('a+b');locked=False
+    try:
+        handle.seek(0,2)
+        if handle.tell()==0:handle.write(b'0');handle.flush()
+        handle.seek(0)
+        try:
+            if os.name=='nt':
+                import msvcrt
+                msvcrt.locking(handle.fileno(),msvcrt.LK_NBLCK,1)
+            else:
+                import fcntl
+                fcntl.flock(handle.fileno(),fcntl.LOCK_EX|fcntl.LOCK_NB)
+            locked=True
+        except OSError as exc:raise ValueError('까스텔바작 수집용 크롬 프로필이 사용 중입니다. 실행 중인 수집이 끝난 후 다시 실행해주세요.') from exc
+        yield folder
+    finally:
+        if locked:
+            handle.seek(0)
+            if os.name=='nt':
+                import msvcrt
+                msvcrt.locking(handle.fileno(),msvcrt.LK_UNLCK,1)
+            else:
+                import fcntl
+                fcntl.flock(handle.fileno(),fcntl.LOCK_UN)
+        handle.close()
+
+
+@contextmanager
+def chrome_session(ctx,engine):
+    with profile_lease(chrome_profile()) as folder:
+        ctx.log('까스텔바작 '+REVISION+' / Chrome 전용 프로필 재사용: '+str(folder),'INFO')
+        try:browser=engine.chromium.launch_persistent_context(str(folder),channel='chrome',headless=True,locale='ko-KR')
+        except Exception as exc:raise ValueError('수집용 Chrome 실행 실패. Chrome 설치 및 전용 프로필 사용 여부를 확인해주세요: '+str(exc)) from exc
+        try:yield browser
+        finally:browser.close()
+
+
 def crawl(ctx):
     code=str(ctx.product_code).strip().upper()
     if not code:raise ValueError('품번이 비어 있습니다')
@@ -265,8 +313,8 @@ def crawl(ctx):
     cache={};failures=[];emitted=0
     try:
         with sync_playwright() as engine:
-            with engine.chromium.launch(headless=True,channel='msedge') as browser:
-                page=browser.new_page();page.set_default_timeout(15000)
+            with chrome_session(ctx,engine) as browser:
+                page=browser.pages[0] if browser.pages else browser.new_page();page.set_default_timeout(15000)
                 def route(request):
                     parsed=urlsplit(request.request.url);path=parsed.path
                     if request.request.resource_type in ('image','media','font'):return request.abort()
