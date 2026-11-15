@@ -23,6 +23,9 @@ SOCKET_SECONDS=15
 REQUEST_ATTEMPTS=3
 class CrawlError(RuntimeError):
     """Official source or collection failure."""
+class ProductUnavailable(CrawlError):
+    """The official detail explicitly says this product cannot be purchased."""
+
 class MissingResource(CrawlError):
     """Source image was removed."""
 
@@ -155,7 +158,11 @@ def field(doc,label):
 
 def identity(doc,expected):
     box=doc.select_one('.prodOptionBox')
-    if box is None:raise CrawlError('공식 상품 옵션 영역 없음')
+    if box is None:
+        for script in doc.find_all('script'):
+            alert=re.search(r'''alert\s*\(\s*['"](현재\s*구매\s*가능한\s*상품이\s*아닙니다\.?)['"]''',script.get_text())
+            if alert:raise ProductUnavailable('공식 상세 안내: '+alert[1])
+        raise CrawlError('공식 상품 옵션 영역 없음: 상품 없음으로 확정할 수 없는 응답')
     primary=doc.select_one('.prodOptionBox > input.prd_no_cate')
     sku=str(primary.get('value') or '').strip().upper() if primary else ''
     if sku!=expected or field(doc,'품번').strip().upper()!=expected:raise CrawlError('주상품 품번/고시 품번과 요청 상품 불일치: '+expected)
@@ -300,8 +307,9 @@ def crawl(ctx):
     lookup=re.sub(r'[_-](?=[A-Z0-9]{3}$)','',query)
     ctx.stage('에스티코 공식 검색: '+lookup);rows=0;errors=[]
     try:products=search(ctx,lookup)
-    except Exception as exc:ctx.fail_item(str(exc));raise
+    except Exception as exc:ctx.fail_item('[검색 조회 실패] '+query+' / '+str(exc));raise
     for sku,link in products:
+        doc=None
         try:
             doc=parse(fetch(ctx,link,MAX_BYTES));record=identity(doc,sku)
             record.update(product_code=query,product_url=link)
@@ -318,6 +326,11 @@ def crawl(ctx):
                 if ctx.enabled('additional_images'):record['additional_images']=extras
             if ctx.enabled('detail_page'):record['detail_page']=detail(ctx,doc,link,cache)
             ctx.emit_result(record);rows+=1
-        except Exception as exc:errors.append(sku+' / '+str(exc));ctx.fail_item(errors[-1])
+        except Exception as exc:
+            reason=('공홈 조회 불가' if isinstance(exc,ProductUnavailable) else
+                    '상세 조회/통신 실패' if doc is None else
+                    '공홈 응답 확인 실패' if doc.select_one('.prodOptionBox') is None else
+                    '상품 조회 후 수집 실패')
+            errors.append('['+reason+'] '+sku+' / '+str(exc));ctx.fail_item(errors[-1])
     if not rows and not errors:errors.append('공식 상품 검색 결과 없음: '+query);ctx.fail_item(errors[-1])
     if errors:raise CrawlError('일부 수집 미완료: '+' / '.join(errors))

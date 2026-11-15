@@ -154,4 +154,28 @@ class StcoTests(unittest.TestCase):
         self.assertEqual(c.amount(c.text(doc.select_one('.priceNew'))),59900)
         self.assertIsNone(c.regular_price(ctx,doc))
 
+    def test_official_unavailable_response_is_not_option_parsing_failure(self):
+        ctx=Context();ctx.product_code='DKGYA01'
+        raw=b"<script>alert('"+'현재 구매가능한상품이 아닙니다.'.encode()+b"');location.href='/';</script>"
+        with patch.object(c,'search',return_value=[('DKGYA01',c.SITE+'/detail/index/DKGYA01')]),patch.object(c,'fetch',return_value=raw),self.assertRaises(c.CrawlError):c.crawl(ctx)
+        self.assertIn('[공홈 조회 불가]',ctx.failures[0]);self.assertNotIn('옵션 영역 없음',ctx.failures[0])
+
+    def test_empty_or_challenge_response_is_not_reported_as_missing_product(self):
+        ctx=Context()
+        with patch.object(c,'search',return_value=[('DDSXD01CCD',c.SITE+'/detail/index/DDSXD01CCD')]),patch.object(c,'fetch',return_value=b'<html>challenge</html>'),self.assertRaises(c.CrawlError):c.crawl(ctx)
+        self.assertIn('[공홈 응답 확인 실패]',ctx.failures[0]);self.assertNotIn('[공홈 조회 불가]',ctx.failures[0])
+
+    def test_visible_product_with_broken_notice_is_collection_failure(self):
+        ctx=Context();doc=source();doc.select_one('#targetProdInfoNotice').decompose()
+        with patch.object(c,'search',return_value=[('DDSXD01CCD',c.SITE+'/detail/index/DDSXD01CCD')]),patch.object(c,'fetch',return_value=str(doc).encode()),self.assertRaises(c.CrawlError):c.crawl(ctx)
+        self.assertIn('[상품 조회 후 수집 실패]',ctx.failures[0])
+
+    def test_transport_error_does_not_mean_product_absent(self):
+        ctx=Context()
+        with patch.object(c,'search',return_value=[('DDSXD01CCD',c.SITE+'/detail/index/DDSXD01CCD')]),patch.object(c,'fetch',side_effect=c.CrawlError('TLS timeout')),self.assertRaises(c.CrawlError):c.crawl(ctx)
+        self.assertIn('[상세 조회/통신 실패]',ctx.failures[0])
+        ctx=Context()
+        with patch.object(c,'search',side_effect=c.CrawlError('TLS timeout')),self.assertRaises(c.CrawlError):c.crawl(ctx)
+        self.assertIn('[검색 조회 실패]',ctx.failures[0])
+
 if __name__=='__main__':unittest.main()
