@@ -1,0 +1,97 @@
+{
+  "itemMain": {
+    "brandName": "더데이걸",
+    "brandNo": "1690000198",
+    "itemImage": [
+      {
+        "imageDcode": "010",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2025-11-12/fd7f444f-4268-4e40-af6f-bd49176e6593.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2025-11-12/89b52922-0f22-452f-8286-a9862c9265b6.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2025-11-12/6ef784cb-d94d-4708-b2b0-65eca5e13941.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2025-11-12/99d82d7f-25e7-411d-9f36-64274d3f4325.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2025-11-12/53511d5b-dce6-4238-a41f-ab26042c7de9.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2025-11-12/1efc4b24-b1b9-4590-834b-f29015ab3b1b.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2025-11-12/e38c0d4f-9aed-4fd3-af34-4a2a784867ae.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2025-11-12/8b6ba730-61d9-4e1a-8438-9ed57c367e76.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2025-11-12/5d76d0f1-83e8-45bd-bea0-fcda89d479f9.jpg",
+        "imageName": ""
+      }
+    ],
+    "itemNo": "2511167056",
+    "itemTcode": "10",
+    "lowerVendNo": "LV17008491",
+    "itemName": "힙해 트렌디 맨투맨 TGMA25T09",
+    "sellprice": 27900,
+    "orgSellprice": 39900,
+    "modelNo": "TGMA25T09"
+  },
+  "itemDesc": {
+    "itemDescdocumentCon": "&lt;img src=&quot;http://img-studio.elandmall.com/Winstudio/TG-24-2BANNER.jpg&quot;/&gt;&lt;br&gt;&lt;img src=&quot;http://img-studio.elandmall.com/Winstudio/TGMA25T09.jpg&quot;/&gt;&lt;br&gt;&lt;img src=&quot;http://img-studio.elandmall.com/Winstudio/TG25-SIZE-1.jpg&quot;/&gt;&lt;br&gt;",
+    "itemAnnounceList": [
+      {
+        "itemAnnounceNo": "260817000201940",
+        "itemAnnounceTitle": "[핀핀] 겨울 fw 베스트아이템_ emall top",
+        "itemAnnounceLocDcode": "20",
+        "itemAnnounceMediaCode": "10",
+        "itemAnnounceCon": "&lt;!-- START :: MD 공지사항 배너(PC) --&gt;\n&lt;html&gt;\n &lt;head&gt;\n &lt;link href=&quot;https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css&quot; rel=&quot;stylesheet&quot; type=&quot;text/css&quot;&gt; \n &lt;link href=&quot;https://spoqa.github.io/spoqa-han-sans/css/SpoqaHanSansNeo.css&quot; rel=&quot;stylesheet&quot; type=&quot;text/css&quot;&gt; \n &lt;style type=&quot;text/css&quot;&gt;a.md-banner{\n position: relative;\n display: block;\n width: 1080px;\n height: auto;\n min-height: 137px;\n margin: 0 auto;\n overflow: hidden;\n }\n\n a.md-banner *{margin:0; padding:0; border:none; text-decoration: none;}\n\n\n a.md-banner .txt{\n position: absolute;\n top: 0;\n left: 50%;\n transform: translateX(-50%);\n -webkit-transform: translateX(-50%);\n -ms-transform: translateX(-50%);\n -moz-transform: translateX(-50%);\n -o-transform: translateX(-50%);\n display: inline-flex;\n display: -webkit-inline-flex;\n display: -ms-inline-flex;\n display: -moz-inline-flex;\n display: -o-inline-flex;;\n flex-direction: column;\n -webkit-flex-direction: column;\n -ms-flex-direction: column;\n -moz-flex-direction: column;\n -o-flex-direction: column;\n justify-content: center;\n -webkit-justify-content: center;\n -ms-justify-content: center;\n -moz-justify-content: center;\n -o-justify-content: center;\n width: 640px;\n height: 137px;\n padding: 0 30px;\n margin: 0 auto;\n box-sizing: border-box;\n -webkit-box-sizing: border-box;\n -ms-box-sizing: border-box;\n -moz-box-sizing: border-box;\n -o-box-sizing: border-box;\n }\n\n a.md-banner .txt.black{\n color: #000;\n }\n a.md-banner .txt.white{\n color: #fff;\n }\n\n a.md-banner .mdBanner-first{\n display: block;\n font-size: 32px;\n font-weight: bold;\n line-height: 1;\n letter-spacing: -0.9px;\n white-space: nowrap;\n text-overflow: ellipsis;\n overflow: hidden;\n font-family: 'Spoqa Han Sans Neo', 'Pretendard', 'sans-serif';\n }\n a.md-banner .mdBanner-second{\n display: block;\n font-size: 20px;\n font-weight: 400;\n line-height: 1;\n letter-spacing: 0;\n margin-top: 15px;\n white-space: nowrap;\n text-overflow: ellipsis;\n overflow: hidden;\n font-family: 'Spoqa Han Sans Neo', 'Pretendard', 'sans-serif';\n }\n&lt;/style&gt; &lt;!-- &darr;&darr;&darr;&darr;&darr;수정 영역&darr;&darr;&darr;&darr;&darr; --&gt;&lt;!--\n &lt;사용법&gt;\n 1) a태그의 [랜딩주소]라 적힌 부분에 랜딩 시킬 url을 적어주시면 됩니다.\n 2) 두번째 줄 span태그의 class중 'black을 넣으면 검정 글자색' 'white를 넣으면 하얀 글자색'을 쓸 수 있습니다.\n 예시:: &lt;div class=&quot;txt black&quot;&gt; / &lt;div class=&quot;txt white&quot;&gt;\n 3) class명이 'mdBanner-first'인 태그안에 첫번째 줄에 해당하는 텍스트를 넣어주시면 됩니다.(박스를 넘치게 적지 말아주세요)\n 4) class명이 'mdBanner-second'인 태그안에 두번째 줄에 해당하는 텍스트를 넣어주시면 됩니다.(박스를 넘치게 적지 말아주세요)\n 5) img태그의 src영역에 이미지 경로 url을 적어주시면 됩니다.\n\n ※규격 외 이미지는 사용하지 말아주세요(PC: 1080px / M: 640px)\n --&gt; \n &lt;/head&gt;\n &lt;body&gt;\n &lt;p&gt;&lt;a class=&quot;md-banner&quot; href=&quot;https://www.elandmall.co.kr/p/planshop?exhibitionNo=202611110319&quot; data-cttn=&quot;in_260817000201940_1&quot;&gt;&lt;span class=&quot;txt black&quot;&gt;&lt;span class=&quot;mdBanner-first&quot;&gt;핀핀 FW 전상품 시즌오프&lt;/span&gt; &lt;span class=&quot;mdBanner-second&quot;&gt;마지막 고쟁이 1만원대/인기 덕다운 아우터 49,900원&amp;nbsp;&lt;/span&gt; &lt;/span&gt; &lt;img alt=&quot;MD공지사항배너&quot; src=&quot;https://item.elandrs.com/r/image/item/2026-11-09/fe0689da-667b-47b3-b14b-df21b1446b4b.jpg&quot; style=&quot;width: 1080px; height: 142px;&quot;&gt; &lt;/a&gt; &lt;!-- END :: MD 공지사항 배너(PC) --&gt;&lt;/p&gt; \n &lt;/body&gt;\n&lt;/html&gt;"
+      },
+      {
+        "itemAnnounceNo": "260817000201940",
+        "itemAnnounceTitle": "[핀핀] 겨울 fw 베스트아이템_ emall top",
+        "itemAnnounceLocDcode": "30",
+        "itemAnnounceMediaCode": "10",
+        "itemAnnounceCon": ""
+      }
+    ]
+  }
+}
