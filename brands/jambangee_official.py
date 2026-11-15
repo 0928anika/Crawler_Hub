@@ -1,6 +1,7 @@
 PORTAL_API_VERSION = 1
 
 import hashlib
+import ast
 import html
 import json
 import re
@@ -125,6 +126,24 @@ def options(doc, title, number):
             label = re.sub(r'\s*[\[(]품절[\])]\s*$', '', node.get_text(' ',strip=True)).strip()
             if label and label not in values:
                 values.append(label)
+    if not values:
+        # Sold-out/hidden Cafe24 options can be absent from the selects while
+        # the same page still publishes original labels in its stock data.
+        meta=doc.select_one('meta[property="product:productId"]')
+        verified=(meta is not None and meta.get('content')==number) or bool(groups(doc,number))
+        if verified:
+            for script in doc.find_all('script'):
+                match=re.search(r"var\s+option_stock_data\s*=\s*('(?:\\.|[^'\\])*')",script.get_text())
+                if not match:continue
+                try:stock=json.loads(ast.literal_eval(match[1]))
+                except (ValueError,SyntaxError,TypeError):continue
+                if not isinstance(stock,dict):continue
+                for item in stock.values():
+                    if not isinstance(item,dict):continue
+                    names=item.get('option_name_original',[]);original=item.get('option_value_orginal',[])
+                    if not isinstance(names,list) or not isinstance(original,list) or len(names)!=len(original):continue
+                    for key,value in zip(names,original):
+                        if key==title and isinstance(value,str) and value.strip() and value.strip() not in values:values.append(value.strip())
     return values
 
 
@@ -197,6 +216,10 @@ def identity(doc, number, base, search_verified=False):
     if (product_id and product_id.get('content') != number) or (not product_id and not confirmed):
         raise ValueError('공식 상품번호 연결 확인 실패')
     colors = options(doc,'색상',number)
+    if not colors and match:
+        # A title explicitly ending in STYLE-COLOR identifies this individual item.
+        # Keep the source code rather than inventing a translated color name.
+        colors=[code]
     if len(colors) != 1:
         raise ColorMappingError('개별 상품의 단일 색상 옵션 확인 실패: ' + str(colors))
     name = product_name(name_text, base, code)
