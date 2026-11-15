@@ -581,7 +581,23 @@ def detail_images(ctx, detail, code, cache, mixed_gallery=None, original_only=Fa
     return result
 
 
+# Uploaded product bodies visually verified against the exact model.
+# Keep the strict original-only rule for all other mixed seller content.
+VERIFIED_UPLOADED_BODIES = {
+    'TGAK25A05': (
+        'https://item.elandrs.com/r/image/item/2025-02-07/a02fee98-6ce4-467a-b53f-2f6d5a32571e.jpg',
+        'https://item.elandrs.com/r/image/item/2025-02-07/0d50aab5-5f9d-4dd8-a9d0-d0d9f92c14b3.jpg',
+        'https://item.elandrs.com/r/image/item/2025-02-07/f3ed3882-1a9b-481e-8a8f-ef3a26ad4ed4.jpg',
+    ),
+    'TGBR25A01': (
+        'https://item.elandrs.com/r/image/item/2025-03-21/c3b66d8e-5208-47df-b930-9ba4d8300549.jpg',
+        'https://item.elandrs.com/r/image/item/2025-03-21/7b43d524-7cf1-4935-a892-87ee44f03e9c.jpg',
+    ),
+}
+
+
 def original_detail_url(url, code, include_shared=False):
+    if url in VERIFIED_UPLOADED_BODIES.get(code.upper(), ()):return True
     parsed=urlsplit(url)
     if parsed.hostname!='img-studio.elandmall.com' or not parsed.path.startswith('/Winstudio/'):return False
     name=unquote(parsed.path.rsplit('/',1)[-1])

@@ -18,6 +18,15 @@ class C:
 def photos(url='https://item.elandrs.com/studio.jpg',safe=True):
  p=c.GalleryPhotos();p.append((url,url));p.detail_safe=safe;return p
 class TdgStudioTests(unittest.TestCase):
+ def test_verified_uploaded_bodies_keep_size_and_exclude_unknown_seller_images(self):
+  for code,count in [('TGAK25A05',3),('TGBR25A01',2)]:
+   d=json.loads((FIX.parent/(code+'_0.json')).read_text('utf-8'))
+   d['itemDesc']['itemDescdocumentCon']+='<img src="https://item.elandrs.com/unverified.jpg">'
+   with patch.object(c,'image_info',return_value=('JPEG',1080,4000,'hash',False)):
+    urls=c.detail_images(C(),d,code,{},original_only=True)
+   self.assertEqual(len(urls),count)
+   self.assertEqual(set(urls),set(c.VERIFIED_UPLOADED_BODIES[code]))
+   self.assertFalse(c.original_detail_url(urls[0],'WRONGCODE'))
  def test_official_vendor_excludes_every_other_vendor(self):
   other=LINK.replace(c.VENDOR_NO,'OTHER')
   with patch.object(c,'search_site',return_value=c.SearchResults([other,LINK,LINK+'&duplicate=1'],3,[])):self.assertEqual(c.search(C(),'TGMA25T09'),[LINK])
