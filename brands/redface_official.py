@@ -16,7 +16,7 @@ from PIL import Image
 from crawler_rules import check_public_image, validate_gallery_image, gallery_slots, clean_product_name
 
 SITE = 'https://m.theredfacemall.co.kr'
-REVISION = '2026-11-16-redface-options'
+REVISION = '2026-11-16-redface-detail-retry'
 DETAIL_MAX_BYTES = 64 * 1024 * 1024
 POLICY = dict(checked_on='2026-11-10', source='https://marketplace.coupang.com/mba/listing', min_side=500, max_bytes=10000000, formats=['JPEG','PNG','WEBP'], max_aspect=1.8)
 # Official option links or an explicitly single-color product only.
@@ -184,7 +184,16 @@ def detail_image(ctx,url,cache):
     key=('detail',url)
     if key not in cache:
         prior=cache.get(url,{})
-        cache[key]=prior if prior.get('status')=='accessible' else check_public_image(url,timeout=20,max_bytes=DETAIL_MAX_BYTES,retries=1,checkpoint=ctx.checkpoint)
+        if prior.get('status')=='accessible':cache[key]=prior
+        else:
+            for attempt in range(3):
+                ctx.checkpoint()
+                result=check_public_image(url,timeout=20,max_bytes=DETAIL_MAX_BYTES,retries=0,checkpoint=ctx.checkpoint)
+                cache[key]=result
+                if result['status']!='unknown' or attempt==2:break
+                delay=(1,3)[attempt]
+                ctx.log('상세 이미지 일시적 통신 실패: '+str(delay)+'초 후 재시도 / '+url+' / '+', '.join(result['reasons']),'WARNING')
+                for _ in range(delay*10):ctx.checkpoint();time.sleep(.1)
     result=cache[key]
     if result['status']!='accessible':
         ctx.log('상세 원본 확인 불가: '+url+' / '+', '.join(result['reasons']),'WARNING')
@@ -245,7 +254,8 @@ def detail(ctx, urls, cache):
             if any(re.search(r'HTTP (404|410)\b', r) for r in cache.get(('detail',url), {}).get('reasons', [])):
                 ctx.log('없는 상세 원본 이미지 생략: ' + url, 'WARNING')
                 continue
-            raise ValueError('상세 이미지 조회 미완료: ' + url)
+            reasons=', '.join(cache.get(('detail',url),{}).get('reasons',[]))
+            raise ValueError('상세 이미지 조회 미완료: ' + url + (' / '+reasons if reasons else ''))
         parts.append('<p><img src="' + html.escape(url, quote=True) + '" alt="상품 상세정보"></p>')
     if not parts:
         ctx.log('상품 상세 이미지 없음: 고시/사이즈표를 임의 생성하지 않음', 'WARNING')

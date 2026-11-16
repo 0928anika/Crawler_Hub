@@ -46,4 +46,22 @@ class Tests(unittest.TestCase):
   ctx=self.run_case('4348',fields=());self.assertEqual(len(ctx.rows),2);self.assertFalse(ctx.unmapped);self.assertNotIn('price',ctx.rows[0])
  def test_missing_regular_price_is_optional(self):
   with patch.object(c,'field',return_value='0원'):self.assertIsNone(c.price(Context('REWFJKFBF457'),None,True))
+ def test_transient_detail_disconnect_recovers_after_backoff(self):
+  url=c.details(c.parse(self.source('4231')),c.SITE)[0];cache={}
+  reset=dict(status='unknown',reasons=['WinError 10054 connection reset'])
+  good=dict(status='accessible',reasons=[],width=747,height=6895)
+  with patch.object(c,'check_public_image',side_effect=[reset,good]) as check,patch.object(c.time,'sleep') as wait:
+   result=c.detail(Context('REEFHAW24500'),[url],cache)
+   self.assertIn(url,result);self.assertEqual(check.call_count,2)
+   self.assertAlmostEqual(sum(call.args[0] for call in wait.call_args_list),1)
+   self.assertEqual(c.detail_image(Context('REEFHAW24500'),url,cache),good)
+   self.assertEqual(check.call_count,2)
+ def test_missing_detail_is_not_retried_but_transient_error_is_not_silenced(self):
+  url='https://theredface.diskn.com/Online/24FW/page/REEFHAW24500_0.jpg'
+  for status,reason,count in [('inaccessible','공개 GET 거부: HTTP 404',1),('unknown','WinError 10054 connection reset',3)]:
+   with patch.object(c,'check_public_image',return_value=dict(status=status,reasons=[reason])) as check,patch.object(c.time,'sleep'):
+    if status=='inaccessible':self.assertEqual(c.detail(Context('REEFHAW24500'),[url],{}),'')
+    else:
+     with self.assertRaisesRegex(ValueError,'10054'):c.detail(Context('REEFHAW24500'),[url],{})
+    self.assertEqual(check.call_count,count)
 if __name__=='__main__':unittest.main()
