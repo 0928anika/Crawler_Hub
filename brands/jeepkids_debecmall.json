@@ -1,0 +1,172 @@
+{
+  "id": "jeepkids_debecmall",
+  "name": "지프키즈",
+  "category": "유아동 의류",
+  "crawl_source": "대백몰",
+  "script": "jeepkids_debecmall.py",
+  "execution_level": 1,
+  "interface": "portal_v1",
+  "mapping_mode": "manual",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명"
+  ],
+  "extensions": [],
+  "official_color_codes": false,
+  "image_color_mapping": "hybrid",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 listSkuInfo의 SKU_NAME 색상/사이즈 조합. 품절 포함, 색상별 사이즈 보존."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 화면 판매가와 대응하는 prdDetail.SALE_PRICE. 할인적용가/쿠폰가는 제외."
+    },
+    "regular_price": {
+      "supported": false,
+      "status": "unsupported",
+      "reason": "독립 정상가·소비자가 표시를 확인하지 못함. LIST_PRICE를 정상가로 추정하지 않음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 분류 pool.getUpperCategory의 TREE_ITEM_LABEL."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 prdProductImage SIZE_600 원본. 사이트 제공 합성 대표사진도 원본 그대로 보존. 단일 색상 자동, 다색상 미연결 사진 수동 매핑."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 갤러리 순서. 단 한 장이면 대표 재사용."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 상세설명 속성의 /files/DETAIL/ 본문 이미지와 사이즈 이미지. 별도 공통 매장픽업·축하카드 배너 제외. 고시·사이즈표 중복 생성 안 함."
+    }
+  },
+  "guide": {
+    "example": "KR3TPU247",
+    "examples": [
+      "KR3TPU247"
+    ],
+    "pattern": "^[A-Za-z]{2}\\d[A-Za-z]{3}\\d{3}$",
+    "format": "예 KR3TPU247, 대소문자 무관",
+    "notes": "공식 판매자 품번이 일치하는 지프키즈 상품만 수집합니다.",
+    "method": "대백몰 공개 상품 검색 및 상세 API",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "KR3TPU"
+    ],
+    "validation_note": "실제 상품 존재는 실행 시 확인."
+  },
+  "notes": "품번 exact VENDOR_PRODUCT_CODE와 지프키즈 브랜드 확인. 단일색상 자동/다색상 수동 매핑. 공식 합성 대표이미지 그대로 사용. 본문에 포함된 고시와 사이즈표 이미지 보존. 공통 매장픽업·축하카드 안내 제외.",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "대백몰 공개 상품/옵션 원문 확인"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "대백몰 공개 상품/옵션 원문 확인"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "대백몰 공개 상품/옵션 원문 확인"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "대백몰 공개 상품/옵션 원문 확인"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 listSkuInfo의 SKU_NAME 색상/사이즈 조합. 품절 포함, 색상별 사이즈 보존."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 화면 판매가와 대응하는 prdDetail.SALE_PRICE. 할인적용가/쿠폰가는 제외."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": false,
+      "status": "unsupported",
+      "reason": "독립 정상가·소비자가 표시를 확인하지 못함. LIST_PRICE를 정상가로 추정하지 않음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 분류 pool.getUpperCategory의 TREE_ITEM_LABEL."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 prdProductImage SIZE_600 원본. 사이트 제공 합성 대표사진도 원본 그대로 보존. 단일 색상 자동, 다색상 미연결 사진 수동 매핑."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 갤러리 순서. 단 한 장이면 대표 재사용."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 상세설명 속성의 /files/DETAIL/ 본문 이미지와 사이즈 이미지. 별도 공통 매장픽업·축하카드 배너 제외. 고시·사이즈표 중복 생성 안 함."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null
+  },
+  "code_hash": "6f5d3730f654fd7dfb818f1f12f21dbbe41902f76cc9cb20c363a6fee5a81844",
+  "hybrid_mapping": true,
+  "additional_image_count": 5
+}
