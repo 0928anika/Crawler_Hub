@@ -202,5 +202,11 @@
     "profile": "daehyun",
     "supported": true,
     "reason": "공식 상세 .info_price .prc.consumer 소비자가. dis_price는 판매가이며 정상가 대체값으로 사용하지 않음. 품번별 누락은 빈칸으로 성공 처리."
+  },
+  {
+    "id": "littlebren_eland_studio",
+    "profile": "eland",
+    "supported": true,
+    "reason": "독립 itemMain.orgSellprice. 누락/0/상품 간 불일치 시 공통 정상가는 빈칸이며 판매가를 복사하지 않음."
   }
 ]
