@@ -173,9 +173,20 @@ function renderMapping(){const y=window.scrollY,groups=S.mapping.groups,visible=
  else if(!visible.length)empty($('mappingProducts'),'조건에 맞는 품번이 없습니다','상단 필터를 전체로 바꾸면 모든 품번을 볼 수 있습니다.');
  renderMappingProgress();window.scrollTo({top:y})}
 async function saveMappingColor(gid,cid){if(S.mappingBusy)throw Error('저장 중입니다. 잠시 기다려주세요.');S.mappingBusy=true;renderMappingProgress();try{const group=mappingGroup(gid),key=mappingKey(gid,cid);if(!mappingDraft(group,cid).size)throw Error('사진을 최소 1장 선택한 뒤 저장하세요.');S.mapping=await api('/api/jobs/'+S.jobId+'/mapping/color',{group_id:gid,color_id:cid,image_ids:[...mappingDraft(group,cid)],expected_revision:S.mapping.revision});S.mappingDirty.delete(key);delete S.mappingDrafts[key];for(const cached of Object.keys(S.mappingDrafts))if(!S.mappingDirty.has(cached))delete S.mappingDrafts[cached];}finally{S.mappingBusy=false;renderMappingProgress()}}
-async function saveMappingOption(gid,cid){await saveMappingColor(gid,cid);const current=mappingGroup(gid);S.mappingFocused=gid;S.mappingActive[gid]=current.colors.find(c=>!current.confirmed.includes(c.id))?.id||cid;refreshMappingProduct(gid);toast('색상 선택을 로컬에 저장했습니다.');}
+async function saveMappingOption(gid,cid){
+ await saveMappingColor(gid,cid);const current=mappingGroup(gid),pending=g=>g.colors.find(c=>!g.confirmed.includes(c.id)||S.mappingDirty.has(mappingKey(g.id,c.id)));
+ S.mappingFocused=gid;S.mappingActive[gid]=pending(current)?.id||cid;refreshMappingProduct(gid);
+ if(current.colors.length&&!pending(current)){
+  const groups=S.mapping.groups,index=groups.findIndex(g=>g.id===gid),next=[...groups.slice(index+1),...groups.slice(0,index)].find(g=>pending(g));
+  if(next){S.mappingFocused=next.id;S.mappingActive[next.id]=pending(next).id;
+   if(!mappingFilterView().some(g=>g.id===next.id)){$('mappingFilter').value='incomplete';renderMapping();}else refreshMappingProduct(next.id);
+   const target=$('mapping-product-'+next.id);if(target){target.tabIndex=-1;target.style.scrollMarginTop='var(--mapping-sticky-top, 150px)';target.focus({preventScroll:true});target.scrollIntoView({behavior:'smooth',block:'start'});}
+  }
+ }
+ toast('색상 선택을 로컬에 저장했습니다.');
+}
 async function mappingEnter(e){
- if(S.page!=='mapping'||!S.mapping||e.key!=='Enter'||e.defaultPrevented||e.isComposing||e.keyCode===229||e.ctrlKey||e.altKey||e.metaKey||e.shiftKey)return;
+ if(S.page!=='mapping'||!S.mapping||!['Enter','Escape'].includes(e.key)||e.defaultPrevented||e.isComposing||e.keyCode===229||e.ctrlKey||e.altKey||e.metaKey||e.shiftKey)return;
  const target=e.target;
  if(target?.closest?.('input,textarea,select,form,[contenteditable]:not([contenteditable="false"])')||document.querySelector('dialog[open]'))return;
  const control=target?.closest?.('button,a');if(control&&!control.matches('.mapping-photo,.mapping-save'))return;
@@ -185,6 +196,7 @@ async function mappingEnter(e){
  e.preventDefault();if(S.mappingBusy||S.mappingDrag||e.repeat)return;
  const cid=S.mappingActive[gid]||group.colors.find(c=>!group.confirmed.includes(c.id))?.id||group.colors[0]?.id;if(!cid)return;
  S.mappingFocused=gid;S.mappingActive[gid]=cid;
+ if(e.key==='Escape'){S.mappingDrafts[mappingKey(gid,cid)]=new Set();S.mappingDirty.add(mappingKey(gid,cid));refreshMappingProduct(gid);toast('현재 옵션의 사진 선택을 모두 해제했습니다.');return;}
  if(!mappingDraft(group,cid).size){selectRemainingMappingPhotos(group,cid);refreshMappingProduct(gid);if(!mappingDraft(group,cid).size)toast('선택할 남은 사진이 없습니다. 사진을 직접 선택해주세요.',true);return;}
  if(group.confirmed.includes(cid)&&!S.mappingDirty.has(mappingKey(gid,cid)))return;
  await saveMappingOption(gid,cid);

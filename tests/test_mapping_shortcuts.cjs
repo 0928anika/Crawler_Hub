@@ -20,4 +20,5 @@ function event(values={}){return {key:'Enter',target:{closest:()=>null},preventD
  console.log('Typing, IME, held Enter, dialogs, active drag and other pages do not save');
  const rect={left:100,right:200,top:100,bottom:200};assert(ctx.segmentHitsPhoto(0,150,300,150,rect));assert(!ctx.segmentHitsPhoto(0,0,50,50,rect));assert(ctx.segmentHitsPhoto(150,0,150,300,rect));
  console.log('Fast drag segments include crossed middle photos and ignore untouched photos');
+ ctx.S.mappingActive.g='a';ctx.S.mappingDrafts={'g:a':new Set(['x']),'g:b':new Set(['y'])};await ctx.mappingEnter(event({key:'Escape'}));assert.equal(ctx.mappingDraft(group,'a').size,0);assert.deepEqual([...ctx.mappingDraft(group,'b')],['y']);assert(ctx.S.mappingDirty.has('g:a'));assert.equal(saves,1);console.log('Escape clears only the active option without saving');
 })().catch(e=>{console.error(e);process.exitCode=1});
