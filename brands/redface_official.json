@@ -1,0 +1,173 @@
+{
+  "id": "redface_official",
+  "name": "레드페이스",
+  "category": "아웃도어",
+  "crawl_source": "공식 홈페이지",
+  "script": "redface_official.py",
+  "execution_level": 1,
+  "interface": "portal_v1",
+  "mapping_mode": "manual",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명"
+  ],
+  "extensions": [],
+  "official_color_codes": false,
+  "image_color_mapping": "hybrid",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data 색상별 사이즈 전체. 품절 포함."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 판매가 행."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 소비자가 행. 누락은 빈칸."
+    },
+    "category": {
+      "supported": false,
+      "status": "unsupported",
+      "reason": "모바일 공식 상품 페이지에 상품 분류 경로가 제공되지 않음. URL의 카테고리 숫자로 분류명을 추정하지 않음."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 link_image 또는 단일 색상 상품 사진만 자동 연결. 미연결 사진은 수동 후보."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 개별 갤러리 사진. 부분 매핑은 자동 연결 보존."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "prdDetailContent 원본 이미지 순서 보존. 고시와 사이즈표 별도 생성 없음."
+    }
+  },
+  "guide": {
+    "example": "REEGSTXBE101",
+    "examples": [
+      "REEGSTXBE101",
+      "REWFJKFBF457"
+    ],
+    "pattern": "^RE[A-Za-z0-9]{10}$",
+    "format": "RE로 시작하는 기본 품번 12자리",
+    "notes": "대소문자 무관. 품번별로 매핑 필요 여부 구분. 일부 사진만 미매핑이어도 해당 품번 전체 사진과 기존 색상 연결을 표시합니다.",
+    "method": "공식 검색 후 상품명 내 정확한 품번 일치 확인",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "REEGSTXBE101_"
+    ],
+    "validation_note": "실제 상품 존재는 실행 시 확인."
+  },
+  "notes": "공식 색상 연결 또는 단일 색상 상품만 자동 매핑. 일부 미연결 사진은 품번 단위로 자동 연결을 보존해 매핑 화면에 표시. 전부 연결되면 화면 제외. 고시와 사이즈표는 본문 원본 이미지만 보존.",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data 색상별 사이즈 전체. 품절 포함."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 판매가 행."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 소비자가 행. 누락은 빈칸."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": false,
+      "status": "unsupported",
+      "reason": "모바일 공식 상품 페이지에 상품 분류 경로가 제공되지 않음. URL의 카테고리 숫자로 분류명을 추정하지 않음."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 link_image 또는 단일 색상 상품 사진만 자동 연결. 미연결 사진은 수동 후보."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 개별 갤러리 사진. 부분 매핑은 자동 연결 보존."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "prdDetailContent 원본 이미지 순서 보존. 고시와 사이즈표 별도 생성 없음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null
+  },
+  "code_hash": "35208c929d2110015563dc112ebc3cf6f92241b3152ae65e7c382f234c8a2c71",
+  "hybrid_mapping": true,
+  "additional_image_count": 5
+}
