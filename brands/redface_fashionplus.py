@@ -375,7 +375,7 @@ def detail_images(ctx, link, code):
         seen.add(url)
         path=urllib.parse.unquote(urllib.parse.urlsplit(url).path)
         context=path+' '+str(node.get('alt') or '')+' '+str(node.get('title') or '')
-        if re.search(r'/mall/(?:event|md_image)/|/brand_info/|banner|coupon|delivery|shipping|return|refund|notice|tekbae|detailpage_under|배송|택배|교환|반품|쿠폰|매장',context,re.I):
+        if re.search(r'/mall/(?:event|md_image)/|/brand_info/|banner|coupon|delivery|shipping|return|refund|notice|(?:^|/)intro[_./-]|tekbae|detailpage_under|배송|택배|교환|반품|쿠폰|매장',context,re.I):
             ctx.log('본문 외 공통 안내 제외: '+url,'INFO');continue
         if urllib.parse.urlsplit(url).scheme not in ('http','https'):continue
         try:
@@ -387,8 +387,8 @@ def detail_images(ctx, link, code):
                 picture.verify()
         except MissingResource:
             ctx.log('없는 상세 원본 이미지 제외: '+url,'WARNING');continue
-        except (UnidentifiedImageError,OSError,Image.DecompressionBombError) as exc:
-            raise CollectionError('상세 원본 이미지 해독 실패: '+url) from exc
+        except (CollectionError,UnidentifiedImageError,OSError,Image.DecompressionBombError) as exc:
+            ctx.log('사용할 수 없는 상세 이미지 제외, 다른 본문 계속 확인: '+url+' / '+str(exc),'WARNING');continue
         if w<400 or h<2000 or h/w<2.5:
             ctx.log('짧은 안내/개별 컷 상세 제외: %sx%s / %s'%(w,h,url),'INFO');continue
         candidates.append((exact_code(path,code),h/w,h,url))
@@ -478,7 +478,7 @@ def crawl(ctx):
         except (CollectionError, json.JSONDecodeError, UnicodeError) as exc:
             message = '%s / %s' % (link, exc)
             errors.append(message)
-            ctx.fail_item(message)
+            ctx.log('사용 불가 판매처 제외, 다른 판매처 수집 계속: '+message,'WARNING')
     if not products:
         message = '정확한 품번의 스튜디오 대표사진 상품/유효 사진 없음: ' + code
         ctx.fail_item(message)
@@ -522,10 +522,10 @@ def crawl(ctx):
             except MissingDetail as exc:
                 ctx.log(str(exc)+' / 다른 채택 링크에서 한 곳의 본문 확인','WARNING')
             except (CollectionError,json.JSONDecodeError,UnicodeError) as exc:
-                ctx.fail_item(detail_link+' / '+str(exc));raise
+                ctx.log('이 판매처의 상세 확인 불가, 다른 채택 링크 확인: '+detail_link+' / '+str(exc),'WARNING')
         if not details:
-            raise MissingDetail('채택한 상품 링크에 긴 통짜 상세 원본 없음: '+code)
-        ctx.log('최종 공통 상세 출처(다른 링크와 합치지 않음): '+detail_link,'INFO')
+            ctx.log('상세페이지 미수집: '+code+' / 모든 채택 링크에서 사용 가능한 긴 본문 원본을 찾지 못했습니다. 상세는 빈칸으로 두고 상품사진·옵션 수집을 완료합니다.','WARNING')
+        if details:ctx.log('최종 공통 상세 출처(다른 링크와 합치지 않음): '+detail_link,'INFO')
         markup = ''.join('<img src="%s" alt="상품 상세" style="max-width:100%%;height:auto">' %
                          html.escape(url, quote=True) for url in details)
         if len(markup.encode('utf-16-le'))//2 > 32767:
@@ -537,6 +537,6 @@ def crawl(ctx):
         ctx.emit_unmapped(dict(record, product_url=products[0][0]['product_url']), colors, url,
                           shared_detail_html=record.get('detail_page', ''))
     if errors:
-        raise CollectionError('일부 링크 수집 실패. 성공 후보 보존, 입력 행 미완료: ' + '; '.join(errors))
+        ctx.log('사용 불가 판매처 '+str(len(errors))+'개 제외. 정상 판매처의 상품사진·옵션으로 수집 완료.','WARNING')
     ctx.log('%s: %s개 링크, %s개 색상 후보, %s장 사진 수집' %
             (code, len(products), len(colors), len(photos)), 'SUCCESS')
