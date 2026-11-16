@@ -19,7 +19,7 @@ def photos(url='https://item.elandrs.com/studio.jpg',safe=True):
  p=c.GalleryPhotos();p.append((url,url));p.detail_safe=safe;return p
 class TdgStudioTests(unittest.TestCase):
  def test_verified_uploaded_bodies_keep_size_and_exclude_unknown_seller_images(self):
-  for code,count in [('TGAK25A05',3),('TGBR25A01',2)]:
+  for code,count in [('TGAK25A05',3),('TGBR25A01',2),('TGTJ25F02',3),('TGWR25A01',2)]:
    d=json.loads((FIX.parent/(code+'_0.json')).read_text('utf-8'))
    d['itemDesc']['itemDescdocumentCon']+='<img src="https://item.elandrs.com/unverified.jpg">'
    with patch.object(c,'image_info',return_value=('JPEG',1080,4000,'hash',False)):

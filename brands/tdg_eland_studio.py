@@ -593,6 +593,15 @@ VERIFIED_UPLOADED_BODIES = {
         'https://item.elandrs.com/r/image/item/2025-03-21/c3b66d8e-5208-47df-b930-9ba4d8300549.jpg',
         'https://item.elandrs.com/r/image/item/2025-03-21/7b43d524-7cf1-4935-a892-87ee44f03e9c.jpg',
     ),
+    'TGTJ25F02': (
+        'https://item.elandrs.com/r/image/item/2025-04-08/ccac7329-ca4e-425d-9aa3-43f985648a77.jpg',
+        'https://item.elandrs.com/r/image/item/2025-04-08/53182b51-0f00-4278-886e-dc488e16c05c.jpg',
+        'https://item.elandrs.com/r/image/item/2025-04-04/472f7a8c-a491-4454-8181-7af7dd5cd005.jpg',
+    ),
+    'TGWR25A01': (
+        'https://item.elandrs.com/r/image/item/2025-03-21/65f9a239-8200-41a5-849a-b7bd205dd67c.jpg',
+        'https://item.elandrs.com/r/image/item/2025-03-21/7b43d524-7cf1-4935-a892-87ee44f03e9c.jpg',
+    ),
 }
 
 
