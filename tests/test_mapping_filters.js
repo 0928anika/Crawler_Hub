@@ -14,9 +14,10 @@ const drafts={'p:red':new Set(['one','two'])};
 assert.deepEqual(filters.status(saved,drafts,new Set(['p:red'])),{complete:false,unassigned:0});
 assert.equal(filters.matches(filters.status(saved,drafts,new Set(['p:red'])),'incomplete'),true);
 assert.equal(filters.matches(filters.status(saved,drafts,new Set(['p:red'])),'unselected'),false);
-assert.deepEqual(filters.status({...group,colors:[]}),{complete:false,unassigned:2});
+assert.deepEqual(filters.status({...group,colors:[]}),{complete:true,unassigned:2});
 assert.equal(filters.status({...group,confirmed:['red','blue']}).complete,true); // All colors explicitly saved with zero photos.
 assert.equal(filters.status(saved,{'p:red':new Set()}).unassigned,2); // An unsaved deselection is visible immediately.
 assert.equal(filters.matches(filters.status(group),'all'),true);
 assert.equal(filters.status(group,{'other:red':new Set(['one'])}).unassigned,2); // Other product drafts do not leak.
+assert.equal(filters.matches(filters.status({...group,colors:[]}),'incomplete'),false);
 console.log('Mapping filters: saved/unsaved selections, exclusions, empty options and independent IDs passed.');

@@ -32,4 +32,14 @@ function event(values={}){return {key:'Enter',target:{closest:()=>null},preventD
  ctx.toggleMappingPhoto(group,'a','y');assert.deepEqual([...ctx.mappingDraft(group,'a')],['x','y']);assert.deepEqual([...ctx.mappingDraft(group,'b')],['y','z']);
  ctx.mappingDraft(group,'a').clear();ctx.mappingDraft(group,'b').delete('y');drag();assert.deepEqual([...ctx.mappingDraft(group,'a')],['x','y']);
  console.log('Drag skips other options saved/draft photos; direct click permits sharing and current drafts take precedence');
+ // A stroke beginning on a selected photo removes only the current option.
+ ctx.S.mappingDrafts={'g:a':new Set(['x','y']),'g:b':new Set(['y','z'])};ctx.S.mappingDirty=new Set();
+ const start={dataset:{mappingImage:'x'},closest:()=>({dataset:{mappingGroup:'g'}})};
+ ctx.mappingPointerDown({button:0,pointerType:'mouse',pointerId:2,clientX:0,clientY:150,target:{closest:()=>start}});
+ assert.equal(ctx.S.mappingDrag.mode,'remove');
+ ctx.mappingPointerMove({pointerId:2,clientX:300,clientY:150,preventDefault(){}});
+ assert.deepEqual([...ctx.mappingDraft(group,'a')],[]);assert.deepEqual([...ctx.mappingDraft(group,'b')],['y','z']);
+ ctx.mappingPointerMove({pointerId:2,clientX:0,clientY:150,preventDefault(){}});assert.equal(ctx.mappingDraft(group,'a').size,0);
+ assert(ctx.S.mappingDirty.has('g:a'));assert(!ctx.S.mappingDirty.has('g:b'));
+ console.log('Selected-start drag removes only the current option, preserves shared owners and never retoggles on re-entry');
 })().catch(e=>{console.error(e);process.exitCode=1});

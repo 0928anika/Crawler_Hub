@@ -202,6 +202,10 @@ def edit_options(job,data):
         elif action=='delete':
             if data.get('color_id') not in {c['id'] for c in group['colors']}:raise ValueError('삭제할 색상이 없습니다.')
             saved['hidden_colors']=list(set(saved.get('hidden_colors',[])+[data['color_id']]))
+        elif action=='delete-unsaved':
+            pending=[c['id'] for c in group['colors'] if c['id'] not in group['confirmed']]
+            if not pending:raise ValueError('삭제할 미저장 옵션이 없습니다.')
+            saved['hidden_colors']=sorted(set(saved.get('hidden_colors',[])+pending))
         elif action=='reset':
             saved['hidden_colors']=[];saved['added_colors']=[]
         else:raise ValueError('지원하지 않는 옵션 작업입니다.')

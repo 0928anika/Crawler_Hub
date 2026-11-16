@@ -53,4 +53,25 @@ class SharedPhotoMappingTests(unittest.TestCase):
    with self.assertRaisesRegex(ValueError,'다른 창'):
     m.save_color(job,dict(group_id=g['id'],color_id=g['colors'][1]['id'],image_ids=[g['images'][0]['id']],expected_revision=v['revision']))
    self.assertEqual(m.snapshot(job),saved)
+ def test_bulk_delete_unsaved_preserves_saved_colors_photos_and_other_product(self):
+  import copy
+  with tempfile.TemporaryDirectory(dir=ROOT/'tests') as folder:
+   job=self.make_job(folder);job.items.append(helper.item(1,'OTHER','60','https://img/other.jpg',True));original=copy.deepcopy(job.items)
+   view=m.snapshot(job);g=next(g for g in view['groups'] if g['code']=='STYLE');other=next(g for g in view['groups'] if g['code']=='OTHER');saved=g['colors'][0]['id'];iid=g['images'][0]['id']
+   view=m.save_color(job,dict(group_id=g['id'],color_id=saved,image_ids=[iid],expected_revision=view['revision']))
+   view=m.edit_options(job,dict(group_id=g['id'],action='add',color_name='추가색상',expected_revision=view['revision']))
+   revision=view['revision'];view=m.edit_options(job,dict(group_id=g['id'],action='delete-unsaved',color_ids=[saved],expected_revision=revision))
+   current=next(v for v in view['groups'] if v['id']==g['id']);self.assertEqual([c['id'] for c in current['colors']],[saved]);self.assertEqual(current['confirmed'],[saved]);self.assertEqual(current['images'][0]['assigned_colors'],[saved]);self.assertEqual(view['revision'],revision+1)
+   self.assertEqual(next(v for v in view['groups'] if v['id']==other['id']),other);self.assertEqual(job.items,original);self.assertEqual(m.snapshot(job),{k:v for k,v in view.items() if k!='active_color'})
+ def test_bulk_delete_all_unsaved_keeps_all_source_images(self):
+  with tempfile.TemporaryDirectory(dir=ROOT/'tests') as folder:
+   job=self.make_job(folder);view=m.snapshot(job);g=view['groups'][0]
+   view=m.edit_options(job,dict(group_id=g['id'],action='delete-unsaved',expected_revision=view['revision']));current=view['groups'][0]
+   self.assertEqual(current['colors'],[]);self.assertEqual([i['url'] for i in current['images']],[i['url'] for i in g['images']]);self.assertTrue(current['complete'])
+   with self.assertRaisesRegex(ValueError,'미저장'):m.edit_options(job,dict(group_id=g['id'],action='delete-unsaved',expected_revision=view['revision']))
+ def test_bulk_delete_rejects_stale_revision_without_changing_state(self):
+  with tempfile.TemporaryDirectory(dir=ROOT/'tests') as folder:
+   job=self.make_job(folder);view=m.snapshot(job);g=view['groups'][0]
+   with self.assertRaisesRegex(ValueError,'다른 창'):m.edit_options(job,dict(group_id=g['id'],action='delete-unsaved',expected_revision=view['revision']-1))
+   self.assertEqual(m.snapshot(job),view)
 if __name__=='__main__':unittest.main()
