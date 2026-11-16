@@ -7,3 +7,5 @@
 .execution-panel{margin-bottom:18px}.execution-heading{display:flex;gap:16px;align-items:center;flex-wrap:wrap}.execution-heading strong{font-size:14px}.execution-jobs{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}.execution-job{display:flex;flex-direction:column;align-items:flex-start;gap:5px;text-align:left;min-width:180px;max-width:100%;flex:1}.execution-job small{font-weight:400;color:#64748b}.execution-job.selected{border-color:#5277d5;background:#f0f5ff}.execution-block-reason{color:#ad4934!important}.brand-card:disabled{cursor:not-allowed;opacity:.6}
 
 .mapping-photo{user-select:none}.mapping-dragging .mapping-photo{cursor:crosshair}#mappingDetailDialog{width:min(1000px,94vw);height:90vh}#mappingDetailContent{padding:16px;height:calc(90vh - 122px);overflow:auto}.mapping-detail-frame{width:100%;height:100%;min-height:300px;border:0}
+
+.mapping-option-tools{gap:6px;margin:4px 0 8px}.mapping-option-tools button{font-size:11px;padding:4px 8px}.mapping-product-head .mapping-colors{margin-bottom:4px}
