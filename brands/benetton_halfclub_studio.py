@@ -240,7 +240,7 @@ SELLER_BANNER = re.compile(SELLER_BANNER.pattern + r'|구매전참고|주문전�
 def asset_url(raw):
     url=urllib.parse.urljoin('https://cdn2.halfclub.com/',raw)
     p=urllib.parse.urlsplit(url)
-    if p.scheme not in ('http','https') or p.username or p.password or p.hostname not in ('cdn2.halfclub.com','ai.esmplus.com','gi.esmplus.com'):
+    if p.scheme not in ('http','https') or p.username or p.password or not (p.hostname in ('cdn2.halfclub.com','ai.esmplus.com','gi.esmplus.com') or p.hostname == 'bnj0995.hgodo.com' and p.path.startswith('/Benetton/')):
         raise CollectionError('미확인 이미지 호스트: '+url)
     return urllib.parse.quote(url,safe=':/%?=&+@')
 
@@ -311,10 +311,15 @@ def details(ctx,info,cache):
     doc=BeautifulSoup(info.get('productDesc',{}).get('prdDescContClob',''),'html.parser')
     parts=[];seen=set()
     for node in doc.select('img[src]'):
-        ctx.checkpoint();url=asset_url(node['src'])
-        if url in seen:continue
-        seen.add(url)
-        raw,image,text=inspected(ctx,url,cache)
+        ctx.checkpoint()
+        try:
+            url=asset_url(node['src'])
+            if url in seen:continue
+            seen.add(url)
+            raw,image,text=inspected(ctx,url,cache)
+        except (CollectionError,OSError,subprocess.SubprocessError) as exc:
+            ctx.log('상세 이미지 확인 불가: '+node['src']+' / '+str(exc)+' / 상품 사진 수집 계속','WARNING')
+            continue
         if banner_text(text):ctx.log('판매자 안내 이미지 제외: '+url,'INFO');continue
         compact=re.sub(r'\s+','',text)
         # Text documents (size/specification/color chart) are detail-only.
@@ -325,6 +330,7 @@ def details(ctx,info,cache):
             studio=all(studio_background(image.crop((0,image.height*k//2,image.width,image.height*(k+1)//2)))[0] for k in range(2))
         if not document and not studio:ctx.log('비균일 배경 본문 사진 제외: '+url,'INFO');continue
         parts.append('<p><img src="'+html.escape(url,quote=True)+'" alt="상품 상세"></p>')
+    if not parts:ctx.log('채택 가능한 상세 이미지 없음: 상세 빈칸으로 상품 사진 수집 계속','WARNING')
     return '<div>'+''.join(parts)+'</div>' if parts else ''
 
 

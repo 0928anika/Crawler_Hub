@@ -48,6 +48,28 @@ class Tests(unittest.TestCase):
    ctx=CrawlContext(Path(folder)/'in.xlsx',Path(folder)/'out.xlsx',0,['main_image','size','price','regular_price'],definition['output_headers'],lambda:None,lambda *a,**k:None,input_item={'품번':'BAKPC3661'},mapping_mode='manual')
    with patch.object(c,'search',return_value=['442037474']),patch.object(c,'page',return_value=self.data),patch.object(c,'inspected',return_value=(None,im,'')):c.crawl(ctx)
    ctx.finish();self.assertTrue((Path(folder)/'out.xlsx').is_file())
+ def test_bactc2661_seller_image_host(self):
+  data=json.loads((FIX/'BACTC2661.json').read_text(encoding='utf-8'))
+  urls=[x['src'] for x in c.BeautifulSoup(data['productInfo']['productDesc']['prdDescContClob'],'html.parser').select('img')]
+  self.assertEqual(len(urls),11)
+  self.assertTrue(all(c.asset_url(url)==url for url in urls))
+  with self.assertRaises(c.CollectionError):c.asset_url('https://bnj0995.hgodo.com.evil.example/Benetton/a.jpg')
+  with self.assertRaises(c.CollectionError):c.asset_url('https://bnj0995.hgodo.com/another-shop/a.jpg')
+ def test_detail_failure_keeps_bactc2661_studio_photos(self):
+  data=json.loads((FIX/'BACTC2661.json').read_text(encoding='utf-8'))
+  ctx=Context('BACTC2661',('main_image','detail_page','size'))
+  im=Image.new('RGB',(720,960),'#eee');ImageDraw.Draw(im).rectangle((180,100,540,850),fill='#333')
+  def inspect(ctx,url,cache):
+   if 'hgodo.com' in url:raise c.CollectionError('HTTP 404')
+   return None,im,''
+  with patch.object(c,'search',return_value=['440540994']),patch.object(c,'page',return_value=data),patch.object(c,'inspected',side_effect=inspect):c.crawl(ctx)
+  self.assertTrue(ctx.rows);self.assertFalse(ctx.errors)
+  self.assertTrue(all(row[0]['detail_page']=='' for row in ctx.rows))
+ def test_bad_detail_resource_does_not_discard_later_images(self):
+  info={'productDesc':{'prdDescContClob':'<img src="https://unknown.example/a.jpg"><img src="https://ai.esmplus.com/a.jpg">'}}
+  im=Image.new('RGB',(720,960),'#eee');ImageDraw.Draw(im).rectangle((180,100,540,850),fill='#333')
+  with patch.object(c,'inspected',return_value=(None,im,'')):markup=c.details(Context(),info,{})
+  self.assertNotIn('unknown.example',markup);self.assertIn('ai.esmplus.com/a.jpg',markup)
  def test_nonstudio_product_not_emitted(self):
   ctx=Context();im=Image.effect_noise((720,960),90).convert('RGB')
   with patch.object(c,'search',return_value=['442037474','442060720','442953268']),patch.object(c,'page',return_value=self.data),patch.object(c,'inspected',return_value=(None,im,'')):
