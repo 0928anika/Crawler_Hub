@@ -114,12 +114,13 @@
       "sha256": "164d9db0265b087cabd3b1899ea75e51ba9bd1b3e36e7978b1ab06999e642e45"
     },
     {
-      "id": "usall_eland",
+      "id": "usall_eland_studio",
       "name": "유솔",
-      "action": "add",
-      "source_json": "usall_eland.json",
-      "source_python": "usall_eland.py",
-      "sha256": "3004868756ab869d75f09c898cb15b832b24bde2b031620e4500bc950d470a4b"
+      "action": "rename",
+      "source_json": "usall_eland_studio.json",
+      "source_python": "usall_eland_studio.py",
+      "sha256": "6a215deaf47d1b4ab55ac5cd36531edb27c71c05bc486b61af139f862667def3",
+      "previous_id": "usall_eland"
     },
     {
       "id": "volvik_official",

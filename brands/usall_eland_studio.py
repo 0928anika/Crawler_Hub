@@ -3,25 +3,31 @@ PORTAL_API_VERSION = 1
 from regular_price import collect_regular_price, merge_regular_prices
 
 import hashlib
+import base64
+import subprocess
+import tempfile
+import time
+from pathlib import Path
 import html
 import io
 import json
 import re
 from urllib.error import HTTPError, URLError
-from urllib.parse import parse_qs, urlencode, urljoin, urlsplit
+from urllib.parse import parse_qs, urlencode, urljoin, urlsplit, unquote
 from urllib.request import Request, build_opener
 
 from bs4 import BeautifulSoup
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, ImageStat, UnidentifiedImageError
 
 SITE = 'https://www.elandmall.co.kr'
 VENDOR = 'LV17008492'
+BRAND_NO = '1690000401'
 POLICY = {'checked': '2026-11-05', 'source': 'https://marketplace.coupang.com/mba/listing',
           'route': 'WING 웹/엑셀', 'min_side': 500, 'max_bytes': 10000000,
           'formats': ('JPEG', 'PNG', 'WEBP'), 'max_aspect': 1.8,
           'note': '정지 WebP와 비율 1.8은 프로젝트 정책. 등록 승인 보장은 아님.'}
 # 실제 조사: 유솔 ULJP24W01 / ULMH24W51 / ULUS25W01 공개 검색·상품·옵션.
-# 상품 상세 통짜 안에 인쇄된 안내문은 이미지 자체의 일부로 유지된다.
+# 공식 판매자 우선. 공식이 없을 때만 전체 판매자의 스튜디오컷을 검사한다.
 # 실제 Hub 화면, 최종 Excel, WING 업로드는 별도 검증 대상이다.
 
 
@@ -85,7 +91,7 @@ def search(ctx, code):
             key = (q['itemNo'][0], q.get('lowerVendNo', [''])[0])
             if key not in current:
                 current.append(key)
-            if key[1] == VENDOR and u not in links:
+            if u not in links:
                 links.append(u)
         signature = tuple(current)
         if total and (not current or signature in signatures):
@@ -93,7 +99,9 @@ def search(ctx, code):
         signatures.add(signature)
         seen.update(current)
         if len(seen) >= total:
-            return links
+            official=[u for u in links if parse_qs(urlsplit(u).query).get('lowerVendNo')==[VENDOR]]
+            ctx.log('공식 판매자 상품 우선: 공식만 수집' if official else '공식 판매자 상품 없음: 모든 판매자 스튜디오컷 검사', 'INFO')
+            return official or links
         page_no += 1
     raise CrawlError('검색 30페이지 초과')
 
@@ -114,13 +122,17 @@ def product_once(ctx, url, code):
             main = d['itemMain']
         except (ValueError, KeyError, TypeError) as e:
             raise CrawlError('상품 JSON 파싱 실패: ' + url) from e
-        if str(main.get('lowerVendNo')) != VENDOR:
+        expected_vendor=parse_qs(urlsplit(url).query).get('lowerVendNo',[''])[0]
+        if str(main.get('lowerVendNo')) != expected_vendor:
             ctx.log('다른 판매자 제외: ' + final, 'INFO')
+            return None
+        if str(main.get('brandNo')) != BRAND_NO:
+            ctx.log('다른 브랜드 제외: '+str(main.get('brandNo')), 'INFO')
             return None
         if str(main.get('modelNo', '')).strip().upper() != code:
             ctx.log('다른 공식 품번 제외: ' + str(main.get('modelNo')) + ': ' + final, 'INFO')
             return None
-        if str(main.get('itemNo')) != parse_qs(urlsplit(final).query).get('itemNo', [''])[0]:
+        if str(main.get('itemNo')) != parse_qs(urlsplit(url).query).get('itemNo', [''])[0]:
             raise CrawlError('조회 상품 ID와 응답 상품 ID 불일치')
         if not main.get('itemName'):
             raise CrawlError('상품명 누락: ' + final)
@@ -146,7 +158,7 @@ def product(ctx, url, code):
 
 
 def options(ctx, main, selected=None):
-    params = {'itemNo': main['itemNo'], 'lowerVendNo': VENDOR, 'itemTcode': main['itemTcode']}
+    params = {'itemNo': main['itemNo'], 'lowerVendNo': main['lowerVendNo'], 'itemTcode': main['itemTcode']}
     if selected is not None:
         params['itemOptionNoList'] = str(selected)
     raw, final, _ = fetch(ctx, SITE + '/v1/item/option/api?' + urlencode(params))
@@ -159,7 +171,7 @@ def options(ctx, main, selected=None):
         rows = data['data']['itemOption']
         if not isinstance(rows, list) or not rows:
             raise CrawlError('공식 옵션 후보 없음')
-        if any(str(o.get('lowerVendNo')) != VENDOR or str(o.get('itemNo')) != str(main['itemNo']) for o in rows):
+        if any(str(o.get('lowerVendNo')) != str(main['lowerVendNo']) or str(o.get('itemNo')) != str(main['itemNo']) for o in rows):
             raise CrawlError('옵션 판매자/상품 ID 불일치')
         return rows
     except (ValueError, KeyError, TypeError) as e:
@@ -169,7 +181,7 @@ def options(ctx, main, selected=None):
 def color_rows(rows):
     result = []
     for o in rows:
-        if str(o.get('itemOptionTcode')) != '10':
+        if str(o.get('itemOptionTcode')) not in ('10','99'):
             raise CrawlError('첫 옵션이 색상인 상품만 지원: 사이트 옵션 구조 확인 필요')
         label = str(o.get('itemOptionName') or '').strip()
         if not label:
@@ -240,6 +252,45 @@ def content_signal(im):
     return ''
 
 
+def studio_background(image):
+    """Uniform perimeter color; no brand logo requirement or color guessing."""
+    im=image.convert('RGB').resize((200,268))
+    boxes=[(.04,.04,.14,.12),(.86,.04,.96,.12),(.04,.88,.14,.96),(.86,.88,.96,.96)]
+    for y in (.20,.46,.72):boxes.extend([(.02,y,.10,y+.08),(.90,y,.98,y+.08)])
+    patches=[]
+    for x1,y1,x2,y2 in boxes:
+        stat=ImageStat.Stat(im.crop((int(x1*im.width),int(y1*im.height),int(x2*im.width),int(y2*im.height))))
+        patches.append((stat.mean,max(stat.stddev)))
+    best=0
+    for center,variance in patches:
+        if variance>14:continue
+        count=sum(spread<=14 and sum((a-b)**2 for a,b in zip(mean,center))<=35**2 for mean,spread in patches)
+        best=max(best,count)
+    # Large packshots may overlap the broad inset patches. Confirm the actual
+    # outer border independently, requiring matching background on every side.
+    border=[]
+    for side in range(4):
+        for pos in (.20,.46,.72):
+            box=((pos,0,pos+.08,.02) if side==0 else
+                 (pos,.98,pos+.08,1) if side==1 else
+                 (0,pos,.02,pos+.08) if side==2 else (.98,pos,1,pos+.08))
+            x1,y1,x2,y2=box
+            stat=ImageStat.Stat(im.crop((int(x1*im.width),int(y1*im.height),int(x2*im.width),int(y2*im.height))))
+            border.append((side,stat.mean,max(stat.stddev)))
+    border_best=0
+    border_ok=False
+    for _,center,variance in border:
+        if variance>14:continue
+        matched=[side for side,mean,spread in border
+                 if spread<=14 and sum((a-b)**2 for a,b in zip(mean,center))<=35**2]
+        border_best=max(border_best,len(matched))
+        if len(matched)>=10 and all(matched.count(side)>=2 for side in range(4)):
+            border_ok=True
+    foreground=ImageStat.Stat(im.crop((30,35,170,233)))
+    accepted=(best>=7 or border_ok) and max(foreground.stddev)>=6
+    return accepted,'배경 패치 %s/10, 외곽 테두리 %s/12(4방향 확인)'%(best,border_best)
+
+
 def image_info(ctx, url, cache):
     if url in cache:
         return cache[url]
@@ -252,8 +303,9 @@ def image_info(ctx, url, cache):
         with Image.open(io.BytesIO(data)) as im:
             im.load()
             signal = content_signal(im)
+            plain = studio_background(im)[0]
         ctx.log(f'이미지 {fmt} {w}x{h}, {len(data)}bytes, animated={animated}, HTTP={content_type}: {url}', 'INFO')
-        info = (fmt, w, h, animated, hashlib.sha256(data).hexdigest(), signal)
+        info = (fmt, w, h, animated, hashlib.sha256(data).hexdigest(), signal, plain)
     except (CrawlError, UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError) as e:
         ctx.log(f'이미지 제외: {url}: {e}', 'WARNING')
         info = None
@@ -276,7 +328,10 @@ def gallery(ctx, main, cache):
         info = image_info(ctx, url, cache)
         if not info:
             continue
-        fmt, w, h, animated, digest, signal = info
+        fmt, w, h, animated, digest, signal, plain = info
+        if str(main['lowerVendNo']) != VENDOR and not plain:
+            ctx.log('비균일 배경 셀러 사진 제외: '+url, 'INFO')
+            continue
         if signal:
             ctx.log('갤러리 제외: ' + signal + ': ' + url, 'WARNING')
             continue
@@ -287,36 +342,138 @@ def gallery(ctx, main, cache):
     return urls
 
 
-def detail(ctx, d, code, cache):
-    desc = d.get('itemDesc', {})
-    fragment = BeautifulSoup(html.unescape(desc.get('itemDescdocumentCon') or ''), 'html.parser')
-    parts = []
-    # Winstudio의 해당 품번 상품 이미지와 공식 SIZE 자료만 허용한다.
-    # 공지/프로모션 itemAnnounceList 및 배송/케어 영역은 순회하지 않는다.
-    # 사용자 요청: 이미지 안의 고시/실측 정보를 유지하며 별도 표는 만들지 않는다.
-    for img in fragment.find_all('img'):
-        ctx.checkpoint()
-        url = urljoin(SITE, img.get('src') or '')
-        p = urlsplit(url)
-        filename = p.path.rsplit('/', 1)[-1]
-        official = p.hostname == 'img-studio.elandmall.com' and p.path.startswith('/Winstudio/')
-        product_photo = bool(re.fullmatch(re.escape(code) + r'(?:[_-][A-Za-z0-9]+)?\.(?:jpg|jpeg|png|webp)', filename, re.I))
-        size_guide = bool(re.fullmatch(r'UL[A-Za-z0-9_-]*SIZE[A-Za-z0-9_-]*\.(?:jpg|jpeg|png|webp)', filename, re.I))
-        cdn_product = p.hostname == 'item.elandrs.com' and p.path.startswith('/r/image/item/')
-        negative = re.search(r'배송|교환|반품|쿠폰|혜택|케어|세탁|banner|coupon|shipping|care_', filename + ' ' + str(img.get('alt') or ''), re.I)
-        if negative or not ((official and (product_photo or size_guide)) or cdn_product):
-            ctx.log('지원 범위 밖 상세 이미지 생략: ' + url, 'WARNING')
-            continue
-        if p.scheme == 'http':
-            url = 'https:' + url[5:]
-        if image_info(ctx, url, cache):
-            parts.append(('size' if size_guide else 'photo', '<img src="' + html.escape(url, quote=True) + '">'))
-        else:
-            raise CrawlError('선택한 상세 이미지 공개 접근/해독 실패: ' + url)
-    if not parts:
-        raise CrawlError('공식 상세에서 사용할 수 있는 상품 이미지가 없습니다.')
-    if not any(kind == 'size' for kind, _ in parts):
-        ctx.log('별도 사이즈 이미지 없음: 상품 상세 이미지 내부 정보는 원본 그대로 유지', 'INFO')
+OCR_SCRIPT = r"""[Console]::OutputEncoding=[System.Text.UTF8Encoding]::new($false)
+
+$ProgressPreference='SilentlyContinue'
+$ErrorActionPreference='Stop'
+Add-Type -AssemblyName System.Runtime.WindowsRuntime
+$null=[Windows.Storage.StorageFile,Windows.Storage,ContentType=WindowsRuntime]
+$null=[Windows.Storage.Streams.IRandomAccessStream,Windows.Storage.Streams,ContentType=WindowsRuntime]
+$null=[Windows.Graphics.Imaging.BitmapDecoder,Windows.Graphics.Imaging,ContentType=WindowsRuntime]
+$null=[Windows.Graphics.Imaging.SoftwareBitmap,Windows.Graphics.Imaging,ContentType=WindowsRuntime]
+$null=[Windows.Media.Ocr.OcrEngine,Windows.Foundation,ContentType=WindowsRuntime]
+$null=[Windows.Media.Ocr.OcrResult,Windows.Foundation,ContentType=WindowsRuntime]
+$asTask=([System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object {$_.Name -eq 'AsTask' -and $_.IsGenericMethod -and $_.GetParameters().Count -eq 1})[0]
+function Await($Op,$Type) { $task=$asTask.MakeGenericMethod($Type).Invoke($null,@($Op));$task.Wait();$task.Result }
+
+$null=[Windows.Globalization.Language,Windows.Globalization,ContentType=WindowsRuntime]
+$engine=[Windows.Media.Ocr.OcrEngine]::TryCreateFromLanguage([Windows.Globalization.Language]::new('ko-KR'))
+if ($null -eq $engine) { throw 'Korean OCR language is not installed' }
+foreach($ImagePath in $ImagePaths) {
+try {
+$file=Await ([Windows.Storage.StorageFile]::GetFileFromPathAsync($ImagePath)) ([Windows.Storage.StorageFile])
+$stream=Await ($file.OpenAsync([Windows.Storage.FileAccessMode]::Read)) ([Windows.Storage.Streams.IRandomAccessStream])
+$decoder=Await ([Windows.Graphics.Imaging.BitmapDecoder]::CreateAsync($stream)) ([Windows.Graphics.Imaging.BitmapDecoder])
+$bitmap=Await ($decoder.GetSoftwareBitmapAsync()) ([Windows.Graphics.Imaging.SoftwareBitmap])
+$result=Await ($engine.RecognizeAsync($bitmap)) ([Windows.Media.Ocr.OcrResult])
+[Console]::OutputEncoding=[System.Text.UTF8Encoding]::new($false)
+[pscustomobject]@{text=$result.Text} | ConvertTo-Json -Compress
+} catch { [pscustomobject]@{error=$_.Exception.Message} | ConvertTo-Json -Compress } finally { if ($bitmap) {$bitmap.Dispose();$bitmap=$null}; if ($stream) {$stream.Dispose();$stream=$null} }
+
+}
+"""
+
+def ocr_many(ctx, pictures):
+    """One PowerShell/OCR engine for a bounded group; retain every image tile."""
+    if not pictures:return []
+    with tempfile.TemporaryDirectory(prefix='benetton-halfclub-ocr-') as folder:
+        paths=[];owners=[]
+        for owner,picture in enumerate(pictures):
+            width=min(1600,max(picture.width,1200))
+            scaled=picture.convert('RGB').resize((width,round(picture.height*width/picture.width)))
+            for y in range(0,scaled.height,2100):
+                ctx.checkpoint()
+                path=Path(folder)/(str(len(paths))+'.png')
+                scaled.crop((0,y,width,min(y+2300,scaled.height))).save(path)
+                paths.append(str(path.resolve()));owners.append(owner)
+        script=OCR_SCRIPT
+        manifest=Path(folder)/'tiles.json'
+        manifest.write_text(json.dumps(paths,ensure_ascii=False),encoding='utf-8')
+        script="$ImagePaths=Get-Content -LiteralPath '"+str(manifest.resolve()).replace("'","''")+"' -Raw -Encoding UTF8 | ConvertFrom-Json\n"+script
+        command=base64.b64encode(script.encode('utf-16le')).decode('ascii')
+        process=subprocess.Popen(['powershell.exe','-NoProfile','-NonInteractive','-EncodedCommand',command],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,encoding='utf-8',errors='replace',creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+        deadline=time.monotonic()+min(120,20+len(paths)*10)
+        try:
+            while True:
+                ctx.checkpoint()
+                if time.monotonic()>deadline:raise CrawlError('상세 이미지 OCR 검사 시간 초과')
+                try:
+                    output,error=process.communicate(timeout=.2);break
+                except subprocess.TimeoutExpired:pass
+            if process.returncode:raise CrawlError('Windows 한국어 OCR 검사 실행 실패')
+        finally:
+            if process.poll() is None:process.kill();process.communicate()
+    try:
+        tiles=[json.loads(line) for line in output.splitlines() if line.strip()]
+        if len(tiles)!=len(owners):raise ValueError('OCR tile count mismatch')
+        results=['' for _ in pictures]
+        for owner,tile in zip(owners,tiles):
+            if 'error' in tile:results[owner]=CrawlError('OCR 이미지 검사 실패: '+tile['error'])
+            elif not isinstance(results[owner],Exception):results[owner]+=tile['text']+'\n'
+        return results
+    except (ValueError,KeyError,TypeError) as exc:
+        raise CrawlError('OCR 결과 형식 확인 실패') from exc
+
+
+BANNER = re.compile(r'banner|shipping|delivery|refund|coupon|copyright|notice|매장|배송|교환|반품|쿠폰|저작권|고객센터|문의사항|상담시간|구매전|구매안내',re.I)
+
+
+def original_detail(url,code):
+    p=urlsplit(url);name=unquote(p.path.rsplit('/',1)[-1])
+    return p.hostname=='img-studio.elandmall.com' and p.path.startswith('/Winstudio/') and bool(
+        re.fullmatch(re.escape(code)+r'(?:[_-][A-Za-z0-9]+)?\.(?:jpe?g|png|webp)',name,re.I) or
+        re.fullmatch(r'UL[A-Za-z0-9_-]*SIZE[A-Za-z0-9_-]*\.(?:jpe?g|png|webp)',name,re.I))
+
+
+def detail(ctx,d,code,cache):
+    desc=d.get('itemDesc') or {};doc=BeautifulSoup(html.unescape(desc.get('itemDescdocumentCon') or ''),'html.parser')
+    announced=set()
+    for notice in desc.get('itemAnnounceList') or []:
+        fragment=BeautifulSoup(html.unescape(notice.get('itemAnnounceCon') or ''),'html.parser')
+        for node in fragment.select('img[src]'):announced.add(image_key(urljoin(SITE,node['src'])))
+    trusted=[];other=[]
+    for node in doc.select('img'):
+        raw=node.get('ec-data-src') or node.get('data-src') or node.get('src') or ''
+        if not raw or raw.startswith('data:'):continue
+        url=urljoin(SITE,raw);p=urlsplit(url)
+        label=unquote(p.path)+' '+str(node.get('alt') or '')+' '+str(node.get('title') or '')
+        if image_key(url) in announced or BANNER.search(label):
+            ctx.log('셀러/공통 안내 배너 제외: '+url, 'INFO');continue
+        if p.scheme not in ('http','https'):continue
+        if p.scheme=='http':url='https:'+url[5:]
+        if original_detail(url,code):
+            if url not in trusted:trusted.append(url)
+        elif p.hostname in ('item.elandrs.com','item-imghub.eland.co.kr'):
+            if url not in other:other.append(url)
+        else:ctx.log('본문 이미지 출처 확인 불가: '+url,'WARNING')
+    # Prefer the actual brand product/size originals and omit seller-added assets.
+    if trusted:
+        parts=[]
+        for url in trusted:
+            ctx.checkpoint()
+            if image_info(ctx,url,cache):parts.append(('photo','<img src="'+html.escape(url,quote=True)+'">'))
+        return parts
+    # UUID files have no meaningful filename: inspect all image tiles before use.
+    parts=[]
+    for offset in range(0,len(other),4):
+        batch=[]
+        for url in other[offset:offset+4]:
+            ctx.checkpoint()
+            try:
+                raw,_,_=fetch(ctx,url,64*1024*1024)
+                with Image.open(io.BytesIO(raw)) as im:
+                    if im.format not in ('JPEG','PNG','WEBP') or getattr(im,'is_animated',False):raise CrawlError('정지 상세 이미지 아님')
+                    if im.width*im.height>80_000_000:raise CrawlError('상세 이미지 픽셀 한도 초과')
+                    im.load();batch.append((url,im.copy()))
+            except (CrawlError,OSError,UnidentifiedImageError,Image.DecompressionBombError) as exc:ctx.log('상세 이미지 제외: '+str(exc),'WARNING')
+        if not batch:continue
+        try:texts=ocr_many(ctx,[image for _,image in batch])
+        except (CrawlError,OSError,subprocess.SubprocessError) as exc:
+            ctx.log('상세 OCR 검사 실패: 미검사 이미지 제외 / '+str(exc),'WARNING');continue
+        for (url,_),text in zip(batch,texts):
+            if isinstance(text,Exception) or BANNER.search(re.sub(r'\s+','',text)):
+                ctx.log('셀러 안내/검사 실패 상세 이미지 제외: '+url,'INFO');continue
+            parts.append(('photo','<img src="'+html.escape(url,quote=True)+'">'))
     return parts
 
 
@@ -330,6 +487,7 @@ def crawl(ctx):
         raise CrawlError('매핑용 이미지 수집 미선택')
     errors, products, colors, candidates, sizes, prices, categories = [], [], [], [], [], [], []
     cache, pieces = {}, []
+    detail_source = None
     def failed(message):
         errors.append(message)
         ctx.fail_item(message)
@@ -350,17 +508,21 @@ def crawl(ctx):
             opts = options(ctx, main)
             cs = color_rows(opts)
             products.append((main, final))
+            photos=gallery(ctx, main, cache)
+            if not photos:
+                products.pop()
+                ctx.log('통과한 스튜디오 상품 사진 없음: '+url,'INFO')
+                continue
+            candidates.extend(photos)
             for c in cs:
-                if c not in colors:
-                    colors.append(c)
-            candidates.extend(gallery(ctx, main, cache))
+                if c not in colors:colors.append(c)
             if ctx.enabled('category'):
                 categories.append(str(main.get('depth4StandardCategoryName') or ''))
             if ctx.enabled('price') or ctx.enabled('size'):
                 for opt in opts:
                     ctx.checkpoint()
                     child = options(ctx, main, opt['itemOptionNo'])
-                    if any(str(o.get('itemOptionTcode')) != '20' for o in child):
+                    if any(str(o.get('itemOptionTcode')) not in ('20','99') for o in child):
                         raise CrawlError('2단계 색상/사이즈 외 옵션 구조는 미지원')
                     if ctx.enabled('size'):
                         names = list(dict.fromkeys(str(o.get('itemOptionName') or '').strip() for o in child))
@@ -372,13 +534,17 @@ def crawl(ctx):
                         if any(not isinstance(v, (int, float)) or v < 0 for v in values):
                             raise CrawlError('사이즈별 판매가 누락')
                         prices.extend(values)
-            if ctx.enabled('detail_page'):
-                pieces.extend(detail(ctx, d, code, cache))
+            if ctx.enabled('detail_page') and detail_source is None:
+                body=detail(ctx,d,code,cache)
+                if body:
+                    pieces=body
+                    detail_source=final
+                    ctx.log('상세는 이 상품 한 곳만 사용: '+final,'INFO')
         except CrawlError as e:
             message=str(e)
             failed(message if url in message else message + ': ' + url)
     if (not products or not colors) and not errors:
-        failed('정확한 품번과 지정 판매자 LV17008492에 해당하는 상품/색상 후보 없음')
+        failed('정확한 유솔 품번에 해당하는 스튜디오 상품/색상 후보 없음')
     unique, hashes = [], set()
     for url, digest in candidates:
         ctx.checkpoint()
@@ -389,7 +555,7 @@ def crawl(ctx):
         failed('통과한 매핑용 개별 상품 사진이 0장입니다.')
     if products and colors and unique:
         main, final = products[0]
-        record = {'product_code': code, 'product_name': clean_name(main['itemName'], code), 'product_url': final}
+        record = {'product_code': code, 'product_name': clean_name(main['itemName'], code), 'product_url': detail_source or final}
         regular_records = []
         for product_main, _ in products:
             value = {}
@@ -412,7 +578,7 @@ def crawl(ctx):
                 body = list(dict.fromkeys(markup for _, markup in pieces))
                 markup = ''.join(body)
                 if not markup:
-                    raise CrawlError('선택한 상세 이미지 수집 미완료')
+                    ctx.log('셀러 배너를 제외한 안전한 상세 원본 없음: 상세 빈칸으로 사진 수집 계속','WARNING')
                 if len(markup.encode('utf-16-le')) // 2 > 32767:
                     raise CrawlError('상세 HTML이 Excel 셀 32767자 한도 초과')
                 record['detail_page'] = markup

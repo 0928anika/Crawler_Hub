@@ -1,9 +1,9 @@
 {
-  "id": "usall_eland",
+  "id": "usall_eland_studio",
   "name": "유솔",
   "category": "주니어복",
-  "crawl_source": "이랜드몰",
-  "script": "usall_eland.py",
+  "crawl_source": "이랜드몰 스튜디오컷",
+  "script": "usall_eland_studio.py",
   "execution_level": 1,
   "mapping_mode": "manual",
   "image_color_mapping": "manual",
@@ -43,17 +43,17 @@
     "main_image": {
       "supported": true,
       "status": "conditional",
-      "reason": "itemMain.itemImage의 상품 갤러리. 공개 접근·실제 파일·픽셀·비율·합성/글자 위주 이미지 보조 검사 후 수동 색상 매핑."
+      "reason": "공식 판매자는 본사 갤러리 유지. 공식이 없을 때는 모든 판매자의 개별 사진 중 균일 배경·형식·크기·사진 내용 검사를 통과한 스튜디오컷 수집."
     },
     "additional_images": {
       "supported": true,
       "status": "conditional",
-      "reason": "통과한 개별 갤러리 전체 후보를 전달. 사진 선택과 최종 슬롯 구성은 허브에서 처리."
+      "reason": "채택한 모든 상품 링크의 통과 사진을 실제 파일 해시로 중복 제거하여 수동 매핑 후보로 전달."
     },
     "detail_page": {
       "supported": true,
       "status": "conditional",
-      "reason": "공식 itemDesc의 상품·사이즈 이미지를 원래 순서로 사용. 상단 이미지 추가 없음. 사용자 요청으로 상품고시/사이즈 표를 별도로 생성하지 않음."
+      "reason": "한 상품 링크의 본문만 사용. Winstudio 해당 품번·공유 사이즈 원본 우선. 셀러 공지/배너 제외. UUID 본문은 전체 타일 OCR로 안내 배너 확인. 상세 원본끼리 합치지 않음."
     },
     "regular_price": {
       "supported": true,
@@ -62,16 +62,15 @@
     }
   },
   "guide": {
-    "example": "ULJP24W01",
+    "example": "ULTM26N02",
     "examples": [
-      "ULJP24W01",
-      "ULMH24W51",
-      "ULUS25W01"
+      "ULTM26N02",
+      "ULMT24855"
     ],
     "pattern": "^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$",
     "format": "색상 접미사가 없는 기본 품번",
     "notes": "기본 품번으로 모든 검색 일치 상품과 품절 색상 후보를 수집한 뒤 허브에서 색상을 매핑합니다. 품번_색상코드 지정은 지원하지 않습니다. 대표 또는 추가이미지를 선택하세요.",
-    "method": "이랜드몰 /s/srch?q=품번 검색 후 상품 JSON itemMain.modelNo 정확히 대조. itemMain.lowerVendNo가 LV17008492인 상품만 허용. 브랜드명 포함 여부는 검사하지 않습니다.",
+    "method": "공식 판매자 LV17008492 검색 결과가 있으면 해당 판매자만 수집. 없으면 전체 판매자 중 정확한 유솔 브랜드·품번 및 스튜디오컷 통과 상품을 모두 수집.",
     "required_columns": [
       "품번"
     ],
@@ -79,9 +78,9 @@
       "",
       "ULJP24W01_01"
     ],
-    "validation_note": "입력 문법 검사이며 실제 품번과 공식 판매자는 실행 시 확인합니다. 하이픈은 품번의 일부로 대조합니다."
+    "validation_note": "기본 품번과 실제 브랜드/판매자를 확인. 상세는 여러 상품을 합치지 않고 한 상품만 사용."
   },
-  "notes": "지정 판매자 LV17008492 전용 수동 색상 매핑. 상품명에 유솔이 없어도 공식 modelNo와 판매자로 확인합니다. 상품고시·사이즈정보는 원본 이미지에 있는 내용을 유지하고 별도 표는 생성하지 않습니다. 상단 이미지를 추가하지 않습니다. 원본 상세의 별도 브랜드 배너/배송/혜택 이미지는 제외합니다. 가격 차이는 첫 지정 상품/옵션 가격 선택+경고로 성공 처리합니다. 사진 내용 보조 검사는 OCR·의미 인식이 아니므로 임의 합성 사진을 완벽히 판정하지는 못합니다. 공식 상세 HTML에 상품 JSON이 일시 누락되면 최대 2회 재조회. 정상 응답에서 판매자·정확한 modelNo·상품 ID를 다시 검증하며, 계속 누락되면 원인 오류만 보고.",
+  "notes": "기존 usall_eland 항목을 usall_eland_studio로 변경한 버전. 공식 판매자 LV17008492 상품이 있으면 공식만, 없으면 모든 판매자의 통과 스튜디오컷을 수집. 옵션은 조회 판매자에 맞춰 요청. 상세는 안전한 본문을 제공하는 한 상품만 사용. Winstudio 품번/사이즈 원본 우선, 셀러 공지·배너 제외. UUID 본문 이미지는 Windows 한국어 OCR로 전체 타일 검사 후 셀러 안내 제외(검사 불가 이미지는 생략). 사진은 수동 색상 매핑. 고시·사이즈표는 원본 유지하며 별도 생성 없음. 상품 JSON 일시 누락 시 최대 2회 재조회.",
   "image_mode": "url",
   "interface": "portal_v1",
   "fields": {
@@ -131,19 +130,19 @@
       "label": "대표이미지",
       "supported": true,
       "status": "conditional",
-      "reason": "itemMain.itemImage의 상품 갤러리. 공개 접근·실제 파일·픽셀·비율·합성/글자 위주 이미지 보조 검사 후 수동 색상 매핑."
+      "reason": "공식 판매자는 본사 갤러리 유지. 공식이 없을 때는 모든 판매자의 개별 사진 중 균일 배경·형식·크기·사진 내용 검사를 통과한 스튜디오컷 수집."
     },
     "additional_images": {
       "label": "추가이미지",
       "supported": true,
       "status": "conditional",
-      "reason": "통과한 개별 갤러리 전체 후보를 전달. 사진 선택과 최종 슬롯 구성은 허브에서 처리."
+      "reason": "채택한 모든 상품 링크의 통과 사진을 실제 파일 해시로 중복 제거하여 수동 매핑 후보로 전달."
     },
     "detail_page": {
       "label": "상세페이지",
       "supported": true,
       "status": "conditional",
-      "reason": "공식 itemDesc의 상품·사이즈 이미지를 원래 순서로 사용. 상단 이미지 추가 없음. 사용자 요청으로 상품고시/사이즈 표를 별도로 생성하지 않음."
+      "reason": "한 상품 링크의 본문만 사용. Winstudio 해당 품번·공유 사이즈 원본 우선. 셀러 공지/배너 제외. UUID 본문은 전체 타일 OCR로 안내 배너 확인. 상세 원본끼리 합치지 않음."
     },
     "regular_price": {
       "label": "정상가",
@@ -167,5 +166,5 @@
     "상세페이지 HTML": "detail_page",
     "정상가": "regular_price"
   },
-  "code_hash": "eb04f906740c113fc8a423904d365649f3bdc865e8f82e9e70adcfa048377aa3"
+  "code_hash": "6a215deaf47d1b4ab55ac5cd36531edb27c71c05bc486b61af139f862667def3"
 }
