@@ -21,4 +21,15 @@ function event(values={}){return {key:'Enter',target:{closest:()=>null},preventD
  const rect={left:100,right:200,top:100,bottom:200};assert(ctx.segmentHitsPhoto(0,150,300,150,rect));assert(!ctx.segmentHitsPhoto(0,0,50,50,rect));assert(ctx.segmentHitsPhoto(150,0,150,300,rect));
  console.log('Fast drag segments include crossed middle photos and ignore untouched photos');
  ctx.S.mappingActive.g='a';ctx.S.mappingDrafts={'g:a':new Set(['x']),'g:b':new Set(['y'])};await ctx.mappingEnter(event({key:'Escape'}));assert.equal(ctx.mappingDraft(group,'a').size,0);assert.deepEqual([...ctx.mappingDraft(group,'b')],['y']);assert(ctx.S.mappingDirty.has('g:a'));assert.equal(saves,1);console.log('Escape clears only the active option without saving');
+ // Drag skips both saved and unsaved assignments belonging to another option.
+ vm.runInContext(source.slice(source.indexOf('function mappingPointerDown('),source.indexOf('function mappingPointerEnd(')),ctx);
+ const tiles=group.images.map(image=>({dataset:{mappingImage:image.id},getBoundingClientRect:()=>rect,classList:{add(){},remove(){}},setAttribute(){},querySelector:()=>({textContent:''})}));
+ const save={dataset:{}},product={querySelectorAll:()=>tiles,querySelector:()=>save},container={setPointerCapture(){},classList:{add(){}}};
+ ctx.$=id=>id==='mappingProducts'?container:product;
+ ctx.S.mappingDrafts={'g:a':new Set(),'g:b':new Set(['y','z'])};ctx.S.mappingDirty=new Set(['g:b']);
+ const drag=()=>{ctx.S.mappingDrag={gid:'g',cid:'a',pointerId:1,x:0,y:150,startX:0,startY:150,dragged:false};ctx.mappingPointerMove({pointerId:1,clientX:300,clientY:150,preventDefault(){}});};
+ drag();assert.deepEqual([...ctx.mappingDraft(group,'a')],['x']);assert.deepEqual([...ctx.mappingDraft(group,'b')],['y','z']);
+ ctx.toggleMappingPhoto(group,'a','y');assert.deepEqual([...ctx.mappingDraft(group,'a')],['x','y']);assert.deepEqual([...ctx.mappingDraft(group,'b')],['y','z']);
+ ctx.mappingDraft(group,'a').clear();ctx.mappingDraft(group,'b').delete('y');drag();assert.deepEqual([...ctx.mappingDraft(group,'a')],['x','y']);
+ console.log('Drag skips other options saved/draft photos; direct click permits sharing and current drafts take precedence');
 })().catch(e=>{console.error(e);process.exitCode=1});
