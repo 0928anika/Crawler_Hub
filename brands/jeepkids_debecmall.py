@@ -27,6 +27,11 @@ def fetch(ctx, route, **params):
 def normalize(value):
     return re.sub(r'\s+', '', str(value or '')).upper()
 
+def matches_product(row, code):
+    # 대백몰의 색상별 별도 등록번호(-1/-2 등)는 기본 품번과 구분한다.
+    vendor = normalize(row.get('VENDOR_PRODUCT_CODE'))
+    return row.get('BRAND_NAME') == '지프키즈' and re.fullmatch(re.escape(code) + r'(?:-\d+)?', vendor) is not None
+
 def search(ctx, code):
     found = {}; total = 0
     for page in range(1, 51):
@@ -34,7 +39,7 @@ def search(ctx, code):
         if not rows: break
         total += len(rows)
         for row in rows:
-            if normalize(row.get('VENDOR_PRODUCT_CODE')) == code and row.get('BRAND_NAME') == '지프키즈':
+            if matches_product(row, code):
                 found[str(row['PRODUCT_CODE'])] = row
         if len(rows) < 20 or total >= int(rows[0].get('TOTALCNT') or total): break
     else: raise ValueError('대백몰 검색 페이지 한도 초과: 결과 미완료')
@@ -45,7 +50,7 @@ def search(ctx, code):
 def name_of(row, code):
     name = str(row.get('PRODUCT_NAME') or row.get('LONG_LABEL') or '')
     name = re.sub(r'\[[^\]]*\]', '', name)
-    name = re.sub(re.escape(code), '', name, flags=re.I)
+    name = re.sub(re.escape(code) + r'(?:-\d+)?(?![A-Za-z0-9])', '', name, flags=re.I)
     return re.sub(r'\s+', ' ', re.sub(r'\(\s*\)', '', name)).strip()
 
 def palette(rows):
@@ -105,7 +110,7 @@ def crawl(ctx):
             rows = fetch(ctx, '/api/product/prdDetail', productCode=candidate['PRODUCT_CODE'])
             if len(rows)!=1: raise ValueError('대백몰 상품 상세 확인 실패')
             row = rows[0]
-            if normalize(row.get('VENDOR_PRODUCT_CODE')) != code or row.get('BRAND_NAME') != '지프키즈': raise ValueError('상세 품번/브랜드 불일치')
+            if not matches_product(row, code): raise ValueError('상세 품번/브랜드 불일치')
             pid = row['PRODUCT_ID']; colors = palette(fetch(ctx, '/api/product/listSkuInfo', productId=pid, saleStatus=row.get('SALE_STATUS','N')))
             name = name_of(row, code)
             if not name: raise ValueError('공식 상품명 없음')
