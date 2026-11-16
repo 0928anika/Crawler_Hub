@@ -214,5 +214,11 @@
     "profile": "eland",
     "supported": true,
     "reason": "독립 itemMain.orgSellprice. 누락/0/상품 간 불일치 시 공통 정상가는 빈칸이며 판매가를 복사하지 않음."
+  },
+  {
+    "id": "soie_official",
+    "profile": "godomall",
+    "supported": true,
+    "reason": "공식 hidden set_goods_fixedPrice 독립 정가. 선택 시에만 수집, 누락/0/형식 오류는 빈칸이며 판매가를 대입하지 않음."
   }
 ]
