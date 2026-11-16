@@ -31,7 +31,7 @@
     "size": {
       "supported": true,
       "status": "supported",
-      "reason": "공식 사이즈 select의 모든 실제 option 표시명. 품절/disabled 옵션 포함."
+      "reason": "공식 option_stock_data의 해당 색상 사이즈 조합 전체(품절/미표시 포함)를 우선 사용. 없으면 기존 사이즈 select의 실제 옵션 사용."
     },
     "price": {
       "supported": true,
@@ -61,7 +61,7 @@
     "detail_page": {
       "supported": true,
       "status": "conditional",
-      "reason": "공식 #prdDetail .cont 안 NNEditor 상품 원본 이미지. 이미지 안 고시·사이즈표를 그대로 유지하고 별도 표를 만들지 않음."
+      "reason": "공식 NNEditor 및 hollhaus.speedgabia.com/jeep/detail/의 정확한 품번·색상 상품 이미지와 사이즈 원본. washing/foot/배너 제외. 고시·사이즈표 별도 생성 없음. 상세 전용 최대 64MiB 검사."
     }
   },
   "guide": {
@@ -75,7 +75,8 @@
       "KR3DPU735",
       "KR3TSU023",
       "KR4TSU824",
-      "KR4JPU403"
+      "KR4JPU403",
+      "KO3TPU905"
     ],
     "pattern": "^[A-Za-z0-9]{9}(?:[_-]?[A-Za-z0-9]{2})?$",
     "format": "기본 품번 9자리. 색상 지정은 붙여쓰기·언더바·하이픈 + 공식 색상코드 2자리.",
@@ -90,7 +91,7 @@
     ],
     "validation_note": "문법 검사이며 상품/색상 존재는 실행 시 확인."
   },
-  "notes": "상품명에서 품번을 제거. 색상명은 공식 텍스트가 확인될 때만 제공하며 KH=카키처럼 코드로 추정하지 않음. 고시/사이즈표는 상세 이미지 보존, 별도 HTML 표 없음. 정상가 미지원. Chrome 필요. WING 실제 업로드는 별도 검증 대상.",
+  "notes": "상품명에서 품번을 제거. 색상명은 공식 텍스트가 확인될 때만 제공하며 KH=카키처럼 코드로 추정하지 않음. 고시/사이즈표는 상세 이미지 보존, 별도 HTML 표 없음. 정상가 미지원. Chrome 필요. WING 실제 업로드는 별도 검증 대상. 종속/완전 품절 옵션은 공식 option_stock_data로 전체 사이즈 보존. 외부 공식 상품 이미지 서버의 해당 품번/색상과 사이즈 원본 지원. 상세 미수집은 빈칸 성공으로 처리하지 않음.",
   "fields": {
     "product_code": {
       "label": "품번",
@@ -120,7 +121,7 @@
       "label": "사이즈",
       "supported": true,
       "status": "supported",
-      "reason": "공식 사이즈 select의 모든 실제 option 표시명. 품절/disabled 옵션 포함."
+      "reason": "공식 option_stock_data의 해당 색상 사이즈 조합 전체(품절/미표시 포함)를 우선 사용. 없으면 기존 사이즈 select의 실제 옵션 사용."
     },
     "price": {
       "label": "판매가",
@@ -156,7 +157,7 @@
       "label": "상세페이지",
       "supported": true,
       "status": "conditional",
-      "reason": "공식 #prdDetail .cont 안 NNEditor 상품 원본 이미지. 이미지 안 고시·사이즈표를 그대로 유지하고 별도 표를 만들지 않음."
+      "reason": "공식 NNEditor 및 hollhaus.speedgabia.com/jeep/detail/의 정확한 품번·색상 상품 이미지와 사이즈 원본. washing/foot/배너 제외. 고시·사이즈표 별도 생성 없음. 상세 전용 최대 64MiB 검사."
     }
   },
   "column_fields": {
@@ -175,5 +176,5 @@
     "상세페이지 HTML": "detail_page",
     "원본 상품명": null
   },
-  "code_hash": "2012e5ab05bbbb98ee8add87f3fb72d13f7742346e72889045198373888ed7bc"
+  "code_hash": "6b5332bf9152ac700911b80a224a464f745993cca421497fd2f1ba9bcc9fcf8b"
 }

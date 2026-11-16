@@ -143,4 +143,45 @@ class JeepKidsTests(unittest.TestCase):
         self.assertEqual(meta['capabilities']['regular_price']['status'],'unsupported')
 
 
+class JeepKidsDependentOptionTests(unittest.TestCase):
+    def docs(self):return [(n,c.parse((FIX/('KO3TPU905_'+n+'.html')).read_text(encoding='utf-8'))) for n in ['986','985','984']]
+    def test_original_stock_sizes_include_soldout_and_empty_select(self):
+        for n,doc in self.docs():
+            self.assertEqual(c.sizes(doc),'120,130,145,155',n)
+        black=self.docs()[0][1]
+        self.assertFalse(black.select('select[option_title="사이즈"] option[value]:not([value="*"]):not([value="**"])'))
+    def test_detail_includes_exact_product_color_and_size_only(self):
+        for n,doc in self.docs():
+            urls=c.detail_urls(doc,c.SITE)
+            self.assertEqual(len(urls),3,n)
+            code=c.identity(doc,'KO3TPU905')['color_code']
+            self.assertTrue(any('00_KO3TPU905_'+code+'.jpg' in u for u in urls))
+            self.assertTrue(any('01_KO3TPU905_'+code+'.jpg' in u for u in urls))
+            self.assertTrue(any('KO3TPU905_size.jpg' in u for u in urls))
+            self.assertFalse(any('washing' in u or 'foot.jpg' in u for u in urls))
+    def test_wrong_external_host_product_and_color_are_excluded(self):
+        doc=self.docs()[0][1];area=doc.select_one('#prdDetail .cont')
+        for src in ['https://hollhaus.speedgabia.com/jeep/detail/00_KO3TPU905_LE.jpg','https://hollhaus.speedgabia.com/jeep/detail/00_OTHER0000_BK.jpg','https://evil.example/jeep/detail/00_KO3TPU905_BK.jpg']:
+            image=doc.new_tag('img',src=src);area.append(image)
+        urls=c.detail_urls(doc,c.SITE);self.assertEqual(len(urls),3)
+    def test_detail_has_separate_large_image_limit_and_cache(self):
+        url='https://hollhaus.speedgabia.com/jeep/detail/00_KO3TPU905_BK.jpg';cache={url:dict(status='inaccessible',reasons=['size limit'])}
+        result=dict(status='accessible',data=b'checked',reasons=[])
+        with patch.object(c,'check_public_image',return_value=result) as check:
+            self.assertIs(c.public_image(Context(),url,cache,detail=True),result)
+            self.assertEqual(check.call_args.kwargs['max_bytes'],64*1024*1024)
+            c.public_image(Context(),url,cache,detail=True);self.assertEqual(check.call_count,1)
+        self.assertEqual(cache[url]['status'],'inaccessible')
+    def test_missing_selected_detail_does_not_succeed_empty(self):
+        with self.assertRaisesRegex(ValueError,'상세페이지 수집 실패'):c.detail(Context(),[],{})
+    def test_all_three_colors_complete_with_sizes_and_original_detail(self):
+        pages={c.SITE+'/product/detail.html?product_no='+n:doc for n,doc in self.docs()}
+        with tempfile.TemporaryDirectory() as folder:
+            ctx=Context(folder,'KO3TPU905',('size','detail_page'))
+            with patch('playwright.sync_api.sync_playwright',return_value=MagicMock()),patch.object(c,'search',return_value=list(pages)),patch.object(c,'visit',side_effect=lambda ctx,page,url:(pages[url],url)),patch.object(c,'public_image',return_value={'status':'accessible'}):c.crawl(ctx)
+            self.assertFalse(ctx.failures);self.assertEqual(len(ctx.rows),3)
+            self.assertEqual({r['color_code'] for r in ctx.rows},{'BK','LE','NA'})
+            for row in ctx.rows:
+                self.assertEqual(row['size'],'120,130,145,155');self.assertEqual(row['detail_page'].count('<img'),3);self.assertNotIn('<table',row['detail_page'])
+
 if __name__=='__main__':unittest.main()

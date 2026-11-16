@@ -1,6 +1,7 @@
 PORTAL_API_VERSION = 1
 
 import hashlib
+import ast
 import html
 import json
 import re
@@ -16,7 +17,8 @@ from crawler_rules import check_public_image, validate_gallery_image, gallery_sl
 
 SITE='https://jeepwear.co.kr'
 HOSTS=('jeepwear.co.kr','www.jeepwear.co.kr')
-REVISION='2026-11-10-jeepkids-2'
+DETAIL_MAX_BYTES=64*1024*1024
+REVISION='2026-11-16-jeepkids-stock-detail'
 POLICY={'checked_on':'2026-11-10','source':'https://marketplace.coupang.com/mba/listing',
         'route':'WING 웹/엑셀','min_side':500,'max_bytes':10000000,
         'formats':['JPEG','PNG','WEBP'],'max_aspect':1.8}
@@ -108,16 +110,25 @@ def detail_urls(doc,final):
         parts=urlsplit(url)
         # 상품 본문 안 공식 업로드 이미지에는 고시/사이즈표도 포함된다.
         # 갤러리용 사이즈/비율 필터를 상세에 적용하지 않는다.
-        if parts.hostname not in HOSTS or not parts.path.startswith('/web/upload/NNEditor/'):continue
+        local=parts.hostname in HOSTS and parts.path.startswith('/web/upload/NNEditor/')
+        external=False
+        if parts.hostname=='hollhaus.speedgabia.com' and parts.path.startswith('/jeep/detail/'):
+            raw=field(doc,'상품명');match=re.search(r'\(([A-Z0-9]{9})([A-Z0-9]{2})\)\s*$',raw,re.I)
+            if match:
+                filename=parts.path.rsplit('/',1)[-1]
+                external=bool(re.fullmatch(r'(?:\d+[_-])?'+re.escape(match[1])+r'[_-](?:'+re.escape(match[2])+r'|size|gosi|spec|detail)(?:[_-]\d+)?\.(?:jpe?g|png|webp)',filename,re.I))
+        if not (local or external):continue
         if re.search(r'banner|shipping|delivery|coupon|review|배송|교환|반품|쿠폰',str(node.get('alt',''))+' '+parts.path,re.I):continue
         if url not in urls:urls.append(url)
     return urls
 
 
-def public_image(ctx,url,cache):
-    if url not in cache:
-        cache[url]=check_public_image(url,timeout=10,retries=1,checkpoint=ctx.checkpoint)
-    result=cache[url]
+def public_image(ctx,url,cache,detail=False):
+    key=('detail',url) if detail else url
+    if key not in cache:
+        prior=cache.get(url,{})
+        cache[key]=prior if detail and prior.get('status')=='accessible' else check_public_image(url,timeout=15 if detail else 10,max_bytes=DETAIL_MAX_BYTES if detail else 10000000,retries=1,checkpoint=ctx.checkpoint)
+    result=cache[key]
     if result['status']!='accessible':
         ctx.log('이미지 확인 불가: '+url+' / '+', '.join(result['reasons']),'WARNING')
         return None
@@ -153,13 +164,12 @@ def gallery(ctx,urls,code,cache):
 
 def detail(ctx,urls,cache):
     if not urls:
-        ctx.log('공식 상세 이미지 없음: 고시/사이즈표를 임의 생성하지 않음','WARNING')
-        return ''
+        raise ValueError('상세페이지 수집 실패: 공식 상품/사이즈 이미지 없음')
     parts=[]
     for url in urls:
         ctx.checkpoint()
-        if not public_image(ctx,url,cache):
-            if any(re.search(r'HTTP (404|410)\b',r) for r in cache.get(url,{}).get('reasons',[])):
+        if not public_image(ctx,url,cache,detail=True):
+            if any(re.search(r'HTTP (404|410)\b',r) for r in cache.get(('detail',url),cache.get(url,{})).get('reasons',[])):
                 ctx.log('공식 상세 원본 404/410: 해당 파일 생략','WARNING');continue
             raise ValueError('상세 이미지 조회 미완료: '+url)
         parts.append('<p><img src="'+html.escape(url,quote=True)+'" alt="상품 상세정보"></p>')
@@ -171,6 +181,24 @@ def detail(ctx,urls,cache):
 
 def sizes(doc):
     result=[]
+    # Dependent/sold-out selects may be empty; the original combinations remain.
+    match=re.search(r'\(([A-Z0-9]{9})([A-Z0-9]{2})\)\s*$',field(doc,'상품명'),re.I)
+    color=match[2].upper() if match else None
+    for script in doc.find_all('script'):
+        stock=re.search(r"var\s+option_stock_data\s*=\s*('(?:\\.|[^'\\])*')",script.get_text())
+        if not stock:continue
+        try:rows=json.loads(ast.literal_eval(stock[1]))
+        except (ValueError,SyntaxError,TypeError):continue
+        if not isinstance(rows,dict):continue
+        for row in rows.values():
+            if not isinstance(row,dict):continue
+            names=row.get('option_name_original');values=row.get('option_value_orginal')
+            if not isinstance(names,list) or not isinstance(values,list) or len(names)!=len(values):continue
+            options=dict(zip(names,values));selected=options.get('색상',options.get('Color'))
+            if color and selected and str(selected).upper()!=color:continue
+            size=options.get('사이즈',options.get('Size'))
+            if isinstance(size,str) and size.strip() and size.strip() not in result:result.append(size.strip())
+    if result:return ','.join(result)
     for select in doc.select('select[product_type="product_option"][option_title="사이즈"]'):
         for option in select.select('option[value]'):
             value=option.get_text(' ',strip=True)
@@ -256,7 +284,7 @@ def crawl(ctx):
                         if ctx.enabled('category'):record['category']=' > '.join(categories(doc))
                         photos=gallery_urls(doc,final,raw_name) if ctx.enabled('main_image') or ctx.enabled('additional_images') else []
                         details=detail_urls(doc,final) if ctx.enabled('detail_page') else []
-                        cache={};prefetch(ctx,photos+details,cache)
+                        cache={};prefetch(ctx,photos,cache)
                         if ctx.enabled('main_image') or ctx.enabled('additional_images'):
                             main,extras,warning=gallery(ctx,photos,code,cache)
                             if warning:ctx.log(warning,'WARNING')
