@@ -1,0 +1,883 @@
+{
+  "errorCode": null,
+  "data": {
+    "ori_keyword": "",
+    "rel_keywords": [],
+    "search_keyword": "BAKPC3661",
+    "result": {
+      "took": 7,
+      "timed_out": false,
+      "_shards": {
+        "total": 3,
+        "successful": 3,
+        "skipped": 0,
+        "failed": 0
+      },
+      "hits": {
+        "total": {
+          "value": 3,
+          "relation": "eq"
+        },
+        "max_score": 2.1123056,
+        "hits": [
+          {
+            "_index": "hf_prd_search-2025-10-30",
+            "_id": "442037474",
+            "_score": 2.1123056,
+            "_source": {
+              "dlvTmpltSeq": 237310,
+              "selAcntNo": 300538,
+              "pcode": "P442037474",
+              "selAcntNm": "주식회사 디오에이",
+              "decWordStrDt": null,
+              "prdImgUrl": "",
+              "prdTag": null,
+              "dispTypeNm": "PC+모바일",
+              "pchsTypCd": null,
+              "appPrdImgUrl": "https://cdn2.halfclub.com//rimg/330x440/contain/cdn/product/SA000697/P442037474/1_P442037474_basic_1794813594625.png",
+              "hztlImg": "",
+              "bnftMdTxtLnk": null,
+              "prdType": "P",
+              "selPrc": 125600,
+              "brand": "ㅂ^베네통^BL103488",
+              "sgnCd": [
+                "05"
+              ],
+              "dpCtgr": [
+                "001@32508@여성의류^003@32548@니트/스웨터^004@32603@터틀넥"
+              ],
+              "prdSearchKeyword": "베네통 아가일 슬리브 터틀넥 니트_BAKPC3661 여성의류 니트/스웨터 BENETTON 베네통 사계절 여성 ",
+              "createDt": "2026-11-16T07:23:31.000Z",
+              "dlvFreeYnMc": "Y",
+              "reviewStar": 0,
+              "eblmImg": "",
+              "ctgr": [
+                {
+                  "ctgr1": "001@32508@여성의류",
+                  "ctgrSet": "001@32508@여성의류^003@32548@니트/스웨터^004@32603@터틀넥",
+                  "ctgr3": "004@32603@터틀넥",
+                  "ctgr2": "003@32548@니트/스웨터"
+                }
+              ],
+              "siteCd": "1",
+              "masterPrdNo": null,
+              "advrtStmtStrDt": null,
+              "dlvAmt": 2500,
+              "cpnYnApp": "Y",
+              "dpCtgrNm2": "니트/스웨터",
+              "wishQty": 2,
+              "dpCtgrNm1": "여성의류",
+              "interFreeYn": "Y",
+              "totRateMc": 57,
+              "dpCtgrNo": "001@32508@여성의류^003@32548@니트/스웨터^004@32603@터틀넥",
+              "dpCtgrNm3": "터틀넥",
+              "gndCd": [
+                "02"
+              ],
+              "dispChanYypCd": "01",
+              "stockFilter": [
+                {
+                  "fSet": "3000714633316@AT114016^기타@@@@@@",
+                  "AT101": "",
+                  "AT104": "",
+                  "AT105": "",
+                  "AT102": "",
+                  "AT114": "AT114016^기타",
+                  "AT103": "",
+                  "AT106": "",
+                  "stockNo": "3000714633316"
+                }
+              ],
+              "prdAddImg1": "cdn/product/SA000697/P442037474/1_P442037474_add_1794813594626.png",
+              "advrtStmtEndDt": null,
+              "sales_summary": {
+                "last_3_days_sales": 231869.72,
+                "popular_score": 0.9623056538479086,
+                "last_3_days_qty": 2.01,
+                "last_1_day_qty": 1.0,
+                "last_30_days_qty": 3.1,
+                "prd_no": 442037474,
+                "last_7_days_sales": 236881.16,
+                "last_1_day_sales": 117580.0,
+                "last_90_days_qty": 3.1,
+                "last_7_days_qty": 2.05,
+                "@timestamp": "2026-11-15T20:04:47.313438+00:00",
+                "last_30_days_sales": 356189.86,
+                "last_90_days_sales": 356189.86,
+                "last_14_days_qty": 3.1,
+                "last_14_days_sales": 356189.86
+              },
+              "ordWeight7": 50,
+              "iconGroup": [],
+              "ordWeight3": 203943,
+              "prdTypCd": "01",
+              "dcPrcPc": 120580,
+              "bizTypCd": "03",
+              "bnftMdTxt": null,
+              "prdImg": "cdn/product/SA000697/P442037474/1_P442037474_basic_1794813594625.png",
+              "teamNm": "",
+              "decoWord": null,
+              "totRateApp": 57,
+              "comp_prd_no": null,
+              "prdNo": 442037474,
+              "reviewQty": 0,
+              "prdNm": "아가일 슬리브 터틀넥 니트_BAKPC3661",
+              "collectionGroup": "",
+              "znCtgrNm": "여성영캐주얼@여성커리어",
+              "znCtgrNo": "22628@22740",
+              "cpnYnPc": "Y",
+              "prdGroupCd": "PG005242",
+              "dlvFreeAmt": 50000,
+              "brand_weight": 0,
+              "brandCd": "BL103488",
+              "eblmStrDt": null,
+              "ordPrice": 0,
+              "appPrdAddImg1": "https://cdn2.halfclub.com//cdn/product/SA000697/P442037474/1_P442037474_add_1794813594626.png",
+              "mdNm": "",
+              "icnNm": "무료배송",
+              "advrtStmt": null,
+              "dispCategoryName3": "터틀넥",
+              "dlvFreeYnPc": "Y",
+              "mdNo": 113301,
+              "dlvFreeYnApp": "Y",
+              "stock_filter": [
+                "3000714633316@AT114016^기타@@@@@@"
+              ],
+              "cpnYnMc": "Y",
+              "brandNm": "베네통",
+              "normPrc": 279000,
+              "selYr": "2025",
+              "coDlvAmt": 0,
+              "brandNo": 103488,
+              "appPrdDtlUrl": "http://m.halfclub.com/product/442037474",
+              "dcPrcMc": 120580,
+              "selAcntCd": "SA000697",
+              "comp_prd_img_url": null,
+              "ordWeight": 265126,
+              "bnftMdEndDt": null,
+              "icnNms": [
+                "무료배송"
+              ],
+              "recomWeight1": "183549",
+              "dlvTypCd": "02",
+              "recomWeight2": "0",
+              "recomWeight3": "0",
+              "appBrandUrl": "http://m.halfclub.com/brand/BL103488",
+              "prd_filter": null,
+              "colorCd": "ZZ9",
+              "bnftMdStrDt": null,
+              "sgnWeight": 0,
+              "ordQty": 0,
+              "extInstAmtYn": null,
+              "brandNmInit": "ㅂ",
+              "eblmNm": null,
+              "appHztlImgUrl": "",
+              "brandLwrnkCd": "BL103488",
+              "prdGroupNo": 1119755,
+              "prdKeyword": "BENETTON 베네통 사계절 여성",
+              "eblmEndDt": null,
+              "totRatePc": 57,
+              "adltCertYn": "N",
+              "giftYn": null,
+              "lstSaleDt": null,
+              "dynamicDt": "2026-11-16T07:40:00.173295Z",
+              "comp_prd_img": null,
+              "dcPrcApp": 120580,
+              "decWordEndDt": null,
+              "dlvFreeYn": "Y",
+              "coDlvYn": "N",
+              "dpCtgrNo3": [
+                "32603"
+              ],
+              "dpCtgrNo2": [
+                "32548"
+              ],
+              "dpCtgrNo1": [
+                "32508"
+              ],
+              "deleteYn": "N",
+              "prdCd": "586999236",
+              "app_comp_prd_img": [],
+              "badgeImg": "https://cdn.halfclub.com/Images_Web/half_img/em_onlyhalf.jpg"
+            },
+            "sort": [
+              2.1123056,
+              231869,
+              "442037474"
+            ]
+          },
+          {
+            "_index": "hf_prd_search-2025-10-30",
+            "_id": "442060720",
+            "_score": 1.35,
+            "_source": {
+              "dlvTmpltSeq": 411203,
+              "selAcntNo": 104049,
+              "pcode": "P442060720",
+              "selAcntNm": "주식회사 비앤제이",
+              "decWordStrDt": null,
+              "prdImgUrl": "",
+              "prdTag": null,
+              "dispTypeNm": "PC+모바일",
+              "pchsTypCd": null,
+              "appPrdImgUrl": "https://cdn2.halfclub.com//rimg/330x440/contain/cdn/product/A4049/P442060720/1_P442060720_basic_1792760839206.jpg?format=webp",
+              "hztlImg": "cdn/product/A4049/P442060720/1_P442060720_hztl_1792760839207.jpg",
+              "bnftMdTxtLnk": null,
+              "prdType": "P",
+              "selPrc": 167400,
+              "brand": "ㅂ^베네통^BL103488",
+              "sgnCd": [
+                "04"
+              ],
+              "dpCtgr": [
+                "001@32508@여성의류^003@32548@니트/스웨터^004@32603@터틀넥"
+              ],
+              "prdSearchKeyword": "베네통 베네통 아가일 슬리브 터틀넥 니트 BAKPC3661 여성의류 니트/스웨터 BENETTON Winter 겨울 베네통 여성 ",
+              "createDt": "2026-11-12T08:43:46.000Z",
+              "dlvFreeYnMc": "Y",
+              "reviewStar": 0,
+              "eblmImg": "",
+              "ctgr": [
+                {
+                  "ctgr1": "001@32508@여성의류",
+                  "ctgrSet": "001@32508@여성의류^003@32548@니트/스웨터^004@32603@터틀넥",
+                  "ctgr3": "004@32603@터틀넥",
+                  "ctgr2": "003@32548@니트/스웨터"
+                }
+              ],
+              "siteCd": "1",
+              "masterPrdNo": null,
+              "advrtStmtStrDt": null,
+              "dlvAmt": 3000,
+              "cpnYnApp": "Y",
+              "dpCtgrNm2": "니트/스웨터",
+              "wishQty": 0,
+              "dpCtgrNm1": "여성의류",
+              "interFreeYn": "Y",
+              "totRateMc": 54,
+              "dpCtgrNo": "001@32508@여성의류^003@32548@니트/스웨터^004@32603@터틀넥",
+              "dpCtgrNm3": "터틀넥",
+              "gndCd": [
+                "02"
+              ],
+              "dispChanYypCd": "01",
+              "stockFilter": [
+                {
+                  "fSet": "3000714765978@AT114015^베이지@@@@@@",
+                  "AT101": "",
+                  "AT104": "",
+                  "AT105": "",
+                  "AT102": "",
+                  "AT114": "AT114015^베이지",
+                  "AT103": "",
+                  "AT106": "",
+                  "stockNo": "3000714765978"
+                },
+                {
+                  "fSet": "3000714765979@AT114016^기타@@@@@@",
+                  "AT101": "",
+                  "AT104": "",
+                  "AT105": "",
+                  "AT102": "",
+                  "AT114": "AT114016^기타",
+                  "AT103": "",
+                  "AT106": "",
+                  "stockNo": "3000714765979"
+                }
+              ],
+              "prdAddImg1": "cdn/product/A4049/P442060720/1_P442060720_add_1792760839208.jpg?format=webp",
+              "advrtStmtEndDt": null,
+              "ordWeight7": 50,
+              "iconGroup": [],
+              "ordWeight3": 0,
+              "prdTypCd": "01",
+              "dcPrcPc": 128900,
+              "bizTypCd": "03",
+              "bnftMdTxt": null,
+              "prdImg": "cdn/product/A4049/P442060720/1_P442060720_basic_1792760839206.jpg?format=webp",
+              "teamNm": "",
+              "decoWord": null,
+              "totRateApp": 54,
+              "comp_prd_no": null,
+              "prdNo": 442060720,
+              "reviewQty": 0,
+              "prdNm": "아가일 슬리브 터틀넥 니트 BAKPC3661",
+              "collectionGroup": "",
+              "znCtgrNm": "여성영캐주얼@여성커리어",
+              "znCtgrNo": "22628@22740",
+              "cpnYnPc": "Y",
+              "prdGroupCd": "16!C",
+              "dlvFreeAmt": 70000,
+              "brand_weight": 0,
+              "brandCd": "BL103488",
+              "eblmStrDt": null,
+              "ordPrice": 0,
+              "appPrdAddImg1": "https://cdn2.halfclub.com//cdn/product/A4049/P442060720/1_P442060720_add_1792760839208.jpg?format=webp",
+              "mdNm": "",
+              "icnNm": "무료배송",
+              "advrtStmt": null,
+              "dispCategoryName3": "터틀넥",
+              "dlvFreeYnPc": "Y",
+              "mdNo": 113301,
+              "dlvFreeYnApp": "Y",
+              "stock_filter": [
+                "3000714765978@AT114015^베이지@@@@@@",
+                "3000714765979@AT114016^기타@@@@@@"
+              ],
+              "cpnYnMc": "Y",
+              "brandNm": "베네통",
+              "normPrc": 279000,
+              "selYr": "2026",
+              "coDlvAmt": 0,
+              "brandNo": 103488,
+              "appPrdDtlUrl": "http://m.halfclub.com/product/442060720",
+              "dcPrcMc": 128900,
+              "selAcntCd": "A4049",
+              "comp_prd_img_url": null,
+              "ordWeight": 1,
+              "bnftMdEndDt": null,
+              "icnNms": [
+                "무료배송"
+              ],
+              "recomWeight1": "3",
+              "dlvTypCd": "02",
+              "recomWeight2": "0",
+              "recomWeight3": "0",
+              "appBrandUrl": "http://m.halfclub.com/brand/BL103488",
+              "prd_filter": null,
+              "colorCd": "ZZ9",
+              "bnftMdStrDt": null,
+              "sgnWeight": 1,
+              "ordQty": 0,
+              "extInstAmtYn": null,
+              "brandNmInit": "ㅂ",
+              "eblmNm": null,
+              "appHztlImgUrl": "https://cdn2.halfclub.com//cdn/product/A4049/P442060720/1_P442060720_hztl_1792760839207.jpg",
+              "brandLwrnkCd": "BL103488",
+              "prdGroupNo": 1016073,
+              "prdKeyword": "BENETTON Winter 겨울 베네통 여성",
+              "eblmEndDt": null,
+              "totRatePc": 54,
+              "adltCertYn": "N",
+              "giftYn": null,
+              "lstSaleDt": null,
+              "dynamicDt": "2026-11-12T09:00:00.966360Z",
+              "comp_prd_img": null,
+              "dcPrcApp": 128900,
+              "decWordEndDt": null,
+              "dlvFreeYn": "Y",
+              "coDlvYn": "N",
+              "dpCtgrNo3": [
+                "32603"
+              ],
+              "dpCtgrNo2": [
+                "32548"
+              ],
+              "dpCtgrNo1": [
+                "32508"
+              ],
+              "deleteYn": "N",
+              "prdCd": "BAKPC3661",
+              "app_comp_prd_img": [],
+              "badgeImg": "https://cdn.halfclub.com/Images_Web/half_img/em_onlyhalf.jpg"
+            },
+            "sort": [
+              1.35,
+              -9223372036854775808,
+              "442060720"
+            ]
+          },
+          {
+            "_index": "hf_prd_search-2025-10-30",
+            "_id": "442953268",
+            "_score": 1.15,
+            "_source": {
+              "dlvTmpltSeq": 1385253,
+              "selAcntNo": 305233,
+              "pcode": "P442953268",
+              "selAcntNm": "세정글로벌 마리오",
+              "decWordStrDt": null,
+              "prdImgUrl": "",
+              "prdTag": null,
+              "dispTypeNm": "PC+모바일",
+              "pchsTypCd": null,
+              "appPrdImgUrl": "https://cdn2.halfclub.com//rimg/330x440/contain/cdn/product/SA005392/P442953268/1_P442953268_basic_1794728690998.jpg?format=webp",
+              "hztlImg": "cdn/product/SA005392/P442953268/1_P442953268_hztl_1794728690999.jpg",
+              "bnftMdTxtLnk": null,
+              "prdType": "P",
+              "selPrc": 139500,
+              "brand": "ㅂ^베네통^BL103488",
+              "sgnCd": [
+                "05"
+              ],
+              "dpCtgr": [
+                "004@32518@남성의류^003@32608@니트/스웨터^002@32882@브이넥"
+              ],
+              "prdSearchKeyword": "베네통 베네통 아가일 슬리브 터들넥 니트 BAKPC3661 남성의류 니트/스웨터 BENETTON 남녀공용 베네통 사계절 ",
+              "createDt": "2026-11-15T07:48:41.000Z",
+              "dlvFreeYnMc": "Y",
+              "reviewStar": 0,
+              "eblmImg": "",
+              "ctgr": [
+                {
+                  "ctgr1": "004@32518@남성의류",
+                  "ctgrSet": "004@32518@남성의류^003@32608@니트/스웨터^002@32882@브이넥",
+                  "ctgr3": "002@32882@브이넥",
+                  "ctgr2": "003@32608@니트/스웨터"
+                }
+              ],
+              "siteCd": "1",
+              "masterPrdNo": null,
+              "advrtStmtStrDt": null,
+              "dlvAmt": 3500,
+              "cpnYnApp": "N",
+              "dpCtgrNm2": "니트/스웨터",
+              "wishQty": 0,
+              "dpCtgrNm1": "남성의류",
+              "interFreeYn": "Y",
+              "totRateMc": 0,
+              "dpCtgrNo": "004@32518@남성의류^003@32608@니트/스웨터^002@32882@브이넥",
+              "dpCtgrNm3": "브이넥",
+              "gndCd": [
+                "03"
+              ],
+              "dispChanYypCd": "01",
+              "stockFilter": [
+                {
+                  "fSet": "3000717940100@AT114015^베이지@@@@@@",
+                  "AT101": "",
+                  "AT104": "",
+                  "AT105": "",
+                  "AT102": "",
+                  "AT114": "AT114015^베이지",
+                  "AT103": "",
+                  "AT106": "",
+                  "stockNo": "3000717940100"
+                },
+                {
+                  "fSet": "3000717940101@AT114002^그레이@@@@@@",
+                  "AT101": "",
+                  "AT104": "",
+                  "AT105": "",
+                  "AT102": "",
+                  "AT114": "AT114002^그레이",
+                  "AT103": "",
+                  "AT106": "",
+                  "stockNo": "3000717940101"
+                }
+              ],
+              "prdAddImg1": "cdn/product/SA005392/P442953268/1_P442953268_add_1794728691000.jpg?format=webp",
+              "advrtStmtEndDt": null,
+              "ordWeight7": 50,
+              "iconGroup": [],
+              "ordWeight3": 0,
+              "prdTypCd": "01",
+              "dcPrcPc": 139500,
+              "bizTypCd": "03",
+              "bnftMdTxt": null,
+              "prdImg": "cdn/product/SA005392/P442953268/1_P442953268_basic_1794728690998.jpg?format=webp",
+              "teamNm": "",
+              "decoWord": null,
+              "totRateApp": 0,
+              "comp_prd_no": null,
+              "prdNo": 442953268,
+              "reviewQty": 0,
+              "prdNm": "아가일 슬리브 터들넥 니트 BAKPC3661",
+              "collectionGroup": "",
+              "znCtgrNm": "여성영캐주얼",
+              "znCtgrNo": "22628",
+              "cpnYnPc": "N",
+              "prdGroupCd": "PG266313",
+              "dlvFreeAmt": 70000,
+              "brand_weight": 0,
+              "brandCd": "BL103488",
+              "eblmStrDt": null,
+              "ordPrice": 0,
+              "appPrdAddImg1": "https://cdn2.halfclub.com//cdn/product/SA005392/P442953268/1_P442953268_add_1794728691000.jpg?format=webp",
+              "mdNm": "",
+              "icnNm": "무료배송",
+              "advrtStmt": null,
+              "dispCategoryName3": "브이넥",
+              "dlvFreeYnPc": "Y",
+              "mdNo": 113063,
+              "dlvFreeYnApp": "Y",
+              "stock_filter": [
+                "3000717940100@AT114015^베이지@@@@@@",
+                "3000717940101@AT114002^그레이@@@@@@"
+              ],
+              "cpnYnMc": "N",
+              "brandNm": "베네통",
+              "normPrc": 139500,
+              "selYr": "2026",
+              "coDlvAmt": 0,
+              "brandNo": 103488,
+              "appPrdDtlUrl": "http://m.halfclub.com/product/442953268",
+              "dcPrcMc": 139500,
+              "selAcntCd": "SA005392",
+              "comp_prd_img_url": null,
+              "ordWeight": 1,
+              "bnftMdEndDt": null,
+              "icnNms": [
+                "무료배송"
+              ],
+              "recomWeight1": "3",
+              "dlvTypCd": "02",
+              "recomWeight2": "0",
+              "recomWeight3": "0",
+              "appBrandUrl": "http://m.halfclub.com/brand/BL103488",
+              "prd_filter": null,
+              "colorCd": "ZZ9",
+              "bnftMdStrDt": null,
+              "sgnWeight": 0,
+              "ordQty": 0,
+              "extInstAmtYn": null,
+              "brandNmInit": "ㅂ",
+              "eblmNm": null,
+              "appHztlImgUrl": "https://cdn2.halfclub.com//cdn/product/SA005392/P442953268/1_P442953268_hztl_1794728690999.jpg",
+              "brandLwrnkCd": "BL103488",
+              "prdGroupNo": 1604175,
+              "prdKeyword": "BENETTON 남녀공용 베네통 사계절",
+              "eblmEndDt": null,
+              "totRatePc": 0,
+              "adltCertYn": "N",
+              "giftYn": null,
+              "lstSaleDt": null,
+              "dynamicDt": "2026-11-15T08:00:00.595302Z",
+              "comp_prd_img": null,
+              "dcPrcApp": 139500,
+              "decWordEndDt": null,
+              "dlvFreeYn": "Y",
+              "coDlvYn": "N",
+              "dpCtgrNo3": [
+                "32882"
+              ],
+              "dpCtgrNo2": [
+                "32608"
+              ],
+              "dpCtgrNo1": [
+                "32518"
+              ],
+              "deleteYn": "N",
+              "prdCd": "1816531",
+              "app_comp_prd_img": [],
+              "badgeImg": "https://cdn.halfclub.com/Images_Web/half_img/em_onlyhalf.jpg"
+            },
+            "sort": [
+              1.15,
+              -9223372036854775808,
+              "442953268"
+            ]
+          }
+        ]
+      },
+      "status": 200,
+      "aggregations": {
+        "gndCd": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "02",
+              "doc_count": 2
+            },
+            {
+              "key": "03",
+              "doc_count": 1
+            }
+          ]
+        },
+        "icnNm": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "무료배송",
+              "doc_count": 3
+            }
+          ],
+          "goods": [
+            "무료배송"
+          ],
+          "delvery": []
+        },
+        "rate": {
+          "count": 3,
+          "min": 0.0,
+          "max": 57.0,
+          "avg": 37.0,
+          "sum": 111.0
+        },
+        "price": {
+          "count": 3,
+          "min": 120580.0,
+          "max": 139500.0,
+          "avg": 129660.0,
+          "sum": 388980.0
+        },
+        "AT104": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [],
+          "name": "신발사이즈"
+        },
+        "AT105": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [],
+          "name": "아동신발사이즈"
+        },
+        "AT102": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [],
+          "name": "여성하의사이즈"
+        },
+        "AT103": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [],
+          "name": "남성하의사이즈"
+        },
+        "AT106": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [],
+          "name": "아동의류사이즈"
+        },
+        "sgnCd": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "05",
+              "doc_count": 2
+            },
+            {
+              "key": "04",
+              "doc_count": 1
+            }
+          ]
+        },
+        "AT101": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [],
+          "name": "상의사이즈"
+        },
+        "AT120": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [],
+          "name": "골프공 개수"
+        },
+        "AT121": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [],
+          "name": "길이"
+        },
+        "dlvFreeYn": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "Y",
+              "doc_count": 3
+            }
+          ]
+        },
+        "cpnYn": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "Y",
+              "doc_count": 2
+            },
+            {
+              "key": "N",
+              "doc_count": 1
+            }
+          ]
+        },
+        "ctgr": {
+          "doc_count": 3,
+          "ctgr1": {
+            "doc_count_error_upper_bound": 0,
+            "sum_other_doc_count": 0,
+            "buckets": [
+              {
+                "key": "001@32508@여성의류",
+                "doc_count": 2,
+                "ctgr2": {
+                  "doc_count_error_upper_bound": 0,
+                  "sum_other_doc_count": 0,
+                  "buckets": [
+                    {
+                      "key": "003@32548@니트/스웨터",
+                      "doc_count": 2,
+                      "ctgr3": {
+                        "doc_count_error_upper_bound": 0,
+                        "sum_other_doc_count": 0,
+                        "buckets": [
+                          {
+                            "key": "004@32603@터틀넥",
+                            "doc_count": 2,
+                            "ctgrRn3": "004",
+                            "ctgrNo3": "32603",
+                            "ctgrNm3": "터틀넥"
+                          }
+                        ]
+                      },
+                      "ctgrRn2": "003",
+                      "ctgrNo2": "32548",
+                      "ctgrNm2": "니트/스웨터"
+                    }
+                  ]
+                },
+                "ctgrRn1": "001",
+                "ctgrNo1": "32508",
+                "ctgrNm1": "여성의류"
+              },
+              {
+                "key": "004@32518@남성의류",
+                "doc_count": 1,
+                "ctgr2": {
+                  "doc_count_error_upper_bound": 0,
+                  "sum_other_doc_count": 0,
+                  "buckets": [
+                    {
+                      "key": "003@32608@니트/스웨터",
+                      "doc_count": 1,
+                      "ctgr3": {
+                        "doc_count_error_upper_bound": 0,
+                        "sum_other_doc_count": 0,
+                        "buckets": [
+                          {
+                            "key": "002@32882@브이넥",
+                            "doc_count": 1,
+                            "ctgrRn3": "002",
+                            "ctgrNo3": "32882",
+                            "ctgrNm3": "브이넥"
+                          }
+                        ]
+                      },
+                      "ctgrRn2": "003",
+                      "ctgrNo2": "32608",
+                      "ctgrNm2": "니트/스웨터"
+                    }
+                  ]
+                },
+                "ctgrRn1": "004",
+                "ctgrNo1": "32518",
+                "ctgrNm1": "남성의류"
+              }
+            ]
+          }
+        },
+        "icnNms": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "무료배송",
+              "doc_count": 3
+            }
+          ]
+        },
+        "AT116": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [],
+          "name": "여성팬티사이즈"
+        },
+        "interFreeYn": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "Y",
+              "doc_count": 3
+            }
+          ]
+        },
+        "AT113": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [],
+          "name": "의류소재"
+        },
+        "AT114": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "AT114015^베이지",
+              "pkey": "AT114015",
+              "name": "베이지"
+            },
+            {
+              "key": "AT114016^기타",
+              "pkey": "AT114016",
+              "name": "기타"
+            },
+            {
+              "key": "AT114002^그레이",
+              "pkey": "AT114002",
+              "name": "그레이"
+            }
+          ],
+          "name": "색상"
+        },
+        "AT119": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [],
+          "name": "골프공 등급"
+        },
+        "AT117": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [],
+          "name": "남성팬티사이즈"
+        },
+        "AT118": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [],
+          "name": "브래지어사이즈"
+        },
+        "brand": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "-",
+              "doc_count": 0,
+              "name": "-"
+            }
+          ]
+        }
+      }
+    },
+    "plan_list": "",
+    "deal_list": {
+      "took": 6,
+      "timed_out": false,
+      "_shards": {
+        "total": 3,
+        "successful": 3,
+        "skipped": 0,
+        "failed": 0
+      },
+      "hits": {
+        "total": {
+          "value": 0,
+          "relation": "eq"
+        },
+        "max_score": null,
+        "hits": []
+      }
+    }
+  }
+}
