@@ -16,10 +16,10 @@ let posts=0;context.mappingGroup=()=>g;context.renderMappingProgress=()=>{};cont
 (async()=>{await assert.rejects(context.saveMappingColor('g','a'),/최소 1장/);assert.equal(posts,0);assert.equal(context.S.mappingBusy,false);console.log('Empty option save blocked before API request');})().catch(e=>{console.error(e);process.exitCode=1});
 
 // Saving one option must leave every other product's image elements intact.
-const callback=s.slice(s.indexOf('async()=>{await saveMappingColor(group.id,cid);'),s.indexOf("},'primary');save.dataset.emptySelection"))+"}";
-const saveContext={group:g,cid:'a',S:{mappingActive:{}},saveMappingColor:async()=>{},mappingGroup:()=>({...g,confirmed:['a']}),renderMapping:()=>{throw Error('Full image-grid rebuild on color save')},refreshMappingProduct:gid=>assert.equal(gid,'g'),toast:()=>{}};
+const saveContext={S:{mappingActive:{}},saveMappingColor:async()=>{},mappingGroup:()=>({...g,confirmed:['a']}),renderMapping:()=>{throw Error('Full image-grid rebuild on color save')},refreshMappingProduct:gid=>assert.equal(gid,'g'),toast:()=>{}};
 vm.createContext(saveContext);
-vm.runInContext('('+callback+')()',saveContext).then(()=>{assert.equal(saveContext.S.mappingActive.g,'b');console.log('Color save refreshes only the saved product');}).catch(e=>{console.error(e);process.exitCode=1});
+vm.runInContext(s.slice(s.indexOf('async function saveMappingOption('),s.indexOf('async function mappingEnter(')),saveContext);
+vm.runInContext('saveMappingOption("g","a")',saveContext).then(()=>{assert.equal(saveContext.S.mappingActive.g,'b');console.log('Color save refreshes only the saved product');}).catch(e=>{console.error(e);process.exitCode=1});
 
 // A still-visible product may hold an old draft after another color was saved.
 const one={id:'single',colors:[{id:'a'}],confirmed:[],images:[{id:'x',assigned_colors:[]},{id:'y',assigned_colors:[]}]};

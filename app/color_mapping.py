@@ -3,7 +3,7 @@ import hashlib
 import html
 import json
 from copy import deepcopy
-from schema import field_for, preview, output_headers
+from schema import field_for, preview, output_headers, sanitized_html
 from detail_store import excel_detail
 from storage import atomic_json
 from color_palette import normalize_palette
@@ -229,6 +229,25 @@ def shared_detail(job,group):
     # Old jobs did not collect the full site detail: keep all available colors'
     # gallery pictures and their original common notices/size tables.
     return ''.join('<img src="'+html.escape(i['url'],quote=True)+'">' for i in group['images'])+''.join(legacy)
+
+
+def detail_preview(job,group_id):
+    view=snapshot(job)
+    group=next((g for g in view['groups'] if g['id']==group_id),None)
+    if group is None:raise ValueError('매핑할 품번을 찾을 수 없습니다.')
+    markup='';notice=''
+    if 'detail_page' not in job.selected:notice='이 작업에서는 상세페이지 수집을 선택하지 않았습니다.'
+    else:
+        entry=local_images.detail_entry(job,group['code']) if local_images.enabled(job) else None
+        if entry:markup='<img src="'+html.escape(local_images.preview_url(job,entry['asset_path']),quote=True)+'" alt="수집된 상세이미지">'
+        else:
+            for item in successful_items(job):
+                if str(item.get('code','')).strip().upper()!=group['code']:continue
+                raw=next((v for h,v in item.get('raw',{}).items() if field_for(h)=='detail_page' and v),'')
+                raw=raw or (item.get('unmapped') or {}).get('shared_detail_html','')
+                if raw:markup=sanitized_html(str(raw));break
+        if not markup:notice='수집된 상세페이지가 없습니다. 상품 원본에서 확인할 수 있습니다.'
+    return dict(code=group['code'],name=group['name'],html=markup,notice=notice,product_url=first_product_link(job,group['code']))
 
 
 def result_headers(job):

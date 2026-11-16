@@ -159,7 +159,9 @@ class Handler(BaseHTTPRequestHandler):
                 job.save();file=job.dir/'result.xlsx'
                 return self.send(file.read_bytes(),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',attachment='crawler-result.xlsx')
             if action=='mapping':
-                with job.data_lock:return self.send(color_mapping.snapshot(job))
+                with job.data_lock:
+                    if len(parts)==5 and parts[4]=='detail':return self.send(color_mapping.detail_preview(job,query.get('group_id',[''])[0]))
+                    return self.send(color_mapping.snapshot(job))
             if action=='queue':
                 rows=job.snapshot_queue();search=query.get('search',[''])[0].lower();status=query.get('status',[''])[0]
                 return self.send(page_rows([r for r in rows if search in r['code'].lower() and (not status or r['status']==status)],query))

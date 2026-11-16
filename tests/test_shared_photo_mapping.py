@@ -7,6 +7,19 @@ import local_images
 from unittest.mock import patch
 class SharedPhotoMappingTests(unittest.TestCase):
  def make_job(self,folder):return helper.HybridMappingTests().job(folder,[helper.item(0,'STYLE','60','https://img/shared.jpg',True)])
+ def test_detail_preview_is_product_scoped_read_only_and_sanitized(self):
+  with tempfile.TemporaryDirectory(dir=ROOT/'tests') as folder:
+   job=self.make_job(folder);job.selected.append('detail_page')
+   job.items[0]['raw']['상세페이지 HTML']='<h3>상품고시</h3><img src="https://img/body.jpg" onerror="alert(1)"><script>alert(1)</script>'
+   other=helper.item(1,'OTHER','60','https://img/other.jpg',True);other['raw']['상세페이지 HTML']='<p>다른품번상세</p>';job.items.append(other)
+   group=m.snapshot(job)['groups'][0];view=m.detail_preview(job,group['id'])
+   self.assertEqual(view['code'],'STYLE');self.assertIn('상품고시',view['html']);self.assertNotIn('다른품번',view['html']);self.assertNotIn('script',view['html']);self.assertNotIn('onerror',view['html'])
+   self.assertTrue(view['product_url'].startswith('https://'));self.assertFalse((job.dir/'color_mapping.json').exists())
+   with self.assertRaisesRegex(ValueError,'품번'):m.detail_preview(job,'unknown')
+ def test_detail_not_selected_does_not_substitute_gallery_images(self):
+  with tempfile.TemporaryDirectory(dir=ROOT/'tests') as folder:
+   job=self.make_job(folder);group=m.snapshot(job)['groups'][0];view=m.detail_preview(job,group['id'])
+   self.assertEqual(view['html'],'');self.assertIn('선택하지',view['notice'])
  def test_shared_photo_survives_save_reopen_finalize_and_export(self):
   with tempfile.TemporaryDirectory(dir=ROOT/'tests') as folder:
    job=self.make_job(folder);v=m.snapshot(job);g=v['groups'][0];iid=g['images'][0]['id']
