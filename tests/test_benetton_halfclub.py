@@ -5,6 +5,7 @@ from PIL import Image,ImageDraw
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'brands'))
 import benetton_halfclub_studio as c
 FIX=ROOT/'tests/fixtures/benetton_halfclub'
+PREFETCH=c.prefetch_inspected
 class Context:
  def __init__(self,code='BAKPC3661',fields=()):self.product_code=code;self.fields=fields;self.rows=[];self.errors=[]
  def checkpoint(self):pass
@@ -14,7 +15,9 @@ class Context:
  def fail_item(self,m):self.errors.append(m)
  def emit_unmapped(self,r,colors,url,shared_detail_html=''):self.rows.append((r,colors,url))
 class Tests(unittest.TestCase):
- def setUp(self):self.data=json.loads((FIX/'product.json').read_text(encoding='utf-8'));self.texts=json.loads((FIX/'ocr.json').read_text(encoding='utf-8'))
+ def setUp(self):
+  bypass=patch.object(c,'prefetch_inspected');bypass.start();self.addCleanup(bypass.stop)
+  self.data=json.loads((FIX/'product.json').read_text(encoding='utf-8'));self.texts=json.loads((FIX/'ocr.json').read_text(encoding='utf-8'))
  def test_required_documents_and_excluded_notices(self):
   for key in ['16','17','18']:self.assertFalse(c.banner_text(self.texts[key]),key)
   for key in ['1','excluded0','excluded1']:self.assertTrue(c.banner_text(self.texts[key]),key)
@@ -70,6 +73,35 @@ class Tests(unittest.TestCase):
   im=Image.new('RGB',(720,960),'#eee');ImageDraw.Draw(im).rectangle((180,100,540,850),fill='#333')
   with patch.object(c,'inspected',return_value=(None,im,'')):markup=c.details(Context(),info,{})
   self.assertNotIn('unknown.example',markup);self.assertIn('ai.esmplus.com/a.jpg',markup)
+ def test_prefetch_batches_and_reuses_identical_content(self):
+  import threading
+  ctx=Context();owner=threading.get_ident()
+  ctx.checkpoint=lambda:self.assertEqual(threading.get_ident(),owner)
+  ctx.log=lambda *a:self.assertEqual(threading.get_ident(),owner)
+  cache={};im=Image.new('RGB',(720,960),'#eee')
+  urls=['https://ai.esmplus.com/'+str(i)+'.jpg' for i in range(6)]
+  with patch.object(c,'image_get',return_value=im) as get,patch.object(c,'ocr_many',return_value=['same text']) as read:
+   PREFETCH(ctx,urls+urls,cache)
+   self.assertEqual(get.call_count,6);self.assertEqual(read.call_count,1)
+   self.assertTrue(all(cache[u][2]=='same text' for u in urls))
+   PREFETCH(ctx,urls,cache);self.assertEqual(get.call_count,6)
+ def test_prefetch_failure_is_isolated_to_one_url(self):
+  ctx=Context();cache={};im=Image.new('RGB',(720,960),'#eee')
+  urls=['https://ai.esmplus.com/bad.jpg','https://ai.esmplus.com/good.jpg']
+  with patch.object(c,'image_get',side_effect=[c.CollectionError('404'),im]),patch.object(c,'ocr_many',return_value=['checked']):PREFETCH(ctx,urls,cache)
+  self.assertIsInstance(cache[urls[0]],c.CollectionError);self.assertEqual(cache[urls[1]][2],'checked')
+ def test_ocr_batch_keeps_image_boundaries_empty_tiles_and_errors(self):
+  import subprocess
+  pictures=[Image.new('RGB',(600,1800)),Image.new('RGB',(600,600)),Image.new('RGB',(600,600))]
+  process=unittest.mock.Mock();process.returncode=0;process.poll.return_value=0
+  process.communicate.return_value=('{\"text\":\"top\"}\n{\"text\":\"bottom\"}\n{\"text\":\"\"}\n{\"error\":\"bad tile\"}\n','')
+  with patch.object(c.subprocess,'Popen',return_value=process) as start:
+   values=c.ocr_many(Context(),pictures)
+  self.assertEqual(start.call_count,1);self.assertEqual(values[:2],['top\nbottom\n','\n']);self.assertIsInstance(values[2],c.CollectionError)
+ def test_ocr_tile_mismatch_fails_closed(self):
+  process=unittest.mock.Mock();process.returncode=0;process.poll.return_value=0;process.communicate.return_value=('','')
+  with patch.object(c.subprocess,'Popen',return_value=process):
+   with self.assertRaises(c.CollectionError):c.ocr_many(Context(),[Image.new('RGB',(600,600))])
  def test_nonstudio_product_not_emitted(self):
   ctx=Context();im=Image.effect_noise((720,960),90).convert('RGB')
   with patch.object(c,'search',return_value=['442037474','442060720','442953268']),patch.object(c,'page',return_value=self.data),patch.object(c,'inspected',return_value=(None,im,'')):

@@ -1,6 +1,7 @@
 PORTAL_API_VERSION = 1
 
 import html
+from concurrent.futures import ThreadPoolExecutor
 import base64
 import hashlib
 import subprocess
@@ -166,7 +167,8 @@ def image_get(ctx, url):
             if source.width * source.height > 40_000_000:
                 raise CollectionError('이미지 해독 크기 초과')
             source.load()
-            return source.copy()
+            image=source.copy();image.info['_content_sha256']=hashlib.sha256(raw).hexdigest()
+            return image
     except (UnidentifiedImageError, OSError, Image.DecompressionBombError) as exc:
         raise CollectionError('손상 또는 이미지가 아닌 응답: ' + url) from exc
 
@@ -196,7 +198,36 @@ def gallery_ok(image):
     return True, '실제 상품 갤러리 정지 이미지'
 
 
-OCR_SCRIPT = "\n$ProgressPreference='SilentlyContinue'\n$ErrorActionPreference='Stop'\nAdd-Type -AssemblyName System.Runtime.WindowsRuntime\n$null=[Windows.Storage.StorageFile,Windows.Storage,ContentType=WindowsRuntime]\n$null=[Windows.Storage.Streams.IRandomAccessStream,Windows.Storage.Streams,ContentType=WindowsRuntime]\n$null=[Windows.Graphics.Imaging.BitmapDecoder,Windows.Graphics.Imaging,ContentType=WindowsRuntime]\n$null=[Windows.Graphics.Imaging.SoftwareBitmap,Windows.Graphics.Imaging,ContentType=WindowsRuntime]\n$null=[Windows.Media.Ocr.OcrEngine,Windows.Foundation,ContentType=WindowsRuntime]\n$null=[Windows.Media.Ocr.OcrResult,Windows.Foundation,ContentType=WindowsRuntime]\n$asTask=([System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object {$_.Name -eq 'AsTask' -and $_.IsGenericMethod -and $_.GetParameters().Count -eq 1})[0]\nfunction Await($Op,$Type) { $task=$asTask.MakeGenericMethod($Type).Invoke($null,@($Op));$task.Wait();$task.Result }\n\nforeach($ImagePath in $ImagePaths) {\n$file=Await ([Windows.Storage.StorageFile]::GetFileFromPathAsync($ImagePath)) ([Windows.Storage.StorageFile])\n$stream=Await ($file.OpenAsync([Windows.Storage.FileAccessMode]::Read)) ([Windows.Storage.Streams.IRandomAccessStream])\n$decoder=Await ([Windows.Graphics.Imaging.BitmapDecoder]::CreateAsync($stream)) ([Windows.Graphics.Imaging.BitmapDecoder])\n$bitmap=Await ($decoder.GetSoftwareBitmapAsync()) ([Windows.Graphics.Imaging.SoftwareBitmap])\n$null=[Windows.Globalization.Language,Windows.Globalization,ContentType=WindowsRuntime]\n$engine=[Windows.Media.Ocr.OcrEngine]::TryCreateFromLanguage([Windows.Globalization.Language]::new('ko-KR'))\nif ($null -eq $engine) { throw 'Korean OCR language is not installed' }\n$result=Await ($engine.RecognizeAsync($bitmap)) ([Windows.Media.Ocr.OcrResult])\n[Console]::OutputEncoding=[System.Text.UTF8Encoding]::new($false)\n$result.Text\n$bitmap.Dispose();$stream.Dispose()\n\n}\n"
+OCR_SCRIPT = r"""[Console]::OutputEncoding=[System.Text.UTF8Encoding]::new($false)
+
+$ProgressPreference='SilentlyContinue'
+$ErrorActionPreference='Stop'
+Add-Type -AssemblyName System.Runtime.WindowsRuntime
+$null=[Windows.Storage.StorageFile,Windows.Storage,ContentType=WindowsRuntime]
+$null=[Windows.Storage.Streams.IRandomAccessStream,Windows.Storage.Streams,ContentType=WindowsRuntime]
+$null=[Windows.Graphics.Imaging.BitmapDecoder,Windows.Graphics.Imaging,ContentType=WindowsRuntime]
+$null=[Windows.Graphics.Imaging.SoftwareBitmap,Windows.Graphics.Imaging,ContentType=WindowsRuntime]
+$null=[Windows.Media.Ocr.OcrEngine,Windows.Foundation,ContentType=WindowsRuntime]
+$null=[Windows.Media.Ocr.OcrResult,Windows.Foundation,ContentType=WindowsRuntime]
+$asTask=([System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object {$_.Name -eq 'AsTask' -and $_.IsGenericMethod -and $_.GetParameters().Count -eq 1})[0]
+function Await($Op,$Type) { $task=$asTask.MakeGenericMethod($Type).Invoke($null,@($Op));$task.Wait();$task.Result }
+
+$null=[Windows.Globalization.Language,Windows.Globalization,ContentType=WindowsRuntime]
+$engine=[Windows.Media.Ocr.OcrEngine]::TryCreateFromLanguage([Windows.Globalization.Language]::new('ko-KR'))
+if ($null -eq $engine) { throw 'Korean OCR language is not installed' }
+foreach($ImagePath in $ImagePaths) {
+try {
+$file=Await ([Windows.Storage.StorageFile]::GetFileFromPathAsync($ImagePath)) ([Windows.Storage.StorageFile])
+$stream=Await ($file.OpenAsync([Windows.Storage.FileAccessMode]::Read)) ([Windows.Storage.Streams.IRandomAccessStream])
+$decoder=Await ([Windows.Graphics.Imaging.BitmapDecoder]::CreateAsync($stream)) ([Windows.Graphics.Imaging.BitmapDecoder])
+$bitmap=Await ($decoder.GetSoftwareBitmapAsync()) ([Windows.Graphics.Imaging.SoftwareBitmap])
+$result=Await ($engine.RecognizeAsync($bitmap)) ([Windows.Media.Ocr.OcrResult])
+[Console]::OutputEncoding=[System.Text.UTF8Encoding]::new($false)
+[pscustomobject]@{text=$result.Text} | ConvertTo-Json -Compress
+} catch { [pscustomobject]@{error=$_.Exception.Message} | ConvertTo-Json -Compress } finally { if ($bitmap) {$bitmap.Dispose();$bitmap=$null}; if ($stream) {$stream.Dispose();$stream=$null} }
+
+}
+"""
 
 SELLER_BANNER = re.compile(
     r'백화점|아울렛|패션아일랜드|DEBEC|대백|모다|매장(?:안내|전화|번호|문의|으로연락|에서(?:출고|발송|판매))|'
@@ -204,18 +235,23 @@ SELLER_BANNER = re.compile(
     r'구매하기|배송비|택배비|착불|동봉입금|반송상품|반송시|교환반품접수|주문전꼭|주문전필독|매장재고|판매자(?:안내|공지|정보)|판매처(?:안내|공지|정보)', re.I)
 
 
-def ocr_text(ctx, picture):
-    """Read every overlapping image tile locally; never upload product images."""
-    width=min(1600,max(picture.width,1200))
-    scaled=picture.convert('RGB').resize((width,round(picture.height*width/picture.width)))
+def ocr_many(ctx, pictures):
+    """One PowerShell/OCR engine for a bounded group; retain every image tile."""
+    if not pictures:return []
     with tempfile.TemporaryDirectory(prefix='benetton-halfclub-ocr-') as folder:
-        paths=[]
-        for y in range(0,scaled.height,2100):
-            ctx.checkpoint()
-            path=Path(folder)/(str(y)+'.png')
-            scaled.crop((0,y,width,min(y+2300,scaled.height))).save(path)
-            paths.append("'"+str(path.resolve()).replace("'","''")+"'")
-        script='$ImagePaths=@('+','.join(paths)+')\n'+OCR_SCRIPT
+        paths=[];owners=[]
+        for owner,picture in enumerate(pictures):
+            width=min(1600,max(picture.width,1200))
+            scaled=picture.convert('RGB').resize((width,round(picture.height*width/picture.width)))
+            for y in range(0,scaled.height,2100):
+                ctx.checkpoint()
+                path=Path(folder)/(str(len(paths))+'.png')
+                scaled.crop((0,y,width,min(y+2300,scaled.height))).save(path)
+                paths.append(str(path.resolve()));owners.append(owner)
+        script=OCR_SCRIPT
+        manifest=Path(folder)/'tiles.json'
+        manifest.write_text(json.dumps(paths,ensure_ascii=False),encoding='utf-8')
+        script="$ImagePaths=Get-Content -LiteralPath '"+str(manifest.resolve()).replace("'","''")+"' -Raw -Encoding UTF8 | ConvertFrom-Json\n"+script
         command=base64.b64encode(script.encode('utf-16le')).decode('ascii')
         process=subprocess.Popen(['powershell.exe','-NoProfile','-NonInteractive','-EncodedCommand',command],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,encoding='utf-8',errors='replace',creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
         deadline=time.monotonic()+min(120,20+len(paths)*10)
@@ -224,13 +260,27 @@ def ocr_text(ctx, picture):
                 ctx.checkpoint()
                 if time.monotonic()>deadline:raise CollectionError('상세 이미지 OCR 검사 시간 초과')
                 try:
-                    output,error=process.communicate(timeout=.2)
-                    break
+                    output,error=process.communicate(timeout=.2);break
                 except subprocess.TimeoutExpired:pass
             if process.returncode:raise CollectionError('Windows 한국어 OCR 검사 실행 실패')
         finally:
             if process.poll() is None:process.kill();process.communicate()
-    return output
+    try:
+        tiles=[json.loads(line) for line in output.splitlines() if line.strip()]
+        if len(tiles)!=len(owners):raise ValueError('OCR tile count mismatch')
+        results=['' for _ in pictures]
+        for owner,tile in zip(owners,tiles):
+            if 'error' in tile:results[owner]=CollectionError('OCR 이미지 검사 실패: '+tile['error'])
+            elif not isinstance(results[owner],Exception):results[owner]+=tile['text']+'\n'
+        return results
+    except (ValueError,KeyError,TypeError) as exc:
+        raise CollectionError('OCR 결과 형식 확인 실패') from exc
+
+
+def ocr_text(ctx,picture):
+    result=ocr_many(ctx,[picture])[0]
+    if isinstance(result,Exception):raise result
+    return result
 
 
 
@@ -298,18 +348,63 @@ def banner_text(text):
     return bool(SELLER_BANNER.search(re.sub(r'[\s·ㆍ•/|,:：_-]+','',text)))
 
 
+class DownloadContext:
+    """Downloads never call the SDK from worker threads."""
+    def checkpoint(self):pass
+    def log(self,*args):pass
+
+
+def prefetch_inspected(ctx,urls,cache):
+    urls=[u for u in dict.fromkeys(urls) if u not in cache]
+    texts=getattr(ctx,'_benetton_ocr_cache',None)
+    if texts is None:texts={};ctx._benetton_ocr_cache=texts
+    for offset in range(0,len(urls),4):
+        batch=urls[offset:offset+4];ctx.checkpoint()
+        pool=ThreadPoolExecutor(max_workers=4)
+        futures={url:pool.submit(image_get,DownloadContext(),url) for url in batch}
+        try:
+            while not all(f.done() for f in futures.values()):
+                ctx.checkpoint();time.sleep(.05)
+            images={}
+            for url,future in futures.items():
+                try:images[url]=future.result()
+                except (CollectionError,OSError) as exc:cache[url]=exc
+        finally:
+            pool.shutdown(wait=False,cancel_futures=True)
+        # Byte-identical content at different gallery URLs is inspected only once.
+        pending={}
+        for url,image in images.items():
+            digest=image.info.get('_content_sha256') or hashlib.sha256(image.tobytes()).hexdigest()
+            if digest not in texts:pending.setdefault(digest,image)
+        if pending:
+            try:results=ocr_many(ctx,list(pending.values()))
+            except (CollectionError,OSError,subprocess.SubprocessError) as exc:results=[exc]*len(pending)
+            for digest,text in zip(pending,results):
+                # Do not memoize transient inspection failures across later URLs.
+                if not isinstance(text,Exception):texts[digest]=text
+            failures={digest:text for digest,text in zip(pending,results) if isinstance(text,Exception)}
+        else:failures={}
+        for url,image in images.items():
+            digest=image.info.get('_content_sha256') or hashlib.sha256(image.tobytes()).hexdigest()
+            cache[url]=failures[digest] if digest in failures else (None,image,texts[digest])
+        ctx.checkpoint()
+        ctx.log('이미지 병렬 다운로드·묶음 OCR 완료: '+str(min(offset+4,len(urls)))+'/'+str(len(urls)),'INFO')
+
+
 def inspected(ctx,url,cache):
-    if url not in cache:
-        image=image_get(ctx,url)
-        # Inspect every tile; notices embedded below a photograph also fail.
-        text=ocr_text(ctx,image)
-        cache[url]=(None,image,text)
-    return cache[url]
+    if url not in cache:prefetch_inspected(ctx,[url],cache)
+    result=cache[url]
+    if isinstance(result,Exception):raise result
+    return result
 
 
 def details(ctx,info,cache):
     doc=BeautifulSoup(info.get('productDesc',{}).get('prdDescContClob',''),'html.parser')
-    parts=[];seen=set()
+    parts=[];seen=set();urls=[]
+    for node in doc.select('img[src]'):
+        try:urls.append(asset_url(node['src']))
+        except CollectionError:continue
+    prefetch_inspected(ctx,urls,cache)
     for node in doc.select('img[src]'):
         ctx.checkpoint()
         try:
@@ -360,6 +455,8 @@ def crawl(ctx):
             if not studio or banner_text(text):ctx.log('대표컷 조건 미달 상품 제외: '+number+' / '+reason,'INFO');continue
             colors=palette(info,ctx.enabled('size'))
             shots=[]
+            gallery_urls=[asset_url(value) for key,value in images.items() if value and (key=='basicExtNm' or re.fullmatch(r'add\d+ExtNm',key))]
+            prefetch_inspected(ctx,gallery_urls,cache)
             for key,value in images.items():
                 if not (key=='basicExtNm' or re.fullmatch(r'add\d+ExtNm',key)) or not value:continue
                 url=asset_url(value);_,im,words=inspected(ctx,url,cache)
