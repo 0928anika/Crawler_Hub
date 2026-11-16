@@ -29,6 +29,12 @@ def fetch(ctx,url,payload=None):
     return (FIX/('BK.html' if pid.endswith('67806') else 'BG.html')).read_bytes()
 
 class Tests(unittest.TestCase):
+    def test_registered_guide_can_validate_ui_input(self):
+        from storage import validate_input
+        from registry import get_brand
+        result,_,_=validate_input(dict(brand='benetton_official',codes='BACTF2661',selected=['main_image']),get_brand('benetton_official'))
+        self.assertTrue(result['valid']);self.assertTrue(result['notice'])
+
     def test_public_search_exact_model_and_brand_only(self):
         result=json.loads((FIX/'search.json').read_bytes())
         other=dict(result['result'][0],productcode='999',prodcode='BACTF26610')

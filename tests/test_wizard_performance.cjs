@@ -4,7 +4,7 @@ const part=source.slice(source.indexOf('async function nextStep()'),source.index
 (async()=>{
  let validations=0,posts=0,release;
  const button={disabled:false,textContent:''};
- const context={S:{step:2,validation:null},$:()=>button,brand:()=>({available:true}),renderWizard:()=>{},active:()=>false,toast:()=>{},inputData:()=>({}),resetNewForm:()=>{},openJob:async()=>{},
+ const context={S:{step:2,validation:null},$:()=>button,brand:()=>({available:true}),renderWizard:()=>{},active:()=>false,brandBlockReason:()=>'',refreshConcurrency:async()=>{},toast:()=>{},inputData:()=>({}),resetNewForm:()=>{},openJob:async()=>{},
  validate:async()=>{validations++;await new Promise(r=>release=r);return context.S.validation={valid:true}},
  api:async(path)=>{if(path==='/api/jobs'){posts++;throw Error('simulated server error')}return {}}};
  vm.createContext(context);vm.runInContext(part,context);

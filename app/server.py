@@ -10,10 +10,11 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse,parse_qs
-from registry import ROOT,brands,get_brand
+from registry import ROOT,brands,get_brand,brand_root
 from schema import preview,FIELDS,REQUIRED,OPTIONAL,review_result
 from storage import HOME,VERSION,validate_local,settings,save_settings,validate_input
 from tasks import Job,ACTIVE,safe_cell,history
+from execution_limits import MAX_JOBS,resource_profile,blocked_reason
 import admin
 import color_mapping
 import local_images
@@ -24,6 +25,44 @@ from local_paths import open_local_path
 TOKEN=secrets.token_urlsafe(32)
 JOBS={}
 LOCK=threading.RLock()
+
+def active_jobs():
+    result=[]
+    for job in JOBS.values():
+        if job.state not in ACTIVE:continue
+        resources=job_resources(job)
+        result.append(dict(id=job.id,name=job.name,brand_id=job.brand['id'],brand=job.brand['name'],state=job.state,resources=resources))
+    return result
+
+
+def job_resources(job):
+    saved=job.brand.get('execution_resources')
+    engine=getattr(job,'engine_root',None);script=getattr(job,'engine_script',None)
+    if engine and script:
+        path=(Path(engine)/script).resolve()
+        if Path(engine).resolve() in path.parents and path.is_file():return resource_profile(path)
+    if saved is not None:return saved
+    return resource_profile(brand_root()/job.brand.get('script',''))
+
+
+def concurrency_snapshot(catalog=None):
+    with LOCK:
+        active=active_jobs()
+        return dict(limit=MAX_JOBS,active=[{k:v for k,v in j.items() if k!='resources'} for j in active],
+            availability={b['id']:dict(allowed=not (reason:=blocked_reason(b['execution_resources'],active)),reason=reason) for b in (catalog if catalog is not None else brands())})
+
+
+def check_start(resources,exclude_id=None):
+    reason=blocked_reason(resources,active_jobs(),exclude_id)
+    if reason:raise ValueError(reason)
+
+
+def launch_job(job):
+    job.thread=threading.Thread(target=job.run,daemon=True)
+    try:job.thread.start()
+    except Exception:
+        job.state='error';job.checkpoint();raise
+
 
 def job_for(jid):
     if not re.fullmatch('[a-f0-9]{32}',jid):raise ValueError('잘못된 작업 ID입니다.')
@@ -82,7 +121,10 @@ class Handler(BaseHTTPRequestHandler):
     def get(self):
         url=urlparse(self.path);path=url.path;query=parse_qs(url.query)
         if path=='/':return self.send((ROOT/'static/index.html').read_bytes().replace(b'__TOKEN__',TOKEN.encode()),'text/html; charset=utf-8')
-        if path=='/api/brands':return self.send(dict(brands=brands(),directory=str(HOME/'jobs'),version=VERSION,fields=FIELDS,required=REQUIRED,optional=OPTIONAL))
+        if path=='/api/brands':
+            catalog=brands()
+            return self.send(dict(brands=catalog,concurrency=concurrency_snapshot(catalog),directory=str(HOME/'jobs'),version=VERSION,fields=FIELDS,required=REQUIRED,optional=OPTIONAL))
+        if path=='/api/concurrency':return self.send(concurrency_snapshot())
         if path=='/api/active':
             job=next((j for j in JOBS.values() if j.state in ACTIVE),None)
             return self.send(job.summary() if job else None)
@@ -179,15 +221,14 @@ class Handler(BaseHTTPRequestHandler):
                 result,_,_=validate_input(data,get_brand(data['brand']));return self.send(result)
             if self.path=='/api/jobs':
                 with LOCK:
-                    if any(j.state in ACTIVE for j in JOBS.values()):raise ValueError('현재 작업을 먼저 중지하거나 완료해주세요.')
-                    brand=get_brand(data['brand']);result,headers,rows=validate_input(data,brand)
+                    brand=get_brand(data['brand']);check_start(brand['execution_resources'])
+                    result,headers,rows=validate_input(data,brand)
                     if brand.get('mapping_mode')=='manual' and not any(k in result['selected'] for k in ('main_image','additional_images')):raise ValueError('수동 색상 매핑에는 대표 또는 추가이미지 수집을 선택하세요.')
                     if not result['valid']:raise ValueError('입력 검증 실패: '+', '.join(result['missing_columns'])+' / '+str(result['invalid_count'])+'개 입력 오류')
                     if not brand['available']:raise ValueError('브랜드 크롤러 파일이 없습니다.')
                     job=Job(brand,headers,rows,False,result['selected'],data.get('name'));JOBS[job.id]=job
                     save_settings(dict(selected=data.get('selected',result['selected']),last_brand=brand['id']))
-                    job.thread=threading.Thread(target=job.run,daemon=True)
-                    job.thread.start()
+                    launch_job(job)
                 return self.send({'id':job.id})
             parts=self.path.strip('/').split('/')
             if len(parts)==5 and parts[:2]==['api','jobs'] and parts[3]=='mapping':
@@ -200,13 +241,15 @@ class Handler(BaseHTTPRequestHandler):
             job=job_for(parts[2]);action=parts[3]
             if action in ('continue','retry-failed'):
                 with LOCK:
-                    if any(j.state in ACTIVE for j in JOBS.values()):raise ValueError('진행 중인 작업을 먼저 완료하거나 중지해주세요.')
+                    check_start(job_resources(job),exclude_id=job.id)
                     job.prepare_rerun(action)
-                    job.thread=threading.Thread(target=job.run,daemon=True);job.thread.start()
+                    launch_job(job)
             elif action=='pause' and job.state=='running':
                 job.control.write_text('pause',encoding='utf-8');job.state='pausing';job.checkpoint()
             elif action=='resume' and job.state in ('paused','pausing'):
-                job.control.write_text('run',encoding='utf-8');job.state='running';job.checkpoint()
+                with LOCK:
+                    check_start(job_resources(job),exclude_id=job.id)
+                    job.control.write_text('run',encoding='utf-8');job.state='running';job.checkpoint()
             elif action=='stop' and job.state in ('running','paused','pausing'):
                 job.state='stopping';job.stop.set();job.control.write_text('run',encoding='utf-8');job.kill()
             elif action=='save':job.save()

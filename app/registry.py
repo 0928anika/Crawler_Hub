@@ -6,6 +6,7 @@ import copy
 import threading
 from schema import FIELDS, field_for
 from brand_catalog import definitions, script_path
+from execution_limits import resource_profile
 
 ROOT=Path(__file__).resolve().parent
 
@@ -21,6 +22,7 @@ def _load_brands(source_root=None):
     result=[]
     for definition in definitions(folder):
         b=dict(definition);path=script_path(folder,b)
+        b['execution_resources']=resource_profile(path)
         b['available']=path.is_file();b['column_fields']={h:field_for(h) for h in b['output_headers']}
         if b['available'] and b.get('code_hash'):
             b['available']=hashlib.sha256(path.read_bytes()).hexdigest()==b['code_hash']
