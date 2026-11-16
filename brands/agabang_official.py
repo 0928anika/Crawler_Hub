@@ -17,7 +17,7 @@ from crawler_rules import check_public_image, validate_gallery_image, gallery_sl
 
 SITE = 'https://agabangmall.com'
 HOSTS = ('agabangmall.com', 'www.agabangmall.com')
-REVISION = '2026-11-09-agabang-4'
+REVISION = '2026-11-16-agabang-5'
 POLICY = {'checked_on':'2026-11-09', 'source':'https://marketplace.coupang.com/mba/listing',
           'route':'WING 웹/엑셀', 'min_side':500, 'max_bytes':10000000,
           'formats':['JPEG','PNG','WEBP'], 'max_aspect':1.8}
@@ -180,7 +180,9 @@ def gallery_urls(doc,final):
     for image in doc.select('.imgArea img'):
         src=image.get('ec-data-src') or image.get('data-src') or image.get('src') or ''
         url=urljoin(final,src);path=urlsplit(url).path
-        if urlsplit(url).hostname!='ecimg.cafe24img.com' or not re.search(r'/web/product/(?:big/|extra/big/)',path):continue
+        host=urlsplit(url).hostname
+        official_cdn=host=='ecimg.cafe24img.com' or (host=='cafe24img.poxo.com' and path.startswith('/ecimg.cafe24img.com/'))
+        if not official_cdn or not re.search(r'/web/product/(?:big/|extra/big/)',path):continue
         if NEGATIVE.search(path+' '+str(image.get('alt',''))):continue
         if url not in urls:urls.append(url)
     return urls
