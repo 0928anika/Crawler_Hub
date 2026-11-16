@@ -119,7 +119,7 @@
       "action": "rename",
       "source_json": "usall_eland_studio.json",
       "source_python": "usall_eland_studio.py",
-      "sha256": "6a215deaf47d1b4ab55ac5cd36531edb27c71c05bc486b61af139f862667def3",
+      "sha256": "107a2722de60a77bda923c39b0263e980df788ba6acf6acb9aeefd501f01d9cf",
       "previous_id": "usall_eland"
     },
     {

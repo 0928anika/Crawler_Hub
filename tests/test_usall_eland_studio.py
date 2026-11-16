@@ -3,6 +3,7 @@ from pathlib import Path
 from unittest.mock import patch
 ROOT=Path(__file__).resolve().parents[1];sys.path[:0]=[str(ROOT/'app'),str(ROOT/'brands')]
 import usall_eland_studio as c
+STUDIO_PRODUCT=c.studio_product
 URL=c.SITE+'/i/item?itemNo=2610598080&lowerVendNo='+c.VENDOR
 class Context:
  product_code='ULTM26N02'
@@ -14,7 +15,9 @@ class Context:
  def fail_item(self,m):self.errors.append(m)
  def emit_unmapped(self,r,colors,url,shared_detail_html=''):self.rows.append((r,colors,url))
 class Tests(unittest.TestCase):
- def setUp(self):self.data=json.loads((ROOT/'tests/fixtures/usall/ULTM26N02.json').read_text(encoding='utf-8'))
+ def setUp(self):
+  primary=patch.object(c,'studio_product',return_value=True);primary.start();self.addCleanup(primary.stop)
+  self.data=json.loads((ROOT/'tests/fixtures/usall/ULTM26N02.json').read_text(encoding='utf-8'))
  def page(self,data=None):
   source='<script>const itemDetailJson = '+json.dumps({'itemDetail':self.data if data is None else data})+';</script>'
   return c.BeautifulSoup(source,'html.parser'),URL
@@ -122,4 +125,35 @@ class Tests(unittest.TestCase):
    d=copy.deepcopy(self.data);d['itemMain']['lowerVendNo']='SELLER'+str(i);data.append((d,links[i]))
   with patch.object(c,'search',return_value=links),patch.object(c,'product',side_effect=data),patch.object(c,'options',return_value=[dict(itemOptionTcode='10',itemOptionName='05 GREY')]),patch.object(c,'gallery',side_effect=[[('https://item.elandrs.com/'+str(i)+'.jpg',str(i))] for i in range(3)]),patch.object(c,'detail',side_effect=[[],[('photo','<img src="only-second.jpg">')],[('photo','<img src="third.jpg">')]]) as detail:c.crawl(ctx)
   self.assertEqual(len(ctx.rows),3);self.assertEqual(detail.call_count,2);self.assertTrue(all(r[0]['product_url']==links[1] and r[0]['detail_page']=='<img src="only-second.jpg">' for r in ctx.rows))
+ def test_real_brick_wall_photos_rejected_and_studio_preserved(self):
+  from PIL import Image
+  folder=ROOT/'tests/fixtures/usall'
+  for name in ['ULJM26T02_cover','ULJM26T02_brick','ULJM26T02_hanger']:
+   with Image.open(folder/(name+'.jpg')) as im:self.assertFalse(c.studio_background(im)[0],name)
+  for name in ['ULMT24855_studio','ULTM26N02_studio']:
+   with Image.open(folder/(name+'.jpg')) as im:self.assertTrue(c.studio_background(im)[0],name)
+ def test_nonstudio_primary_rejects_whole_seller_before_options_and_detail(self):
+  data=json.loads((ROOT/'tests/fixtures/usall/ULJM26T02.json').read_text(encoding='utf-8'));ctx=Context();ctx.product_code='ULJM26T02'
+  url=c.SITE+'/i/item?itemNo=2610611503&lowerVendNo=LV19017855';raw=(ROOT/'tests/fixtures/usall/ULJM26T02_cover.jpg').read_bytes()
+  with patch.object(c,'search',return_value=[url]),patch.object(c,'product',return_value=(data,url)),patch.object(c,'studio_product',side_effect=STUDIO_PRODUCT),patch.object(c,'fetch',return_value=(raw,url,'image/jpeg')),patch.object(c,'options') as options,patch.object(c,'gallery') as gallery,patch.object(c,'detail') as detail:
+   with self.assertRaisesRegex(c.CrawlError,'스튜디오컷 없음'):c.crawl(ctx)
+  options.assert_not_called();gallery.assert_not_called();detail.assert_not_called();self.assertFalse(ctx.rows);self.assertEqual(len(ctx.errors),1)
+ def test_search_zero_has_separate_failure_reason(self):
+  ctx=Context()
+  with patch.object(c,'search',return_value=[]):
+   with self.assertRaisesRegex(c.CrawlError,'품번 검색 결과 없음'):c.crawl(ctx)
+  self.assertEqual(len(ctx.errors),1);self.assertNotIn('스튜디오컷 없음',ctx.errors[0])
+ def test_search_hits_but_no_exact_model_has_separate_failure_reason(self):
+  ctx=Context()
+  with patch.object(c,'search',return_value=[URL]),patch.object(c,'product',return_value=None):
+   with self.assertRaisesRegex(c.CrawlError,'정확한 품번 일치 상품 없음'):c.crawl(ctx)
+  self.assertNotIn('검색 0건',ctx.errors[0])
+ def test_primary_download_error_is_not_nonstudio_failure(self):
+  with patch.object(c,'image_info',return_value=None):
+   with self.assertRaisesRegex(c.CrawlError,'상품 사진 조회 실패'):STUDIO_PRODUCT(Context(),self.data['itemMain'],{})
+ def test_selected_detail_empty_is_failure_not_silent_success(self):
+  ctx=Context();ctx.enabled=lambda k:k in ('main_image','detail_page')
+  with patch.object(c,'search',return_value=[URL]),patch.object(c,'product',return_value=(self.data,URL)),patch.object(c,'options',return_value=[dict(itemOptionTcode='10',itemOptionName='05 GREY')]),patch.object(c,'gallery',return_value=[('https://item.elandrs.com/photo.jpg','x')]),patch.object(c,'detail',return_value=[]):
+   with self.assertRaisesRegex(c.CrawlError,'상세페이지 수집 실패'):c.crawl(ctx)
+  self.assertEqual(len(ctx.errors),1);self.assertNotIn('스튜디오컷 없음',ctx.errors[0])
 if __name__=='__main__':unittest.main()

@@ -17,7 +17,7 @@ from urllib.parse import parse_qs, urlencode, urljoin, urlsplit, unquote
 from urllib.request import Request, build_opener
 
 from bs4 import BeautifulSoup
-from PIL import Image, ImageStat, UnidentifiedImageError
+from PIL import Image, ImageStat, ImageChops, ImageFilter, UnidentifiedImageError
 
 SITE = 'https://www.elandmall.co.kr'
 VENDOR = 'LV17008492'
@@ -74,7 +74,7 @@ def search(ctx, code):
     links, seen, signatures = [], set(), set()
     page_no = 1
     while page_no <= 30:
-        ctx.stage(f'지정 판매자 상품 검색 {page_no}페이지')
+        ctx.stage(f'이랜드몰 품번 검색 {page_no}페이지')
         soup, _ = page(ctx, SITE + '/s/srch?' + urlencode(
             {'q': code, 'size': 100, 'page': page_no, 'from': (page_no - 1) * 100}))
         total_tag = soup.select_one('[data-searchresult-total]')
@@ -287,8 +287,20 @@ def studio_background(image):
         if len(matched)>=10 and all(matched.count(side)>=2 for side in range(4)):
             border_ok=True
     foreground=ImageStat.Stat(im.crop((30,35,170,233)))
-    accepted=(best>=7 or border_ok) and max(foreground.stddev)>=6
-    return accepted,'배경 패치 %s/10, 외곽 테두리 %s/12(4방향 확인)'%(best,border_best)
+    # Pale brick/tile walls have similar average colors but repeated fine edges.
+    # Require genuinely smooth matching background patches, not just matching means.
+    fine=image.convert('RGB').resize((400,400));gray=fine.convert('L')
+    texture=ImageChops.difference(gray,gray.filter(ImageFilter.GaussianBlur(2)))
+    clean=[]
+    boxes=[(.02,.05,.10,.15),(.90,.05,.98,.15),(.02,.85,.10,.95),(.90,.85,.98,.95)]
+    boxes += [(x,y,x+.08,y+.1) for y in (.20,.45,.70) for x in (.02,.90)]
+    for x1,y1,x2,y2 in boxes:
+        box=(int(x1*400),int(y1*400),int(x2*400),int(y2*400))
+        stat=ImageStat.Stat(fine.crop(box))
+        if max(stat.stddev)<=14 and ImageStat.Stat(texture.crop(box)).mean[0]<=1.0:clean.append(stat.mean)
+    smooth=max((sum(sum((a-b)**2 for a,b in zip(mean,center))<=35**2 for mean in clean) for center in clean),default=0)
+    accepted=(best>=7 or border_ok) and smooth>=5 and max(foreground.stddev)>=6
+    return accepted,'배경 패치 %s/10, 외곽 %s/12, 무늬 없는 배경 %s/10(필요5)'%(best,border_best,smooth)
 
 
 def image_info(ctx, url, cache):
@@ -312,6 +324,16 @@ def image_info(ctx, url, cache):
     cache[url] = info
     return info
 
+
+
+def studio_product(ctx,main,cache):
+    primary=next((row for row in main.get('itemImage',[]) if str(row.get('imageDcode'))=='010' and row.get('imagePath')),None)
+    if primary is None:raise CrawlError('상품 사진 조회 실패: 대표사진 주소 없음')
+    url=urljoin('https://item.elandrs.com/',primary['imagePath']);info=image_info(ctx,url,cache)
+    if not info:raise CrawlError('상품 사진 조회 실패: 대표사진 접근/해독 불가 / '+url)
+    passed=info[6] and not info[5]
+    if not passed:ctx.log('스튜디오컷 조건 미달 대표사진: '+url,'INFO')
+    return passed
 
 def gallery(ctx, main, cache):
     urls = []
@@ -488,11 +510,13 @@ def crawl(ctx):
     errors, products, colors, candidates, sizes, prices, categories = [], [], [], [], [], [], []
     cache, pieces = {}, []
     detail_source = None
+    matched = rejected = 0
     def failed(message):
         errors.append(message)
         ctx.fail_item(message)
     try:
         links = search(ctx, code)
+        if not links:raise CrawlError('품번 검색 결과 없음: '+code+' / 이랜드몰 검색 0건')
     except CrawlError as e:
         failed(str(e))
         raise
@@ -505,12 +529,20 @@ def crawl(ctx):
                 continue
             d, final = found
             main = d['itemMain']
+            matched += 1
+            if str(main['lowerVendNo']) != VENDOR and not studio_product(ctx,main,cache):
+                rejected += 1
+                ctx.log('스튜디오컷 없음(상품 제외): '+code+' / '+final,'INFO')
+                continue
             opts = options(ctx, main)
             cs = color_rows(opts)
             products.append((main, final))
             photos=gallery(ctx, main, cache)
             if not photos:
                 products.pop()
+                rejected += 1
+                if any(cache[url] is None for row in main.get('itemImage',[]) if row.get('imagePath') for url in [urljoin('https://item.elandrs.com/',row['imagePath'])] if url in cache):
+                    failed('상품 사진 조회 실패: '+code+' / 통과 사진이 없고 이미지 접근/해독 오류 발생 / '+final)
                 ctx.log('통과한 스튜디오 상품 사진 없음: '+url,'INFO')
                 continue
             candidates.extend(photos)
@@ -544,7 +576,10 @@ def crawl(ctx):
             message=str(e)
             failed(message if url in message else message + ': ' + url)
     if (not products or not colors) and not errors:
-        failed('정확한 유솔 품번에 해당하는 스튜디오 상품/색상 후보 없음')
+        if matched:
+            failed('스튜디오컷 없음: '+code+' / 정확한 품번 상품 '+str(matched)+'개 조회, 대표/개별 사진 조건 미달 '+str(rejected)+'개')
+        else:
+            failed('정확한 품번 일치 상품 없음: '+code+' / 검색 결과 '+str(len(links))+'개가 있으나 브랜드·품번 검증 불일치')
     unique, hashes = [], set()
     for url, digest in candidates:
         ctx.checkpoint()
@@ -578,7 +613,7 @@ def crawl(ctx):
                 body = list(dict.fromkeys(markup for _, markup in pieces))
                 markup = ''.join(body)
                 if not markup:
-                    ctx.log('셀러 배너를 제외한 안전한 상세 원본 없음: 상세 빈칸으로 사진 수집 계속','WARNING')
+                    failed('상세페이지 수집 실패: '+code+' / 스튜디오컷 '+str(len(unique))+'장은 있으나 배너를 제외한 안전한 상세 원본을 수집하지 못함')
                 if len(markup.encode('utf-16-le')) // 2 > 32767:
                     raise CrawlError('상세 HTML이 Excel 셀 32767자 한도 초과')
                 record['detail_page'] = markup

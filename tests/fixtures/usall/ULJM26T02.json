@@ -1,0 +1,685 @@
+{
+  "itemMain": {
+    "brandName": "유솔",
+    "brandNo": "1690000401",
+    "flagName": "",
+    "flagImgPath": "",
+    "itemImage": [
+      {
+        "imageDcode": "010",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2026-10-13/52f52e34-a6c4-4adf-9367-266c3a4ddf95.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2026-10-13/295a0175-5c7a-48f4-a01c-08ebaa5bc7ed.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2026-10-13/5ae2feec-3477-4a5b-a9ab-71006c3dca68.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2026-10-13/1b048a05-a253-43cb-acb4-f186a8ca84e6.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2026-10-13/d31ea356-64b4-470a-a990-59c6116802f6.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2026-10-13/2c193c2c-7c06-4ee3-bc59-df772fa42677.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2026-10-13/df2470be-4d3a-45eb-812b-95d81e54c12c.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2026-10-13/6fa88764-ed35-4144-a6be-33e36c5fe628.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/item/2026-10-13/15846483-51de-45cb-b53f-34943047aefa.jpg",
+        "imageName": ""
+      }
+    ],
+    "videoPathObj": {
+      "itemVideoPlatformDcode": "",
+      "imagePath": "",
+      "imageDcode": ""
+    },
+    "itemNo": "2610611503",
+    "itemTcode": "10",
+    "lowerVendNo": "LV19017855",
+    "purchaseTipCon": "",
+    "iconName": [
+      "무료배송"
+    ],
+    "itemName": "[유솔] 기모쭈리 아플리케 후드집업 ULJM26T02_인천점",
+    "briefItemName": "[유솔] 기모쭈리 아플리케 ",
+    "addSearchwordCon": "ULJM26T02,아플리케 후드집업,주니어 기모 후드집업,여아 기모후드집업,초등학생 기모 후드집업,유솔 기모후드집업,주니어 후드집업,유솔 후드집업,아동 후드집업",
+    "depth4StandardCategoryName": "집업류",
+    "originMarkingYn": "",
+    "wishYn": "N",
+    "freeshipYn": "Y",
+    "bestYn": "N",
+    "sellprice": 49900,
+    "orgSellprice": 49900,
+    "manualApplyCouponPossYn": "Y",
+    "immeDcApplyYn": "Y",
+    "immeDcPrice": 47400,
+    "applyImmeDcProm": {
+      "promNo": "2611122159",
+      "promName": "11월 2차_즉시할인_5%",
+      "benefitValueDcode": "10",
+      "benefitValue": 5,
+      "promStartTs": "2026-11-16 00:00:00",
+      "promEndTs": "2026-11-29 23:59:59"
+    },
+    "doubleCpApplyPsbYn": "N",
+    "maxmembersApplyYn": "N",
+    "maxmembersApplyItemYn": "N",
+    "maxPoint": 499,
+    "maxDcPrice": 47400,
+    "finalDcPrice": 47400,
+    "appTotalItemDcPrice": 49900,
+    "applyDoubleCpProm": {},
+    "applyMplusNProm": {},
+    "zeroIntInsBenefitImagePath": "",
+    "freeInterestCardBenefit": [
+      {
+        "cardcoDcode": "01",
+        "installmentMonthsCount": "2,3,4,5",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/34ad669d-878b-4380-a42d-e30c7396f975.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "02",
+        "installmentMonthsCount": "2,3",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/a68c2797-d298-46af-82d4-583474f7564e.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "03",
+        "installmentMonthsCount": "2,3,4,5",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/c9f328c3-9a14-4313-86bc-f91fc3a5b92f.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "04",
+        "installmentMonthsCount": "2,3",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "",
+        "cardcoCiImagePath": "r/image/display/2024-04-29/36ce6a2b-4b0a-459c-9b10-3f4dbc495da0.png",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "05",
+        "installmentMonthsCount": "2,3",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/cb564e96-d313-4e98-be1c-cd6af35834ea.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "08",
+        "installmentMonthsCount": "2,3",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/3a674a25-912e-4bf4-8ff7-1be035b71d4f.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "09",
+        "installmentMonthsCount": "2,3",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/b952cafb-802f-4177-96d8-c986aa62a2fc.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "14",
+        "installmentMonthsCount": "2,3,4,5",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "",
+        "cardcoCiImagePath": "r/image/display/2023-02-21/d66b07bf-390f-4d23-b2eb-cb305acbe88f.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "15",
+        "installmentMonthsCount": "2,3,4,5,6",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/9774af9a-671f-4986-a31e-ab82306415b2.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "17",
+        "installmentMonthsCount": "2,3,4,5",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/36d8bdf6-fe4a-4cca-b46c-37f58003354f.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "18",
+        "installmentMonthsCount": "2,3",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/a01b7848-8e11-477b-a236-da142f229b3f.gif",
+        "totalDay": "29"
+      }
+    ],
+    "partInterestCardBenefit": [
+      {
+        "cardcoDcode": "01",
+        "installmentMonthsCount": "6",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~3회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/34ad669d-878b-4380-a42d-e30c7396f975.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "01",
+        "installmentMonthsCount": "10",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~5회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/34ad669d-878b-4380-a42d-e30c7396f975.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "01",
+        "installmentMonthsCount": "12",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~6회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/34ad669d-878b-4380-a42d-e30c7396f975.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "02",
+        "installmentMonthsCount": "6",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~3회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/a68c2797-d298-46af-82d4-583474f7564e.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "02",
+        "installmentMonthsCount": "10,12",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~5회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/a68c2797-d298-46af-82d4-583474f7564e.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "02",
+        "installmentMonthsCount": "18",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~7회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/a68c2797-d298-46af-82d4-583474f7564e.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "03",
+        "installmentMonthsCount": "6",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~3회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/c9f328c3-9a14-4313-86bc-f91fc3a5b92f.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "03",
+        "installmentMonthsCount": "10",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~4회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/c9f328c3-9a14-4313-86bc-f91fc3a5b92f.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "03",
+        "installmentMonthsCount": "12",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~5회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/c9f328c3-9a14-4313-86bc-f91fc3a5b92f.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "03",
+        "installmentMonthsCount": "18",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~8회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/c9f328c3-9a14-4313-86bc-f91fc3a5b92f.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "04",
+        "installmentMonthsCount": "7",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~3회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2024-04-29/36ce6a2b-4b0a-459c-9b10-3f4dbc495da0.png",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "04",
+        "installmentMonthsCount": "11",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~5회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2024-04-29/36ce6a2b-4b0a-459c-9b10-3f4dbc495da0.png",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "04",
+        "installmentMonthsCount": "23",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~10회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2024-04-29/36ce6a2b-4b0a-459c-9b10-3f4dbc495da0.png",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "05",
+        "installmentMonthsCount": "7",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~3회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/cb564e96-d313-4e98-be1c-cd6af35834ea.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "05",
+        "installmentMonthsCount": "9",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~4회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/cb564e96-d313-4e98-be1c-cd6af35834ea.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "05",
+        "installmentMonthsCount": "11",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~5회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/cb564e96-d313-4e98-be1c-cd6af35834ea.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "05",
+        "installmentMonthsCount": "23",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~10회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/cb564e96-d313-4e98-be1c-cd6af35834ea.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "08",
+        "installmentMonthsCount": "8",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~4회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/3a674a25-912e-4bf4-8ff7-1be035b71d4f.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "08",
+        "installmentMonthsCount": "10",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~5회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/3a674a25-912e-4bf4-8ff7-1be035b71d4f.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "08",
+        "installmentMonthsCount": "12",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~6회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/3a674a25-912e-4bf4-8ff7-1be035b71d4f.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "14",
+        "installmentMonthsCount": "10",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~5회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2023-02-21/d66b07bf-390f-4d23-b2eb-cb305acbe88f.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "14",
+        "installmentMonthsCount": "12",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~6회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2023-02-21/d66b07bf-390f-4d23-b2eb-cb305acbe88f.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "15",
+        "installmentMonthsCount": "7,8,9,10",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~3회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/9774af9a-671f-4986-a31e-ab82306415b2.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "15",
+        "installmentMonthsCount": "12",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~4회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/9774af9a-671f-4986-a31e-ab82306415b2.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "15",
+        "installmentMonthsCount": "18",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~5회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/9774af9a-671f-4986-a31e-ab82306415b2.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "15",
+        "installmentMonthsCount": "24",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~6회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/9774af9a-671f-4986-a31e-ab82306415b2.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "18",
+        "installmentMonthsCount": "4,5,6,7,8,9",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/a01b7848-8e11-477b-a236-da142f229b3f.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "18",
+        "installmentMonthsCount": "10,11,12",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~2회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/a01b7848-8e11-477b-a236-da142f229b3f.gif",
+        "totalDay": "29"
+      }
+    ],
+    "cardCoDiscountCoupon": [],
+    "paymentBenefits": [
+      {
+        "payMeanBenefitNo": "261100000001053",
+        "evtNo": "E261061840",
+        "payMeanKcode": "73",
+        "benefitCon": "적립프로모션",
+        "alliancecoCon": "네이버페이",
+        "benefitValue": "5,000",
+        "benefitValueDcode": "원",
+        "benefitFcode": "적립",
+        "miniOrdAmount": "200000",
+        "payMean": "네이버페이"
+      }
+    ],
+    "discountRate": 5,
+    "ratioAmountDcode": "",
+    "ratioAmountValue": 0,
+    "purchasePoint": 47,
+    "applyStartTs": "2026-11-05 06:45:03",
+    "applyEndTs": "2999-12-31 23:59:59",
+    "itemCompositionDcode": "10",
+    "incomeTaxDeductionYn": "N",
+    "shipcostInfo": "무료배송",
+    "codYn": "N",
+    "itemVendLeadtimeInfo": "2026.11.19(목) 이내",
+    "avgDispatchDayCount": "0.5",
+    "overseasDeliveryYn": "N",
+    "courierDeliveryYn": "Y",
+    "ordMakeItemYn": "N",
+    "installItemYn": "N",
+    "willcallPossYn": "N",
+    "presentgivePossYn": "N",
+    "purchasePossMiniQty": 1,
+    "onepPurchasePossMaxQty": "",
+    "oncePurchasePossMaxQty": "",
+    "memberItemOrderQty": 0,
+    "reservationSellStartTS": "",
+    "reservationSellEndTS": "",
+    "sendStartDt": "",
+    "shipStartDayAllApplyYn": "",
+    "isbnCode": "",
+    "shipcostPayFcode": "10",
+    "shipFcode": "10",
+    "pickupEndTs": "",
+    "kidikidiPickupYn": "N",
+    "pickupAddr": "인천 남동구 구월동\n1465-1번지 뉴코아아울렛인천점 11층 온라인사무실",
+    "immidiatepurchaseYn": "N",
+    "sellStartTs": "2026-10-13 00:00:00",
+    "sellEndTs": "2999-12-31 23:59:59",
+    "sellEndYn": "N",
+    "beforesellDispStartTs": "",
+    "beforesellDispPossNoCountYn": "N",
+    "soldoutYn": "N",
+    "sellPossQty": 23,
+    "reWhsinNotificPossYn": "Y",
+    "itemOptionType": [
+      {
+        "itemOptionTypeInputNo": "1",
+        "itemOptionTypeName": "색상",
+        "itemOptionTcode": "10"
+      },
+      {
+        "itemOptionTypeInputNo": "2",
+        "itemOptionTypeName": "사이즈",
+        "itemOptionTcode": "20"
+      }
+    ],
+    "itemGiftApplyYn": "N",
+    "itemGift": [],
+    "manyUitemYn": "Y",
+    "appointMbrSellYn": "N",
+    "empExclusiveuseSellItemYn": "N",
+    "appointPurcMbrList": [],
+    "lowerVendTcode": "10",
+    "brandCode": "",
+    "jwYn": "N",
+    "modelNo": "ULJM26T02",
+    "depth1StandardCategory": {
+      "depth1StandardCategoryNo": "1600074048",
+      "depth1StandardCategoryName": "유아동 의류"
+    },
+    "compositionItem": [],
+    "sellingpointCon": "",
+    "dispContentsDispEndTs": "",
+    "timeSaleApply": false,
+    "immeDcBenefitValueDcode": "10",
+    "immeDcBenefitValue": 5,
+    "immeDcMaxDcAmount": 100000,
+    "countRepresentPriceY": 0,
+    "strItemNo": "",
+    "strLowerVendNo": "",
+    "moBizNo": "",
+    "mplusNApplyYn": "N",
+    "representItem": ""
+  },
+  "itemDesc": {
+    "itemNo": "2610611503",
+    "itemDescdocumentCon": "&lt;p&gt;\n\t&lt;img alt=&quot;&quot; loading=&quot;lazy&quot; src=&quot;https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/vendor_inventory/f6b1/f9e7996bc785a7816e84baba12ea416fa632444106de156f56018c234191.jpg&quot; width=&quot;100%&quot;&gt;\n&lt;/p&gt;\n\n&lt;p&gt;\n\t&lt;img alt=&quot;&quot; loading=&quot;lazy&quot; src=&quot;https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/vendor_inventory/f61d/2bdd363a9f90417e8527873ea579d690be278fe5e9db1699d5b2690b81dd.png&quot; width=&quot;100%&quot;&gt;\n&lt;/p&gt;\n\n&lt;p&gt;\n\t&lt;img alt=&quot;&quot; loading=&quot;lazy&quot; src=&quot;https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/vendor_inventory/a779/1423bf574fd5db56d697f716dd038feed1d703e2ec0c0317bd6d56d278e0.jpg&quot; width=&quot;100%&quot;&gt;\n&lt;/p&gt;\n\n&lt;p&gt;\n\t&lt;img alt=&quot;&quot; loading=&quot;lazy&quot; src=&quot;https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/vendor_inventory/f353/f2bace8ac88d8b146eda8cc8ff676bacde6af12db49f39f71c38f81b3fa1.jpg&quot; width=&quot;100%&quot;&gt;\n&lt;/p&gt;\n\n&lt;p&gt;\n\t&lt;img alt=&quot;&quot; loading=&quot;lazy&quot; src=&quot;https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/vendor_inventory/8ddb/f5e72cd6ac5573135ecdaf5cb82fc8e415ca8862d2e685f795c9cd9a89bc.jpg&quot; width=&quot;100%&quot;&gt;\n&lt;/p&gt;\n\n&lt;p&gt;\n\t&lt;img alt=&quot;&quot; loading=&quot;lazy&quot; src=&quot;https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/vendor_inventory/9fe5/955e614285cf3892b13c370272a160ef6552dca68084fd6c03c537a153f5.jpg&quot; width=&quot;100%&quot;&gt;\n&lt;/p&gt;\n\n&lt;p&gt;\n\t&lt;img alt=&quot;&quot; loading=&quot;lazy&quot; src=&quot;https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/vendor_inventory/45d8/798e80c3123f0e8d493772e761b5eb4c89bc101a30fb0fae7ec685677e11.jpg&quot; width=&quot;100%&quot;&gt;\n&lt;/p&gt;\n\n&lt;p&gt;\n\t&lt;img alt=&quot;&quot; loading=&quot;lazy&quot; src=&quot;https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/vendor_inventory/76ca/247b4bc48124d166d3a75848842df8c0e210ece991854c1b309515516510.jpg&quot; width=&quot;100%&quot;&gt;\n&lt;/p&gt;\n\n&lt;p&gt;\n\t&lt;img alt=&quot;&quot; loading=&quot;lazy&quot; src=&quot;https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/vendor_inventory/64e5/ad93cac43477f241c3ad3a33a463871722274181379b63e06884baa3291d.jpg&quot; width=&quot;100%&quot;&gt;\n&lt;/p&gt;\n\n&lt;p&gt;\n\t&lt;img alt=&quot;&quot; loading=&quot;lazy&quot; src=&quot;https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/vendor_inventory/c0b2/92a18c52ee6f9d42076c0f0b11dd3a4401ce343ffa5fcbfebb3053781b80.jpg&quot; width=&quot;100%&quot;&gt;\n&lt;/p&gt;\n\n&lt;p&gt;\n\t&lt;img alt=&quot;&quot; loading=&quot;lazy&quot; src=&quot;https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/vendor_inventory/2ab1/f54aa7a8748ea8f2cda2e65ef11479b961b4c8e17e5584c7b382c8a6bdb0.jpg&quot; width=&quot;100%&quot;&gt;\n&lt;/p&gt;\n\n&lt;p&gt;\n\t&lt;img alt=&quot;&quot; loading=&quot;lazy&quot; src=&quot;https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/vendor_inventory/3a66/b793c6ce13e087bbd3a2e93a2ee4f73d337a84c0896d58e0d0e9061d6056.jpg&quot; width=&quot;100%&quot;&gt;\n&lt;/p&gt;\n\n&lt;p&gt;\n\t&lt;img alt=&quot;&quot; loading=&quot;lazy&quot; src=&quot;https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/vendor_inventory/9fb4/97346cc74d6f7300ad93b9fa4aa285fa801deffeb60d84a71a919a239141.jpg&quot; width=&quot;100%&quot;&gt;\n&lt;/p&gt;\n\n&lt;p&gt;\n\t&lt;img alt=&quot;&quot; loading=&quot;lazy&quot; src=&quot;https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/vendor_inventory/56e9/363a8f3c59c7d192dbd12d8125da3b477b999a12ae5ae6f5f31f3bc01b6f.jpg&quot; width=&quot;100%&quot;&gt;\n&lt;/p&gt;\n\n&lt;p&gt;\n\t&lt;img alt=&quot;&quot; loading=&quot;lazy&quot; src=&quot;https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/vendor_inventory/b7e8/af6c624c2401e6eea70674b0b49291fe132011fd22f317c95b1dc40e2c5d.jpg&quot; width=&quot;100%&quot;&gt;\n&lt;/p&gt;\n\n&lt;p&gt;\n\t&lt;img alt=&quot;&quot; loading=&quot;lazy&quot; src=&quot;https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/vendor_inventory/161d/a4d4bd45110b8c3ad23e3740b7fdd17f7a6834feea17e38dc3941505fe6d.jpg&quot; width=&quot;100%&quot;&gt;\n&lt;/p&gt;\n\n&lt;p&gt;\n\t&lt;img alt=&quot;&quot; loading=&quot;lazy&quot; src=&quot;https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/vendor_inventory/fc32/7f7bd142857641f89b6c725b8fa9caea005819f036a6e9d5c5cff54b6088.jpg&quot; width=&quot;100%&quot;&gt;\n&lt;/p&gt;\n\n&lt;p&gt;\n\t&lt;img alt=&quot;&quot; loading=&quot;lazy&quot; src=&quot;https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/vendor_inventory/4112/83fc1cc8503c0bdf3eae6d22553db1921f9fd0bfc480b829338bfe6a5f6c.jpg&quot; width=&quot;100%&quot;&gt;\n&lt;/p&gt;\n\n&lt;p&gt;\n\t&lt;img alt=&quot;&quot; loading=&quot;lazy&quot; src=&quot;https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/vendor_inventory/0545/6c7644880d716828282bc271fca6c5ae83f41fed8242fb07f35570593f1e.jpg&quot; width=&quot;100%&quot;&gt;\n&lt;/p&gt;\n\n&lt;p&gt;\n\t&lt;img alt=&quot;&quot; loading=&quot;lazy&quot; src=&quot;https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/vendor_inventory/944a/bd66295a7304c7b623cd0d2634e0b5548644fe5f405d1b6a91bf17b2416a.jpg&quot; width=&quot;100%&quot;&gt;\n&lt;/p&gt;\n\n&lt;p&gt;\n\t&lt;img alt=&quot;&quot; loading=&quot;lazy&quot; src=&quot;https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/vendor_inventory/8343/50c9685f48fac5ea03800562b419755ccd933a4a1c0eb9de4b5bad69874f.jpg&quot; width=&quot;100%&quot;&gt;\n&lt;/p&gt;\n\n&lt;p&gt;\n\t&lt;img alt=&quot;&quot; loading=&quot;lazy&quot; src=&quot;https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/vendor_inventory/b113/db2eaf34a42b931862e7f20e2b5d0df2fcc506f324f967b668ba99de0926.jpg&quot; width=&quot;100%&quot;&gt;\n&lt;/p&gt;\n\n&lt;p&gt;\n\t&lt;img alt=&quot;&quot; loading=&quot;lazy&quot; src=&quot;https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/vendor_inventory/5e19/bfeb88df7bc3f34091a400c642094eea0a5db19bd22cccb5fd4d9e893425.jpg&quot; width=&quot;100%&quot;&gt;\n&lt;/p&gt;\n\n&lt;p&gt;\n\t&lt;img alt=&quot;&quot; loading=&quot;lazy&quot; src=&quot;https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/vendor_inventory/5b4f/080f6223f27f8990c15b3c6ce31e8ddc1e7c6ce301df9f4d8bcdff252a0b.jpg&quot; width=&quot;100%&quot;&gt;\n&lt;/p&gt;\n\n&lt;p&gt;\n\t&lt;img alt=&quot;&quot; loading=&quot;lazy&quot; src=&quot;https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/vendor_inventory/0c2e/b33bede04e06d6a25d432182e0b40cae08672220594826d71a44f7d87415.jpg&quot; width=&quot;100%&quot;&gt;\n&lt;/p&gt;\n\n&lt;p&gt;\n\t&lt;img alt=&quot;&quot; loading=&quot;lazy&quot; src=&quot;https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/vendor_inventory/1116/26b9be5da350b51087f8f45db44a325b89249792fc60e55229aca147b22a.jpg&quot; width=&quot;100%&quot;&gt;\n&lt;/p&gt;\n\n&lt;p&gt;\n\t&lt;img alt=&quot;&quot; loading=&quot;lazy&quot; src=&quot;https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/vendor_inventory/e2f5/a1347ecccb2a2dc693d4c0ab586a3dc3c367a3ccfa3f7597e26d1b352129.jpg&quot; width=&quot;100%&quot;&gt;\n&lt;/p&gt;\n\n&lt;p&gt;\n\t&lt;img alt=&quot;&quot; loading=&quot;lazy&quot; src=&quot;https://thumbnail.coupangcdn.com/thumbnails/remote/q89/image/vendor_inventory/e578/01a311786546d7619172f45a78fffc54ad6fa7e417b4e358a44b7bd0ca57.jpg&quot; width=&quot;100%&quot;&gt;\n&lt;/p&gt;\n",
+    "itemAttImagePath": "",
+    "itemCertiList": [
+      {
+        "itemNo": "2610611503",
+        "safetyCertiSn": 1,
+        "safetyCertiTcode": "90",
+        "safetyCertiOrganKcode": "901",
+        "safetyCertiCode": "",
+        "safetyCertiCon": "",
+        "safetyCertiDt": "2026-07-01",
+        "safetyCertiModelName": "ULJM26T02",
+        "safetyCertiTcodeGroupCode": "Y",
+        "safetyCertiTcodeName": "어린이제품_공급자적합성확인",
+        "safetyCertiOrganKcodeName": "KC인증마크획득"
+      }
+    ],
+    "itemAnnounceList": [
+      {
+        "itemAnnounceNo": "260817000201940",
+        "itemAnnounceTitle": "[핀핀] 겨울 fw 베스트아이템_ emall top",
+        "itemAnnounceLocDcode": "20",
+        "itemAnnounceMediaCode": "10",
+        "itemAnnounceCon": "&lt;!-- START :: MD 공지사항 배너(PC) --&gt;\n&lt;html&gt;\n &lt;head&gt;\n &lt;link href=&quot;https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css&quot; rel=&quot;stylesheet&quot; type=&quot;text/css&quot;&gt; \n &lt;link href=&quot;https://spoqa.github.io/spoqa-han-sans/css/SpoqaHanSansNeo.css&quot; rel=&quot;stylesheet&quot; type=&quot;text/css&quot;&gt; \n &lt;style type=&quot;text/css&quot;&gt;a.md-banner{\n position: relative;\n display: block;\n width: 1080px;\n height: auto;\n min-height: 137px;\n margin: 0 auto;\n overflow: hidden;\n }\n\n a.md-banner *{margin:0; padding:0; border:none; text-decoration: none;}\n\n\n a.md-banner .txt{\n position: absolute;\n top: 0;\n left: 50%;\n transform: translateX(-50%);\n -webkit-transform: translateX(-50%);\n -ms-transform: translateX(-50%);\n -moz-transform: translateX(-50%);\n -o-transform: translateX(-50%);\n display: inline-flex;\n display: -webkit-inline-flex;\n display: -ms-inline-flex;\n display: -moz-inline-flex;\n display: -o-inline-flex;;\n flex-direction: column;\n -webkit-flex-direction: column;\n -ms-flex-direction: column;\n -moz-flex-direction: column;\n -o-flex-direction: column;\n justify-content: center;\n -webkit-justify-content: center;\n -ms-justify-content: center;\n -moz-justify-content: center;\n -o-justify-content: center;\n width: 640px;\n height: 137px;\n padding: 0 30px;\n margin: 0 auto;\n box-sizing: border-box;\n -webkit-box-sizing: border-box;\n -ms-box-sizing: border-box;\n -moz-box-sizing: border-box;\n -o-box-sizing: border-box;\n }\n\n a.md-banner .txt.black{\n color: #000;\n }\n a.md-banner .txt.white{\n color: #fff;\n }\n\n a.md-banner .mdBanner-first{\n display: block;\n font-size: 32px;\n font-weight: bold;\n line-height: 1;\n letter-spacing: -0.9px;\n white-space: nowrap;\n text-overflow: ellipsis;\n overflow: hidden;\n font-family: 'Spoqa Han Sans Neo', 'Pretendard', 'sans-serif';\n }\n a.md-banner .mdBanner-second{\n display: block;\n font-size: 20px;\n font-weight: 400;\n line-height: 1;\n letter-spacing: 0;\n margin-top: 15px;\n white-space: nowrap;\n text-overflow: ellipsis;\n overflow: hidden;\n font-family: 'Spoqa Han Sans Neo', 'Pretendard', 'sans-serif';\n }\n&lt;/style&gt; &lt;!-- &darr;&darr;&darr;&darr;&darr;수정 영역&darr;&darr;&darr;&darr;&darr; --&gt;&lt;!--\n &lt;사용법&gt;\n 1) a태그의 [랜딩주소]라 적힌 부분에 랜딩 시킬 url을 적어주시면 됩니다.\n 2) 두번째 줄 span태그의 class중 'black을 넣으면 검정 글자색' 'white를 넣으면 하얀 글자색'을 쓸 수 있습니다.\n 예시:: &lt;div class=&quot;txt black&quot;&gt; / &lt;div class=&quot;txt white&quot;&gt;\n 3) class명이 'mdBanner-first'인 태그안에 첫번째 줄에 해당하는 텍스트를 넣어주시면 됩니다.(박스를 넘치게 적지 말아주세요)\n 4) class명이 'mdBanner-second'인 태그안에 두번째 줄에 해당하는 텍스트를 넣어주시면 됩니다.(박스를 넘치게 적지 말아주세요)\n 5) img태그의 src영역에 이미지 경로 url을 적어주시면 됩니다.\n\n ※규격 외 이미지는 사용하지 말아주세요(PC: 1080px / M: 640px)\n --&gt; \n &lt;/head&gt;\n &lt;body&gt;\n &lt;p&gt;&lt;a class=&quot;md-banner&quot; href=&quot;https://www.elandmall.co.kr/p/planshop?exhibitionNo=202611110319&quot; data-cttn=&quot;in_260817000201940_1&quot;&gt;&lt;span class=&quot;txt black&quot;&gt;&lt;span class=&quot;mdBanner-first&quot;&gt;핀핀 FW 전상품 시즌오프&lt;/span&gt; &lt;span class=&quot;mdBanner-second&quot;&gt;마지막 고쟁이 1만원대/인기 덕다운 아우터 49,900원&amp;nbsp;&lt;/span&gt; &lt;/span&gt; &lt;img alt=&quot;MD공지사항배너&quot; src=&quot;https://item.elandrs.com/r/image/item/2026-11-09/fe0689da-667b-47b3-b14b-df21b1446b4b.jpg&quot; style=&quot;width: 1080px; height: 142px;&quot;&gt; &lt;/a&gt; &lt;!-- END :: MD 공지사항 배너(PC) --&gt;&lt;/p&gt; \n &lt;/body&gt;\n&lt;/html&gt;"
+      },
+      {
+        "itemAnnounceNo": "260817000201940",
+        "itemAnnounceTitle": "[핀핀] 겨울 fw 베스트아이템_ emall top",
+        "itemAnnounceLocDcode": "30",
+        "itemAnnounceMediaCode": "10",
+        "itemAnnounceCon": ""
+      }
+    ],
+    "itemAttList": [],
+    "itemProvideMntList": [
+      {
+        "itemProvideMntArtiName": "제품 소재 (섬유의 조성 또는 혼용률을 백분율로 표시, 기능성인 경우 성적서 또는 허가서)",
+        "itemProvideMntArtiCon": "면 53%, 폴리에스터 43%, 레이온 4%(섬유의 조성 또는 혼용률을 백분율(%)로 표시)"
+      },
+      {
+        "itemProvideMntArtiName": "색상",
+        "itemProvideMntArtiCon": "05 MELANGE GREY,78 NAVY"
+      },
+      {
+        "itemProvideMntArtiName": "치수",
+        "itemProvideMntArtiCon": "S,M,L"
+      },
+      {
+        "itemProvideMntArtiName": "수입여부(Y,N)",
+        "itemProvideMntArtiCon": "Y"
+      },
+      {
+        "itemProvideMntArtiName": "제조사, 수입품의 경우 수입자를 함께 표기 (병행수입의 경우 병행수입 여부로 대체 가능)",
+        "itemProvideMntArtiCon": "㈜이랜드리테일"
+      },
+      {
+        "itemProvideMntArtiName": "제조국",
+        "itemProvideMntArtiCon": "방글라데시"
+      },
+      {
+        "itemProvideMntArtiName": "세탁방법 및 취급시 주의사항",
+        "itemProvideMntArtiCon": "찬물 중성세제, 단독 손세탁, 드라이크리닝, 자연건조"
+      },
+      {
+        "itemProvideMntArtiName": "제조연월",
+        "itemProvideMntArtiCon": "2026-07"
+      },
+      {
+        "itemProvideMntArtiName": "품질보증기준",
+        "itemProvideMntArtiCon": "제품 이상 시 공정거래위원회 고시 소비자분쟁해결기준에 의거 보상합니다."
+      },
+      {
+        "itemProvideMntArtiName": "A/S 책임자와 전화번호",
+        "itemProvideMntArtiCon": "유솔 뉴코아 인천점 매장 032-430-5737"
+      }
+    ],
+    "itemAttListToConvert": {}
+  }
+}
