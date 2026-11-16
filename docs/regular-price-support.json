@@ -208,5 +208,11 @@
     "profile": "eland",
     "supported": true,
     "reason": "독립 itemMain.orgSellprice. 누락/0/상품 간 불일치 시 공통 정상가는 빈칸이며 판매가를 복사하지 않음."
+  },
+  {
+    "id": "cheek_eland_studio",
+    "profile": "eland",
+    "supported": true,
+    "reason": "독립 itemMain.orgSellprice. 누락/0/상품 간 불일치 시 공통 정상가는 빈칸이며 판매가를 복사하지 않음."
   }
 ]
