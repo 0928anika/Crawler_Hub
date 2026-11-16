@@ -174,7 +174,6 @@ class Job:
                             output=[heads]+[[dict(zip(rows[0],r)).get(h) for h in heads] for r in rows[1:]]
                         for index,row in enumerate(output):
                             ws.append([safe_cell(excel_detail(v)[0] if index and i<len(output[0]) and field_for(output[0][i])=='detail_page' else v) for i,v in enumerate(row)])
-                        ws.freeze_panes='A2';ws.auto_filter.ref=ws.dimensions
                     if '작업처리로그' not in book.sheetnames:
                         ws=book.create_sheet('작업처리로그');ws.append(['입력 행','품번','상태','처리 시간(초)','오류/주의'])
                         manual_state=('완료' if color_mapping.snapshot(self)['finalized'] else '대기') if color_mapping.is_manual(self) else None
@@ -182,6 +181,8 @@ class Job:
                             notices=[('매핑 결과 제외 · 수집 실패/미완료' if q['status']!='SUCCESS' else '수동 색상 매핑 '+manual_state)] if color_mapping.is_manual(self) else list(dict.fromkeys(message for item in self.items if item.get('task_id')==q['id'] for message in review_result(item,self.selected)[1]))
                             ws.append([q.get('source_row'),safe_cell(q['code']),q['status'],q.get('duration'),safe_cell(' / '.join(filter(None,[q.get('error','')]+notices)))])
                     if len(book.sheetnames)==1 and book.sheetnames[0]=='작업처리로그':book.create_sheet('결과',0).append(output_headers(self.brand.get('output_headers',[]),self.selected))
+                    for ws in book.worksheets:
+                        ws.freeze_panes='A2';ws.auto_filter.ref=ws.dimensions
                     target=self.dir/('original.xlsx' if original else 'result.xlsx')
                     temp=self.dir/('export-'+uuid.uuid4().hex+'.xlsx')
                     book.save(temp);os.replace(temp,target)
