@@ -98,7 +98,11 @@ def search(ctx, code):
     raise CrawlError('검색 30페이지 초과')
 
 
-def product(ctx, url, code):
+class ProductDataMissing(CrawlError):
+    """Successful HTML response temporarily omitted itemDetailJson."""
+
+
+def product_once(ctx, url, code):
     soup, final = page(ctx, url)
     for script in soup.find_all('script', src=False):
         value = script.string or script.get_text()
@@ -123,7 +127,22 @@ def product(ctx, url, code):
         clean_name(main['itemName'], code)
         ctx.log('품번/판매자 확인: ' + final, 'SUCCESS')
         return d, final
-    raise CrawlError('공식 상품 JSON 없음: ' + url)
+    raise ProductDataMissing('공식 상품 JSON 없음: ' + url)
+
+
+def product(ctx, url, code):
+    # The official page intermittently omits its JSON even while the item exists.
+    # Retry this precise failure; malformed data and identity errors stay strict.
+    for attempt in range(3):
+        ctx.checkpoint()
+        try:
+            return product_once(ctx, url, code)
+        except ProductDataMissing:
+            if attempt == 2:
+                raise
+            ctx.log('상품 JSON 일시 누락: 공식 상세 재조회 '+str(attempt+1)+'/2 / '+url, 'WARNING')
+        finally:
+            ctx.checkpoint()
 
 
 def options(ctx, main, selected=None):
@@ -356,8 +375,9 @@ def crawl(ctx):
             if ctx.enabled('detail_page'):
                 pieces.extend(detail(ctx, d, code, cache))
         except CrawlError as e:
-            failed(str(e) + ': ' + url)
-    if not products or not colors:
+            message=str(e)
+            failed(message if url in message else message + ': ' + url)
+    if (not products or not colors) and not errors:
         failed('정확한 품번과 지정 판매자 LV17008492에 해당하는 상품/색상 후보 없음')
     unique, hashes = [], set()
     for url, digest in candidates:
@@ -365,7 +385,7 @@ def crawl(ctx):
         if digest not in hashes:
             hashes.add(digest)
             unique.append(url)
-    if not unique:
+    if not unique and not errors:
         failed('통과한 매핑용 개별 상품 사진이 0장입니다.')
     if products and colors and unique:
         main, final = products[0]
