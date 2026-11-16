@@ -1,6 +1,11 @@
 PORTAL_API_VERSION = 1
 
 import html
+import base64
+import hashlib
+import subprocess
+import tempfile
+from pathlib import Path
 import http.client
 import io
 import json
@@ -364,6 +369,62 @@ def options(ctx, link, include_size, doc=None, code="", raw_options=None):
     return colors, sizes
 
 
+OCR_SCRIPT = "\n$ProgressPreference='SilentlyContinue'\n$ErrorActionPreference='Stop'\nAdd-Type -AssemblyName System.Runtime.WindowsRuntime\n$null=[Windows.Storage.StorageFile,Windows.Storage,ContentType=WindowsRuntime]\n$null=[Windows.Storage.Streams.IRandomAccessStream,Windows.Storage.Streams,ContentType=WindowsRuntime]\n$null=[Windows.Graphics.Imaging.BitmapDecoder,Windows.Graphics.Imaging,ContentType=WindowsRuntime]\n$null=[Windows.Graphics.Imaging.SoftwareBitmap,Windows.Graphics.Imaging,ContentType=WindowsRuntime]\n$null=[Windows.Media.Ocr.OcrEngine,Windows.Foundation,ContentType=WindowsRuntime]\n$null=[Windows.Media.Ocr.OcrResult,Windows.Foundation,ContentType=WindowsRuntime]\n$asTask=([System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object {$_.Name -eq 'AsTask' -and $_.IsGenericMethod -and $_.GetParameters().Count -eq 1})[0]\nfunction Await($Op,$Type) { $task=$asTask.MakeGenericMethod($Type).Invoke($null,@($Op));$task.Wait();$task.Result }\n\nforeach($ImagePath in $ImagePaths) {\n$file=Await ([Windows.Storage.StorageFile]::GetFileFromPathAsync($ImagePath)) ([Windows.Storage.StorageFile])\n$stream=Await ($file.OpenAsync([Windows.Storage.FileAccessMode]::Read)) ([Windows.Storage.Streams.IRandomAccessStream])\n$decoder=Await ([Windows.Graphics.Imaging.BitmapDecoder]::CreateAsync($stream)) ([Windows.Graphics.Imaging.BitmapDecoder])\n$bitmap=Await ($decoder.GetSoftwareBitmapAsync()) ([Windows.Graphics.Imaging.SoftwareBitmap])\n$null=[Windows.Globalization.Language,Windows.Globalization,ContentType=WindowsRuntime]\n$engine=[Windows.Media.Ocr.OcrEngine]::TryCreateFromLanguage([Windows.Globalization.Language]::new('ko-KR'))\nif ($null -eq $engine) { throw 'Korean OCR language is not installed' }\n$result=Await ($engine.RecognizeAsync($bitmap)) ([Windows.Media.Ocr.OcrResult])\n[Console]::OutputEncoding=[System.Text.UTF8Encoding]::new($false)\n$result.Text\n$bitmap.Dispose();$stream.Dispose()\n\n}\n"
+
+SELLER_BANNER = re.compile(
+    r'백화점|아울렛|패션아일랜드|DEBEC|대백|모다|매장(?:안내|전화|번호|문의|으로연락|에서(?:출고|발송|판매))|'
+    r'배송안내|배송및출고|교환(?:및)?반품안내|교환(?:및)?환불안내|단체구매|상담시간|고객센터(?:안내|운영|상담)|'
+    r'구매하기|배송비|택배비|착불|동봉입금|반송상품|반송시|교환반품접수|주문전꼭|주문전필독|매장재고|판매자(?:안내|공지|정보)|판매처(?:안내|공지|정보)', re.I)
+
+
+def ocr_text(ctx, picture):
+    """Read every overlapping image tile locally; never upload product images."""
+    width=min(1600,max(picture.width,1200))
+    scaled=picture.convert('RGB').resize((width,round(picture.height*width/picture.width)))
+    with tempfile.TemporaryDirectory(prefix='redface-detail-ocr-') as folder:
+        paths=[]
+        for y in range(0,scaled.height,2100):
+            ctx.checkpoint()
+            path=Path(folder)/(str(y)+'.png')
+            scaled.crop((0,y,width,min(y+2300,scaled.height))).save(path)
+            paths.append("'"+str(path.resolve()).replace("'","''")+"'")
+        script='$ImagePaths=@('+','.join(paths)+')\n'+OCR_SCRIPT
+        command=base64.b64encode(script.encode('utf-16le')).decode('ascii')
+        process=subprocess.Popen(['powershell.exe','-NoProfile','-NonInteractive','-EncodedCommand',command],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,encoding='utf-8',errors='replace',creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+        deadline=time.monotonic()+min(120,20+len(paths)*10)
+        try:
+            while True:
+                ctx.checkpoint()
+                if time.monotonic()>deadline:raise CollectionError('상세 이미지 OCR 검사 시간 초과')
+                try:
+                    output,error=process.communicate(timeout=.2)
+                    break
+                except subprocess.TimeoutExpired:pass
+            if process.returncode:raise CollectionError('Windows 한국어 OCR 검사 실행 실패')
+        finally:
+            if process.poll() is None:process.kill();process.communicate()
+    return output
+
+
+def detail_banner_check(ctx, raw):
+    cache=getattr(ctx,'_redface_detail_checks',None)
+    if cache is None:cache={};ctx._redface_detail_checks=cache
+    digest=hashlib.sha256(raw).hexdigest()
+    if digest not in cache:
+        try:
+            with Image.open(io.BytesIO(raw)) as picture:
+                text=ocr_text(ctx,picture)
+            compact=re.sub(r'[\s·ㆍ•/|,:：_-]+','',text)
+            found=SELLER_BANNER.search(compact)
+            if found:result=(False,'판매자 배너 문구: '+found.group())
+            elif len(compact)<60:result=(False,'OCR 판독 문자 부족: 배너 없음 확인 불가')
+            else:result=(True,'긴 이미지 전체 OCR: 판매자 배너 문구 미검출')
+        except (CollectionError,OSError,subprocess.SubprocessError) as exc:
+            result=(False,'배너 검사 미완료: '+str(exc))
+        cache[digest]=result
+    return cache[digest]
+
+
 def detail_images(ctx, link, code):
     doc=soup_get(ctx,link+'/description-iframe')
     area=doc.select_one('.m_prodetail-desc .mm_pinchzoom-wrapper')
@@ -391,6 +452,10 @@ def detail_images(ctx, link, code):
             ctx.log('사용할 수 없는 상세 이미지 제외, 다른 본문 계속 확인: '+url+' / '+str(exc),'WARNING');continue
         if w<400 or h<2000 or h/w<2.5:
             ctx.log('짧은 안내/개별 컷 상세 제외: %sx%s / %s'%(w,h,url),'INFO');continue
+        clean,reason=detail_banner_check(ctx,raw)
+        if not clean:
+            ctx.log('긴 상세 이미지 제외: '+reason+' / '+url,'WARNING');continue
+        ctx.log(reason+' / '+url,'INFO')
         candidates.append((exact_code(path,code),h/w,h,url))
     if not candidates:raise MissingDetail('상품 본문의 긴 통짜 상세 이미지 없음: '+link)
     chosen=max(candidates,key=lambda x:x[:3])[-1]

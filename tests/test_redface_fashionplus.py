@@ -29,6 +29,10 @@ def jpeg(size):
     stream=io.BytesIO();Image.new('RGB',size,'white').save(stream,format='JPEG');return stream.getvalue()
 
 class Tests(unittest.TestCase):
+    def setUp(self):
+        reader=patch.object(c,'ocr_text',return_value='상품상세설명 색상 소재 사이즈 원산지 제조년월 세탁방법 품질보증기준 '*5)
+        reader.start();self.addCleanup(reader.stop)
+
     def test_name_removes_all_brackets_and_shop_but_preserves_product(self):
         self.assertEqual(c.clean_name('[레드페이스 본사] [특가] 대전점 여성 웜부클2우먼햇 REEFHAW24500_EPT','REEFHAW24500'),'여성 웜부클2우먼햇')
         self.assertEqual(c.clean_name('레드페이스 강남아울렛 이중점퍼 REEFHAW24500','REEFHAW24500'),'이중점퍼')
@@ -114,5 +118,41 @@ class Tests(unittest.TestCase):
         with patch.object(c,'search',return_value=[(link,'REEFHAW24500','https://example.com/1.jpg')]),patch.object(c,'soup_get',return_value=doc),patch.object(c,'image_get',return_value=photo()),patch.object(c,'options',return_value=([dict(color_name='BLACK',color_code='')],['057'])):
             with self.assertRaisesRegex(c.CollectionError,'유효 사진 없음'):c.crawl(ctx)
         self.assertFalse(ctx.rows);self.assertTrue(ctx.errors)
+
+    def test_embedded_seller_banner_rejects_whole_image_but_notice_is_preserved(self):
+        for words in ['상품 상세 설명 배송 • 안내 교환 / 반품 안내','고객센터 안내 010-1234-5678','대구백화점 정품 상품입니다','단체 구매 문의 안내']:
+            with patch.object(c,'ocr_text',return_value=words):
+                self.assertFalse(c.detail_banner_check(Context(),jpeg((747,6895)))[0])
+        with patch.object(c,'ocr_text',return_value='상품정보고시 소재 폴리에스터 색상 블랙 사이즈 95 100 제조국 중국 제조사 레드페이스 세탁방법 손세탁 품질보증기준 소비자분쟁해결기준에 따름 A/S 책임자와 전화번호 레드페이스 고객센터 02-1234-5678'):
+            self.assertTrue(c.detail_banner_check(Context(),jpeg((747,6895)))[0])
+
+    def test_ocr_unavailable_or_unreadable_never_passes_image(self):
+        for result in ['', '로고']:
+            with patch.object(c,'ocr_text',return_value=result):
+                self.assertFalse(c.detail_banner_check(Context(),jpeg((747,6895)))[0])
+        with patch.object(c,'ocr_text',side_effect=OSError('OCR unavailable')):
+            self.assertFalse(c.detail_banner_check(Context(),jpeg((747,6895)))[0])
+
+    def test_finds_clean_body_on_another_seller_without_combining(self):
+        ctx=Context();first=c.BASE+'/goods/detail/443139434';second=c.BASE+'/goods/detail/425911524'
+        def doc(ctx,url):
+            if url.endswith('/description-iframe'):
+                image='seller.jpg' if url.startswith(first) else 'clean.jpg'
+                return c.BeautifulSoup('<div class="m_prodetail-desc"><div class="mm_pinchzoom-wrapper"><img src="https://example.com/'+image+'"></div></div>','html.parser')
+            return source(url.rsplit('/',1)[-1],'product')
+        def fetch(ctx,url,limit):return jpeg((747,4000 if 'seller.jpg' in url else 4100))
+        def words(ctx,picture):return '상품 본문 배송 안내 매장 문의' if picture.height==4000 else '상품 설명 소재 사이즈 원산지 제조년월 색상 세탁방법 '*5
+        with patch.object(c,'search',return_value=[(first,'REEFHAW24500','https://example.com/1.jpg'),(second,'REEFHAW24500','https://example.com/2.jpg')]),patch.object(c,'soup_get',side_effect=doc),patch.object(c,'image_get',return_value=photo()),patch.object(c,'options',return_value=([dict(color_name='BLACK',color_code='')],['057'])),patch.object(c,'fetch',side_effect=fetch),patch.object(c,'ocr_text',side_effect=words):
+            c.crawl(ctx)
+        self.assertTrue(ctx.rows);self.assertFalse(ctx.errors)
+        self.assertTrue(all('clean.jpg' in kw['shared_detail_html'] and 'seller.jpg' not in kw['shared_detail_html'] for _,kw in ctx.rows))
+
+@unittest.skipUnless(sys.platform=='win32','Windows Korean OCR')
+class RealBannerTests(unittest.TestCase):
+    def test_actual_embedded_banners_and_clean_original_with_real_ocr(self):
+        ctx=Context()
+        for code,clean in [('REEFSCX23503',False),('REEGBPX23100',False),('RESGLCX23101',True),('socks_shipping_icons',False)]:
+            with self.subTest(code=code):
+                self.assertEqual(c.detail_banner_check(ctx,(FIX/('socks_shipping_icons.jpg' if code=='socks_shipping_icons' else code+'_body.jpg')).read_bytes())[0],clean)
 
 if __name__=='__main__':unittest.main()
