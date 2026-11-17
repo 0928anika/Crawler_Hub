@@ -144,7 +144,7 @@
     "reason": "공식 소비자가 #span_product_price_custom 또는 product_custom(regular_price cafe24 프로필). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
   },
   {
-    "id": "roem_official",
+    "id": "roem_eland_studio",
     "profile": "eland",
     "supported": true,
     "reason": "공식 itemMain.orgSellprice. 링크별 값이 다르거나 누락되면 공통 정상가는 빈칸이며 실패 처리하지 않음."
