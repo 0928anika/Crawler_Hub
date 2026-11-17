@@ -13,7 +13,7 @@ import io
 import json
 import re
 from urllib.error import HTTPError, URLError
-from urllib.parse import parse_qs, urlencode, urljoin, urlsplit, unquote
+from urllib.parse import parse_qs, urlencode, urljoin, urlsplit, unquote, quote
 from urllib.request import Request, build_opener
 
 from bs4 import BeautifulSoup
@@ -21,7 +21,7 @@ from PIL import Image, ImageStat, ImageChops, ImageFilter, UnidentifiedImageErro
 
 SITE = 'https://www.elandmall.co.kr'
 VENDOR = 'LV16003577'
-REVISION = '2026-11-17-roem-eland-studio-v1'
+REVISION = '2026-11-17-roem-unicode-detail-v2'
 IMGHUB_BRAND = 'atq4q25afat1ri4gphpsy03t'
 BRAND_NO = '1690000158'
 POLICY = {'checked': '2026-11-05', 'source': 'https://marketplace.coupang.com/mba/listing',
@@ -38,6 +38,9 @@ class CrawlError(Exception):
 
 
 def fetch(ctx, url, limit=6000000):
+    # Official product image filenames can contain Korean (e.g. _상세_800).
+    # Preserve existing percent escapes while encoding the non-ASCII URL.
+    url = quote(url, safe=":/?&=%+#,;@!$*()~[]'")
     if urlsplit(url).scheme not in ('http', 'https'):
         raise CrawlError('HTTP 이미지/페이지 주소가 아님: ' + url)
     for attempt in range(3):
@@ -454,7 +457,7 @@ BANNER = re.compile(r'banner|shipping|delivery|refund|coupon|copyright|notice|�
 def original_detail(url,code):
     p=urlsplit(url);name=unquote(p.path.rsplit('/',1)[-1])
     if p.hostname=='item-imghub.eland.co.kr' and ('/'+IMGHUB_BRAND+'/') in p.path:
-        return bool(re.search(r'-(?:BASE|GOSI)-',name,re.I) or re.fullmatch(r'(?:\d+_)?'+re.escape(code)+r'(?:[_-][A-Za-z0-9]+)?\.(?:jpe?g|png|webp)',name,re.I))
+        return bool(re.search(r'-(?:BASE|GOSI)-',name,re.I) or re.fullmatch(r'(?:\d+_)?'+re.escape(code)+r'(?:[_-][A-Za-z0-9가-힣]+)*\.(?:jpe?g|png|webp)',name,re.I))
     return p.hostname=='img-studio.elandmall.com' and p.path.startswith('/Winstudio/') and bool(
         re.fullmatch(re.escape(code)+r'(?:[_-][A-Za-z0-9]+)?\.(?:jpe?g|png|webp)',name,re.I) or
         re.fullmatch(r'RM[A-Za-z0-9_-]*SIZE[A-Za-z0-9_-]*\.(?:jpe?g|png|webp)',name,re.I))
@@ -514,7 +517,7 @@ def detail(ctx,d,code,cache):
     return parts
 
 
-def crawl(ctx):
+def _crawl(ctx):
     code = str(ctx.product_code).strip().upper()
     if not re.fullmatch(r'[A-Z0-9]+(?:-[A-Z0-9]+)*', code):
         ctx.fail_item('색상 접미사 없는 기본 품번을 입력하세요.')
@@ -650,3 +653,13 @@ def crawl(ctx):
             ctx.emit_unmapped(dict(record), colors, url, shared_detail_html=record.get('detail_page', ''))
     if errors:
         raise CrawlError(' / '.join(dict.fromkeys(errors)))
+
+
+def crawl(ctx):
+    try:
+        _crawl(ctx)
+    except CrawlError:
+        raise
+    except Exception as exc:
+        ctx.fail_item('로엠 수집 오류: '+str(ctx.product_code)+' / '+type(exc).__name__+': '+str(exc))
+        raise

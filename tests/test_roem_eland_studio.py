@@ -1,6 +1,6 @@
 import copy,io,json,sys,unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import patch,MagicMock
 from PIL import Image
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -22,6 +22,27 @@ def product():
                              modelNo='RMKAG4TRTN',itemName='V넥 풀오버 RMKAG4TRTN',orgSellprice=59900),itemDesc={})
 
 class Tests(unittest.TestCase):
+    def test_unicode_image_url_is_encoded_without_double_encoding(self):
+        url='https://item-imghub.eland.co.kr/brands/'+c.IMGHUB_BRAND+'/product/RMCKG49A11_상세_800.jpg?x=%EC%83%81'
+        response=MagicMock();response.read.return_value=b'public image';response.geturl.return_value=c.quote(url,safe=":/?&=%+#,;@!$*()~[]'");response.headers.get.return_value='image/jpeg'
+        opener=MagicMock();opener.open.return_value.__enter__.return_value=response
+        with patch.object(c,'build_opener',return_value=opener):
+            self.assertEqual(c.fetch(Context(),url)[0],b'public image')
+        requested=opener.open.call_args.args[0].full_url
+        requested.encode('ascii');self.assertIn('%EC%83%81%EC%84%B8',requested);self.assertNotIn('%25EC',requested)
+
+    def test_korean_product_detail_filename_remains_official_original(self):
+        url='https://item-imghub.eland.co.kr/brands/'+c.IMGHUB_BRAND+'/product/RMCKG49A11_RMTJG49A11_상세_800.jpg'
+        self.assertTrue(c.original_detail(url,'RMCKG49A11'))
+        self.assertTrue(c.original_detail(c.quote(url,safe=':/'),'RMCKG49A11'))
+        self.assertFalse(c.original_detail(url,'DIFFERENT'))
+
+    def test_unexpected_failure_has_actionable_error_event(self):
+        ctx=Context()
+        with patch.object(c,'_crawl',side_effect=ValueError('specific failure')):
+            with self.assertRaises(ValueError):c.crawl(ctx)
+        self.assertIn('ValueError: specific failure',ctx.failures[0])
+
     def test_registration_and_brand(self):
         from registry import get_brand
         brand=get_brand('roem_eland_studio')
