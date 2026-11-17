@@ -25,6 +25,20 @@ class DuranTests(unittest.TestCase):
   imgs,notice,blocks=c.detail_parts(C(),source(),c.CONFIG['site'],'DBF6W-9242')
   self.assertEqual(len(imgs),8);self.assertTrue(imgs[-1].endswith('_size.jpg'));self.assertEqual((notice,blocks),([],[]))
   self.assertTrue(all('DBF6W-9242_' in url for url in imgs))
+ def test_yoga_towel_legacy_detail_keeps_all_product_images_in_order(self):
+  doc=c.soup((FIX/'DAF0E-0004_detail.html').read_text(encoding='utf-8'))
+  images,notice,blocks=c.detail_parts(C(),doc,c.CONFIG['site'],'DAF0E-0004')
+  self.assertEqual(len(images),11)
+  self.assertTrue(images[0].endswith('/daf0004_1.jpg'))
+  self.assertEqual([u.rsplit('/',1)[-1] for u in images[1:4]],['0004_01.gif','0004_02.gif','0004_03.gif'])
+  self.assertTrue(images[-1].endswith('/daf0004_size.jpg'))
+  self.assertEqual((notice,blocks),([],[]))
+  self.assertFalse(any(u.endswith('/'+n+'.jpg') for u in images for n in ['notice','intro','top_series','wash','info','about']))
+ def test_legacy_detail_exception_does_not_leak_to_other_products_or_paths(self):
+  original=(FIX/'DAF0E-0004_detail.html').read_text(encoding='utf-8')
+  self.assertEqual(c.detail_parts(C(),c.soup(original),c.CONFIG['site'],'DAF0E-9999')[0],[])
+  for text in [original.replace('/img/acc/','/img/other/'),original.replace('gi.esmplus.com/dmfng2013','gi.esmplus.com/duranc'),original.replace('daf0004_','daf00040_').replace('0004_0','00040_0')]:
+   self.assertEqual(c.detail_parts(C(),c.soup(text),c.CONFIG['site'],'DAF0E-0004')[0],[])
  def test_text_size_and_notice_are_tables_when_present(self):
   d=c.soup('<div id="-description"><table><tr><th>사이즈</th><th>총장</th></tr><tr><td>M</td><td>100</td></tr></table><table><tr><th>제품소재</th><td>면100%</td></tr><tr><th>제조국</th><td>한국</td></tr></table></div>')
   images,notice,blocks=c.detail_parts(C(),d,c.CONFIG['site'],'DBF6W-9242')

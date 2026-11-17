@@ -1,6 +1,6 @@
 PORTAL_API_VERSION = 1
 """뒤란핏 공식 홈페이지: 공식 옵션 연결 사진은 자동, 미연결 갤러리는 수동 매핑."""
-REVISION = '2026-11-16-duranfit-color-sizes-2'
+REVISION = '2026-11-17-duranfit-legacy-detail-3'
 CONFIG = dict(site='https://duran-fit.com',hosts=('duran-fit.com','www.duran-fit.com'),brand='뒤란핏',
               aliases=['뒤란핏','뒤란','DURAN FIT','DURAN'],input=r'([A-Z0-9]+-\d{4})',format='예: DBF6W-9242 또는 DBF6W9242')
 
@@ -917,12 +917,18 @@ def detail_parts(ctx, doc, final, style):
         return [],[],[]
     images=[];pairs=[];blocks=[]
     product_pattern=re.compile(r'(?<![A-Z0-9])'+re.escape(style)+r'(?![A-Z0-9])',re.I)
+    # Product 930 declares these legacy filenames in its official description.
+    # Scope the exception to this product, host, directory and exact filenames.
+    legacy_paths={
+        'DAF0E-0004': re.compile(r'^/dmfng2013/img/acc/(?:daf0004_(?:[1-7]|size)\.jpg|0004_0[1-3]\.gif)$',re.I)
+    }
     for image in box.select('img'):
         url=body_image_url(img_src(image),final)
         if not url:continue
         path=unquote(urlsplit(url).path)
         # This also excludes notice/intro/wash/about/series assets shared by all products.
-        if not product_pattern.search(path):continue
+        legacy=legacy_paths.get(style.upper())
+        if not product_pattern.search(path) and not (urlsplit(url).hostname=='gi.esmplus.com' and legacy and legacy.fullmatch(path)):continue
         if re.search(r'benefit|member|delivery|shipping|notice|coupon|배송|회원|혜택',path,re.I):continue
         if url not in images:images.append(url)
     for table in box.select('table'):
