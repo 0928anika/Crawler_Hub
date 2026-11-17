@@ -18,7 +18,11 @@ from crawler_rules import check_public_image, validate_gallery_image, gallery_sl
 SITE='https://jeepwear.co.kr'
 HOSTS=('jeepwear.co.kr','www.jeepwear.co.kr')
 DETAIL_MAX_BYTES=64*1024*1024
-REVISION='2026-11-16-jeepkids-stock-detail'
+REVISION='2026-11-17-jeepkids-setup-color-detail'
+# Official exact searches for both component codes lead to this same set-up
+# product, whose official photos include both top and trousers. Keep set name
+# and set price; do not present the shared page as a separately sold component.
+SETUP_MODELS={'KP4TPU098':'KP4TZU098'}
 POLICY={'checked_on':'2026-11-10','source':'https://marketplace.coupang.com/mba/listing',
         'route':'WING 웹/엑셀','min_side':500,'max_bytes':10000000,
         'formats':['JPEG','PNG','WEBP'],'max_aspect':1.8}
@@ -44,20 +48,55 @@ def categories(doc):
     return [a.get_text(' ',strip=True) for a in doc.select('.xans-product-headcategory ol li a') if a.get_text(' ',strip=True) not in ('','홈','현재 위치')]
 
 
-def identity(doc,base):
+def product_sku(doc):
     raw=field(doc,'상품명')
     match=re.search(r'\(([A-Z0-9]{9})([A-Z0-9]{2})\)\s*$',raw,re.I)
-    if not match:raise ValueError('공식 상품명 끝의 전체 품번/색상코드 확인 실패: '+raw)
-    if match[1].upper()!=base:return None
+    if match:return match[1].upper(),match[2].upper(),raw[:match.start()].strip()
+    suffix=re.search(r'_([A-Z]{2})\s*$',raw,re.I)
+    if suffix:
+        pairs=set()
+        for node in doc.select('#prdDetail .cont img'):
+            url=urlsplit(node.get('ec-data-src') or node.get('data-src') or node.get('src') or '')
+            if url.hostname!='hollhaus.speedgabia.com' or not re.match(r'^/jeep(?:kids)?/detail/',url.path):continue
+            photo=re.fullmatch(r'(?:\d+[_-])?([A-Z0-9]{9})[_-]([A-Z]{2})(?:[_-]\d+)?\.(?:jpe?g|png|webp)',url.path.rsplit('/',1)[-1],re.I)
+            if photo:pairs.add((photo[1].upper(),photo[2].upper()))
+        if len(pairs)==1 and next(iter(pairs))[1]==suffix[1].upper():
+            model,color=next(iter(pairs));return model,color,raw[:suffix.start()].strip()
+    raise ValueError('공식 상품명/상품 상세 이미지에서 품번·색상 확인 실패: '+raw)
+
+
+def color_name(doc,code):
+    for row in doc.select('.infoArea tr'):
+        head,value=row.find('th'),row.find('td')
+        if not head or not value or head.get_text(' ',strip=True) not in ('색상','컬러'):continue
+        options=[]
+        for option in value.select('select option[value]'):
+            if option['value'] in ('','*','**'):continue
+            label=re.sub(r'\s*\[(?:품절|일시품절|SOLD\s*OUT)\]\s*','',option.get_text(' ',strip=True),flags=re.I).strip()
+            if label:options.append(label)
+        # Static labelled information is independent from the option widget.
+        static=parse(str(value))
+        for node in static.select('select,script,style'):node.decompose()
+        label=static.get_text(' ',strip=True)
+        if not label:
+            matches=[v for v in options if v.upper()==code or re.search(r'\('+re.escape(code)+r'\)',v,re.I)]
+            label=matches[0] if len(matches)==1 else ''
+        if re.search(r'옵션.*선택|\[필수\]|^-+$',label):return ''
+        return '' if label.upper()==code else label
+    return ''
+
+
+def identity(doc,base):
+    raw=field(doc,'상품명')
+    model,code,title=product_sku(doc)
+    if model!=base and not ('셋업' in title and SETUP_MODELS.get(base)==model):return None
     kids_category=any(c.upper()=='KIDS' or '키즈' in c for c in categories(doc))
     kids_title=bool(re.search(r'\bJEEPKIDS\b|\bJEEP\s+KIDS\b|\[KIDS\]|지프\s*키즈',raw,re.I))
     if not (kids_category or kids_title):
         raise ValueError('공식 KIDS 카테고리 상품인지 확인할 수 없습니다.')
-    name=clean_product_name(raw[:match.start()].strip(),['지프키즈','지프 키즈','JEEP KIDS','JEEPKIDS','[KIDS]','Jeep®'],[base])
+    name=clean_product_name(title,['지프키즈','지프 키즈','JEEP KIDS','JEEPKIDS','[KIDS]','Jeep®'],[base])
     if not name:raise ValueError('정리 후 상품명 없음')
-    code=match[2].upper()
-    color=field(doc,'색상') or field(doc,'컬러')
-    if color==code:color=''
+    color=color_name(doc,code)
     return dict(product_code=base,product_name=name,color=color or code,color_name=color,color_code=code,원본상품명=raw)
 
 
@@ -112,11 +151,13 @@ def detail_urls(doc,final):
         # 갤러리용 사이즈/비율 필터를 상세에 적용하지 않는다.
         local=parts.hostname in HOSTS and parts.path.startswith('/web/upload/NNEditor/')
         external=False
-        if parts.hostname=='hollhaus.speedgabia.com' and parts.path.startswith('/jeep/detail/'):
-            raw=field(doc,'상품명');match=re.search(r'\(([A-Z0-9]{9})([A-Z0-9]{2})\)\s*$',raw,re.I)
-            if match:
-                filename=parts.path.rsplit('/',1)[-1]
-                external=bool(re.fullmatch(r'(?:\d+[_-])?'+re.escape(match[1])+r'[_-](?:'+re.escape(match[2])+r'|size|gosi|spec|detail)(?:[_-]\d+)?\.(?:jpe?g|png|webp)',filename,re.I))
+        if parts.hostname=='hollhaus.speedgabia.com' and re.match(r'^/jeep(?:kids)?/detail/',parts.path):
+            model,color,_=product_sku(doc)
+            filename=parts.path.rsplit('/',1)[-1]
+            external=bool(re.fullmatch(r'(?:\d+[_-])?'+re.escape(model)+r'[_-](?:'+re.escape(color)+r'|size|gosi|spec|detail)(?:[_-]\d+)?\.(?:jpe?g|png|webp)',filename,re.I))
+            # One official size-chart filename literally has an extra "p".
+            # Preserve the source URL; never invent a corrected file path.
+            external=external or bool(re.fullmatch(r'p'+re.escape(model)+r'[_-]size\.(?:jpe?g|png|webp)',filename,re.I))
         if not (local or external):continue
         if re.search(r'banner|shipping|delivery|coupon|review|배송|교환|반품|쿠폰',str(node.get('alt',''))+' '+parts.path,re.I):continue
         if url not in urls:urls.append(url)
@@ -182,8 +223,7 @@ def detail(ctx,urls,cache):
 def sizes(doc):
     result=[]
     # Dependent/sold-out selects may be empty; the original combinations remain.
-    match=re.search(r'\(([A-Z0-9]{9})([A-Z0-9]{2})\)\s*$',field(doc,'상품명'),re.I)
-    color=match[2].upper() if match else None
+    _,color,_=product_sku(doc)
     for script in doc.find_all('script'):
         stock=re.search(r"var\s+option_stock_data\s*=\s*('(?:\\.|[^'\\])*')",script.get_text())
         if not stock:continue

@@ -1,0 +1,168 @@
+{
+  "id": "plastic_island_official",
+  "name": "플라스틱 아일랜드",
+  "category": "여성복",
+  "crawl_source": "공식 홈페이지",
+  "script": "plastic_island_official.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_color_mapping": "manual",
+  "official_color_codes": false,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 색상별 optionItem_ajax 사이즈 목록. 매핑 후보별 사이즈 전달, 전 색상 동일 시 공통 사이즈 출력."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 색상별/사이즈별 optionItem_ajax.price가 모두 동일한 경우만 공통 판매가. 상이하면 빈칸."
+    },
+    "category": {
+      "supported": false,
+      "status": "unsupported",
+      "reason": "상품 종류의 독립 카테고리 필드 미확인. 브랜드를 카테고리로 사용하지 않음."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 contentsmap.IMGB 및 goodsImageList 개별 사진. 공개 바이트·Pillow 형식·픽셀·비율·10MB 검사 후 수동 색상 매핑 후보 전달."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 갤러리 전체 후보 전달. URL/파일 해시 중복 제거. 색상 추정과 수집 단계의 후보 수 제한 없음."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 품번/브랜드를 확인한 CONTENT의 /external/pla/ 및 /data/editor/YYYYMM/ 상세 이미지 + 실측 그림/표/안내/추가정보/고시. 별도 배송 영역과 세탁 제외. 실측 제목 없는 자리표시자는 생략."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 goodsPrice.RETAILPRICE 독립 정상가. 없거나 0이면 빈칸."
+    }
+  },
+  "guide": {
+    "example": "PY6WZ062",
+    "examples": [
+      "PY6WZ062"
+    ],
+    "pattern": "^[A-Za-z]{2}\\d[A-Za-z]{2}\\d{3}$",
+    "format": "기본 품번 8자리",
+    "notes": "기본 품번으로 모든 색상 사진을 수집한 뒤 수동 매핑. 공홈이 명시한 두 영문자 코드만 사용. BLACK을 BL 등으로 임의 변환하지 않음.",
+    "method": "TheAmall 공식 품번 검색 → contentsmap.GOODSCODE 정확히 일치 및 BRANDIDX=3/BRANDNAME=PLASTIC ISLAND 확인.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "PY6WZ062_BL"
+    ],
+    "validation_note": "상품 및 색상 존재 여부는 실행 시 확인."
+  },
+  "notes": "2026-11-17 PY6WZ062 확인. BLACK/KHAKI/WINE 옵션은 있으나 공식 갤러리 색상 연결 및 두 자리 영문 색상코드 없음. 내부 옵션키 101/102/103을 색상코드로 사용하지 않음. 수동 매핑 버전. 상품명 모든 대괄호 문구와 기본 품번 제거. 사이즈 그림/표/측정 안내/소재/추가정보/고시를 별도 HTML로 재구성. 세탁/취급주의 행과 세탁 아이콘 제외. 영상/이벤트/배송 배너 제외. 상세 이미지에 이미 구워진 글자 편집은 지원하지 않음. v2: 실측 항목명 없는 세탁 전용 자리표시자 행은 실측표에서 생략하고 상품 수집을 계속합니다. 공홈 검색 0건 및 실행 오류의 구체 사유를 fail_item으로 전달합니다. 재출시 상품은 검증한 공식 CONTENT 안의 기존 품번 사진 경로도 보존합니다(PS4WC561 → PS1WC285). v3: 공식 CONTENT의 /data/editor/YYYYMM/ 상품 이미지도 원문 순서대로 보존(PR4CL581). 줄바꿈 포함 src 정리. CONTENTDELIVERY 등 별도 배송 영역은 제외.",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": false,
+      "status": "unsupported",
+      "reason": "독립 결과 컬럼 없음"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 색상별 optionItem_ajax 사이즈 목록. 매핑 후보별 사이즈 전달, 전 색상 동일 시 공통 사이즈 출력."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 색상별/사이즈별 optionItem_ajax.price가 모두 동일한 경우만 공통 판매가. 상이하면 빈칸."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": false,
+      "status": "unsupported",
+      "reason": "상품 종류의 독립 카테고리 필드 미확인. 브랜드를 카테고리로 사용하지 않음."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 contentsmap.IMGB 및 goodsImageList 개별 사진. 공개 바이트·Pillow 형식·픽셀·비율·10MB 검사 후 수동 색상 매핑 후보 전달."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 갤러리 전체 후보 전달. URL/파일 해시 중복 제거. 색상 추정과 수집 단계의 후보 수 제한 없음."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 품번/브랜드를 확인한 CONTENT의 /external/pla/ 및 /data/editor/YYYYMM/ 상세 이미지 + 실측 그림/표/안내/추가정보/고시. 별도 배송 영역과 세탁 제외. 실측 제목 없는 자리표시자는 생략."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 goodsPrice.RETAILPRICE 독립 정상가. 없거나 0이면 빈칸."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "정상가": "regular_price",
+    "상품 링크": "product_url"
+  },
+  "code_hash": "4c70658085d789d971318781efebf23ba246adee29e791ee860ec36af88b4d83",
+  "image_mode": "url"
+}

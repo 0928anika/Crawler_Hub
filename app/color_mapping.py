@@ -8,6 +8,7 @@ from detail_store import excel_detail
 from storage import atomic_json
 from color_palette import normalize_palette
 import local_images
+import am_requests
 
 
 def key(value):
@@ -120,8 +121,11 @@ def snapshot(job, *, groups=None, state=None):
         legacy_signature=key(json.dumps({'colors':[c['id'] for c in group['colors']],'images':[i['id'] for i in group['images']]},sort_keys=True))
         group['signature']=key(json.dumps([i['id'] for i in group['images']]))
         group['original_colors']=[dict(c) for c in group['colors']]
+        group['am_options']=deepcopy((state.get('am_requests') or {}).get('products',{}).get(am_requests.code_key(group['code']),[]))
+        group['am_mode']=state.get('am_requests') is not None
+        group['option_sources']=deepcopy(saved.get('option_sources',{}))
         for color in saved.get('added_colors',[]):
-            if not any(same_color(c,color) for c in group['colors']):group['colors'].append(dict(color,manual=True))
+            if not any(c['id']==color['id'] for c in group['colors']):group['colors'].append(dict(color,manual=True))
         group['colors']=[c for c in group['colors'] if c['id'] not in saved.get('hidden_colors',[])]
         valid_colors={c['id'] for c in group['colors']};valid_images={i['id'] for i in group['images']}
         assignments={iid:[cid for cid in (value if isinstance(value,list) else [value]) if cid in valid_colors] for iid,value in saved.get('assignments',{}).items() if iid in valid_images}
@@ -144,7 +148,7 @@ def snapshot(job, *, groups=None, state=None):
     if is_hybrid(job) and not groups and automatic_items(job):finalized=True
     excluded=[dict(code=q['code'],status=q['status'],error=q.get('error','')) for q in job.queue if q['status']!='SUCCESS']
     return dict(revision=state.get('revision',0),groups=groups,total_colors=total,saved_colors=done,excluded_tasks=excluded,image_mode=job.brand.get('image_mode','url'),
-                finalized=finalized,fingerprint=fingerprint,unassigned=sum(not i['assigned_to'] for g in groups for i in g['images']))
+                finalized=finalized,fingerprint=fingerprint,am_import=state.get('am_requests'),unassigned=sum(not i['assigned_to'] for g in groups for i in g['images']))
 
 
 def initial_saved(group):
@@ -160,7 +164,8 @@ def save_color(job,data):
         group=next((g for g in view['groups'] if g['id']==data.get('group_id')),None)
         if not group:raise ValueError('품번을 찾을 수 없습니다.')
         color=data.get('color_id')
-        if color not in {c['id'] for c in group['colors']}:raise ValueError('잘못된 색상입니다.')
+        reference=next((c for c in group['original_colors'] if c['id']==color),None) if group.get('am_mode') else None
+        if color not in {c['id'] for c in group['colors']} and not reference:raise ValueError('잘못된 색상입니다.')
         selected=data.get('image_ids')
         valid_images={image['id'] for image in group['images']}
         if not isinstance(selected,list) or any(i not in valid_images for i in selected):raise ValueError('현재 품번의 사진만 선택할 수 있습니다.')
@@ -168,6 +173,8 @@ def save_color(job,data):
         saved=state.setdefault('groups',{}).setdefault(group['id'],initial_saved(group))
         if group.get('review_required') and not saved.get('all_photos'):
             saved.update(initial_saved(group))
+        if reference:
+            saved['hidden_colors']=[cid for cid in saved.get('hidden_colors',[]) if cid!=color]
         saved['all_photos']=True
         assignments=saved['assignments'];confirmed=set(saved['confirmed'])
         # Each color owns its selection independently; legacy scalar values migrate here.
@@ -189,7 +196,7 @@ def edit_options(job,data):
         group=next((g for g in view['groups'] if g['id']==data.get('group_id')),None)
         if not group:raise ValueError('품번을 찾을 수 없습니다.')
         saved=state.setdefault('groups',{}).setdefault(group['id'],initial_saved(group))
-        action=data.get('action');active=None
+        action=data.get('action');active=None;transfers={}
         if action=='add':
             name=data.get('color_name','');code=data.get('color_code','')
             if not isinstance(name,str) or not isinstance(code,str) or max(len(name),len(code))>80:raise ValueError('색상명·코드는 각각 80자 이하로 입력하세요.')
@@ -206,13 +213,17 @@ def edit_options(job,data):
             pending=[c['id'] for c in group['colors'] if c['id'] not in group['confirmed']]
             if not pending:raise ValueError('삭제할 미저장 옵션이 없습니다.')
             saved['hidden_colors']=sorted(set(saved.get('hidden_colors',[])+pending))
+        elif action=='configure':
+            transfers=configure_options(saved,group,data.get('entries'))
         elif action=='reset':
-            saved['hidden_colors']=[];saved['added_colors']=[]
+            if group.get('am_mode'):configure_options(saved,group,[dict(source='am',id=c['id']) for c in group['am_options']])
+            else:saved['hidden_colors']=[];saved['added_colors']=[];saved['option_sources']={}
         else:raise ValueError('지원하지 않는 옵션 작업입니다.')
         state.update(revision=view['revision']+1,finalized=False,fingerprint=view['fingerprint'])
         atomic_json(job.dir/'color_mapping.json',state)
     job.checkpoint()
     result=snapshot(job);result['active_color']=active
+    if action=='configure':result['option_transfers']=transfers
     return result
 
 
@@ -439,3 +450,59 @@ def export_sheet(job):
         info=item.get('unmapped')
         if info:rows.append([item['code'],item['name'],','.join(c['label'] for c in info['colors']),item.get('normalized',{}).get('product_url') or item.get('source_url',''),info['asset_path'].rsplit('/',1)[-1] if info.get('asset_path') else info['image_url'],'색상 매핑 대기']+[item['raw'].get(h) for h in optional])
     return rows
+
+
+def configure_options(saved,group,entries):
+    """Build only the chosen working palette; source palettes stay immutable."""
+    if not isinstance(entries,list) or len(entries)>300:raise ValueError('품번별 작업 옵션은 최대 300개입니다.')
+    catalog={'crawl':{c['id']:c for c in group['original_colors']},'am':{c['id']:c for c in group.get('am_options',[])},'current':{c['id']:c for c in group['colors']}}
+    chosen={};sources={};transfers={};inherit={}
+    for entry in entries:
+        if not isinstance(entry,dict):raise ValueError('작업 옵션 형식이 올바르지 않습니다.')
+        source=entry.get('source');original=catalog.get(source,{}).get(entry.get('id'))
+        if not original:raise ValueError('현재 품번의 AM/수집 옵션만 선택할 수 있습니다.')
+        ids={original['id']};color={k:original.get(k,'') for k in ('color_name','color_code')}
+        if entry.get('linked_crawl_id'):raise ValueError('옵션 연결은 지원하지 않습니다.')
+        if 'size' in original:color['size']=original['size']
+        if max(len(color['color_name']),len(color['color_code']))>80:raise ValueError('옵션 이름/코드는 80자 이하로 입력하세요.')
+        normalized=normalize_palette([color])[0];cid=normalized['id'];chosen[cid]=normalized
+        inherit.setdefault(cid,set()).update(ids|{cid})
+        sources[cid]=dict(source=source,origin_id=original['id'],linked_crawl_id=None)
+    raw_ids=set(catalog['crawl']);added={c['id']:c for c in saved.get('added_colors',[])}
+    for cid,color in chosen.items():
+        if cid not in raw_ids:added[cid]=color
+    saved['added_colors']=list(added.values());saved['hidden_colors']=sorted((raw_ids|set(added))-set(chosen));saved['option_sources']=sources
+    assignments={iid:list(value) if isinstance(value,list) else [value] for iid,value in saved.get('assignments',{}).items()}
+    confirmed=set(saved.get('confirmed',[]));active_confirmed=set(group['confirmed'])
+    for cid,old_ids in inherit.items():
+        for old in old_ids:transfers.setdefault(old,[]).append(cid)
+        for iid,values in assignments.items():
+            if old_ids.intersection(values) and cid not in values:values.append(cid)
+        if old_ids.intersection(active_confirmed):confirmed.add(cid)
+    saved.update(assignments=assignments,confirmed=sorted(confirmed),image_signature=group['signature'],all_photos=True)
+    return transfers
+
+
+def preview_am(job,data):
+    with job.data_lock:known=[g['code'] for g in source_groups(job)]
+    return am_requests.parse_requests(data,known)
+
+
+def import_am(job,data):
+    if job.state in ('running','pausing','paused','stopping','saving'):raise ValueError('수집을 마친 뒤 AM 요청을 불러오세요.')
+    parsed=preview_am(job,data)
+    if parsed['needs_columns']:raise ValueError('품번과 색상 열을 선택하고 다시 미리보기하세요.')
+    if not parsed['products']:raise ValueError('인식된 AM 요청 옵션이 없습니다. 열과 입력 내용을 확인하세요.')
+    with job.data_lock:
+        view=snapshot(job);state=read_state(job)
+        if data.get('expected_revision')!=view['revision']:raise ValueError('다른 창에서 매핑이 변경되었습니다. 다시 불러오세요.')
+        state['am_requests']=parsed;applied=[];kept=[]
+        for group in view['groups']:
+            options=parsed['products'].get(am_requests.code_key(group['code']),[])
+            group['am_options']=options
+            saved=state.setdefault('groups',{}).setdefault(group['id'],initial_saved(group))
+            configure_options(saved,group,[dict(source='am',id=c['id']) for c in options]);applied.append(group['code'])
+        state.update(revision=view['revision']+1,finalized=False,fingerprint=view['fingerprint'])
+        atomic_json(job.dir/'color_mapping.json',state)
+    job.checkpoint();result=snapshot(job);result['am_applied']=applied;result['am_preserved']=kept
+    return result

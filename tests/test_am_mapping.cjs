@@ -1,0 +1,10 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const source=fs.readFileSync('app/static/app.js','utf8'),filters=require('../app/static/mapping-filters.js');
+const ctx={S:{mappingDrafts:{},mappingDirty:new Set()}};vm.createContext(ctx);
+vm.runInContext(source.slice(source.indexOf('const mappingKey='),source.indexOf('async function openMapping(')),ctx);
+const group={id:'g',am_mode:true,colors:[{id:'WH'}],original_colors:[{id:'white'},{id:'black'}],confirmed:['WH'],images:[{id:'photo',assigned_colors:['WH']}]};
+assert.equal(ctx.mappingDisplayColors(group).length,3);assert(filters.status(group).complete);
+ctx.toggleMappingPhoto(group,'white','photo');assert.deepEqual([...ctx.mappingDraft(group,'white')],['photo']);assert(filters.status(group,ctx.S.mappingDrafts,ctx.S.mappingDirty).complete);
+assert.deepEqual(Array.from(ctx.mappingOwners(group,'photo'),c=>c.id),['WH','white']);
+const saved={...group,colors:[...group.colors,{id:'white'}],confirmed:['WH','white']};ctx.S.mappingDirty.clear();assert(filters.status(saved,ctx.S.mappingDrafts,ctx.S.mappingDirty).complete);
+console.log('Inactive crawl references support photo selection without affecting AM completion; saved references participate as active options');

@@ -11,3 +11,4 @@ venv/
 *.key
 .DS_Store
 Thumbs.db
+.verification-tmp/
