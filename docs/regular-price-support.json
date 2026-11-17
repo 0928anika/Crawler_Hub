@@ -202,5 +202,41 @@
     "profile": "daehyun",
     "supported": true,
     "reason": "공식 상세 .info_price .prc.consumer 소비자가. dis_price는 판매가이며 정상가 대체값으로 사용하지 않음. 품번별 누락은 빈칸으로 성공 처리."
+  },
+  {
+    "id": "jdx_official",
+    "profile": "cafe24",
+    "supported": true,
+    "reason": "공식 소비자가 #span_product_price_custom 또는 product_custom(regular_price cafe24 프로필). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "sfit_official",
+    "profile": "cafe24",
+    "supported": true,
+    "reason": "공식 소비자가 #span_product_price_custom 또는 product_custom(regular_price cafe24 프로필). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "elcanto_official",
+    "profile": "makeshop",
+    "supported": true,
+    "reason": "공식 취소선 가격(.strike/del). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "riverclassy_favlook",
+    "profile": "makeshop",
+    "supported": true,
+    "reason": "공식 span.tagprice 취소선 가격. 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "zensai_official",
+    "profile": "imweb",
+    "supported": true,
+    "reason": "공식 .sale_price(취소선 정가). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "mountia_official",
+    "profile": "byn",
+    "supported": true,
+    "reason": "공식 .prd-info__price-original .prd-info__price-num의 독립 정상가. 누락/0/형식 변경은 빈칸으로 계속 진행."
   }
 ]

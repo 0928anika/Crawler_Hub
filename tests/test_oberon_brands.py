@@ -18,7 +18,8 @@ from crawler_sdk import CrawlContext
 from PIL import Image
 
 NEW = ['adhoc_official', 'bangbang_official', 'decoand_official', 'dawnfield_official', 'disneygolf_smfashion',
-       'renomakids_official', 'minimum_official', 'adidas_official', 'brentwood_kolonmall', 'ping_bucketstore', 'ecolier_soiemall']
+       'renomakids_official', 'minimum_official', 'adidas_official', 'brentwood_kolonmall', 'ping_bucketstore', 'ecolier_soiemall',
+       'jdx_official', 'sfit_official', 'elcanto_official', 'riverclassy_favlook', 'zensai_official', 'mountia_official']
 
 
 def load(key):
@@ -299,6 +300,100 @@ class Others(unittest.TestCase):
         self.assertEqual(rows[0]['상품명'], '플레어 원피스')
         self.assertIn('<th>제조국</th><td>대한민국</td>', rows[0]['상세페이지 HTML'])
         self.assertNotIn('top1', rows[0]['상세페이지 HTML'])
+
+
+def single_page(host, name, color, extra=''):
+    stock = {'P1': {'option_name_original': ['색상', '사이즈'], 'option_value_orginal': [color, '090'], 'is_display': 'T'}}
+    return ('<html><head><meta property="og:image" content="https://%s/web/product/big/%s.jpg"></head><body>'
+            "<script>var product_name = '%s'; var option_stock_data = '%s';</script>"
+            '<span id="span_product_price_text">10,000원</span>%s</body></html>'
+            % (host, color, name, json.dumps(stock, ensure_ascii=False).replace('"', '\\"'), extra))
+
+
+class SecondBatch(unittest.TestCase):
+    def test_jdx_follows_color_pages_and_full_code_selects_one(self):
+        module = load('jdx_official')
+        site = module.CONFIG['site']
+        routes = {site + '/product/search.html?keyword=X1WDX4131': CAFE24_SEARCH.replace('<li id="anchorBoxId_102"></li>', ''),
+                  site + '/product/detail.html?product_no=101': single_page('jdx.co.kr', '골프 팬츠 (X1WDX4131BK) - JDX', '블랙', '<a href="/product/golf/x1wdx4131wh/102/">WH</a>'),
+                  site + '/product/detail.html?product_no=102': single_page('jdx.co.kr', '골프 팬츠 (X1WDX4131WH) - JDX', '화이트'),
+                  site + '/product/image_zoom2.html?product_no=101': '<html></html>', site + '/product/image_zoom2.html?product_no=102': '<html></html>'}
+        rows, failures, error, net = run(module, 'jdx_official', 'X1WDX4131', ALL, routes)
+        self.assertIsNone(error, failures)
+        self.assertEqual([(r['색상명'], r['색상코드'], r['품번']) for r in rows], [('블랙', 'BK', 'X1WDX4131'), ('화이트', 'WH', 'X1WDX4131')])
+        self.assertEqual(rows[0]['상품명'], '골프 팬츠')
+        rows, failures, error, net = run(module, 'jdx_official', 'X1WDX4131WH', [], routes)
+        self.assertIsNone(error, failures)
+        self.assertEqual([r['색상코드'] for r in rows], ['WH'])
+
+    def test_sfit_code_in_image_filename_and_combined_option(self):
+        module = load('sfit_official')
+        site = module.CONFIG['site']
+        stock = {'P1': {'option_name_original': ['색상/사이즈'], 'option_value_orginal': ['블랙(BK)/95(3)'], 'is_display': 'T'},
+                 'P2': {'option_name_original': ['색상/사이즈'], 'option_value_orginal': ['블랙(BK)/100(0)'], 'is_display': 'T'}}
+        page = ('<html><head><meta property="og:image" content="https://sfit.co.kr/web/product/big/SFT001_1.jpg"></head><body>'
+                "<script>var product_name = '데일리 팬츠'; var option_stock_data = '" + json.dumps(stock, ensure_ascii=False).replace('"', '\\"') + "';</script></body></html>")
+        routes = {site + '/product/search.html?keyword=SFT001': CAFE24_SEARCH.replace('<li id="anchorBoxId_102"></li>', ''),
+                  site + '/product/detail.html?product_no=101': page, site + '/product/image_zoom2.html?product_no=101': '<html></html>'}
+        rows, failures, error, net = run(module, 'sfit_official', 'SFT001', ['size', 'main_image'], routes)
+        self.assertIsNone(error, failures)
+        self.assertEqual((rows[0]['색상명'], rows[0]['색상코드'], rows[0]['사이즈']), ('블랙', 'BK', '95,100'))
+
+    def test_elcanto_multicolor_goes_to_manual_with_notice_table(self):
+        module = load('elcanto_official')
+        ld = {'@type': 'Product', 'mpn': 'LCMC93', 'name': '엘칸토 로퍼', 'category': '여성(대) > 로퍼(중)', 'offers': {'price': 89000}}
+        page = ('<script type="application/ld+json">' + json.dumps(ld, ensure_ascii=False) + '</script>'
+                '<div class="thumb-info"><span class="price">89,000원</span><del>129,000원</del>'
+                '<div class="originImgArea"><img src="https://www.elcanto.co.kr/shopimages/a1.jpg"><img src="https://www.elcanto.co.kr/shopimages/a2.jpg"></div></div>'
+                '<select name="optionlist[]" label="색상"></select><select name="optionlist[]" label="사이즈"></select>'
+                "<script>var optionJsonData = {0:{opt_values:'블랙,230',sto_state:'SALE'},1:{opt_values:'블랙,240',sto_state:'SOLDOUT'},2:{opt_values:'브라운,230',sto_state:'SALE'}};\n</script>"
+                '<div class="prd-detail"><img src="https://www.elcanto.co.kr/detail/d1.jpg"><img src="https://www.elcanto.co.kr/design/cs_1.jpg">'
+                '<table><tr><th>소재</th><td>소가죽</td></tr><tr><th>제조국</th><td>대한민국</td></tr></table></div>')
+        search = '<div class="prdListArea"><dl class="item-list"><a class="prdLink" href="/shop/shopdetail.html?branduid=55">x</a><dd class="name">로퍼 LCMC93</dd></dl></div>'
+        routes = {'https://www.elcanto.co.kr/shop/shopbrand.html?search=LCMC93': search,
+                  'https://www.elcanto.co.kr/shop/shopdetail.html?branduid=55': page}
+        rows, failures, error, net = run(module, 'elcanto_official', 'LCMC93', ALL, routes)
+        self.assertIsNone(error, failures)
+        self.assertEqual(len(rows), 2)
+        self.assertTrue(all(r['_unmapped'] for r in rows))
+        self.assertEqual(rows[0]['상품명'], '로퍼')
+        self.assertEqual((rows[0]['판매가'], rows[0]['정상가'], rows[0]['카테고리']), (89000, 129000, '여성 > 로퍼'))
+        self.assertEqual(rows[0]['사이즈'], '')  # 색상별 사이즈가 달라 공통값 없음
+        self.assertIn('<th>소재</th><td>소가죽</td>', rows[0]['상세페이지 HTML'])
+        self.assertNotIn('cs_1', rows[0]['상세페이지 HTML'])
+
+    def test_riverclassy_uses_official_color_text_and_fails_without_it(self):
+        module = load('riverclassy_favlook')
+        def page(name):
+            return ('<div class="thumb-wrap"><ul class="thumbnail"><img src="https://www.favlook.co.kr/shopimages/x1.jpg"></ul></div>'
+                    '<div class="thumb-info"><div class="info"><p class="brand">리버클래시</p><h3 class="main_name">' + name + '</h3>'
+                    '<p class="model_name">LMD51854</p><span class="sellprice"><em>59,000</em></span><span class="tagprice"><strike>99,000</strike></span>'
+                    '</div></div><script>var optionJsonData = {0:{opt_values:\'55\'},1:{opt_values:\'66\'}};\n</script>')
+        search = '<div class="item-list"><dl class="item"><a href="/shop/shopdetail.html?branduid=7">x</a>LMD51854</dl><dl class="item"><a href="/shop/shopdetail.html?branduid=8">y</a>LMD51854</dl></div>'
+        routes = {'https://www.favlook.co.kr/shop/shopbrand.html?search=LMD51854': search,
+                  'https://www.favlook.co.kr/shop/shopdetail.html?branduid=7': page('울 코트 블랙'),
+                  'https://www.favlook.co.kr/shop/shopdetail.html?branduid=8': page('울 코트')}
+        rows, failures, error, net = run(module, 'riverclassy_favlook', 'LMD51854', ['size', 'price', 'regular_price', 'main_image'], routes)
+        self.assertEqual([(r['색상명'], r['사이즈'], r['판매가'], r['정상가']) for r in rows], [('블랙', '55,66', 59000, 99000)])
+        self.assertIsNotNone(error)
+        self.assertTrue(any('색상 표기가 없어' in f for f in failures))
+
+    def test_zensai_sizes_only_requested_when_selected(self):
+        module = load('zensai_official')
+        ld = {'@type': 'Product', 'name': '[네이비] 남성 바람막이 (ZAD4JP403NV)', 'sku': 'ZAD4JP403NV'}
+        page = ('<script type="application/ld+json">' + json.dumps(ld, ensure_ascii=False) + '</script>'
+                '<div id="prod_image_list"><img xoriginal="https://cdn-optimized.imweb.me/upload/a.jpg"></div>'
+                '<span class="real_price">199,000원</span><span class="sale_price">259,000원</span>')
+        routes = {'https://www.zensai.co.kr/search?keyword=ZAD4JP403': '<a href="/shop_view/?idx=11">남성 바람막이 (ZAD4JP403NV)</a>',
+                  'https://www.zensai.co.kr/shop_view/?idx=11': page,
+                  'https://www.zensai.co.kr/shop/load_option.cm': {'option_html': '<div class="dropdown-item"><a class="_requireOption">95</a></div><div class="dropdown-item"><a class="_requireOption">100 (품절)</a></div>'}}
+        rows, failures, error, net = run(module, 'zensai_official', 'ZAD4JP403', ['price', 'regular_price', 'main_image'], routes)
+        self.assertIsNone(error, failures)
+        self.assertFalse(any('load_option' in u for u in net.calls))
+        self.assertEqual((rows[0]['색상명'], rows[0]['색상코드'], rows[0]['상품명'], rows[0]['판매가'], rows[0]['정상가']), ('네이비', 'NV', '남성 바람막이', 199000, 259000))
+        self.assertTrue(rows[0]['대표이미지'].startswith('https://cdn.imweb.me/'))
+        rows, failures, error, net = run(module, 'zensai_official', 'ZAD4JP403', ['size'], routes)
+        self.assertEqual(rows[0]['사이즈'], '95,100 (품절)')
 
 
 if __name__ == '__main__':

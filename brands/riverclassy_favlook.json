@@ -1,0 +1,172 @@
+{
+  "id": "riverclassy_favlook",
+  "name": "리버클래시",
+  "category": "여성 의류",
+  "crawl_source": "페이브룩",
+  "script": "riverclassy_favlook.py",
+  "execution_level": 1,
+  "mapping_mode": "automatic",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명",
+    "사이트 브랜드"
+  ],
+  "extensions": [],
+  "official_color_codes": false,
+  "image_color_mapping": "verified",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 optionJsonData 옵션 값 전체(품절 포함), 없으면 옵션 셀렉트."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 span.sellprice."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 span.tagprice 취소선 가격. 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 ld+json category 경로."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "단일 색상 상품 페이지의 공식 ul.thumbnail 갤러리. 공개 접근·규격 검사."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "같은 갤러리 검사 통과 컷 5슬롯."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 div.prd-detail 이미지 + PRODUCT INFO 고시 이미지(원본 유지)."
+    }
+  },
+  "guide": {
+    "pattern": "^[A-Za-z0-9 _-]{4,24}$",
+    "format": "기본 품번(예: LMD51854)",
+    "notes": "같은 품번의 색상별 상품을 각각 한 행으로 모읍니다.",
+    "method": "공식 검색 후 상세 모델명(p.model_name)에 품번이 경계 일치하는 상품만.",
+    "example": "LMD51854",
+    "examples": [
+      "LMD51854"
+    ],
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "공백"
+    ],
+    "validation_note": "입력 형식 검사이며 실제 상품 존재 확인은 실행 시 수행"
+  },
+  "notes": "페이브룩(메이크샵) 리버클래시. 상품 페이지마다 한 색상 상품이고 색상 옵션이 없음 → 공식 상품명/모델명의 색상 표기(없으면 DETAIL 설명의 \"~컬러\" 원문)를 색상명으로 사용하고 근거를 로그에 남김. 공식 문구에 색상이 없으면 그 상품은 실패로 알림(추측 색상 생성 안 함). 고시는 PRODUCT INFO 이미지로 상세에 유지. 검증 범위: 사용자 단독 크롤러(리버클래시 크롤러)에서 운영 확인된 URL·선택자·응답 키를 Crawler Hub SDK 규약으로 이식. 이 코드를 작성한 환경은 해당 사이트 접속이 차단되어 실사이트 실행은 미검증이며, SDK 계약·선택 항목 생략·표 재구성은 오프라인 fixture 테스트(tests/test_oberon_brands.py)로만 확인함.",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 optionJsonData 옵션 값 전체(품절 포함), 없으면 옵션 셀렉트."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 span.sellprice."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 span.tagprice 취소선 가격. 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 ld+json category 경로."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "단일 색상 상품 페이지의 공식 ul.thumbnail 갤러리. 공개 접근·규격 검사."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "같은 갤러리 검사 통과 컷 5슬롯."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 div.prd-detail 이미지 + PRODUCT INFO 고시 이미지(원본 유지)."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null,
+    "사이트 브랜드": null
+  },
+  "code_hash": "4c5240e315ab3555ac3cd25bc301539befa3e03f68d82f4f8fee29c3cec31edd"
+}

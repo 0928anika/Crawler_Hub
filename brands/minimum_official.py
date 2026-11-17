@@ -3,7 +3,7 @@ PORTAL_API_VERSION = 1
 
 검증 범위: 사용자 단독 크롤러(미니멈 크롤러)에서 운영 확인된 URL·선택자·응답 키를 Crawler Hub SDK 규약으로 이식. 이 코드를 작성한 환경은 해당 사이트 접속이 차단되어 실사이트 실행은 미검증이며, SDK 계약·선택 항목 생략·표 재구성은 오프라인 fixture 테스트(tests/test_oberon_brands.py)로만 확인함.
 """
-REVISION = '2026-11-12-oberon-1'
+REVISION = '2026-11-18-oberon-2'
 CONFIG = {'site': 'https://minimummall.com',
  'hosts': ('minimummall.com', 'www.minimummall.com'),
  'brand': '미니멈',
@@ -453,8 +453,13 @@ def page_colors(doc, text, notice):
                 ci, si = 0, 1
             elif ci is None and si is None:
                 si = 0
-            color = str(values[ci]).strip() if ci is not None and ci < len(values) else ''
-            size = str(values[si]).strip() if si is not None and si < len(values) else ''
+            if ci is not None and ci == si and ci < len(values) and '/' in str(values[ci]):
+                color, size = (part.strip() for part in str(values[ci]).rsplit('/', 1))  # '색상/사이즈' 한 옵션
+            else:
+                color = str(values[ci]).strip() if ci is not None and ci < len(values) else ''
+                size = str(values[si]).strip() if si is not None and si < len(values) else ''
+            if CONFIG.get('size_count_suffix'):
+                size = re.sub(r'\(\d+\)$', '', size).strip() or size  # 옵션명 끝 (수량) 표기 제거
             entry = result.setdefault(color, {'sizes': [], 'prices': [], 'image': ''})
             if size and size not in entry['sizes']:
                 entry['sizes'].append(size)
@@ -672,9 +677,18 @@ def identity(doc, text, base, info):
         style, code = (match[1], match[2]) if match else (value, '')
         if style == base or value == base:
             return raw, style if style == base else value, code
+    if CONFIG.get('name_code'):
+        pattern, cc_len = CONFIG['name_code']
+        match = re.search(pattern, raw.upper())
+        if match:
+            code = match[1]
+            style, cc = (code[:-cc_len], code[-cc_len:]) if len(code) >= len(base) + cc_len else (code, '')
+            return (raw, style, cc) if style == base else None
     if bounded(base, raw.upper()):
         match = re.search(r'(?<![A-Z0-9])' + re.escape(base) + r'_([A-Z0-9]{1,4})(?![A-Z0-9])', raw.upper())
         return raw, base, match[1] if match else ''
+    if CONFIG.get('html_code') and re.search(r'(?<![A-Za-z0-9])' + re.escape(base) + r'(?=[_/.])', text, re.I):
+        return raw, base, ''  # 공식 상품 이미지 파일명에 품번이 정확히 있음
     return None
 
 
@@ -694,6 +708,9 @@ def crawl(ctx):
         ctx.fail_item('품번 형식 오류: ' + CONFIG['format'])
         raise CrawlError('품번 형식 오류')
     base, requested = match[1], (match.group(2) if match.re.groups >= 2 else None)
+    if CONFIG.get('name_code') and not requested and len(base) >= CONFIG.get('full_code_len', 99):
+        cc_len = CONFIG['name_code'][1]
+        base, requested = base[:-cc_len], base[-cc_len:]  # 색상코드까지 붙인 전체 품번 입력
     ctx.log(CONFIG['brand'] + ' 코드 버전: ' + REVISION, 'INFO')
     ctx.allow_automatic_results = True
     wants = ctx.enabled('main_image') or ctx.enabled('additional_images')
@@ -701,7 +718,11 @@ def crawl(ctx):
     pages, manual, palette, details = [], [], [], ([], [], [])
     try:
         ctx.stage(CONFIG['brand'] + ' 공식 품번 검색: ' + base)
-        for number in find_products(ctx, base):
+        queue = find_products(ctx, base)
+        index = 0
+        while index < len(queue):
+            number = queue[index]
+            index += 1
             ctx.checkpoint()
             url = CONFIG['site'] + '/product/detail.html?product_no=' + number
             try:
@@ -713,6 +734,12 @@ def crawl(ctx):
                     ctx.log('품번 불일치 상품 제외: ' + final, 'INFO')
                     continue
                 name_raw, style, page_code = found
+                if CONFIG.get('siblings'):
+                    for a in doc.select('a[href]'):
+                        href = unquote(a['href']).lower()
+                        hit = re.search(re.escape(style.lower()) + r'[a-z0-9]{0,3}/(\d+)/', href) or (re.search(r'product_no=(\d+)', href) if style.lower() in href else None)
+                        if hit and hit[1] not in queue and len(queue) < 60:
+                            queue.append(hit[1])  # 같은 품번 다른 색상 상품 링크
                 if requested and page_code != requested:
                     ctx.log('지정 색상코드와 다른 상품 링크 제외: ' + final, 'INFO')
                     continue
@@ -745,7 +772,7 @@ def crawl(ctx):
                     raise CrawlError('공식 색상 후보가 없습니다: ' + final)
                 tags = re.findall(r'^\s*\[([^\]]+)\]', name_raw)
                 page = dict(doc=doc, text=text, final=final, number=number, style=style, colors=colors,
-                            name=clean_name(name_raw, CONFIG['aliases'], [base, style + ('_' + page_code if page_code else '')]),
+                            name=clean_name(name_raw, CONFIG['aliases'], [base, style + ('_' + page_code if page_code else ''), style + page_code if CONFIG.get('name_code') else '']),
                             raw_name=name_raw, site_brand=tags[0].strip() if tags and CONFIG.get('title_brand') else '')
                 if ctx.enabled('detail_page'):
                     images, pairs, blocks = detail_parts(ctx, doc, final, style)

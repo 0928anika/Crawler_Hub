@@ -1,0 +1,174 @@
+{
+  "id": "elcanto_official",
+  "name": "엘칸토",
+  "category": "신발",
+  "crawl_source": "공식 홈페이지",
+  "script": "elcanto_official.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명",
+    "사이트 브랜드"
+  ],
+  "extensions": [],
+  "official_color_codes": false,
+  "image_color_mapping": "hybrid",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 optionJsonData의 색상별 사이즈 전체(품절 포함). 수동 후보는 색상 공통일 때만."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .thumb-info .price(없으면 ld+json offers.price)."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 취소선 가격(.strike/del). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 ld+json category 경로."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .originImgArea/.multi_list/.swiper-slide 상품 사진. 색상 1개 상품은 자동, 다색상은 수동 매핑 후보."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "수동 후보는 자르지 않고 전달, 최종 5슬롯은 Hub가 구성."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .prd-detail 이미지 + 상세 표의 항목-값 2열 고시 표."
+    }
+  },
+  "guide": {
+    "pattern": "^[A-Za-z0-9]{4,20}$",
+    "format": "기본 품번(예: LCMC93)",
+    "notes": "공식 mpn이 품번 또는 품번+영문 1~3자리인 상품을 모읍니다.",
+    "method": "공식 검색(shopbrand.html?search=) 후 상세 ld+json mpn으로 대조.",
+    "example": "LCMC93",
+    "examples": [
+      "LCMC93"
+    ],
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "공백"
+    ],
+    "validation_note": "입력 형식 검사이며 실제 상품 존재 확인은 실행 시 수행"
+  },
+  "notes": "엘칸토몰(메이크샵). 공식 ld+json mpn으로 품번 확인(기본 품번 또는 뒤 영문 1~3자리까지). 한 상품에 색상 옵션이 여러 개이고 색상별 사진 연결이 없어 색상 1개 상품만 자동, 다색상 갤러리는 수동 매핑. 상세 표(.prd-detail table)는 고시 2열 표로 재구성. speedgabia 상세 이미지는 해당 품번 파일만, 상단·CS·이벤트·리뷰 공통 이미지 요청 제외. 검증 범위: 사용자 단독 크롤러(elcanto_crawler.py)에서 운영 확인된 URL·선택자·응답 키를 Crawler Hub SDK 규약으로 이식. 이 코드를 작성한 환경은 해당 사이트 접속이 차단되어 실사이트 실행은 미검증이며, SDK 계약·선택 항목 생략·표 재구성은 오프라인 fixture 테스트(tests/test_oberon_brands.py)로만 확인함.",
+  "hybrid_mapping": true,
+  "additional_image_count": 5,
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 optionJsonData의 색상별 사이즈 전체(품절 포함). 수동 후보는 색상 공통일 때만."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .thumb-info .price(없으면 ld+json offers.price)."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 취소선 가격(.strike/del). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 ld+json category 경로."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .originImgArea/.multi_list/.swiper-slide 상품 사진. 색상 1개 상품은 자동, 다색상은 수동 매핑 후보."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "수동 후보는 자르지 않고 전달, 최종 5슬롯은 Hub가 구성."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .prd-detail 이미지 + 상세 표의 항목-값 2열 고시 표."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null,
+    "사이트 브랜드": null
+  },
+  "code_hash": "0207443a9cfaee4ead533567d0efa14a4cdc1eea889d5b4f10b23d46fe0ce19f"
+}
