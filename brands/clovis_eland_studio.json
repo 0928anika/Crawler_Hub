@@ -1,9 +1,9 @@
 {
-  "id": "clavis_eland_studio",
+  "id": "clovis_eland_studio",
   "name": "클라비스",
   "category": "여성복",
   "crawl_source": "이랜드몰 스튜디오컷",
-  "script": "clavis_eland_studio.py",
+  "script": "clovis_eland_studio.py",
   "execution_level": 1,
   "mapping_mode": "manual",
   "image_color_mapping": "manual",
@@ -165,5 +165,5 @@
     "상세페이지 HTML": "detail_page",
     "정상가": "regular_price"
   },
-  "code_hash": "c98d02a006e4bf95d2a33b6f1ba04bad0384c037f4f04dd84c0786485a4527a7"
+  "code_hash": "3891bfac729390b23c38eb822fe544362789c963906f0f572d1ac22737ec036d"
 }

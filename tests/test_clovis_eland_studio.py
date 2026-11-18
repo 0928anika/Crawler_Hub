@@ -4,7 +4,7 @@ from pathlib import Path
 from unittest.mock import patch
 ROOT=Path(__file__).resolve().parents[1]
 sys.path[:0]=[str(ROOT/'app'),str(ROOT/'brands')]
-import clavis_eland_studio as c
+import clovis_eland_studio as c
 class Context:
  product_code='CVTWG1108N'
  def __init__(self):self.rows=[];self.errors=[]
@@ -18,7 +18,7 @@ class Tests(unittest.TestCase):
  def setUp(self):self.data=json.loads((ROOT/'tests/fixtures/clavis/CVTWG1108N.json').read_text('utf-8'))
  def test_registration(self):
   from registry import get_brand
-  d=get_brand('clavis_eland_studio');self.assertTrue(d['available']);self.assertEqual(d['crawl_source'],'이랜드몰 스튜디오컷');self.assertEqual(c.VENDOR,'LV16003596');self.assertEqual(c.BRAND_NO,'1690000333')
+  d=get_brand('clovis_eland_studio');self.assertTrue(d['available']);self.assertEqual(d['crawl_source'],'이랜드몰 스튜디오컷');self.assertEqual(c.VENDOR,'LV16003596');self.assertEqual(c.BRAND_NO,'1690000333')
  def test_official_search_priority(self):
   def page(vendors):return c.BeautifulSoup('<span data-searchresult-total>'+str(len(vendors))+'</span>'+''.join('<a class="ui-item__link" href="/i/item?itemNo='+str(i)+'&lowerVendNo='+v+'">x</a>' for i,v in enumerate(vendors)),'html.parser'),c.SITE
   with patch.object(c,'page',return_value=page(['OTHER',c.VENDOR])):self.assertEqual(len(c.search(Context(),'CVTWG1108N')),1)

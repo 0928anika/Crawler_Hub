@@ -203,7 +203,7 @@ def color_rows(rows):
 
 
 def clean_name(name, code):
-    for token in ('클라비스', 'CLAVIS', code):
+    for token in ('클라비스', 'CLOVIS', code):
         name = re.sub(r'(?<![A-Za-z0-9])' + re.escape(token) + r'(?![A-Za-z0-9])', '', name, flags=re.I)
     name = re.sub(r'\[\s*\]|\(\s*\)', '', name)
     name = re.sub(r'\s+', ' ', name).strip(' _-')
