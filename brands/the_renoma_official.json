@@ -1,0 +1,173 @@
+{
+  "id": "the_renoma_official",
+  "name": "더레노마",
+  "category": "여성 의류",
+  "crawl_source": "공식 홈페이지",
+  "script": "the_renoma_official.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명",
+    "사이트 브랜드"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "hybrid",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상 행: 공식 option_stock_data의 해당 색상 사이즈 전체(품절 포함, 숨김 옵션 제외). 수동 후보는 모든 색상의 사이즈가 같을 때만 공통값, 다르면 빈칸."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data 색상별 option_price가 하나로 같을 때 그 값, 없으면 #span_product_price_sale/#span_product_price_text. 사이즈별 상이하면 빈칸."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 소비자가 #span_product_price_custom 또는 product_custom(regular_price cafe24 프로필). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 .xans-product-headcategory 경로."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 갤러리에 실제 선언된 URL의 공개 접근/픽셀/형식/비율 검사. 한 색상 또는 공식 색상 연결만 자동, 그 외 수동 매핑."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 갤러리 전체를 매핑 후보로 전달. 자동 결과와 최종 매핑 결과는 유효 컷을 반복해 추가이미지 5슬롯."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "품번 상세 이미지와 #desctable 고시 및 .size-wrap 도식/표/주석. 공통 notice와 배너·배송·교환 안내 제외."
+    }
+  },
+  "guide": {
+    "example": "R2H41OJP820",
+    "examples": [
+      "R2H41OJP820"
+    ],
+    "format": "기본 품번 전체 입력",
+    "notes": "품절 포함 전체 사이즈. 공식 옵션 연결 사진 자동 매핑, 연결 없는 사진 수동 매핑.",
+    "method": "공식 검색 후 더레노마 브랜드 및 상세 품번 일치 검증.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      ""
+    ],
+    "validation_note": "빈 입력 외 품번 형식으로 사전 거절하지 않음."
+  },
+  "notes": "더레노마 공식 DECO&몰. 공식 브랜드 확인 및 품번 정확 대조. BR(브라운) 형식의 실제 두 자리 코드를 수집. 품절 포함 색상별 전체 사이즈. 공식 사진 연결이 없는 다색상은 수동 매핑. 추가이미지 5슬롯. 공통 notice/배송/판매자 배너 제외. 고시 및 사이즈 도식·표·주석 재구성. 2026-11-18 R2H41OJP820 실사이트 검증.",
+  "hybrid_mapping": true,
+  "additional_image_count": 5,
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상 행: 공식 option_stock_data의 해당 색상 사이즈 전체(품절 포함, 숨김 옵션 제외). 수동 후보는 모든 색상의 사이즈가 같을 때만 공통값, 다르면 빈칸."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data 색상별 option_price가 하나로 같을 때 그 값, 없으면 #span_product_price_sale/#span_product_price_text. 사이즈별 상이하면 빈칸."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 소비자가 #span_product_price_custom 또는 product_custom(regular_price cafe24 프로필). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 .xans-product-headcategory 경로."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 갤러리에 실제 선언된 URL의 공개 접근/픽셀/형식/비율 검사. 한 색상 또는 공식 색상 연결만 자동, 그 외 수동 매핑."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 갤러리 전체를 매핑 후보로 전달. 자동 결과와 최종 매핑 결과는 유효 컷을 반복해 추가이미지 5슬롯."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "품번 상세 이미지와 #desctable 고시 및 .size-wrap 도식/표/주석. 공통 notice와 배너·배송·교환 안내 제외."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null,
+    "사이트 브랜드": null
+  },
+  "code_hash": "ccd5014d3ed4fb05496ca8bdf82565b223cfd2f08845a4ceeed3ad5eda152016"
+}
