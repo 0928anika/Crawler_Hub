@@ -43,7 +43,7 @@ GOOGLE_QUERY_LIMIT = 2
 GOOGLE_CANDIDATE_LIMIT = 20
 GOOGLE_MANUAL_WAIT_SECONDS = 300
 GOOGLE_RENDER_WAIT_SECONDS = 15
-ADAPTER_REVISION = "2026-11-09-browser-verify-r6"
+ADAPTER_REVISION = "2026-11-18-search-before-format-r7"
 IMAGE_ORIGIN = "https://image.babathe.com"
 MAX_HTML = 3_000_000
 MAX_IMAGE = 10_000_000
@@ -63,7 +63,11 @@ NEGATIVE = re.compile(
     r"사이즈|실측|측정|고시|콜라주|합성|배너|로고|스와치|배송|세탁", re.I)
 GALLERY = "#contentGoodsDtlGoodsDefaultBox .gallery-top .swiper-slide img"
 DETAIL_IMAGES = ".prd-detail .img-box > div > img"
-INPUT_PATTERN = re.compile(r"^([A-Z0-9]{10})(?:[_-]([A-Z0-9]{2,8}))?$")
+LEGACY_COLOR_INPUT_PATTERN = re.compile(r"^([A-Z0-9]{10})[_-]([A-Z0-9]{2,8})$")
+
+
+class GoogleModelNotFound(ValueError):
+    """Search completed without a verified official model match."""
 
 
 
@@ -244,10 +248,23 @@ def browser_loaded_api(ctx, endpoint, params):
 
 
 def split_input(value):
-    match = INPUT_PATTERN.fullmatch(str(value).strip().upper())
-    if not match:
-        raise ValueError("품번은 영문/숫자 10자리, 색상 지정은 _BLL0 또는 -BLL0 형식입니다")
-    return match.groups()
+    raw = str(value or '').strip().upper()
+    if not raw:
+        raise ValueError("품번이 비어 있습니다")
+    return raw, None
+
+
+def resolve_google_model(ctx, value):
+    raw, _ = split_input(value)
+    try:
+        return raw, None, model_ids(ctx, raw)
+    except GoogleModelNotFound:
+        match = LEGACY_COLOR_INPUT_PATTERN.fullmatch(raw)
+        if not match:
+            raise
+        base, color = match.groups()
+        ctx.log('전체 입력 검색 후 일치 상품 없음: 기존 색상 지정의 기본 품번으로 재검색 / '+base, 'INFO')
+        return base, color, model_ids(ctx, base)
 
 
 def official_google_link(href):
@@ -602,8 +619,8 @@ def page_model_code(soup):
             label, value = row.find("th"), row.find("td")
             if label is not None and value is not None and re.sub(r"\s+", "", text(label)) == "제품코드":
                 code = text(value).strip().upper()
-                if not re.fullmatch(r"[A-Z0-9]{10}", code):
-                    raise ValueError("공식 고시 제품코드 형식 확인 필요: " + code)
+                if not code:
+                    raise ValueError("공식 고시 제품코드가 비어 있습니다")
                 if code not in codes:
                     codes.append(code)
     table = soup.select_one("#contentGoodsDtlGoodsNotifyListContent")
@@ -629,7 +646,7 @@ def page_model_code(soup):
     if codes:
         return codes[0], block
     model = product_json(soup).get("mpn")
-    if isinstance(model, str) and re.fullmatch(r"[A-Za-z0-9]{10}", model.strip()):
+    if isinstance(model, str) and model.strip():
         return model.strip().upper(), block
     raise ValueError("공식 mdlNo/MPN 필드를 확인하지 못했습니다")
 
@@ -726,8 +743,8 @@ def google_candidate_urls(ctx, base):
                 break
     if not links:
         if rejected:
-            raise ValueError("공식 링크는 찾았으나 상품 검증 실패: " + " / ".join(rejected))
-        raise ValueError("구글 검색에서 바바더 공식 상품 링크를 찾지 못했습니다: " + base)
+            raise GoogleModelNotFound("공식 링크는 찾았으나 상품 검증 실패: " + " / ".join(rejected))
+        raise GoogleModelNotFound("구글 검색에서 바바더 공식 상품 링크를 찾지 못했습니다: " + base)
     return links[:GOOGLE_CANDIDATE_LIMIT]
 
 
@@ -746,7 +763,7 @@ def model_ids(ctx, base):
             failures.append(str(exc))
             ctx.log("구글 후보 상품 확인 실패: " + url + " / " + str(exc), "WARNING")
     if not result:
-        raise ValueError("구글 공식 링크에서 정확한 더아이잗 품번을 확인하지 못했습니다: " + base + (" / " + "; ".join(failures) if failures else ""))
+        raise GoogleModelNotFound("구글 공식 링크에서 정확한 더아이잗 품번을 확인하지 못했습니다: " + base + (" / " + "; ".join(failures) if failures else ""))
     # 검색으로 찾은 상품을 기준으로 공식 색상 목록이 있으면 함께 확장한다.
     data = api(ctx, "/goods/includeGoodsDtlModelNoList", mdlNo=base)
     rows = data.get("goodsMdlImgList")
@@ -1111,9 +1128,8 @@ def detail_html(ctx, soup, gid, base, info, cache):
 def _crawl(ctx):
     failures, matched, emitted = [], set(), set()
     try:
-        base, requested = split_input(ctx.product_code)
-        ctx.stage("공홈 구글링 버전: " + base)
-        ids = model_ids(ctx, base)
+        ctx.stage("공홈 구글링 버전: " + str(ctx.product_code).strip())
+        base, requested, ids = resolve_google_model(ctx, ctx.product_code)
     except Exception as exc:
         ctx.fail_item(str(exc))
         raise
