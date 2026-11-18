@@ -653,6 +653,37 @@ class RedfaceLocalCrop(unittest.TestCase):
         self.assertEqual(len(rows), 5)                        # 실패한 추가컷 1장만 빠지고 나머지는 계속
         self.assertFalse(any('detail.html' in u for u in calls))  # 검증된 상품 링크로 바로 열고 fallback 미사용
 
+    def test_word_labels_map_each_column_and_thin_seams_split(self):
+        from PIL import ImageDraw
+        module = load('redface_official')
+        img = Image.new('RGB', (2000, 4200), 'white')
+        d = ImageDraw.Draw(img)
+        for cx in (350, 1000, 1650):                       # BLACK / KHAKI / IVORY 글자(한 줄, 열마다)
+            d.rectangle((cx - 80, 100, cx + 80, 130), fill=(20, 20, 20))
+        for cx, c in ((350, (30, 30, 30)), (1000, (110, 110, 110)), (1650, (210, 200, 190))):
+            d.rectangle((cx - 290, 220, cx + 290, 1000), fill=c)
+        d.rectangle((900, 1200, 1100, 1230), fill=(20, 20, 20))   # DETAIL VIEW
+        d.rectangle((300, 1350, 1700, 2350), fill=(150, 140, 135))  # 3px 흰 선으로만 붙은 두 컷
+        d.rectangle((300, 2353, 1700, 3353), fill=(140, 130, 125))
+        photos, labels = module.segment(img)
+        self.assertEqual(len(photos), 5)
+        words = [labels[k[0]][1][k[1]] for _, k in photos[:3]]
+        self.assertEqual([round((w[0] + w[2]) / 2) for w in words], [350, 1000, 1650])
+        self.assertEqual(photos[3][1], photos[4][1])          # 디테일 두 컷은 같은 글자(DETAIL VIEW) 아래
+        self.assertLess(photos[3][0][3], 2353)
+        self.assertGreaterEqual(photos[4][0][1], 2350)
+        module.LABEL_POSITION = 'below'                         # 글자가 사진 아래인 브랜드용 설정
+        photos, labels = module.segment(img)
+        self.assertEqual(photos[0][1][0], [i for i, _ in enumerate(labels)][1])  # 첫 줄 사진들은 다음 글자 띠(DETAIL VIEW)로
+
+    def test_fuzzy_match_against_official_options(self):
+        module = load('redface_official')
+        colors = [{'color_name': '블랙', 'color_code': ''}, {'color_name': '카키', 'color_code': ''}, {'color_name': '아이보리', 'color_code': ''}]
+        self.assertEqual(module.match_color('BLAGK', colors)[0]['color_name'], '블랙')
+        self.assertEqual(module.match_color('IV0RY', colors)[0]['color_name'], '아이보리')
+        self.assertIsNone(module.match_color('FRONT VIEW', colors)[0])
+        self.assertIsNone(module.match_color('BLACK KHAKI', colors)[0])
+
     def test_optional_fields_skipped(self):
         rows, failures, error, calls = self.run_redface(['main_image'])
         self.assertIsNone(error, failures)

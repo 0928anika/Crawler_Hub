@@ -14,6 +14,7 @@ from detail_store import excel_detail
 - 상세 HTML은 전 색상 공통: 공식 상세 이미지 URL + 상품정보고시 2열 표 + 공식 사이즈표.
 """
 import ast
+import difflib
 import html
 import io
 import json
@@ -30,13 +31,15 @@ from urllib.request import Request, build_opener
 from bs4 import BeautifulSoup
 from PIL import Image, ImageChops, ImageOps
 
-REVISION = '2026-11-18-redface-3'
+REVISION = '2026-11-18-redface-4'
 ORIGIN = 'https://theredface.com'
 HOSTS = ('theredface.com', 'www.theredface.com', 'm.theredface.com')
 ALIASES = ('레드페이스', 'REDFACE', 'RED FACE', 'THE REDFACE')
 MAX_DOCUMENT = 3_000_000
 MAX_IMAGE = 10_000_000
 MAX_OCR_TILES = 40
+# 색상명 글자가 사진의 어느 쪽에 붙는지. 레드페이스 상세는 색상명이 사진 바로 '위'에 있다(2026-11-18 실조회).
+LABEL_POSITION = 'above'
 COLOR_TITLE = re.compile(r'색상|컬러|color|colour', re.I)
 SIZE_TITLE = re.compile(r'사이즈|size|치수|호수', re.I)
 SKIP_IMAGE = re.compile(r'/common/|/_d1/img/|/web/upload/icon|icon_|ico_|btn_|logo|banner|bn_|cashreceipt|escrow|allat|noimg|no_img|blank|'
@@ -474,81 +477,151 @@ def runs_of(counts, threshold, gap):
 
 def photo_like(mask, box):
     """내용 밀도: 사진은 배경 아닌 화소가 촘촘하고, 글자·표·실측선 도식은 듬성하다(근사 판정)."""
-    region = mask.crop(box)
-    data = region.tobytes()
-    density = data.count(255) / max(1, len(data))
-    region.close()
-    return density
+    counts = row_counts(mask, box)
+    return sum(counts) / max(1, (box[2] - box[0]) * (box[3] - box[1]))
+
+
+def row_counts(mask, box):
+    """box 영역의 행별 내용(배경 아닌) 화소 수. C 수준 bytes.count로 계산."""
+    piece = mask.crop(box)
+    w, h = piece.size
+    raw = piece.tobytes()
+    piece.close()
+    return [raw[y * w:(y + 1) * w].count(255) for y in range(h)]
+
+
+def col_counts(mask, box):
+    piece = mask.crop(box).transpose(Image.Transpose.TRANSPOSE)
+    w, h = piece.size
+    raw = piece.tobytes()
+    piece.close()
+    return [raw[y * w:(y + 1) * w].count(255) for y in range(h)]
+
+
+def split_seams(mask, box, s, depth=0):
+    """사진끼리 여백 없이 붙어 있어도 사이의 '거의 흰 가는 선'(행/열 전체가 배경)에서 나눈다. 원본 해상도 기준."""
+    l, t, r, b = box
+    if depth > 4:
+        return [box]
+    rows = row_counts(mask, box)
+    parts = [(t + a, t + z) for a, z in runs_of(rows, max(1, (r - l) * .03), 0) if z - a >= 60 * s]
+    if len(parts) > 1:
+        return [x for a, z in parts for x in split_seams(mask, (l, a, r, z), s, depth + 1)]
+    cols = col_counts(mask, box)
+    parts = [(l + a, l + z) for a, z in runs_of(cols, max(1, (b - t) * .03), 0) if z - a >= 60 * s]
+    if len(parts) > 1:
+        return [x for a, z in parts for x in split_seams(mask, (a, t, z, b), s, depth + 1)]
+    return [box]
+
+
+def white_extension(mask, inner, outer):
+    """outer로 넓힌 부분이 실제 배경(내용 2% 미만)인지. 이웃 사진을 끌어오지 않기 위한 검사."""
+    total = sum(row_counts(mask, outer))
+    own = sum(row_counts(mask, inner))
+    area = (outer[2] - outer[0]) * (outer[3] - outer[1]) - (inner[2] - inner[0]) * (inner[3] - inner[1])
+    return area <= 0 or (total - own) <= area * .02
+
+
+def fit_ratio(mask, box, size):
+    """비율 1.8 초과 컷은 실제 배경 화소로만 짧은 변을 넓힌다(가짜 여백·확대 없음). 불가능하면 None."""
+    width, height = size
+    l, t, r, b = box
+    bw, bh = r - l, b - t
+    if bh / bw > 1.8:
+        need = int(bh / 1.8) + 1
+        if need > width:
+            return None
+        nl = max(0, min(l - (need - bw) // 2, width - need))
+        out = (nl, t, nl + need, b)
+    elif bw / bh > 1.8:
+        need = int(bw / 1.8) + 1
+        if need > height:
+            return None
+        nt = max(0, min(t - (need - bh) // 2, height - need))
+        out = (l, nt, r, nt + need)
+    else:
+        return box
+    return out if white_extension(mask, box, out) else None
 
 
 def segment(image):
-    """전체 폭 배경 여백(가로 띠)으로 블록을 나누고, 블록 안의 세로 배경 여백으로 나란한 사진을 나눈다.
-    낮은 글자 띠(색상명 후보)는 따로 모아, 그 아래 사진들이 어느 띠 밑에 있는지 기록한다.
-    반환: (photos=[(box, 띠번호|None)], labels=[띠 box]) — 모두 원본 픽셀 정수 좌표."""
-    work = image.copy()
-    work.thumbnail((1000, 1_000_000))
-    w, h = work.size
-    scale = image.width / w
-    bg = Image.new('RGB', work.size, background(image))
-    mask = ImageChops.difference(work, bg).convert('L').point(lambda p: 255 if p > 24 else 0)
+    """원본 해상도에서
+    ① 전체 폭 배경 여백(가로 띠)으로 블록을 나누고 ② 블록 안 세로 여백으로 나란한 사진을 나누고
+    ③ 여백 없이 붙은 사진은 사이의 가는 흰 선에서 다시 나눈다.
+    낮은 글자 띠는 색상명 후보로 모으고, 띠 안의 단어 덩어리(열)별로 위치를 기록한다.
+    반환: (photos=[(box, (띠번호, 단어번호)|None)], labels=[(띠 box, [단어 box...])])"""
+    width, height = image.size
+    s = width / 1000
+    bg = Image.new('RGB', image.size, background(image))
+    mask = ImageChops.difference(image, bg).convert('L').point(lambda p: 255 if p > 24 else 0)
     bg.close()
-    raw = mask.tobytes()
-    rows = [raw[y * w:(y + 1) * w].count(255) for y in range(h)]
-    boxes, labels, current = [], [], None
-    for top, bottom in runs_of(rows, max(4, w * .01), 10):
-        whole = mask.crop((0, top, w, bottom)).getbbox()
-        if not whole:
-            continue
-        if bottom - top < 120:
-            if 8 <= bottom - top and w * .03 <= whole[2] - whole[0] <= w * .85:
-                pad = 12  # 글자 띠: 사진 위 색상명 후보. 같은 블록 안 사진에만 이어진다.
-                labels.append([0, int(max(0, (top - pad) * scale)), image.width, int(min(h, (bottom + pad)) * scale)])
-                current = len(labels) - 1
-            continue
-        block = mask.crop((0, top, w, bottom))
-        braw = block.tobytes()
-        bw = block.width
-        cols = [sum(braw[y * bw + x] == 255 for y in range(0, bottom - top, 2)) for x in range(bw)]
-        block.close()
-        found = False
-        for left, right in runs_of(cols, 1, 10):
-            if right - left < w * .2:
+    events, labels = [], []
+    try:
+        rows = row_counts(mask, (0, 0, width, height))
+        for top, bottom in runs_of(rows, max(4, width * .01), int(10 * s)):
+            whole = mask.crop((0, top, width, bottom)).getbbox()
+            if not whole:
                 continue
-            inner = mask.crop((left, top, right, bottom)).getbbox()
-            if not inner:
+            if bottom - top < 120 * s:
+                if 8 * s <= bottom - top and width * .03 <= whole[2] - whole[0] <= width * .85:
+                    pad = int(12 * s)
+                    band = (0, max(0, top - pad), width, min(height, bottom + pad))
+                    words = [(max(0, a - pad), band[1], min(width, z + pad), band[3])
+                             for a, z in runs_of(col_counts(mask, (0, top, width, bottom)), 0, int(15 * s))]
+                    labels.append((band, words))
+                    events.append(('label', len(labels) - 1))
                 continue
-            l, t, r, b = left + inner[0], top + inner[1], left + inner[2], top + inner[3]
-            if b - t < 120 or photo_like(mask, (l, t, r, b)) < .22:
-                continue  # 글자·표·도식으로 보이는 듬성한 블록
-            boxes.append(((l, t, r, b), current))
-            found = True
-        if not found:
-            current = None  # 사진이 아닌 큰 영역(실측표 등)이 나오면 앞 색상명의 범위를 끊는다
-    mask.close()
-    out = []
-    for (l, t, r, b), label in boxes:
-        pad = 8
-        box = [int(max(0, (l - pad) * scale)), int(max(0, (t - pad) * scale)), int(min(image.width, (r + pad) * scale)), int(min(image.height, (b + pad) * scale))]
-        bw, bh = box[2] - box[0], box[3] - box[1]
-        if bh / bw > 1.8:  # 세로로 긴 컷: 실제 원본 배경 픽셀로만 좌우를 넓힘(가짜 여백 생성 안 함)
-            need = int(bh / 1.8) + 1
-            if need <= image.width:
-                extra = need - bw
-                box[0] = max(0, box[0] - extra // 2)
-                box[2] = min(image.width, box[0] + need)
-                box[0] = box[2] - need
-        elif bw / bh > 1.8:
-            need = int(bw / 1.8) + 1
-            if need <= image.height:
-                extra = need - bh
-                box[1] = max(0, box[1] - extra // 2)
-                box[3] = min(image.height, box[1] + need)
-                box[1] = box[3] - need
-        bw, bh = box[2] - box[0], box[3] - box[1]
-        if min(bw, bh) < 500 or max(bw, bh) / min(bw, bh) > 1.8:
-            continue
-        out.append((tuple(box), label))
-    return out, labels
+            found = False
+            for left, right in runs_of(col_counts(mask, (0, top, width, bottom)), 1, int(10 * s)):
+                if right - left < width * .2:
+                    continue
+                for piece in split_seams(mask, (left, top, right, bottom), s):
+                    inner = mask.crop(piece).getbbox()
+                    if not inner:
+                        continue
+                    box = (piece[0] + inner[0], piece[1] + inner[1], piece[0] + inner[2], piece[1] + inner[3])
+                    if box[3] - box[1] < 120 * s or photo_like(mask, box) < .22:
+                        continue  # 글자·표·실측선 도식처럼 듬성한 영역
+                    pad = int(8 * s)
+                    padded = (max(piece[0], box[0] - pad), max(piece[1], box[1] - pad), min(piece[2], box[2] + pad), min(piece[3], box[3] + pad))
+                    events.append(('photo', padded))
+                    found = True
+            if not found:
+                events.append(('reset', None))  # 사진이 아닌 큰 영역(실측표 등)에서 색상명의 범위를 끊는다
+        # 색상명 → 사진 연결: 'above'는 글자 아래~다음 글자(또는 사진 아닌 큰 영역) 전까지, 'below'는 반대 방향
+        photos, current = [], None
+        order = events if LABEL_POSITION == 'above' else list(reversed(events))
+        for kind, value in order:
+            if kind == 'label':
+                current = value
+            elif kind == 'reset':
+                current = None
+            else:
+                photos.append((value, current))
+        if LABEL_POSITION != 'above':
+            photos.reverse()
+        out = []
+        for box, label in photos:
+            fitted = fit_ratio(mask, box, image.size)
+            if fitted is None:
+                continue
+            bw, bh = fitted[2] - fitted[0], fitted[3] - fitted[1]
+            if min(bw, bh) < 500:
+                continue  # 500px 미만은 확대하지 않고 제외
+            key = None
+            if label is not None:
+                words = labels[label][1]
+                if len(words) == 1:
+                    key = (label, 0)
+                else:  # 여러 색상명이 한 줄에 나란히 있으면 사진 바로 위(가로 위치가 겹치는) 단어만
+                    overlaps = [max(0, min(fitted[2], w[2]) - max(fitted[0], w[0])) for w in words]
+                    best = max(range(len(words)), key=lambda k: overlaps[k])
+                    if overlaps[best] > 0 and sorted(overlaps)[-2:][0] < overlaps[best]:
+                        key = (label, best)
+            out.append((tuple(int(v) for v in fitted), key))
+        return out, labels
+    finally:
+        mask.close()
 
 
 def ocr_tiles(ctx, tiles, work):
@@ -608,12 +681,13 @@ def ocr_tiles(ctx, tiles, work):
 
 
 def match_color(recognized, colors):
-    """OCR 글자에서 공식 색상 후보가 정확히 하나만 확인될 때 그 색상. 아니면 None."""
+    """OCR 글자를 공식 색상 옵션(정답지)과 대조. 정확 일치 우선, 없으면 오인식 1~2글자 수준의 유사 일치(0.8 이상).
+    정확히 한 색상만 남을 때만 그 색상, 아니면 (None, 사유)."""
     upper = recognized.upper()
     tokens = set(re.findall(r'[A-Z0-9]+', upper))
     words = set(re.findall(r'[가-힣]+', recognized))
     words |= {re.sub(r'(컬러|색상|색)$', '', w) for w in words}
-    hits = []
+    exact, near = [], []
     for color in colors:
         name, code = color['color_name'].strip(), color['color_code'].strip().upper()
         reasons = []
@@ -624,10 +698,30 @@ def match_color(recognized, colors):
         elif name in TRANSLIT and TRANSLIT[name] in tokens:
             reasons.append('영문 표기 ' + TRANSLIT[name] + '=' + name)
         if reasons:
-            hits.append((color, reasons))
-    if len(hits) == 1:
-        return hits[0][0], ', '.join(hits[0][1])
-    return None, ('여러 색상 동시 일치' if hits else '')
+            exact.append((color, ', '.join(reasons)))
+            continue
+        targets = [t for t in ([name.upper()] if re.fullmatch(r'[A-Z0-9 ]+', name.upper()) else []) + ([TRANSLIT[name]] if name in TRANSLIT else []) if len(t) >= 4]
+        best = (0.0, '')
+        for target in targets:
+            for token in tokens:
+                if len(token) >= 3:
+                    score = difflib.SequenceMatcher(None, token, target).ratio()
+                    best = max(best, (score, token + '≈' + target))
+        for word in words:
+            if len(name) >= 2 and re.fullmatch(r'[가-힣]+', name) and len(word) >= 2:
+                score = difflib.SequenceMatcher(None, word, name).ratio()
+                best = max(best, (score, word + '≈' + name))
+        if best[0] >= .8:
+            near.append((color, best))
+    if len(exact) == 1:
+        return exact[0][0], exact[0][1]
+    if exact:
+        return None, '여러 색상 동시 일치'
+    near.sort(key=lambda x: -x[1][0])
+    if len(near) == 1 or (len(near) > 1 and near[0][1][0] - near[1][1][0] >= .1):
+        color, (score, how) = near[0]
+        return color, '유사 일치 ' + how + ' (' + format(score, '.2f') + ')'
+    return None, ('유사 색상 여러 개' if near else '')
 
 
 def save_cut(ctx, image, box, seen):
@@ -642,30 +736,33 @@ def save_cut(ctx, image, box, seen):
     return path
 
 
-def cuts_from(ctx, url, image, seen, tiles=None):
-    """한 원본에서 개별 컷 목록 [(path, box, 글자띠 번호|None)].
-    원래 비율이 개별 컷이면 통째, 통이미지면 여백 경계로 분할. 색상명 후보 띠는 tiles에 모아 나중에 한 번에 OCR."""
+def cuts_from(ctx, url, image, seen, tiles=None, split=False):
+    """한 원본에서 개별 컷 목록 [(path, box, 글자 타일 번호|None)].
+    갤러리 사진(split=False)은 통째로. 공식 상세 이미지(split=True)는 여백·가는 흰 선 경계로 나눠 2컷 이상이면 그 컷들,
+    아니면 원본이 개별 컷 규격일 때만 통째. 색상명 후보 글자는 tiles에 모아 나중에 한 번에 OCR."""
     w, h = image.size
-    if min(w, h) >= 500 and max(w, h) / min(w, h) <= 1.8:
-        path = save_cut(ctx, image, None, seen)
-        return [(path, None, None)] if path else []
-    if max(w, h) / min(w, h) <= 1.8:
-        return []
-    photos, labels = segment(image)
-    if not photos:
-        ctx.log('여백 경계로 안전하게 나눌 수 있는 개별 컷이 없어 제외: ' + url, 'INFO')
-        return []
+    whole_ok = min(w, h) >= 500 and max(w, h) / min(w, h) <= 1.8
+    photos, labels = (segment(image) if split else ([], []))
+    if len(photos) < 2:
+        if whole_ok:
+            path = save_cut(ctx, image, None, seen)
+            return [(path, None, None)] if path else []
+        if split and not photos:
+            ctx.log('여백 경계로 안전하게 나눌 수 있는 개별 컷이 없어 제외: ' + url, 'INFO')
+        if not photos:
+            return []
     keys = {}
     if tiles is not None:
-        for label in sorted({label for _, label in photos if label is not None}):
-            keys[label] = len(tiles)
-            tiles.append((image.crop(tuple(labels[label])), url, labels[label]))
+        for key in sorted({key for _, key in photos if key is not None}):
+            keys[key] = len(tiles)
+            label, word = key
+            tiles.append((image.crop(tuple(labels[label][1][word])), url, labels[label][1][word]))
     out = []
-    for box, label in photos:
+    for box, key in photos:
         ctx.checkpoint()
         path = save_cut(ctx, image, list(box), seen)
         if path:
-            out.append((path, list(box), keys.get(label)))
+            out.append((path, list(box), keys.get(key)))
     return out
 
 
@@ -745,12 +842,13 @@ def crawl(ctx):
             release(cache, image)
     # 2) 갤러리(미매핑) + 상세 통이미지(색상명 띠 OCR 일치 시에만 사전 매핑). 색감·파일명으로 추측 안 함
     sources = unique(u for product in products for u in product['gallery'] + product['detail'] if u not in linked)
+    detail_urls = {u for product in products for u in product['detail']}
     tiles = []
     for n, url in enumerate(sources, 1):
         ctx.stage('이미지 ' + str(n) + '/' + str(len(sources)) + ' 다운로드·컷 저장')
         image = load_image(ctx, url, cache)
         if image is not None:
-            for path, box, key in cuts_from(ctx, url, image, seen, tiles):
+            for path, box, key in cuts_from(ctx, url, image, seen, tiles, split=url in detail_urls):
                 pending.append([path, None, '', url, box, key])
             release(cache, image)
     if tiles:
