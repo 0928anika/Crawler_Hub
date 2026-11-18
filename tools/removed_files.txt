@@ -1,0 +1,15 @@
+# 저장소에서 삭제·이름 변경된 파일. 업데이트 실행 시 PC에 남아 있으면 _removed_backup 폴더로 옮깁니다(삭제하지 않음).
+brands/brentwood_kolonmall.json
+brands/brentwood_kolonmall.py
+brands/dawnfield_official.json
+brands/dawnfield_official.py
+brands/disneygolf_smfashion.json
+brands/disneygolf_smfashion.py
+brands/ecolier_soiemall.json
+brands/ecolier_soiemall.py
+brands/ping_bucketstore.json
+brands/ping_bucketstore.py
+brands/roem_official.json
+brands/roem_official.py
+brands/usall_eland.json
+brands/usall_eland.py

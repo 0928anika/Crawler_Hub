@@ -30,7 +30,25 @@ try {
         Copy-Item -LiteralPath $_.FullName -Destination $dest -Force
         $changed++
     }
-    Write-Output ("바뀐 파일 " + $changed + "개 반영 (브랜치: " + $Branch + ")")
+    # 저장소에서 지워지거나 이름이 바뀐 파일: 남아 있으면 같은 브랜드가 두 번 보이므로 백업 폴더로 옮김(삭제 안 함)
+    $moved = 0
+    $list = Join-Path $root.FullName 'tools\removed_files.txt'
+    if (Test-Path -LiteralPath $list) {
+        $backup = Join-Path $Target ('_removed_backup\' + (Get-Date -Format 'yyyyMMdd_HHmmss'))
+        Get-Content -LiteralPath $list -Encoding UTF8 | ForEach-Object {
+            $rel = $_.Trim()
+            if (-not $rel -or $rel.StartsWith('#') -or $rel.Contains('..')) { return }
+            $rel = $rel.Replace('/', '\')
+            $src = Join-Path $Target $rel
+            if ((Test-Path -LiteralPath $src) -and -not (Test-Path -LiteralPath (Join-Path $root.FullName $rel))) {
+                $dest = Join-Path $backup $rel
+                New-Item -ItemType Directory -Path (Split-Path -Parent $dest) -Force | Out-Null
+                Move-Item -LiteralPath $src -Destination $dest -Force
+                $moved++
+            }
+        }
+    }
+    Write-Output ("바뀐 파일 " + $changed + "개 반영, 지워진 파일 " + $moved + "개 백업 폴더로 이동 (브랜치: " + $Branch + ")")
 } finally {
     Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue
 }
