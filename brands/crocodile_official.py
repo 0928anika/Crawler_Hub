@@ -3,7 +3,7 @@ PORTAL_API_VERSION = 1
 
 검증 범위: 사용자 단독 크롤러(dawnfield_crawler.py)에서 운영 확인된 URL·선택자·응답 키를 Crawler Hub SDK 규약으로 이식. 이 코드를 작성한 환경은 해당 사이트 접속이 차단되어 실사이트 실행은 미검증이며, SDK 계약·선택 항목 생략·표 재구성은 오프라인 fixture 테스트(tests/test_oberon_brands.py)로만 확인함.
 """
-REVISION = '2026-11-12-oberon-1'
+REVISION = '2026-11-18-crocodile-2-url-color'
 CONFIG = {'site': 'https://dawnfieldmall.com',
  'hosts': ('dawnfieldmall.com', 'www.dawnfieldmall.com'),
  'brand': '크로커다일',
@@ -117,6 +117,10 @@ def absolute(base, src):
     url = urljoin(base, src)
     if url.startswith('http://'):
         url = 'https://' + url[7:]
+    parsed=urlsplit(url)
+    # 공식 상품 8400의 size.jpg에 등록된 호스트 오타. 같은 경로의 공식몰 원본이 실제 존재함을 확인.
+    if parsed.hostname=='dfamall1..afe24.com' and parsed.path.startswith('/product_images/'):
+        url=CONFIG['site']+parsed.path+('?' + parsed.query if parsed.query else '')
     return url.split('#')[0]
 
 
@@ -157,7 +161,8 @@ def split_color(text):
     for pattern, ni, ci in ((r'^(.+?)\s*\(\s*([A-Za-z0-9]{1,4})\s*\)$', 1, 2),
                             (r'^\(\s*([A-Za-z0-9]{1,4})\s*\)\s*(.+)$', 2, 1),
                             (r'^(\d{2,3})\s+([A-Za-z가-힣].*)$', 2, 1),
-                            (r'^([A-Z0-9]{1,4})_(.+)$', 2, 1)):
+                            (r'^([A-Z0-9]{1,4})_(.+)$', 2, 1),
+                            (r'^([A-Za-z가-힣].*?)\s+(\d{2})$', 1, 2)):
         match = re.match(pattern, value)
         if match:
             return match[ni].strip(), match[ci].strip().upper()
