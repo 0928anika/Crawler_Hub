@@ -15,4 +15,15 @@ class Tests(unittest.TestCase):
   raw=(ROOT/'tests/fixtures/crocodile/CDAABJK4101.html').read_text('utf-8');doc=c.soup(raw);found=c.identity(doc,raw,'CDAABJK4101',c.info_rows(doc));self.assertIsNotNone(found)
   colors=c.page_colors(doc,raw,{});self.assertEqual(c.split_color(colors[0][0]),('차콜','98'));self.assertEqual(colors[0][1]['sizes'],['95','100','105','110'])
   images,_,_=c.detail_parts(None,doc,c.CONFIG['site']+'/product/detail.html?product_no=8400',found[1]);self.assertEqual(len(images),5);self.assertIn(c.CONFIG['site']+'/product_images/2025/c/CDAABJK4101/size.jpg',images);self.assertFalse(any('..afe24' in u for u in images))
+ def test_malformed_cafe24_host_family_reuses_exact_official_image_path(self):
+  path='/product_images/2025/c/CDAABKR3313/images/d_03.jpg';base=c.CONFIG['site']+'/product/detail.html?product_no=8352'
+  for host in ['dfamall..cafe24.com','dfamall1..cafe24.com','dfamall1..afe24.com','dfamall2...cafe24.com']:
+   self.assertEqual(c.absolute(base,'https://'+host+path+'?v=1'),c.CONFIG['site']+path+'?v=1')
+  for host in ['other..cafe24.com','dfamall1.cafe24.com','dfamall1..cafe24.com.evil.test']:
+   url='https://'+host+path;self.assertEqual(c.absolute(base,url),url)
+  self.assertEqual(c.absolute(base,'https://dfamall1..cafe24.com/other.jpg'),'https://dfamall1..cafe24.com/other.jpg')
+ def test_affected_products_preserve_every_detail_image(self):
+  for code,count in [('CDAABJK4101',5),('CDAABKR3313',8),('CDAABPT4554',6)]:
+   raw=(ROOT/'tests/fixtures/crocodile'/str(code+'.html')).read_text('utf-8');doc=c.soup(raw);found=c.identity(doc,raw,code,c.info_rows(doc));self.assertIsNotNone(found)
+   images,_,_=c.detail_parts(None,doc,c.CONFIG['site']+'/product/detail.html',found[1]);self.assertEqual(len(images),count);self.assertTrue(all('..' not in c.urlsplit(u).hostname for u in images));self.assertTrue(any('/size.jpg' in u for u in images))
 if __name__=='__main__':unittest.main()
