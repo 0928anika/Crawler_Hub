@@ -13,7 +13,7 @@ import io
 import json
 import re
 from urllib.error import HTTPError, URLError
-from urllib.parse import parse_qs, urlencode, urljoin, urlsplit, unquote
+from urllib.parse import parse_qs, urlencode, urljoin, urlsplit, unquote, quote
 from urllib.request import Request, build_opener
 
 from bs4 import BeautifulSoup
@@ -38,6 +38,7 @@ class CrawlError(Exception):
 def fetch(ctx, url, limit=6000000):
     if urlsplit(url).scheme not in ('http', 'https'):
         raise CrawlError('HTTP 이미지/페이지 주소가 아님: ' + url)
+    url=quote(url,safe=":/?#[]@!$&'()*+,;=%")
     for attempt in range(3):
         ctx.checkpoint()
         failure = None

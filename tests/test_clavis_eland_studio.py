@@ -60,4 +60,17 @@ class Tests(unittest.TestCase):
  def test_official_parenthesized_color_codes_and_brackets(self):
   self.assertEqual(c.color_rows([dict(itemOptionTcode='10',itemOptionName='(19)Black'),dict(itemOptionTcode='10',itemOptionName='(85)Brown')]),[dict(color_name='Black',color_code='19'),dict(color_name='Brown',color_code='85')])
   self.assertEqual(c.clean_name('[슬랙스닝] 융기모 팬츠_CVTWG1108N','CVTWG1108N'),'[슬랙스닝] 융기모 팬츠')
+ def test_fetch_encodes_korean_paths_without_double_encoding(self):
+  from unittest.mock import MagicMock
+  from urllib.parse import quote
+  response=MagicMock();response.__enter__.return_value=response;response.read.return_value=b'ok';response.geturl.return_value='https://item-imghub.eland.co.kr/final.jpg';response.headers={'Content-Type':'image/jpeg'}
+  opener=MagicMock();opener.open.return_value=response
+  for url in ['https://item-imghub.eland.co.kr/brands/기모_부츠컷.jpg?label=한글&size=1080','https://item-imghub.eland.co.kr/brands/%EA%B8%B0%EB%AA%A8.jpg']:
+   with patch.object(c,'build_opener',return_value=opener):self.assertEqual(c.fetch(Context(),url)[0],b'ok')
+   requested=opener.open.call_args.args[0].full_url;requested.encode('ascii');self.assertEqual(requested,quote(url,safe=":/?#[]@!$&'()*+,;=%"));self.assertNotIn('%25EA',requested)
+ def test_new_imghub_body_keeps_all_five_images_including_gosi(self):
+  data=json.loads((ROOT/'tests/fixtures/clavis/CVTWH1101N.json').read_text('utf-8'));buf=io.BytesIO();Image.new('RGB',(600,1200),'white').save(buf,format='JPEG')
+  with patch.object(c,'fetch',return_value=(buf.getvalue(),'https://item-imghub.eland.co.kr/image.jpg','image/jpeg')),patch.object(c,'ocr_many',side_effect=lambda ctx,images:['상품 설명']*len(images)):
+   parts=c.detail(Context(),data,'CVTWH1101N',{})
+  self.assertEqual(len(parts),5);self.assertIn('기모_부츠컷',parts[0][1]);self.assertIn('GOSI',parts[-1][1])
 if __name__=='__main__':unittest.main()
