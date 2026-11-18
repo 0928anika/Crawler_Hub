@@ -193,14 +193,61 @@ def body_images(doc):
     return urls
 
 
+def size_table(ctx,doc,base,code,cache):
+    if not doc.select_one('#btn_infoSize_pop'):
+        ctx.log('사이즈정보 없음: 표 생략','WARNING');return ''
+    try:popup,_=fetch(ctx,SITE+'/goods/sizeInfo/layer/'+base+'/'+code+'/null',method='POST')
+    except HTTPError as exc:
+        if exc.code not in (404,410):raise
+        ctx.log('사이즈정보 없음: 표 생략','WARNING');return ''
+    tabs=popup.select('.tab_cont_wrap > .tab_cont')
+    if not tabs:return ''
+    standard=tabs[0];parts=[]
+    def render_row(cells):
+        result=[]
+        for cell in cells:
+            attrs=''
+            for key in ('rowspan','colspan'):
+                value=str(cell.get(key,''))
+                if value.isdigit() and 0<int(value)<=50:attrs+=' '+key+'="'+value+'"'
+            result.append('<'+cell.name+attrs+'>'+html.escape(text(cell))+'</'+cell.name+'>')
+        return '<tr>'+''.join(result)+'</tr>'
+    for box in standard.select('.size_tbl_box'):
+        left=box.select_one('.head_t table');right=box.select_one('.body_t table')
+        tables=[]
+        if left is not None and right is not None:
+            labels=left.select('tr');values=right.select('tr')
+            if len(labels)!=len(values):raise ValueError('사이즈정보 행 연결 불일치: '+base)
+            rows=[render_row(a.find_all(['th','td'],recursive=False)+b.find_all(['th','td'],recursive=False)) for a,b in zip(labels,values)]
+            tables=[''.join(rows)]
+        else:
+            for table in box.select('table'):
+                tables.append(''.join(render_row(row.find_all(['th','td'],recursive=False)) for row in table.select('tr')))
+        if tables:
+            title=text(box.select_one('h6'));unit=text(box.select_one('.size_unit'))
+            if title:parts.append('<h4>'+html.escape(title)+'</h4>')
+            if unit:parts.append('<p>'+html.escape(unit)+'</p>')
+            parts.extend('<table border="1" cellpadding="8" cellspacing="0" style="width:100%;border-collapse:collapse"><tbody>'+rows+'</tbody></table>' for rows in tables)
+    # 이미지로만 제공되는 표준 가이드는 원본을 유지한다. 측정 가이드 탭은 제외한다.
+    for img in standard.select('img'):
+        url=image_url(img.get('src'))
+        if url and checked(ctx,url,cache,detail=True):parts.append('<p><img src="'+html.escape(url,quote=True)+'" alt="표준 사이즈 정보"></p>')
+    if not parts:
+        ctx.log('표준 사이즈 자료 없음: 생략','WARNING');return ''
+    notes=[text(n) for n in standard.select('.size_footer li') if text(n)]
+    parts.extend('<p>'+html.escape(note)+'</p>' for note in notes)
+    return '<h3>사이즈정보 · 브랜드 표준 가이드</h3>'+''.join(parts)
+
+
 def detail(ctx,doc,base,code,urls,cache):
     parts=[]
     for n in doc.select('.pd-core__description p,.pd-core__description li'):
         if text(n):parts.append('<p>'+html.escape(text(n))+'</p>')
-    # 본문 이미지 안의 사이즈표는 유지한다. 사이즈 레이어·측정 가이드는 요청하지 않는다.
+    # 본문 사이즈 이미지와 사이즈정보 표준 가이드를 함께 보존한다.
     images=body_images(doc) or urls
     for url in images:
         if checked(ctx,url,cache,detail=True):parts.append('<p><img src="'+html.escape(url,quote=True)+'" alt="상품 상세"></p>')
+    parts.append(size_table(ctx,doc,base,code,cache))
     parts.append(notice_table(ctx,doc))
     return '<div>'+''.join(parts)+'</div>'
 
