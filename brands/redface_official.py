@@ -8,8 +8,8 @@ from detail_store import excel_detail
 - 갤러리(대표·추가) 사진은 그대로, 상세 통이미지는 '전체 폭 배경 여백'과 '세로 여백' 경계로만 개별 컷을 자른다.
 - 사전 매핑 근거는 두 가지뿐이다.
   ① Cafe24 색상 옵션의 공식 link_image(옵션 ↔ 이미지 DOM 연결)
-  ② 통이미지 안 '사진 바로 위 글자 띠'를 Windows 기본 OCR(Windows.Media.Ocr, 추가 설치 없음)로 읽어
-     공식 색상 옵션 이름/코드와 정확히 하나만 일치할 때, 그 띠 아래~다음 글자 띠 전까지의 컷.
+  ② 통이미지 안 '사진과 가장 가까운 글자 띠'(위·아래 중 가까운 쪽)를 Windows 기본 OCR(Windows.Media.Ocr, 추가 설치 없음)로 읽어
+     공식 색상 옵션 이름/코드와 정확히 하나만 일치할 때 그 컷. 가까운 글자가 색상과 무관하면 다음으로 가까운 글자(다른 사진의 1순위 글자 제외).
   그 밖(맥, OCR 실패·불일치·여러 색 동시 일치)은 미매핑으로 보내 사람이 고른다. 색감·파일명으로 추측하지 않는다.
 - 상세 HTML은 전 색상 공통: 공식 상세 이미지 URL + 상품정보고시 2열 표 + 공식 사이즈표.
 """
@@ -31,15 +31,16 @@ from urllib.request import Request, build_opener
 from bs4 import BeautifulSoup
 from PIL import Image, ImageChops, ImageOps
 
-REVISION = '2026-11-18-redface-4'
+REVISION = '2026-11-19-redface-5'
 ORIGIN = 'https://theredface.com'
 HOSTS = ('theredface.com', 'www.theredface.com', 'm.theredface.com')
 ALIASES = ('레드페이스', 'REDFACE', 'RED FACE', 'THE REDFACE')
 MAX_DOCUMENT = 3_000_000
 MAX_IMAGE = 10_000_000
 MAX_OCR_TILES = 40
-# 색상명 글자가 사진의 어느 쪽에 붙는지. 레드페이스 상세는 색상명이 사진 바로 '위'에 있다(2026-11-18 실조회).
-LABEL_POSITION = 'above'
+# 색상명 글자 위치: 레드페이스 상세는 상품에 따라 사진 위(REWFJKWBF560 COLOR 영역)·아래(REEGMKX24101 '네이비(NA)')가 섞여 있어
+# 사진마다 위·아래 중 가장 가까운 글자 띠를 먼저 대조한다(2026-11-19 사용자 확인).
+LABEL_POSITION = 'nearest'
 COLOR_TITLE = re.compile(r'색상|컬러|color|colour', re.I)
 SIZE_TITLE = re.compile(r'사이즈|size|치수|호수', re.I)
 SKIP_IMAGE = re.compile(r'/common/|/_d1/img/|/web/upload/icon|icon_|ico_|btn_|logo|banner|bn_|cashreceipt|escrow|allat|noimg|no_img|blank|'
@@ -544,6 +545,41 @@ def fit_ratio(mask, box, size):
     return out if white_extension(mask, box, out) else None
 
 
+def label_key(labels, label, box):
+    if label is None:
+        return None
+    words = labels[label][1]
+    if len(words) == 1:
+        return (label, 0)
+    overlaps = [max(0, min(box[2], w[2]) - max(box[0], w[0])) for w in words]
+    best = max(range(len(words)), key=lambda k: overlaps[k])
+    if overlaps[best] > 0 and sorted(overlaps)[-2:][0] < overlaps[best]:
+        return (label, best)
+    return None
+
+
+def nearest_labels(events, labels, i):
+    """i번째 사진 기준 위·아래로 가장 가까운 글자 띠(사진 아닌 큰 영역은 넘지 않음)를 세로 거리순으로. 같으면 위 먼저."""
+    box, found = events[i][1], []
+    for step in (-1, 1):
+        j = i + step
+        while 0 <= j < len(events) and events[j][0] != 'reset':
+            if events[j][0] == 'label':
+                band = labels[events[j][1]][0]
+                gap = box[1] - band[3] if step < 0 else band[1] - box[3]
+                found.append((max(0, gap), step, events[j][1]))
+                break
+            j += step
+    return [label for _, _, label in sorted(found)]
+
+
+def unclaimed(items, claimed=None):
+    """두 번째 후보(더 먼 글자)는 다른 사진의 1순위 글자가 아닐 때만 남긴다. 자기 색상명을 못 읽은 사진이 이웃 사진의 색상명을 빌려오지 않게."""
+    if claimed is None:
+        claimed = {near[0] for _, near in items if near}
+    return [(box, near[:1] + [k for k in near[1:] if k not in claimed]) for box, near in items]
+
+
 def segment(image):
     """원본 해상도에서
     ① 전체 폭 배경 여백(가로 띠)으로 블록을 나누고 ② 블록 안 세로 여백으로 나란한 사진을 나누고
@@ -588,38 +624,20 @@ def segment(image):
                     found = True
             if not found:
                 events.append(('reset', None))  # 사진이 아닌 큰 영역(실측표 등)에서 색상명의 범위를 끊는다
-        # 색상명 → 사진 연결: 'above'는 글자 아래~다음 글자(또는 사진 아닌 큰 영역) 전까지, 'below'는 반대 방향
-        photos, current = [], None
-        order = events if LABEL_POSITION == 'above' else list(reversed(events))
-        for kind, value in order:
-            if kind == 'label':
-                current = value
-            elif kind == 'reset':
-                current = None
-            else:
-                photos.append((value, current))
-        if LABEL_POSITION != 'above':
-            photos.reverse()
+        # 색상명 → 사진 연결: 사진마다 위·아래 중 가장 가까운 글자 띠부터 후보(레드페이스는 상품에 따라 위/아래 모두 있음)
+        photos = [(value, nearest_labels(events, labels, i)) for i, (kind, value) in enumerate(events) if kind == 'photo']
         out = []
-        for box, label in photos:
+        for box, near in photos:
             fitted = fit_ratio(mask, box, image.size)
             if fitted is None:
                 continue
             bw, bh = fitted[2] - fitted[0], fitted[3] - fitted[1]
             if min(bw, bh) < 500:
                 continue  # 500px 미만은 확대하지 않고 제외
-            key = None
-            if label is not None:
-                words = labels[label][1]
-                if len(words) == 1:
-                    key = (label, 0)
-                else:  # 여러 색상명이 한 줄에 나란히 있으면 사진 바로 위(가로 위치가 겹치는) 단어만
-                    overlaps = [max(0, min(fitted[2], w[2]) - max(fitted[0], w[0])) for w in words]
-                    best = max(range(len(words)), key=lambda k: overlaps[k])
-                    if overlaps[best] > 0 and sorted(overlaps)[-2:][0] < overlaps[best]:
-                        key = (label, best)
-            out.append((tuple(int(v) for v in fitted), key))
-        return out, labels
+            # 한 줄에 색상명이 여러 개면 사진과 가로 위치가 겹치는 단어만
+            keys = [k for k in (label_key(labels, label, fitted) for label in near) if k is not None]
+            out.append((tuple(int(v) for v in fitted), keys))
+        return unclaimed(out), labels
     finally:
         mask.close()
 
@@ -746,23 +764,23 @@ def cuts_from(ctx, url, image, seen, tiles=None, split=False):
     if len(photos) < 2:
         if whole_ok:
             path = save_cut(ctx, image, None, seen)
-            return [(path, None, None)] if path else []
+            return [(path, None, [])] if path else []
         if split and not photos:
             ctx.log('여백 경계로 안전하게 나눌 수 있는 개별 컷이 없어 제외: ' + url, 'INFO')
         if not photos:
             return []
     keys = {}
     if tiles is not None:
-        for key in sorted({key for _, key in photos if key is not None}):
+        for key in sorted({key for _, near in photos for key in near}):
             keys[key] = len(tiles)
             label, word = key
             tiles.append((image.crop(tuple(labels[label][1][word])), url, labels[label][1][word]))
     out = []
-    for box, key in photos:
+    for box, near in photos:
         ctx.checkpoint()
         path = save_cut(ctx, image, list(box), seen)
         if path:
-            out.append((path, list(box), keys.get(key)))
+            out.append((path, list(box), [keys[k] for k in near if k in keys]))
     return out
 
 
@@ -771,6 +789,16 @@ def release(cache, image):
         if value is image:
             cache[key] = True
     image.close()
+
+
+def nearest_decided(candidates, decided, conflict):
+    """가까운 글자 띠부터: 공식 색상 하나와 맞으면 그 띠, 여러 색과 겹치면 중단(None), 색상과 무관한 글자면 다음 후보."""
+    for key in candidates:
+        if key in decided:
+            return key
+        if key in conflict:
+            return None
+    return None
 
 
 # ───────────────────────── 진입점 ─────────────────────────
@@ -838,7 +866,7 @@ def crawl(ctx):
             evidence = ('Cafe24 색상 옵션 "' + mapped['color_name'] + (' (' + mapped['color_code'] + ')' if mapped['color_code'] else '') +
                         '"의 공식 link_image: ' + url) if mapped else ''
             for path, box, _ in cuts_from(ctx, url, image, seen):
-                pending.append([path, mapped, evidence, url, box, None])
+                pending.append([path, mapped, evidence, url, box, []])
             release(cache, image)
     # 2) 갤러리(미매핑) + 상세 통이미지(색상명 띠 OCR 일치 시에만 사전 매핑). 색감·파일명으로 추측 안 함
     sources = unique(u for product in products for u in product['gallery'] + product['detail'] if u not in linked)
@@ -854,7 +882,7 @@ def crawl(ctx):
     if tiles:
         ctx.stage('색상명 글자 띠 OCR (' + str(len(tiles)) + '개, 1회 실행)')
         texts = ocr_tiles(ctx, [t for t, _, _ in tiles], work)
-        decided = {}
+        decided, conflict = {}, set()
         for key, (tile, source, ybox) in enumerate(tiles):
             tile.close()
             if key not in texts:
@@ -862,12 +890,15 @@ def crawl(ctx):
             color, why = match_color(texts[key], colors)
             if color:
                 decided[key] = (color, 'Windows OCR "' + re.sub(r'\s+', ' ', texts[key]).strip()[:60] + '" → ' + why +
-                                ' / 사진 바로 위 글자 띠 y=' + str(ybox[1]) + '~' + str(ybox[3]) + ' / ' + source)
+                                ' / 사진과 가장 가까운 글자 띠 y=' + str(ybox[1]) + '~' + str(ybox[3]) + ' / ' + source)
             else:
+                if why:  # 여러 색이 동시에 맞은 글자: 더 먼 글자로 넘어가지 않고 미매핑
+                    conflict.add(key)
                 ctx.log('색상명 띠 OCR "' + texts[key].strip()[:40] + '" ' + (why or '공식 색상과 불일치') + ' → 아래 컷은 수동 매핑', 'INFO')
         for entry in pending:
-            if entry[5] in decided:
-                entry[1], entry[2] = decided[entry[5]]
+            hit = nearest_decided(entry[5], decided, conflict)
+            if hit is not None:
+                entry[1], entry[2] = decided[hit]
     if not pending:
         ctx.fail_item('규격(양변 500px·비율 1.8 이하)을 통과한 개별 상품 컷이 없습니다.')
         raise CrawlError('개별 컷 없음')

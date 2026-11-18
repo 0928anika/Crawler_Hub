@@ -6,7 +6,7 @@ from detail_store import excel_detail
 """레드페이스 OCR 추천 버전(redface_official_ocr) — 기존 '레드페이스'(redface_official)는 그대로 두고 별도 브랜드로 추가.
 
 기존 버전과 같은 수집·크롭에 ③ '스와치 추천 매핑'을 더한다.
-  ③ 상세 통이미지의 COLOR 영역에서 색상명 글자(OCR, 공식 옵션명이 정답지) 바로 아래 스와치를 그 색상으로 확정하고,
+  ③ 상세 통이미지에서 색상명 글자(OCR, 공식 옵션명이 정답지)와 가장 가까운 스와치·컷을 그 색상으로 확정하고,
      500px 미만이라 저장하지 않는 그 스와치의 상품 색을 기준으로 저장 컷(갤러리·FRONT/BACK/DETAIL·모델컷)의
      상품 색 화소 비율을 비교한다. 한 색상 비율이 충분히 높고 2위의 2배 이상일 때만 '추천'으로 미리 선택한다.
      (사용자 요청으로 이 브랜드에 한해 3번 프롬프트의 '색감으로 확정 금지'를 '추천 + 사용자 수정' 방식으로 완화.
@@ -40,15 +40,16 @@ from urllib.request import Request, build_opener
 from bs4 import BeautifulSoup
 from PIL import Image, ImageChops, ImageOps
 
-REVISION = '2026-11-19-redface-ocr-1'
+REVISION = '2026-11-19-redface-ocr-2'
 ORIGIN = 'https://theredface.com'
 HOSTS = ('theredface.com', 'www.theredface.com', 'm.theredface.com')
 ALIASES = ('레드페이스', 'REDFACE', 'RED FACE', 'THE REDFACE')
 MAX_DOCUMENT = 3_000_000
 MAX_IMAGE = 10_000_000
 MAX_OCR_TILES = 40
-# 색상명 글자가 사진의 어느 쪽에 붙는지. 레드페이스 상세는 색상명이 사진 바로 '위'에 있다(2026-11-18 실조회).
-LABEL_POSITION = 'above'
+# 색상명 글자 위치: 레드페이스 상세는 상품에 따라 사진 위(REWFJKWBF560 COLOR 영역)·아래(REEGMKX24101 '네이비(NA)')가 섞여 있어
+# 사진마다 위·아래 중 가장 가까운 글자 띠를 먼저 대조한다(2026-11-19 사용자 확인).
+LABEL_POSITION = 'nearest'
 # ③ 스와치 추천: 상품 색 판정 거리(CIELAB ΔE), 컷에서 그 색이 차지해야 하는 최소 비율, 2위 대비 배수
 SWATCH_DELTA = 12.0
 SWATCH_MIN_SHARE = .2
@@ -535,6 +536,44 @@ def white_extension(mask, inner, outer):
     return area <= 0 or (total - own) <= area * .02
 
 
+def clean_extension(mask, inner, outer):
+    """fit_min 전용 엄격 검사: 넓힌 부분이 실제 배경(내용 0.2% 이하, 가장자리 줄에 글자 없음)인지. 이웃 사진을 끌어오지 않기 위한 검사."""
+    total = sum(row_counts(mask, outer))
+    own = sum(row_counts(mask, inner))
+    area = (outer[2] - outer[0]) * (outer[3] - outer[1]) - (inner[2] - inner[0]) * (inner[3] - inner[1])
+    if area <= 0:
+        return True
+    extra = total - own
+    if extra > area * .002:
+        return False  # 넓힌 부분에 글자·이웃 사진 등 내용이 있으면 불가
+    # 넓힌 가장자리 줄에 글자가 걸치는지(전체 비율은 작아도 한 줄에 몰린 내용)도 확인
+    for edge in ((outer[0], outer[1], outer[2], inner[1]), (outer[0], inner[3], outer[2], outer[3]),
+                 (outer[0], inner[1], inner[0], inner[3]), (inner[2], inner[1], outer[2], inner[3])):
+        if edge[2] > edge[0] and edge[3] > edge[1] and max(row_counts(mask, edge) or [0]) > max(3, (edge[2] - edge[0]) * .02):
+            return False
+    return True
+
+
+def fit_min(mask, box, size):
+    """500px 미만 변을 주변 '실제 배경'으로만 넓힌다(확대·가짜 여백 없음). 이웃 내용이 들어오면 None."""
+    width, height = size
+    l, t, r, b = box
+    if r - l < 500:
+        if width < 500:
+            return None
+        nl = max(0, min(l - (500 - (r - l)) // 2, width - 500))
+        l, r = nl, nl + 500
+    if b - t < 500:
+        if height < 500:
+            return None
+        nt = max(0, min(t - (500 - (b - t)) // 2, height - 500))
+        t, b = nt, nt + 500
+    out = (l, t, r, b)
+    if out == tuple(box):
+        return out
+    return out if clean_extension(mask, tuple(box), out) else None
+
+
 def fit_ratio(mask, box, size):
     """비율 1.8 초과 컷은 실제 배경 화소로만 짧은 변을 넓힌다(가짜 여백·확대 없음). 불가능하면 None."""
     width, height = size
@@ -589,11 +628,11 @@ def color_profile(image, box, bg):
     piece.thumbnail((160, 160))
     raw = piece.tobytes()
     piece.close()
-    base = lab(bg)
+    base, white = lab(bg), lab((255, 255, 255))
     counts = {}
     for i in range(0, len(raw), 3):
         value = lab(raw[i:i + 3])
-        if delta(value, base) <= 6:
+        if delta(value, base) <= 6 or delta(value, white) <= 6:  # 배경색(맨 위 줄)과 흰 여백은 상품 색에서 제외
             continue
         key = (round(value[0] / 2) * 2, round(value[1] / 2) * 2, round(value[2] / 2) * 2)
         counts[key] = counts.get(key, 0) + 1
@@ -634,6 +673,28 @@ def label_key(labels, label, box):
     if overlaps[best] > 0 and sorted(overlaps)[-2:][0] < overlaps[best]:
         return (label, best)
     return None
+
+
+def nearest_labels(events, labels, i):
+    """i번째 사진 기준 위·아래로 가장 가까운 글자 띠(사진 아닌 큰 영역은 넘지 않음)를 세로 거리순으로. 같으면 위 먼저."""
+    box, found = events[i][1], []
+    for step in (-1, 1):
+        j = i + step
+        while 0 <= j < len(events) and events[j][0] != 'reset':
+            if events[j][0] == 'label':
+                band = labels[events[j][1]][0]
+                gap = box[1] - band[3] if step < 0 else band[1] - box[3]
+                found.append((max(0, gap), step, events[j][1]))
+                break
+            j += step
+    return [label for _, _, label in sorted(found)]
+
+
+def unclaimed(items, claimed=None):
+    """두 번째 후보(더 먼 글자)는 다른 사진의 1순위 글자가 아닐 때만 남긴다. 자기 색상명을 못 읽은 사진이 이웃 사진의 색상명을 빌려오지 않게."""
+    if claimed is None:
+        claimed = {near[0] for _, near in items if near}
+    return [(box, near[:1] + [k for k in near[1:] if k not in claimed]) for box, near in items]
 
 
 def segment(image):
@@ -679,29 +740,22 @@ def segment(image):
                     found = True
             if not found:
                 events.append(('reset', None))  # 사진이 아닌 큰 영역(실측표 등)에서 색상명의 범위를 끊는다
-        # 색상명 → 사진 연결: 'above'는 글자 아래~다음 글자(또는 사진 아닌 큰 영역) 전까지, 'below'는 반대 방향
-        photos, current = [], None
-        order = events if LABEL_POSITION == 'above' else list(reversed(events))
-        for kind, value in order:
-            if kind == 'label':
-                current = value
-            elif kind == 'reset':
-                current = None
-            else:
-                photos.append((value, current))
-        if LABEL_POSITION != 'above':
-            photos.reverse()
+        # 색상명 → 사진 연결: 사진마다 위·아래 중 가장 가까운 글자 띠부터 후보(레드페이스는 상품에 따라 위/아래 모두 있음)
+        photos = [(value, nearest_labels(events, labels, i)) for i, (kind, value) in enumerate(events) if kind == 'photo']
         out, refs = [], []
-        for box, label in photos:
+        for box, near in photos:
             fitted = fit_ratio(mask, box, image.size)
+            if fitted is not None and min(fitted[2] - fitted[0], fitted[3] - fitted[1]) < 500:
+                fitted = fit_min(mask, fitted, image.size)  # 500px 미만 변은 주변 실제 배경으로만 넓힘(확대 없음)
             if fitted is None or min(fitted[2] - fitted[0], fitted[3] - fitted[1]) < 500:
-                # 500px 미만은 저장하지 않음. 색상명 바로 아래 작은 사진(스와치)은 ③ 추천 기준색으로만 쓴다.
-                key = label_key(labels, label, box)
-                if key is not None:
-                    refs.append((tuple(int(v) for v in box), key))
+                # 500px 미만은 저장하지 않음. 색상명 가까이 있는 작은 사진(스와치)은 ③ 추천 기준색으로만 쓴다.
+                keys = [k for k in (label_key(labels, label, box) for label in near) if k is not None]
+                if keys:
+                    refs.append((tuple(int(v) for v in box), keys))
                 continue
-            out.append((tuple(int(v) for v in fitted), label_key(labels, label, fitted)))
-        return out, labels, refs
+            out.append((tuple(int(v) for v in fitted), [k for k in (label_key(labels, label, fitted) for label in near) if k is not None]))
+        claimed = {near[0] for _, near in out + refs if near}
+        return unclaimed(out, claimed), labels, unclaimed(refs, claimed)
     finally:
         mask.close()
 
@@ -828,34 +882,40 @@ def cuts_from(ctx, url, image, seen, tiles=None, split=False, swatches=None):
     bg = background(image)
     keys = {}
     if tiles is not None and swatches is not None:
-        for box, key in refs:  # ③ 스와치: 색상명 글자는 OCR 대기열에, 상품 색은 기준색으로
+        for box, near in refs:  # ③ 스와치: 색상명 글자는 OCR 대기열에, 상품 색은 기준색으로
             center = profile_center(color_profile(image, box, bg))
             if center is None:
                 continue
-            if key not in keys:
-                keys[key] = len(tiles)
-                label, word = key
-                tiles.append((image.crop(tuple(labels[label][1][word])), url, labels[label][1][word]))
-            swatches.append({'tile': keys[key], 'center': center, 'box': list(box), 'source': url})
+            for key in near:
+                if key not in keys:
+                    keys[key] = len(tiles)
+                    label, word = key
+                    tiles.append((image.crop(tuple(labels[label][1][word])), url, labels[label][1][word]))
+            swatches.append({'tiles': [keys[k] for k in near], 'tile': None, 'center': center, 'box': list(box), 'source': url})
     if len(photos) < 2:
         if whole_ok:
             path = save_cut(ctx, image, None, seen)
-            return [(path, None, None, color_profile(image, None, bg))] if path else []
+            return [(path, None, [], color_profile(image, None, bg))] if path else []
         if split and not photos:
             ctx.log('여백 경계로 안전하게 나눌 수 있는 개별 컷이 없어 제외: ' + url, 'INFO')
         if not photos:
             return []
     if tiles is not None:
-        for key in sorted({key for _, key in photos if key is not None} - set(keys)):
+        for key in sorted({key for _, near in photos for key in near} - set(keys)):
             keys[key] = len(tiles)
             label, word = key
             tiles.append((image.crop(tuple(labels[label][1][word])), url, labels[label][1][word]))
     out = []
-    for box, key in photos:
+    for box, near in photos:
         ctx.checkpoint()
         path = save_cut(ctx, image, list(box), seen)
         if path:
-            out.append((path, list(box), keys.get(key), color_profile(image, box, bg)))
+            profile = color_profile(image, box, bg)
+            tiles_near = [keys[k] for k in near if k in keys]
+            out.append((path, list(box), tiles_near, profile))
+            center = profile_center(profile) if tiles_near and swatches is not None else None
+            if center is not None:  # 색상명이 붙은 저장 컷도 OCR로 색상이 확정되면 추천 기준색으로 쓴다
+                swatches.append({'tiles': tiles_near, 'tile': None, 'center': center, 'box': list(box), 'source': url, 'cut': True})
     return out
 
 
@@ -867,7 +927,7 @@ def release(cache, image):
 
 
 def recommend(ctx, pending, swatches, decided):
-    """③ 스와치 추천. OCR로 색상이 확정된 스와치의 상품 색을 기준으로, 아직 미매핑인 컷의 상품 색 화소 비율을 비교.
+    """③ 스와치 추천. OCR로 색상이 확정된 스와치(또는 색상명이 붙은 저장 컷)의 상품 색을 기준으로, 아직 미매핑인 컷의 상품 색 화소 비율을 비교.
     1위 비율 ≥ SWATCH_MIN_SHARE 이고 2위의 SWATCH_MARGIN배 이상일 때만 1위 색상으로 미리 선택(사용자가 수정 가능).
     색상명을 못 읽은 스와치도 경쟁 후보로 남겨, 그 스와치가 1위면 미매핑."""
     if not swatches:
@@ -902,9 +962,19 @@ def recommend(ctx, pending, swatches, decided):
             rival = ', 2위 ' + (scores[1][2]['color_name'] if scores[1][2] else '글자 없는 스와치') + ' ' + format(second, '.2f')
         entry[1] = color
         entry[2] = ('OCR 스와치 추천(색감 비교·수정 가능): ' + decided[swatch['tile']][1].split(' / ')[0] +
-                    ' → 그 아래 스와치 ' + str(swatch['box']) + '의 상품 색과 같은 화소 비율 ' + format(top, '.2f') + rival)
+                    ' → 기준 사진(' + ('색상명 붙은 컷 ' if swatch.get('cut') else '스와치 ') + str(swatch['box']) + ')의 상품 색과 같은 화소 비율 ' + format(top, '.2f') + rival)
         picked += 1
     ctx.log('스와치 추천으로 미리 선택한 컷: ' + str(picked) + '장 (색상 매핑 화면에서 수정 가능)', 'INFO')
+
+
+def nearest_decided(candidates, decided, conflict):
+    """가까운 글자 띠부터: 공식 색상 하나와 맞으면 그 띠, 여러 색과 겹치면 중단(None), 색상과 무관한 글자면 다음 후보."""
+    for key in candidates:
+        if key in decided:
+            return key
+        if key in conflict:
+            return None
+    return None
 
 
 # ───────────────────────── 진입점 ─────────────────────────
@@ -972,7 +1042,7 @@ def crawl(ctx):
             evidence = ('Cafe24 색상 옵션 "' + mapped['color_name'] + (' (' + mapped['color_code'] + ')' if mapped['color_code'] else '') +
                         '"의 공식 link_image: ' + url) if mapped else ''
             for path, box, _, profile in cuts_from(ctx, url, image, seen):
-                pending.append([path, mapped, evidence, url, box, None, profile])
+                pending.append([path, mapped, evidence, url, box, [], profile])
             release(cache, image)
     # 2) 갤러리(미매핑) + 상세 통이미지(색상명 띠 OCR 일치 시에만 사전 매핑). 색감·파일명으로 추측 안 함
     sources = unique(u for product in products for u in product['gallery'] + product['detail'] if u not in linked)
@@ -988,7 +1058,7 @@ def crawl(ctx):
     if tiles:
         ctx.stage('색상명 글자 띠 OCR (' + str(len(tiles)) + '개, 1회 실행)')
         texts = ocr_tiles(ctx, [t for t, _, _ in tiles], work)
-        decided = {}
+        decided, conflict = {}, set()
         for key, (tile, source, ybox) in enumerate(tiles):
             tile.close()
             if key not in texts:
@@ -996,12 +1066,18 @@ def crawl(ctx):
             color, why = match_color(texts[key], colors)
             if color:
                 decided[key] = (color, 'Windows OCR "' + re.sub(r'\s+', ' ', texts[key]).strip()[:60] + '" → ' + why +
-                                ' / 사진 바로 위 글자 띠 y=' + str(ybox[1]) + '~' + str(ybox[3]) + ' / ' + source)
+                                ' / 사진과 가장 가까운 글자 띠 y=' + str(ybox[1]) + '~' + str(ybox[3]) + ' / ' + source)
             else:
+                if why:  # 여러 색이 동시에 맞은 글자: 더 먼 글자로 넘어가지 않고 미매핑
+                    conflict.add(key)
                 ctx.log('색상명 띠 OCR "' + texts[key].strip()[:40] + '" ' + (why or '공식 색상과 불일치') + ' → 아래 컷은 수동 매핑', 'INFO')
         for entry in pending:
-            if entry[5] in decided:
-                entry[1], entry[2] = decided[entry[5]]
+            hit = nearest_decided(entry[5], decided, conflict)
+            if hit is not None:
+                entry[1], entry[2] = decided[hit]
+        for s in swatches:
+            s['tile'] = nearest_decided(s['tiles'], decided, conflict)
+        swatches[:] = [s for s in swatches if not s.get('cut') or s['tile'] is not None]  # 색상 미확정 컷은 기준에서 제외
         recommend(ctx, pending, swatches, decided)
     if not pending:
         ctx.fail_item('규격(양변 500px·비율 1.8 이하)을 통과한 개별 상품 컷이 없습니다.')

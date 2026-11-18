@@ -531,7 +531,7 @@ def redface_strip():
     from PIL import ImageDraw
     img = Image.new('RGB', (1400, 2600), 'white')
     d = ImageDraw.Draw(img)
-    d.rectangle((600, 60, 800, 90), fill=(20, 20, 20))          # 색상명 문구(얇은 띠) → 단독 컷
+    d.rectangle((600, 120, 800, 145), fill=(20, 20, 20))        # 색상명 문구(얇은 띠, 단독 컷에 가장 가까움) → 단독 컷
     d.rectangle((600, 1060, 800, 1090), fill=(20, 20, 20))      # 색상명 문구 → 나란한 2컷
     d.rectangle((400, 180, 1000, 980), fill=(30, 60, 120))       # 단독 컷 600x800
     d.rectangle((80, 1150, 640, 1850), fill=(150, 30, 30))       # 왼쪽 컷 560x700
@@ -682,14 +682,19 @@ class RedfaceLocalCrop(unittest.TestCase):
         d.rectangle((300, 2353, 1700, 3353), fill=(140, 130, 125))
         photos, labels = module.segment(img)
         self.assertEqual(len(photos), 5)
-        words = [labels[k[0]][1][k[1]] for _, k in photos[:3]]
+        words = [labels[k[0][0]][1][k[0][1]] for _, k in photos[:3]]
         self.assertEqual([round((w[0] + w[2]) / 2) for w in words], [350, 1000, 1650])
-        self.assertEqual(photos[3][1], photos[4][1])          # 디테일 두 컷은 같은 글자(DETAIL VIEW) 아래
+        self.assertEqual(photos[3][1][0], photos[4][1][0])    # 디테일 두 컷은 같은 글자(DETAIL VIEW)가 가장 가까운 후보
         self.assertLess(photos[3][0][3], 2353)
         self.assertGreaterEqual(photos[4][0][1], 2350)
-        module.LABEL_POSITION = 'below'                         # 글자가 사진 아래인 브랜드용 설정
-        photos, labels = module.segment(img)
-        self.assertEqual(photos[0][1][0], [i for i, _ in enumerate(labels)][1])  # 첫 줄 사진들은 다음 글자 띠(DETAIL VIEW)로
+        below = Image.new('RGB', (1000, 2400), 'white')    # 글자가 사진 '아래'에 붙은 상품(REEGMKX24101 형태)
+        d = ImageDraw.Draw(below)
+        d.rectangle((250, 100, 750, 800), fill=(30, 40, 90))         # 네이비 컷
+        d.rectangle((420, 840, 580, 870), fill=(20, 20, 20))         # 네이비(NA) — 바로 아래
+        d.rectangle((250, 1050, 750, 1750), fill=(150, 150, 150))    # 그레이 컷
+        d.rectangle((420, 1790, 580, 1820), fill=(20, 20, 20))       # 그레이(GR) — 바로 아래
+        photos, labels = module.segment(below)
+        self.assertEqual([near[0][0] for _, near in photos], [0, 1])  # 각 사진은 가장 가까운(아래) 글자가 1순위
 
     def test_fuzzy_match_against_official_options(self):
         module = load('redface_official')
