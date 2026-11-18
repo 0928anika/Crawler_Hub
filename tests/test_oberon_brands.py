@@ -516,7 +516,8 @@ def redface_strip():
     from PIL import ImageDraw
     img = Image.new('RGB', (1400, 2600), 'white')
     d = ImageDraw.Draw(img)
-    d.rectangle((600, 60, 800, 90), fill=(20, 20, 20))          # 색상명 문구(얇은 띠)
+    d.rectangle((600, 60, 800, 90), fill=(20, 20, 20))          # 색상명 문구(얇은 띠) → 단독 컷
+    d.rectangle((600, 1060, 800, 1090), fill=(20, 20, 20))      # 색상명 문구 → 나란한 2컷
     d.rectangle((400, 180, 1000, 980), fill=(30, 60, 120))       # 단독 컷 600x800
     d.rectangle((80, 1150, 640, 1850), fill=(150, 30, 30))       # 왼쪽 컷 560x700
     d.rectangle((760, 1150, 1320, 1850), fill=(30, 120, 60))     # 오른쪽 컷
@@ -534,8 +535,10 @@ def solid(size, color):
 
 
 class RedfaceLocalCrop(unittest.TestCase):
-    def run_redface(self, selected, extra_routes=None):
+    def run_redface(self, selected, extra_routes=None, ocr=None):
         module = load('redface_official')
+        if ocr is not None:
+            module.ocr_labels = ocr
         stock = {'P1': {'option_name_original': ['색상', '사이즈'], 'option_value_orginal': ['블랙(BK)', '090'], 'option_price': 189000, 'is_display': 'T'},
                  'P2': {'option_name_original': ['색상', '사이즈'], 'option_value_orginal': ['블랙(BK)', '095'], 'option_price': 189000, 'is_selling': 'F'},
                  'P3': {'option_name_original': ['색상', '사이즈'], 'option_value_orginal': ['네이비(NV)', '090'], 'option_price': 189000},
@@ -615,6 +618,30 @@ class RedfaceLocalCrop(unittest.TestCase):
         self.assertIn('rowspan="2"', detail)
         self.assertTrue(all(x['상세페이지 HTML'] == detail for x in rows))
         self.assertFalse(any('9999' in u for u in calls))  # 비슷한 품번 미요청
+
+    def test_ocr_label_maps_only_unique_official_color(self):
+        seen = []
+        def fake_ocr(ctx, image, labels, work):
+            seen.append(len(labels))
+            return {0: 'BLACK', 1: '블랙 / 네이비'}   # 두 번째 띠는 두 색 동시 일치 → 미매핑
+        rows, failures, error, calls = self.run_redface(ALL, ocr=fake_ocr)
+        self.assertIsNone(error, failures)
+        self.assertEqual(seen, [2])
+        ocr_rows = [r for r in rows if r['OCR 근거']]
+        self.assertEqual(len(ocr_rows), 1)
+        self.assertIn('BLACK=블랙', ocr_rows[0]['OCR 근거'])
+        self.assertTrue(ocr_rows[0]['_unmapped'].get('preassigned_color_id'))
+        crops = [r for r in rows if r['크롭 좌표']]
+        self.assertEqual(sum(1 for r in crops if r['_unmapped'].get('preassigned_color_id')), 1)
+
+    def test_match_color_rules(self):
+        module = load('redface_official')
+        colors = [{'color_name': '블랙', 'color_code': ''}, {'color_name': '카키', 'color_code': ''}, {'color_name': '아이보리', 'color_code': ''}]
+        self.assertEqual(module.match_color('KHAKI', colors)[0]['color_name'], '카키')
+        self.assertEqual(module.match_color('아이보리컬러', colors)[0]['color_name'], '아이보리')
+        self.assertIsNone(module.match_color('블랙 카키', colors)[0])
+        self.assertIsNone(module.match_color('NEW ARRIVAL', colors)[0])
+        self.assertIsNone(module.match_color('BLACKISH', colors)[0])
 
     def test_optional_fields_skipped(self):
         rows, failures, error, calls = self.run_redface(['main_image'])

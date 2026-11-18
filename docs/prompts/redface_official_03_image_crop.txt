@@ -14,13 +14,20 @@
 - 검색: /product/search.html?keyword={품번} (Cafe24 표준, 실조회 전)
 - 상세: /product/detail.html?product_no={번호} — 2026-11-18 작업 환경에서는 상품 상세 페이지를 열지 못함(승인 대기). 선택자·통이미지 배치는 Cafe24 표준 기준이며 실사이트 확인 필요
 - 크롭 방식: 상세 통이미지를 '전체 폭 배경 여백(가로 띠)'과 블록 안 '세로 배경 여백'으로만 나눈다. 고정 좌표·등분 금지. 글자·표·실측선처럼 내용 밀도가 낮은 블록, 500px 미만, 비율 1.8 초과 컷은 제외. 세로로 긴 컷은 원본 배경 픽셀로만 좌우를 넓힌다.
-- 사전 매핑: Cafe24 색상 옵션의 공식 link_image 사진만(옵션 ↔ 이미지 DOM 연결). 갤러리·통이미지 크롭 컷은 미매핑. OCR 미사용.
+- 사전 매핑: ① Cafe24 색상 옵션의 공식 link_image 사진(옵션 ↔ 이미지 DOM 연결) ② 통이미지에서 사진 바로 위 색상명 글자 띠를 Windows 기본 OCR(Windows.Media.Ocr, 추가 설치 없음)로 읽어 공식 색상 이름·코드(또는 고정 음역표 BLACK=블랙 등)와 정확히 하나만 일치할 때, 그 띠 아래부터 다음 띠·실측표 전까지의 컷. 두 색 동시 일치·불일치·맥·OCR 실패는 미매핑. 갤러리 사진은 미매핑.
 
 [구현 결과 — Oberon 브랜치 brands/redface_official.py / .json]
 - mapping_mode=manual, image_mode=local, image_color_mapping=manual, additional_image_count=5
 - 출력 추가 열: 원본 상품명, 크롭 원본 이미지, 크롭 좌표
 - 상세: 전 색상 공통 HTML(#prdDetail 공식 상세 이미지 + 상품정보고시 2열 표 + 사이즈 표, 공통 배너·배송·공지·이벤트 이미지 제외)
 - 사이즈/판매가/정상가/카테고리: option_stock_data·#span_product_price_*·headcategory. 색상·상품 링크 간 값이 다르면 빈칸
+
+[2026-11-18 실조회 결과 (REWFJKWBF560 / 상품번호 4413)]
+- 색상 옵션: 블랙·카키·아이보리 (색상코드 없음), 사이즈: 090·095·100·105·110
+- 판매가 249,000원은 공식 메타 product:price:amount에 있음 → 판매가 칸이 없을 때 메타로 보완하도록 수정
+- 소비자가 498,000원 표시, 카테고리: 홈 > COLLECTIONㅣ패딩 > JACKET l 패딩 자켓
+- 갤러리: 대표(big) + small 1장 + 추가(extra) 5장
+- 정적 HTML의 상품상세정보 영역에 이미지가 없음(스크립트 로딩 추정) → 이 상품은 통이미지 크롭·OCR 없이 갤러리 7장이 후보, 상세 HTML은 고시 표가 없으면 비거나 짧을 수 있음
 
 [미확인 범위 — 실행 전 확인할 것]
 1. 레드페이스 상세 HTML 실제 구조(#prdDetail 위치, 색상 옵션 option_title, link_image 유무, 자체상품코드 표기)

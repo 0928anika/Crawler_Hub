@@ -6,16 +6,23 @@ from detail_store import excel_detail
 """레드페이스 공식몰(theredface.com / Cafe24) -> Crawler Hub 로컬 JPEG 크롭 + 사람 색상 매핑.
 
 - 갤러리(대표·추가) 사진은 그대로, 상세 통이미지는 '전체 폭 배경 여백'과 '세로 여백' 경계로만 개별 컷을 자른다.
-- 색상은 Cafe24 색상 옵션의 공식 link_image(옵션 ↔ 이미지 DOM 연결)로 받은 사진만 사전 매핑한다.
-  나머지 컷은 미매핑으로 보내 사람이 고른다. 색감·파일명·배너 문구로 색상을 추측하지 않는다(OCR 없음).
+- 사전 매핑 근거는 두 가지뿐이다.
+  ① Cafe24 색상 옵션의 공식 link_image(옵션 ↔ 이미지 DOM 연결)
+  ② 통이미지 안 '사진 바로 위 글자 띠'를 Windows 기본 OCR(Windows.Media.Ocr, 추가 설치 없음)로 읽어
+     공식 색상 옵션 이름/코드와 정확히 하나만 일치할 때, 그 띠 아래~다음 글자 띠 전까지의 컷.
+  그 밖(맥, OCR 실패·불일치·여러 색 동시 일치)은 미매핑으로 보내 사람이 고른다. 색감·파일명으로 추측하지 않는다.
 - 상세 HTML은 전 색상 공통: 공식 상세 이미지 URL + 상품정보고시 2열 표 + 공식 사이즈표.
 """
 import ast
 import html
 import io
 import json
+import os
 import re
+import subprocess
+import tempfile
 import time
+from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, quote, urlencode, urljoin, urlsplit
 from urllib.request import Request, build_opener
@@ -23,7 +30,7 @@ from urllib.request import Request, build_opener
 from bs4 import BeautifulSoup
 from PIL import Image, ImageChops, ImageOps
 
-REVISION = '2026-11-18-redface-1'
+REVISION = '2026-11-18-redface-2'
 ORIGIN = 'https://theredface.com'
 HOSTS = ('theredface.com', 'www.theredface.com', 'm.theredface.com')
 ALIASES = ('레드페이스', 'REDFACE', 'RED FACE', 'THE REDFACE')
@@ -34,6 +41,42 @@ SIZE_TITLE = re.compile(r'사이즈|size|치수|호수', re.I)
 SKIP_IMAGE = re.compile(r'/common/|/_d1/img/|/web/upload/icon|icon_|ico_|btn_|logo|banner|bn_|cashreceipt|escrow|allat|noimg|no_img|blank|'
                         r'/_wg/|/skin/|echosting|notice|care_|delivery|shipping|cs_info|배송|교환|반품|event|coupon|gift|사은품', re.I)
 NOTICE_KEYS = re.compile(r'소재|제품소재|혼용|색상|치수|제조자|수입자|제조국|원산지|세탁|취급|제조연월|품질보증|A/S|책임자|종류|중량|사양')
+
+POWERSHELL_OCR = r'''
+param([string]$Manifest)
+$ErrorActionPreference='Stop'
+[Console]::OutputEncoding=New-Object System.Text.UTF8Encoding($false)
+Add-Type -AssemblyName System.Runtime.WindowsRuntime
+$null=[Windows.Storage.StorageFile,Windows.Storage,ContentType=WindowsRuntime]
+$null=[Windows.Storage.Streams.IRandomAccessStream,Windows.Storage.Streams,ContentType=WindowsRuntime]
+$null=[Windows.Graphics.Imaging.BitmapDecoder,Windows.Graphics.Imaging,ContentType=WindowsRuntime]
+$null=[Windows.Graphics.Imaging.SoftwareBitmap,Windows.Graphics.Imaging,ContentType=WindowsRuntime]
+$null=[Windows.Media.Ocr.OcrEngine,Windows.Foundation,ContentType=WindowsRuntime]
+$null=[Windows.Media.Ocr.OcrResult,Windows.Foundation,ContentType=WindowsRuntime]
+$method=([System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object {$_.Name -eq 'AsTask' -and $_.IsGenericMethod -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType.Name -eq 'IAsyncOperation`1'})[0]
+function Await($operation,$type){$task=$method.MakeGenericMethod($type).Invoke($null,@($operation));$task.Wait();return $task.Result}
+$engine=[Windows.Media.Ocr.OcrEngine]::TryCreateFromUserProfileLanguages()
+if($null -eq $engine){throw 'Windows OCR language unavailable. Install Korean or English OCR language in Windows Settings.'}
+$items=Get-Content -LiteralPath $Manifest -Raw -Encoding UTF8|ConvertFrom-Json
+$results=@(foreach($item in $items){
+    $stream=$null;$bitmap=$null
+    try {
+        $file=Await ([Windows.Storage.StorageFile]::GetFileFromPathAsync([string]$item.path)) ([Windows.Storage.StorageFile])
+        $stream=Await ($file.OpenAsync([Windows.Storage.FileAccessMode]::Read)) ([Windows.Storage.Streams.IRandomAccessStream])
+        $decoder=Await ([Windows.Graphics.Imaging.BitmapDecoder]::CreateAsync($stream)) ([Windows.Graphics.Imaging.BitmapDecoder])
+        $bitmap=Await ($decoder.GetSoftwareBitmapAsync()) ([Windows.Graphics.Imaging.SoftwareBitmap])
+        $result=Await ($engine.RecognizeAsync($bitmap)) ([Windows.Media.Ocr.OcrResult])
+        @{index=$item.index;text=$result.Text;error=''}
+    } catch { @{index=$item.index;text='';error=$_.Exception.Message} }
+    finally {if($null -ne $stream){$stream.Dispose()};if($null -ne $bitmap){$bitmap.Dispose()}}
+})
+ConvertTo-Json -InputObject $results -Depth 5 -Compress
+'''
+
+# 옵션 이름이 한글이고 라벨이 영문일 때만 쓰는 고정 음역표(같은 단어의 표기 차이). 이 표 밖의 색은 매핑하지 않는다.
+TRANSLIT = {'블랙': 'BLACK', '화이트': 'WHITE', '아이보리': 'IVORY', '카키': 'KHAKI', '네이비': 'NAVY', '베이지': 'BEIGE', '그레이': 'GRAY',
+            '차콜': 'CHARCOAL', '브라운': 'BROWN', '레드': 'RED', '블루': 'BLUE', '그린': 'GREEN', '핑크': 'PINK', '퍼플': 'PURPLE',
+            '옐로우': 'YELLOW', '오렌지': 'ORANGE', '민트': 'MINT', '카멜': 'CAMEL', '와인': 'WINE', '올리브': 'OLIVE', '크림': 'CREAM'}
 
 
 class CrawlError(RuntimeError):
@@ -303,6 +346,10 @@ def collect_optional(ctx, product):
         if ctx.enabled('price'):
             node = product['soup'].select_one('#span_product_price_sale') or product['soup'].select_one('#span_product_price_text')
             digits = re.sub(r'[^\d]', '', node.get_text()) if node else ''
+            if not digits:  # 이 스킨은 판매가 칸 대신 공식 메타(product:sale_price / price:amount)에 판매가를 둔다
+                meta = product['soup'].select_one('meta[property="product:sale_price:amount"]') or product['soup'].select_one('meta[property="product:price:amount"]')
+                digits = re.sub(r'\.0+$', '', (meta.get('content') or '').strip()) if meta else ''
+                digits = digits if digits.isdigit() else ''
             extras = {str(row.get('option_price')) for rows in by_color.values() for row, _ in rows if row.get('option_price') not in (None, '')}
             if digits and int(digits) > 0 and len(extras) <= 1:
                 result['price'] = int(digits)
@@ -430,7 +477,8 @@ def photo_like(mask, box):
 
 def segment(image):
     """전체 폭 배경 여백(가로 띠)으로 블록을 나누고, 블록 안의 세로 배경 여백으로 나란한 사진을 나눈다.
-    반환: [(left, top, right, bottom, 근거)] 원본 픽셀 정수 좌표."""
+    낮은 글자 띠(색상명 후보)는 따로 모아, 그 아래 사진들이 어느 띠 밑에 있는지 기록한다.
+    반환: (photos=[(box, 띠번호|None)], labels=[띠 box]) — 모두 원본 픽셀 정수 좌표."""
     work = image.copy()
     work.thumbnail((1000, 1_000_000))
     w, h = work.size
@@ -440,15 +488,23 @@ def segment(image):
     bg.close()
     raw = mask.tobytes()
     rows = [raw[y * w:(y + 1) * w].count(255) for y in range(h)]
-    boxes = []
+    boxes, labels, current = [], [], None
     for top, bottom in runs_of(rows, max(4, w * .01), 10):
+        whole = mask.crop((0, top, w, bottom)).getbbox()
+        if not whole:
+            continue
         if bottom - top < 120:
-            continue  # 색상명·문구 띠
+            if 8 <= bottom - top and w * .03 <= whole[2] - whole[0] <= w * .85:
+                pad = 12  # 글자 띠: 사진 위 색상명 후보. 같은 블록 안 사진에만 이어진다.
+                labels.append([0, int(max(0, (top - pad) * scale)), image.width, int(min(h, (bottom + pad)) * scale)])
+                current = len(labels) - 1
+            continue
         block = mask.crop((0, top, w, bottom))
         braw = block.tobytes()
         bw = block.width
         cols = [sum(braw[y * bw + x] == 255 for y in range(0, bottom - top, 2)) for x in range(bw)]
         block.close()
+        found = False
         for left, right in runs_of(cols, 1, 10):
             if right - left < w * .2:
                 continue
@@ -458,10 +514,13 @@ def segment(image):
             l, t, r, b = left + inner[0], top + inner[1], left + inner[2], top + inner[3]
             if b - t < 120 or photo_like(mask, (l, t, r, b)) < .22:
                 continue  # 글자·표·도식으로 보이는 듬성한 블록
-            boxes.append((l, t, r, b))
+            boxes.append(((l, t, r, b), current))
+            found = True
+        if not found:
+            current = None  # 사진이 아닌 큰 영역(실측표 등)이 나오면 앞 색상명의 범위를 끊는다
     mask.close()
     out = []
-    for l, t, r, b in boxes:
+    for (l, t, r, b), label in boxes:
         pad = 8
         box = [int(max(0, (l - pad) * scale)), int(max(0, (t - pad) * scale)), int(min(image.width, (r + pad) * scale)), int(min(image.height, (b + pad) * scale))]
         bw, bh = box[2] - box[0], box[3] - box[1]
@@ -482,8 +541,85 @@ def segment(image):
         bw, bh = box[2] - box[0], box[3] - box[1]
         if min(bw, bh) < 500 or max(bw, bh) / min(bw, bh) > 1.8:
             continue
-        out.append(tuple(box))
-    return out
+        out.append((tuple(box), label))
+    return out, labels
+
+
+def ocr_labels(ctx, image, labels, work):
+    """Windows 기본 OCR로 글자 띠만 읽는다. 윈도우가 아니거나 실패하면 빈 결과(→ 미매핑)."""
+    if not labels:
+        return {}
+    if os.name != 'nt':
+        ctx.log('Windows가 아니어서 색상명 OCR을 건너뜁니다 → 사진은 수동 매핑', 'INFO')
+        return {}
+    work = Path(work)
+    work.mkdir(parents=True, exist_ok=True)
+    items = []
+    for i, box in enumerate(labels):
+        ctx.checkpoint()
+        tile = image.crop(tuple(box))
+        factor = min(2.0, 2400 / tile.width, 3500 / max(1, tile.height))
+        tile = tile.resize((max(1, round(tile.width * factor)), max(1, round(tile.height * factor))), Image.Resampling.LANCZOS)
+        path = work / ('label_' + str(i) + '.png')
+        tile.save(path)
+        tile.close()
+        items.append({'index': i, 'path': str(path.resolve())})
+    script = work / 'recognize.ps1'
+    script.write_text(POWERSHELL_OCR, encoding='utf-8-sig')
+    manifest = work / 'ocr_input.json'
+    manifest.write_text(json.dumps(items, ensure_ascii=False), encoding='utf-8')
+    command = ['powershell.exe', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', str(script.resolve()), '-Manifest', str(manifest.resolve())]
+    texts = {}
+    with tempfile.TemporaryFile() as stdout, tempfile.TemporaryFile() as stderr:
+        process = subprocess.Popen(command, stdout=stdout, stderr=stderr, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+        deadline = time.monotonic() + max(45, len(items) * 12)
+        try:
+            while process.poll() is None:
+                ctx.checkpoint()
+                if time.monotonic() > deadline:
+                    raise CrawlError('Windows OCR 시간 초과')
+                time.sleep(.1)
+            stdout.seek(0)
+            stderr.seek(0)
+            output = stdout.read().decode('utf-8-sig', errors='replace')
+            if process.returncode:
+                raise CrawlError('Windows OCR 실패: ' + stderr.read().decode('utf-8', errors='replace')[:300])
+            result = json.loads(output)
+            for item in result if isinstance(result, list) else [result]:
+                texts[int(item['index'])] = str(item.get('text') or '')
+                if item.get('error'):
+                    ctx.log('OCR 오류(해당 띠 미매핑): ' + str(item['error'])[:200], 'WARNING')
+        except (CrawlError, ValueError, OSError, KeyError) as exc:
+            ctx.log(str(exc) + ' → 사진은 수동 매핑', 'WARNING')
+            return {}
+        finally:
+            if process.poll() is None:
+                process.terminate()
+                process.wait(timeout=5)
+    return texts
+
+
+def match_color(recognized, colors):
+    """OCR 글자에서 공식 색상 후보가 정확히 하나만 확인될 때 그 색상. 아니면 None."""
+    upper = recognized.upper()
+    tokens = set(re.findall(r'[A-Z0-9]+', upper))
+    words = set(re.findall(r'[가-힣]+', recognized))
+    words |= {re.sub(r'(컬러|색상|색)$', '', w) for w in words}
+    hits = []
+    for color in colors:
+        name, code = color['color_name'].strip(), color['color_code'].strip().upper()
+        reasons = []
+        if code and code in tokens:
+            reasons.append('코드 ' + code)
+        if name and (name in words or name.upper() in tokens):
+            reasons.append('이름 ' + name)
+        elif name in TRANSLIT and TRANSLIT[name] in tokens:
+            reasons.append('영문 표기 ' + TRANSLIT[name] + '=' + name)
+        if reasons:
+            hits.append((color, reasons))
+    if len(hits) == 1:
+        return hits[0][0], ', '.join(hits[0][1])
+    return None, ('여러 색상 동시 일치' if hits else '')
 
 
 def save_cut(ctx, image, box, seen):
@@ -498,23 +634,38 @@ def save_cut(ctx, image, box, seen):
     return path
 
 
-def cuts_from(ctx, url, image, seen):
-    """한 원본에서 개별 컷 목록. 원래 비율이 개별 컷이면 통째, 통이미지면 여백 경계로 분할."""
+def cuts_from(ctx, url, image, seen, colors=None, work=None):
+    """한 원본에서 개별 컷 목록 [(path, box, 사전매핑, 근거)].
+    원래 비율이 개별 컷이면 통째, 통이미지면 여백 경계로 분할 + (윈도우) 색상명 띠 OCR."""
     w, h = image.size
     if min(w, h) >= 500 and max(w, h) / min(w, h) <= 1.8:
         path = save_cut(ctx, image, None, seen)
-        return [(path, 'whole', None)] if path else []
+        return [(path, None, None, '')] if path else []
     if max(w, h) / min(w, h) <= 1.8:
         return []
-    out = []
-    boxes = segment(image)
-    if not boxes:
+    photos, labels = segment(image)
+    if not photos:
         ctx.log('여백 경계로 안전하게 나눌 수 있는 개별 컷이 없어 제외: ' + url, 'INFO')
-    for box in boxes:
+        return []
+    used = sorted({label for _, label in photos if label is not None})
+    texts = ocr_labels(ctx, image, [labels[i] for i in used], work) if colors and used and work else {}
+    decided = {}
+    for k, index in enumerate(used):
+        if k not in texts:
+            continue
+        color, why = match_color(texts[k], colors)
+        if color:
+            decided[index] = (color, 'Windows OCR "' + re.sub(r'\s+', ' ', texts[k]).strip()[:60] + '" → ' + why + ' / 사진 바로 위 글자 띠 y=' +
+                              str(labels[index][1]) + '~' + str(labels[index][3]) + ' / ' + url)
+        else:
+            ctx.log('색상명 띠 OCR "' + texts[k].strip()[:40] + '" ' + (why or '공식 색상과 불일치') + ' → 아래 컷은 수동 매핑', 'INFO')
+    out = []
+    for box, label in photos:
         ctx.checkpoint()
         path = save_cut(ctx, image, list(box), seen)
         if path:
-            out.append((path, 'crop', list(box)))
+            color, evidence = decided.get(label, (None, ''))
+            out.append((path, list(box), color, evidence))
     return out
 
 
@@ -574,6 +725,7 @@ def crawl(ctx):
                 ctx.log('상품 링크 간 공통 ' + field + ' 값이 없거나 달라 빈칸으로 둡니다.', 'WARNING')
     merge_regular_prices(ctx, common, [p['optional'] for p in products])
     cache, seen, pending = {}, set(), []
+    work = Path(ctx.output_dir) / '_redface_ocr' / str(ctx.task_id)
     ctx.stage('갤러리·상세 이미지 다운로드 및 개별 컷 저장')
     # 1) 색상 옵션 link_image: 공식 옵션 ↔ 이미지 DOM 연결이 있는 사진만 사전 매핑
     linked = set()
@@ -587,10 +739,10 @@ def crawl(ctx):
             mapped = entries[0] if len({color_key(e) for e in entries}) == 1 else None
             evidence = ('Cafe24 색상 옵션 "' + mapped['color_name'] + (' (' + mapped['color_code'] + ')' if mapped['color_code'] else '') +
                         '"의 공식 link_image: ' + url) if mapped else ''
-            for path, kind, box in cuts_from(ctx, url, image, seen):
+            for path, box, _, _ in cuts_from(ctx, url, image, seen):
                 pending.append((path, mapped, evidence, url, box))
             release(cache, image)
-    # 2) 갤러리 + 상세 통이미지: 모두 미매핑 후보 (색감·파일명으로 색상 추측 안 함)
+    # 2) 갤러리(미매핑) + 상세 통이미지(색상명 띠 OCR 일치 시에만 사전 매핑). 색감·파일명으로 추측 안 함
     for product in products:
         for url in product['gallery'] + product['detail']:
             if url in linked:
@@ -598,8 +750,8 @@ def crawl(ctx):
             ctx.checkpoint()
             image = load_image(ctx, url, cache)
             if image is not None:
-                for path, kind, box in cuts_from(ctx, url, image, seen):
-                    pending.append((path, None, '', url, box))
+                for path, box, color, evidence in cuts_from(ctx, url, image, seen, colors, work / str(len(pending))):
+                    pending.append((path, color, evidence, url, box))
                 release(cache, image)
     if not pending:
         ctx.fail_item('규격(양변 500px·비율 1.8 이하)을 통과한 개별 상품 컷이 없습니다.')
@@ -619,6 +771,7 @@ def crawl(ctx):
         record = dict(base)
         record['크롭 원본 이미지'] = source
         record['크롭 좌표'] = json.dumps(box) if box else ''
+        record['OCR 근거'] = evidence if evidence.startswith('Windows OCR') else ''
         ctx.emit_local_image(record, colors, path, mapped_color=mapped, mapping_evidence=evidence,
                              shared_detail_html=base.get('detail_page', ''))
     if failures:
