@@ -1,0 +1,172 @@
+{
+  "id": "izmelbon_eland_official",
+  "name": "이즈멜본",
+  "category": "여성복",
+  "crawl_source": "이랜드몰 공식",
+  "script": "izmelbon_eland_official.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_color_mapping": "manual",
+  "official_color_codes": true,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 API의 품절 포함 색상별 사이즈를 매핑 후보에 전달. 전 색상 동일 시 공통값도 출력."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "옵션 API sellPrice의 쿠폰 전 KRW 판매가. 가격이 다르면 첫 지정 상품/옵션 가격 하나를 선택하고 경고만 기록하며 성공 처리."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "itemMain.depth4StandardCategoryName. 정확히 일치하는 상품 링크의 분류가 같을 때 출력."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 갤러리의 실제 파일/규격/단일 사진 검사. 지정 판매자 CN003590의 매장/일반 상품 사진도 허용. 배너/고시 사진은 갤러리에서 제외."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "선택한 수집 범위의 유효 사진 전체를 내용 해시로 중복 제거 후 수동 매핑 후보 전달. 최종 추가사진 5슬롯은 부족 시 유효 사진 반복."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "한 상품 본문의 유효 상세 이미지만 원본 순서 유지. 판매자·배송·교환·반품·리뷰 배너를 경로/안내 이미지 대조/전체 타일 OCR로 제외. 고시/사이즈표 별도 생성 없음."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.orgSellprice. 링크별 값이 다르거나 누락되면 공통 정상가는 빈칸이며 실패 처리하지 않음."
+    }
+  },
+  "guide": {
+    "example": "SUJF26130",
+    "examples": [
+      "SUJF26130",
+      "SUTC26TU2",
+      "SUKA263Z5"
+    ],
+    "pattern": "^[\\s\\S]*\\S[\\s\\S]*$",
+    "format": "기본 품번. 형식과 관계없이 공식 조회 후 실제 modelNo를 대조.",
+    "notes": "품절 포함 전체 색상/사이즈. 수동 색상 매핑. 추가사진은 중복 허용 5슬롯.",
+    "method": "이랜드몰 품번 전체 검색 후 이즈멜본 브랜드 ID 1700005506 및 modelNo 정확 대조. 지정 판매자 CN003590의 상품만 수집.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "",
+      "RMKAG4TRTN_01"
+    ],
+    "validation_note": "기본 품번과 실제 브랜드/판매자를 확인. 상세는 여러 상품을 합치지 않고 한 상품만 사용."
+  },
+  "notes": "이즈멜본 / 이랜드몰 공식. 판매자 CN003590 엄격 확인. 스튜디오 배경 요구하지 않음. 상세는 한 상품만 사용하며 고시/사이즈표 원본 유지, 별도 표 생성 없음. 판매자/배송/교환/반품/리뷰 배너 제외. UUID 상세는 Windows 한국어 OCR 검사, 검사 실패 시 제외. 품절 포함 색상별 사이즈 보존. 추가사진 최종 5슬롯.",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 API의 품절 포함 색상별 사이즈를 매핑 후보에 전달. 전 색상 동일 시 공통값도 출력."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "옵션 API sellPrice의 쿠폰 전 KRW 판매가. 가격이 다르면 첫 지정 상품/옵션 가격 하나를 선택하고 경고만 기록하며 성공 처리."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "itemMain.depth4StandardCategoryName. 정확히 일치하는 상품 링크의 분류가 같을 때 출력."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 갤러리의 실제 파일/규격/단일 사진 검사. 지정 판매자 CN003590의 매장/일반 상품 사진도 허용. 배너/고시 사진은 갤러리에서 제외."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "선택한 수집 범위의 유효 사진 전체를 내용 해시로 중복 제거 후 수동 매핑 후보 전달. 최종 추가사진 5슬롯은 부족 시 유효 사진 반복."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "한 상품 본문의 유효 상세 이미지만 원본 순서 유지. 판매자·배송·교환·반품·리뷰 배너를 경로/안내 이미지 대조/전체 타일 OCR로 제외. 고시/사이즈표 별도 생성 없음."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.orgSellprice. 링크별 값이 다르거나 누락되면 공통 정상가는 빈칸이며 실패 처리하지 않음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "정상가": "regular_price"
+  },
+  "code_hash": "04bcafd1552175361ebca455176fd4c9056eaf871fa83a38b1260e6e97efc986",
+  "additional_image_count": 5
+}
