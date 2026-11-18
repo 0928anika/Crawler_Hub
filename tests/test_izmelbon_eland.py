@@ -26,7 +26,7 @@ class Tests(unittest.TestCase):
         from registry import get_brand
         from brand_catalog import definitions
         registered=[b for b in definitions(ROOT/'brands') if b['id'].startswith('izmelbon_eland')]
-        self.assertEqual([b['id'] for b in registered],['izmelbon_eland_studio'])
+        self.assertEqual(sorted(b['id'] for b in registered),['izmelbon_eland_ncys','izmelbon_eland_studio'])
         brand=get_brand('izmelbon_eland_studio');self.assertTrue(brand['available']);self.assertEqual(brand['crawl_source'],'이랜드몰 스튜디오컷');self.assertEqual(studio.VENDOR,'CN003590')
         for vendors,expected in [(['CN003590','LV25019267','LV25019303'],1),(['LV25019267','LV25019303'],2)]:
             doc=studio.BeautifulSoup('<span data-searchresult-total>'+str(len(vendors))+'</span>'+''.join('<a class="ui-item__link" href="/i/item?itemNo='+str(i)+'&lowerVendNo='+v+'">x</a>' for i,v in enumerate(vendors)),'html.parser')
@@ -91,5 +91,16 @@ class Tests(unittest.TestCase):
                 parts=module.detail(Context(),d,'SUJF26130',{})
             html=''.join(markup for _,markup in parts);self.assertEqual(html.count('<img'),2)
             self.assertNotIn('<table',html);self.assertNotIn('BANNER',html)
+
+    def test_restored_ncys_is_separate_and_only_uses_ncys_vendor(self):
+        import izmelbon_eland_ncys as ncys
+        from registry import get_brand
+        self.assertTrue(get_brand('izmelbon_eland_ncys')['available']);self.assertEqual(ncys.VENDOR,'LV25019267')
+        vendors=['CN003590','LV25019267','LV25019303']
+        doc=ncys.BeautifulSoup('<span data-searchresult-total>3</span>'+''.join('<a class="ui-item__link" href="/i/item?itemNo='+str(i)+'&lowerVendNo='+v+'">x</a>' for i,v in enumerate(vendors)),'html.parser')
+        with patch.object(ncys,'page',return_value=(doc,ncys.SITE)):links=ncys.search(Context(),'SUJF26130')
+        self.assertEqual(len(links),1);self.assertIn('LV25019267',links[0])
+        main=data(ncys.VENDOR)['itemMain'];main['itemImage']=[dict(imageDcode='150',imagePath='photo.jpg')]
+        with patch.object(ncys,'image_info',return_value=('JPEG',800,1000,False,'hash','',False)):self.assertTrue(ncys.gallery(Context(),main,{}))
 
 if __name__=='__main__':unittest.main()
