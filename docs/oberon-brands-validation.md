@@ -66,6 +66,15 @@ URL·선택자·응답 키는 원본 단독 크롤러에서 운영 확인된 값
 - 상품 상세 페이지는 작업 환경에서 열지 못해 Cafe24 표준 선택자 기준. 작성 프롬프트: docs/prompts/redface_official_03_image_crop.txt
 - fixture: 문구 띠·실측 격자 제외, 나란한 2컷 분리, 비율·500px 규칙, 공통 상세 HTML, 선택 항목 생략, 이미지 미선택 실패.
 
+## 5차 등록 — 패션플러스 크롭필요건 (2026-11-19)
+
+| ID | 브랜드 | 유형 | 근거 |
+|---|---|---|---|
+| fashionplus_item_crop | 패션플러스 크롭필요건 | 3번 로컬 이미지 저장·크롭 (manual/local) | 416083574 실조회(브라우저) + fixture |
+
+- 조회·옵션·상세는 fashionplus_item 로직, 분할·OCR은 레드페이스 크롭 엔진 재사용. 색상명 위치 'below'.
+- 작성 프롬프트: docs/prompts/fashionplus_item_crop_03_image_crop.txt
+
 ## 공통 규약 적용
 
 - 결과 키: product_code / product_name / color / product_url 필수, color_name·color_code 분리, `원본 상품명` 추가 열.

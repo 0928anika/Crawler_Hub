@@ -1,0 +1,192 @@
+{
+  "id": "fashionplus_item_crop",
+  "name": "패션플러스 크롭필요건",
+  "category": "브랜드 공통",
+  "crawl_source": "품목번호 직접수집",
+  "script": "fashionplus_item_crop.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_mode": "local",
+  "additional_image_count": 5,
+  "image_color_mapping": "manual",
+  "official_color_codes": false,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명",
+    "패션플러스 품목번호",
+    "상위품목ID",
+    "브랜드",
+    "판매자",
+    "판매자 상품번호",
+    "상품정보 원문",
+    "원본 옵션",
+    "OCR 근거",
+    "크롭 원본 이미지",
+    "크롭 좌표"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 API(/fetch-option-data)의 색상-사이즈 조합. 모든 색상의 사이즈가 같을 때만 공통값(예: free), 다르면 빈칸."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상세의 '판매가' 행(fashionplus_item과 동일)."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상세의 '희망소비자가' 행만. 없으면 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상세 breadcrumb의 /goods/category/ 링크."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "갤러리 사진은 통째로, 상세 통짜 이미지는 흰 여백·가는 흰 선 경계로만 개별 컷을 잘라 로컬 JPEG 저장(리사이즈 RS·AR 파라미터 제거한 원본). 500px 미만 컷은 주변 실제 흰 배경만으로 넓힐 수 있을 때만 사용(확대 없음). 글자·표처럼 듬성한 영역 제외. 사전 매핑: (Windows) 사진에 붙은 색상명 글자를 OCR해 공식 옵션명과 하나만 일치할 때만. 나머지는 사용자가 매핑."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "대표와 같은 후보에서 사용자가 선택. 허브가 대표 1장 + 추가 5칸 적용."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "전 색상 공통: 패션플러스 공식 상세 본문(fashionplus_item과 동일 렌더링, 공통 배송·행사·브랜드 배너 제외)."
+    }
+  },
+  "guide": {
+    "example": "416083574",
+    "examples": [
+      "416083574",
+      "https://www.fashionplus.co.kr/goods/detail/416083574"
+    ],
+    "pattern": "^.+$",
+    "format": "패션플러스 숫자 품목번호 또는 상품 링크",
+    "notes": "상세가 긴 통짜 이미지인 패션플러스 상품용(일반 상품은 '패션플러스 품목번호'). 수집 후 색상 매핑하기에서 사진을 분류합니다.",
+    "method": "품목번호로 상품·옵션 API·상세 본문을 직접 조회(검색 없음). og:url로 요청 품목번호 검증.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "공백"
+    ],
+    "validation_note": "상품명과 og:url로 요청 품목번호 검증"
+  },
+  "notes": "패션플러스 중 상세가 통짜 이미지인 상품용(크롭필요건). 조회·옵션·상세는 fashionplus_item 로직 재사용, 이미지 분할·OCR은 레드페이스 크롭 엔진 재사용. 2026-11-19 실조회 416083574(레드페이스 브리즈 마스크): 옵션 그레이·네이비·베이지(free), 상세 통짜 747x7955에서 배너·포인트·색상별 단독컷 3장(약 347px → 실제 흰 배경으로 500px 확장)·디테일 2장 분할 확인. 색상명(베이지(BE) 그레이(GR) 네이비(NA))은 여러 색이 겹친 단체컷 '아래'에 있어 개별 컷에 연결되지 않으므로 이 상품은 수동 매핑. LABEL_POSITION='below'.",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 API(/fetch-option-data)의 색상-사이즈 조합. 모든 색상의 사이즈가 같을 때만 공통값(예: free), 다르면 빈칸."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상세의 '판매가' 행(fashionplus_item과 동일)."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상세의 '희망소비자가' 행만. 없으면 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상세 breadcrumb의 /goods/category/ 링크."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "갤러리 사진은 통째로, 상세 통짜 이미지는 흰 여백·가는 흰 선 경계로만 개별 컷을 잘라 로컬 JPEG 저장(리사이즈 RS·AR 파라미터 제거한 원본). 500px 미만 컷은 주변 실제 흰 배경만으로 넓힐 수 있을 때만 사용(확대 없음). 글자·표처럼 듬성한 영역 제외. 사전 매핑: (Windows) 사진에 붙은 색상명 글자를 OCR해 공식 옵션명과 하나만 일치할 때만. 나머지는 사용자가 매핑."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "대표와 같은 후보에서 사용자가 선택. 허브가 대표 1장 + 추가 5칸 적용."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "전 색상 공통: 패션플러스 공식 상세 본문(fashionplus_item과 동일 렌더링, 공통 배송·행사·브랜드 배너 제외)."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null,
+    "패션플러스 품목번호": null,
+    "상위품목ID": null,
+    "브랜드": null,
+    "판매자": null,
+    "판매자 상품번호": null,
+    "상품정보 원문": null,
+    "원본 옵션": null,
+    "OCR 근거": null,
+    "크롭 원본 이미지": null,
+    "크롭 좌표": null
+  },
+  "code_hash": "89e94c1c05b20287fd4284f7849eb546f995b68fd1d5937317ed1aff8d397649"
+}
