@@ -56,14 +56,14 @@
                    document.getElementById('kakao-link-btn').onclick = function() {
                      var shareImg = document.querySelector('#kakaoshare img');
                      var imageUrl = shareImg ? shareImg.src : 'https://deconf.cafe24.com/web/_new/brand-banner-renoma.jpg';
-                   
+
                      // 최신 SDK 방식
                      Kakao.Share.sendDefault({
                        objectType: 'feed',
                        content: {
                          title: document.title,
                          description: 'DECO&',
-                         imageUrl: imageUrl, 
+                         imageUrl: imageUrl,
                          link: {
                            mobileWebUrl: window.location.href,
                            webUrl: window.location.href,
@@ -167,16 +167,16 @@
 (function() {
     function formatDiscount() {
         const discountElements = document.querySelectorAll('.xans-coupon-productdetailajax .discount span');
-        
+
         discountElements.forEach(element => {
             let text = element.textContent.trim();
-            
+
             // 퍼센트 처리 (소수점 제거)
             if (text.includes('%')) {
                 text = text.replace(/(\d+)\.0%/, '$1%');
                 // 또는 모든 소수점 제거: 10.5% → 10%
                 // text = text.replace(/(\d+)\.\d+%/, '$1%');
-            } 
+            }
             // 금액 처리 (천단위 콤마 추가)
             else if (text.includes('원')) {
                 // 숫자만 추출해서 천단위 콤마 추가 후 "원" 붙이기
@@ -189,13 +189,13 @@
             else if (/^\d+$/.test(text)) {
                 text = Number(text).toLocaleString();
             }
-            
+
             element.textContent = text;
         });
     }
-    
+
     document.addEventListener('DOMContentLoaded', formatDiscount);
-    
+
     setTimeout(formatDiscount, 1000);
     setTimeout(formatDiscount, 2000);
 })();
@@ -236,7 +236,7 @@
 <style>
 							.family_sale_display_ {display:none!important;}
 							.family_sale_display_y {display:flex;}
-							
+
 							.family_sale_displaynone_y {display:none!important;}
 						</style>
 <div class="addinfo">
@@ -391,7 +391,7 @@
 </tbody>
 <!-- 옵션선택 또는 세트상품 선택시 상품이 추가되는 영역입니다. 쇼핑몰 화면에는 아래와 같은 마크업구조로 표시됩니다. 삭제시 기능이 정상동작 하지 않습니다. -->
 <tbody>
-<script>    
+<script>
     function callMetaScript() {
         fbq('track', 'AddToCart', {content_ids: ['10680'],content_type: 'product',value: '316000' * $("#quantity").val(), currency: 'KRW'});
     }
@@ -409,7 +409,7 @@
              }
          );
      }
-    
+
     function callGaScript(){
       let total_qty = $(".total").html().substring($(".total").html().indexOf('(')+1, $(".total").html().indexOf('개'));
 
@@ -568,7 +568,7 @@
 <li>타 택배사(편의점택배) 임의 반송시 추가 비용 발생할 수 있습니다.</li>
 <li>단순 변심 또는 사이즈 변심으로 인한 교환 및 반품 배송비는 고객 부담입니다.<br/>
                                                     (반품 왕복배송비 6,000원 / 교환 배송비 6,000원)</li>
-<li>불량제품에 대한 교환 및 반품 요청은 제품 수령일로부터 7일 이내 
+<li>불량제품에 대한 교환 및 반품 요청은 제품 수령일로부터 7일 이내
                                                         택 미제거·실내 시착 상태에서 접수해 주셔야 합니다.</li>
 <li>맞교환은 불가하며, 교환반품 상품이 물류센터에 도착 및 검수 후 배송됩니다.</li>
 <li>교환의 경우 동일한 상품에 한하여 사이즈 교환만 가능합니다.</li>
@@ -626,7 +626,7 @@
 </button>
 </div>
 <!-- 새로운 항목 추가 예시 (주석 해제하여 사용) -->
-<!-- 
+<!--
                                 <div class="accordion-item">
                                     <button class="accordion-header">
                                         <span>사용 방법</span>
