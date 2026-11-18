@@ -99,7 +99,12 @@ class Tests(unittest.TestCase):
         vendors=['CN003590','LV25019267','LV25019303']
         doc=ncys.BeautifulSoup('<span data-searchresult-total>3</span>'+''.join('<a class="ui-item__link" href="/i/item?itemNo='+str(i)+'&lowerVendNo='+v+'">x</a>' for i,v in enumerate(vendors)),'html.parser')
         with patch.object(ncys,'page',return_value=(doc,ncys.SITE)):links=ncys.search(Context(),'SUJF26130')
-        self.assertEqual(len(links),1);self.assertIn('LV25019267',links[0])
+        self.assertEqual(len(links),1);self.assertIn('CN003590',links[0])
+        for vendors in [['LV25019267','LV25019303'],['LV25019303']]:
+            doc=ncys.BeautifulSoup('<span data-searchresult-total>'+str(len(vendors))+'</span>'+''.join('<a class="ui-item__link" href="/i/item?itemNo='+str(i)+'&lowerVendNo='+v+'">x</a>' for i,v in enumerate(vendors)),'html.parser')
+            with patch.object(ncys,'page',return_value=(doc,ncys.SITE)):links=ncys.search(Context(),'SUJF26130')
+            self.assertEqual(len(links),int('LV25019267' in vendors))
+            if links:self.assertIn('LV25019267',links[0])
         main=data(ncys.VENDOR)['itemMain'];main['itemImage']=[dict(imageDcode='150',imagePath='photo.jpg')]
         with patch.object(ncys,'image_info',return_value=('JPEG',800,1000,False,'hash','',False)):self.assertTrue(ncys.gallery(Context(),main,{}))
 

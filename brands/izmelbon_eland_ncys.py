@@ -21,8 +21,9 @@ from PIL import Image, ImageStat, ImageChops, ImageFilter, UnidentifiedImageErro
 
 SITE = 'https://www.elandmall.co.kr'
 VENDOR = 'LV25019267'
+OFFICIAL_VENDOR = 'CN003590'
 MODE = 'ncys'
-REVISION = '2026-11-18-izmelbon-ncys-v1'
+REVISION = '2026-11-18-izmelbon-ncys-v2-official-first'
 IMGHUB_BRAND = ''
 BRAND_NO = '1700005506'
 POLICY = {'checked': '2026-11-05', 'source': 'https://marketplace.coupang.com/mba/listing',
@@ -108,8 +109,9 @@ def search(ctx, code):
             if MODE == 'studio':
                 ctx.log('전체 판매자 상품의 스튜디오컷 검사', 'INFO')
                 return links
-            selected=[u for u in links if parse_qs(urlsplit(u).query).get('lowerVendNo')==[VENDOR]]
-            ctx.log('지정 판매자 '+VENDOR+' 상품 '+str(len(selected))+'개', 'INFO')
+            official=[u for u in links if parse_qs(urlsplit(u).query).get('lowerVendNo')==[OFFICIAL_VENDOR]]
+            selected=official or [u for u in links if parse_qs(urlsplit(u).query).get('lowerVendNo')==[VENDOR]]
+            ctx.log('공식 판매자 상품만 수집' if official else '공식 상품 없음: NC_YS 상품 '+str(len(selected))+'개 수집', 'INFO')
             return selected
         page_no += 1
     raise CrawlError('검색 30페이지 초과')
@@ -132,7 +134,7 @@ def product_once(ctx, url, code):
         except (ValueError, KeyError, TypeError) as e:
             raise CrawlError('상품 JSON 파싱 실패: ' + url) from e
         expected_vendor=parse_qs(urlsplit(url).query).get('lowerVendNo',[''])[0]
-        if str(main.get('lowerVendNo')) != expected_vendor or (MODE != 'studio' and expected_vendor != VENDOR):
+        if str(main.get('lowerVendNo')) != expected_vendor or (MODE != 'studio' and expected_vendor not in (OFFICIAL_VENDOR,VENDOR)):
             ctx.log('다른 판매자 제외: ' + final, 'INFO')
             return None
         if str(main.get('brandNo')) != BRAND_NO:
@@ -603,6 +605,9 @@ def _crawl(ctx):
                     detail_source=final
                     ctx.log('상세는 이 상품 한 곳만 사용: '+final,'INFO')
             ctx.log('일치 상품 수집 완료: 상세는 최초 유효 본문 한 곳만 사용', 'INFO')
+            if str(main['lowerVendNo'])==OFFICIAL_VENDOR:
+                ctx.log('공식 한 상품 수집 완료: 유성 상품은 수집하지 않음','INFO')
+                break
         except CrawlError as e:
             message=str(e)
             failed(message if url in message else message + ': ' + url)
