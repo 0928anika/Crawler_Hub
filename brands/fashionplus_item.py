@@ -3,7 +3,7 @@ import html,http.client,io,json,re,socket,time,hashlib,urllib.error,urllib.parse
 from bs4 import BeautifulSoup,NavigableString,Comment
 from PIL import Image,UnidentifiedImageError
 BASE='https://www.fashionplus.co.kr'
-REVISION='2026-11-16-fashionplus-item-3-detail-candidates'
+REVISION='2026-11-18-fashionplus-item-4-parent-sku'
 MAX_BYTES=10_000_000
 class CollectionError(RuntimeError):pass
 class MissingResource(CollectionError):pass
@@ -173,6 +173,26 @@ def product_info(doc,number):
             if is_notice:provided[key]=value
             if key=='업체명' and not seller:seller=value
             if key=='상품번호' and not seller_number:seller_number=value
+    structured_skus=[]
+    def product_nodes(value):
+        if isinstance(value,list):
+            for entry in value:yield from product_nodes(entry)
+        elif isinstance(value,dict):
+            kind=value.get('@type',[]);kind=[kind] if isinstance(kind,str) else kind
+            if 'Product' in kind:yield value
+            if '@graph' in value:yield from product_nodes(value['@graph'])
+    for script in doc.select('script[type="application/ld+json"]'):
+        try:data=json.loads(script.string or script.get_text())
+        except (ValueError,TypeError):continue
+        for product in product_nodes(data):
+            if product.get('mpn') is not None and str(product['mpn'])!=number:continue
+            sku=product.get('sku')
+            if isinstance(sku,(str,int)) and str(sku).strip():structured_skus.append(str(sku).strip())
+    structured_skus=list(dict.fromkeys(structured_skus))
+    if len(structured_skus)>1 or seller_number and structured_skus and seller_number!=structured_skus[0]:raise CollectionError('상품번호(SKU) 원문 불일치: '+number)
+    sku=seller_number or (structured_skus[0] if structured_skus else '')
+    if not sku:raise CollectionError('상품번호(SKU) 미표시: '+number+' / 상품명에서 추정하지 않습니다.')
+    record.update(product_code=sku,**{'상위품목ID':number})
     record.update({'판매자':seller,'판매자 상품번호':seller_number,'상품정보 원문':'\n'.join(k+': '+v for k,v in provided.items())})
     return record
 
@@ -242,7 +262,6 @@ def gallery(ctx,doc,cache):
             ctx.log('공식 원본 404 갤러리 파일만 제외: '+url,'WARNING');continue
         if min(image['width'],image['height'])<=1:continue
         result.append(url)
-    if not result:raise CollectionError('상품 등록 사진 수집 결과 없음')
     return result
 
 
@@ -366,6 +385,7 @@ def crawl(ctx):
         if ctx.enabled('detail_page'):record['detail_page']=detail(ctx,link,cache)
         wants=ctx.enabled('main_image') or ctx.enabled('additional_images')
         photos=merge_photos(gallery(ctx,doc,cache),detail_candidates(ctx,link,cache),cache) if wants else []
+        if wants and not photos:raise CollectionError('갤러리·상세페이지 상품컷 수집 결과 없음')
         if wants:record['전체 상품사진']='\n'.join(photos)
         if not wants:
             for color in palette:ctx.emit_result(dict(record,color=color['color_name'] or color['color_code'],**color))
@@ -375,7 +395,7 @@ def crawl(ctx):
             color=palette[0];row=dict(record,color=color['color_name'] or color['color_code'],**color)
             if ctx.enabled('main_image'):row['main_image']=photos[0]
             if ctx.enabled('additional_images'):
-                extras=photos[1:6] or photos[:1];row['additional_images']=','.join(extras[i%len(extras)] for i in range(5))
+                extras=photos[1:] or photos[:1];row['additional_images']=','.join(extras[i%len(extras)] for i in range(max(5,len(extras))))
             ctx.emit_result(row)
         ctx.log(number+': 브랜드 '+record['브랜드']+' / 상품 사진 '+str(len(photos))+'장 / 옵션 '+str(len(raw_options))+'개','SUCCESS')
     except (CollectionError,ValueError,KeyError) as exc:ctx.fail_item(str(exc));raise

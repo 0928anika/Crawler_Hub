@@ -9,6 +9,7 @@
   "image_color_mapping": "hybrid",
   "official_color_codes": true,
   "output_headers": [
+    "상위품목ID",
     "품번",
     "상품명",
     "색상",
@@ -85,7 +86,7 @@
     "invalid_examples": [],
     "validation_note": "상품명과 og:url로 요청 품목번호 검증."
   },
-  "notes": "브랜드 공통 품목번호 전용. 모든 등록 상품 사진 수집(스튜디오컷 필터 없음), 전체 사진 URL 추가 컬럼 보존. 단일 옵션 색상은 자동, 복수 색상은 수동 사진 매핑. 옵션명·재고·옵션ID·원문가격 보존. 판매가는 판매가 행, 정상가는 희망소비자가 행만 사용. 본문 원본 이미지·텍스트·표 보존, 알려진 공통 배송/행사 배너 제외. 매핑 후보는 등록 갤러리 우선, 상세 개별 사진 추가. 긴 통짜(가로세로 비율 2 초과), 명시된 사이즈표·고시·안내 이미지는 본문 후보에서 제외. 상세 본문에서는 원본 유지. 같은 사진의 리사이즈 URL 중복 제거.",
+  "notes": "브랜드 공통 품목번호 전용. 모든 등록 상품 사진 수집(스튜디오컷 필터 없음), 전체 사진 URL 추가 컬럼 보존. 단일 옵션 색상은 자동, 복수 색상은 수동 사진 매핑. 옵션명·재고·옵션ID·원문가격 보존. 판매가는 판매가 행, 정상가는 희망소비자가 행만 사용. 본문 원본 이미지·텍스트·표 보존, 알려진 공통 배송/행사 배너 제외. 매핑 후보는 등록 갤러리 우선, 상세 개별 사진 추가. 긴 통짜(가로세로 비율 2 초과), 명시된 사이즈표·고시·안내 이미지는 본문 후보에서 제외. 상세 본문에서는 원본 유지. 같은 사진의 리사이즈 URL 중복 제거. 상위품목ID는 입력한 상위 ID, 품번은 공식 상품번호/SKU 원문. 상품명에서 품번을 추정하지 않음. 상세 개별 상품컷을 갤러리와 함께 전체 매핑 후보로 보존.",
   "image_mode": "url",
   "interface": "portal_v1",
   "group_manual_pending": true,
@@ -177,9 +178,14 @@
     "판매자 상품번호": null,
     "원본 옵션": null,
     "상품정보 원문": null,
-    "전체 상품사진": null
+    "전체 상품사진": null,
+    "상위품목ID": null
   },
-  "code_hash": "5539d71a78d537b56f522764d2f8b003c03aab827b83b1638894aeda69590e8e",
+  "code_hash": "0d43177a0aa80430394b61205ab7304dde2f54ddfc9deddad16832b92f97b09b",
   "hybrid_mapping": true,
-  "mapping_image_order": "source"
+  "mapping_image_order": "source",
+  "export_prefix_headers": [
+    "상위품목ID"
+  ],
+  "export_all_additional_images": true
 }

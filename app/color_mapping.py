@@ -270,7 +270,9 @@ def result_headers(job):
     for item in job.items:
         for header in item['raw']:
             if header not in headers:headers.append(header)
-    return output_headers(headers,job.selected)
+    headers=output_headers(headers,job.selected)
+    prefix=[h for h in job.brand.get('export_prefix_headers',[]) if h in headers]
+    return prefix+[h for h in headers if h not in prefix]
 
 
 def first_product_link(job,code):
@@ -318,6 +320,7 @@ def final_items(job,view):
             entries=local_plan[(group['id'],color['id'])] if local_plan is not None else None
             urls=[e['filename'] for e in entries] if entries is not None else [i['url'] for i in images]
             extras=urls[:count] if entries is not None and 'main_image' not in job.selected else urls[1:count+1] or urls[:1]
+            if entries is None and job.brand.get('export_all_additional_images'):extras=(urls[1:] if 'main_image' in job.selected else urls) or urls[:1]
             while len(extras)<5:extras.append(extras[-1])
             values=[]
             for header in headers:
