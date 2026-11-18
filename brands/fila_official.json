@@ -1,0 +1,170 @@
+{
+  "id": "fila_official",
+  "name": "휠라",
+  "category": "스포츠",
+  "crawl_source": "공식 홈페이지",
+  "script": "fila_official.py",
+  "execution_level": 1,
+  "mapping_mode": "automatic",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "verified",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 ld+json offers 사이즈 전체(품절 포함)."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 ld+json offers.price(사이즈별 상이하면 빈칸)."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 data-selected-variant compare_at_price(원 단위 환산). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 태그 + ProductGroup category."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상별 상품의 공식 .product__media-gallery 사진. 공개 접근·규격 검사."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "같은 갤러리 검사 통과 컷 5슬롯."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "나머지 제품컷 + 현재 품번 모델컷 + 상품정보고시·핏&스펙 2열 표."
+    }
+  },
+  "guide": {
+    "pattern": "^[A-Za-z0-9]{8,24}$",
+    "format": "색상코드 3자리까지 포함한 품번(예: FS263PO01X001001). 기본 품번도 입력 가능(검색 경로 미검증)",
+    "notes": "전체 품번은 그 색상만, 기본 품번은 검색되는 색상 전부.",
+    "method": "공식 상품 주소 1100+품번으로 직접 조회, 상세 상품코드로 재대조.",
+    "example": "FS263PO01X001001",
+    "examples": [
+      "FS263PO01X001001"
+    ],
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "공백"
+    ],
+    "validation_note": "입력 형식 검사이며 실제 상품 존재 확인은 실행 시 수행"
+  },
+  "notes": "휠라 공식몰(Shopify). 품번 끝 3자리가 색상코드이고 색상마다 상품 주소(/products/1100{품번})가 따로 있어 자동 매핑. 색상은 공식 \"색상 : 001 (BLACK)\" 표기. 모델컷 섹션은 여러 색상이 섞여 있어 파일명에 현재 품번이 있는 컷만 상세에 사용. 체크포인트 공용 화보·상품 설명 문단은 제외. 기본 품번(색상코드 없음)은 Shopify 공개 추천검색(/search/suggest.json)에서 1100+품번+3자리 상품만 — 이 경로는 원본 크롤러에 없던 방식이라 실사이트 확인 필요. 검증 범위: 사용자 단독 크롤러(fila_crawler.py)에서 운영 확인된 URL·선택자·응답 키를 Crawler Hub SDK 규약으로 이식. 이 코드를 작성한 환경은 해당 사이트 접속이 차단되어 실사이트 실행은 미검증이며, SDK 계약·선택 항목 생략·표 재구성은 오프라인 fixture 테스트(tests/test_oberon_brands.py)로만 확인함.",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 ld+json offers 사이즈 전체(품절 포함)."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 ld+json offers.price(사이즈별 상이하면 빈칸)."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 data-selected-variant compare_at_price(원 단위 환산). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 태그 + ProductGroup category."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상별 상품의 공식 .product__media-gallery 사진. 공개 접근·규격 검사."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "같은 갤러리 검사 통과 컷 5슬롯."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "나머지 제품컷 + 현재 품번 모델컷 + 상품정보고시·핏&스펙 2열 표."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null
+  },
+  "code_hash": "c767f204b85104379a7e97e38ea099821386b96ecaee8efbcbe9d91023a3b058"
+}

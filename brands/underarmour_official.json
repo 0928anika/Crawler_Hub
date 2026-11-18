@@ -1,0 +1,170 @@
+{
+  "id": "underarmour_official",
+  "name": "언더아머",
+  "category": "스포츠",
+  "crawl_source": "공식 홈페이지",
+  "script": "underarmour_official.py",
+  "execution_level": 1,
+  "mapping_mode": "automatic",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "verified",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "해당 색상 페이지 .js-size-select 사이즈 전체(품절 disabled 포함, 길이 속성 제외)."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .b-price-value.m-actual(없으면 ld+json offers.price)."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .b-price-value.m-strikethrough. 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 성별(audience) + BreadcrumbList."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 ld+json 이미지 중 파일명에 해당 색상코드가 있는 컷. 공개 접근·규격 검사."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "같은 색상 컷 검사 통과 5슬롯."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "같은 색상 나머지 컷 + 공식 사이즈 & 핏 가이드 표. HTML 고시 없음."
+    }
+  },
+  "guide": {
+    "pattern": "^\\d{6,8}(?:[-_]\\d{3})?$",
+    "format": "스타일 번호(예: 1370494) 또는 스타일-색상코드(예: 1370494-001)",
+    "notes": "스타일 번호는 모든 색상, 색상코드까지 넣으면 그 색상만.",
+    "method": "공식 검색 결과 타일 data-pid가 스타일 번호와 정확히 같은 상품.",
+    "example": "1370494",
+    "examples": [
+      "1370494"
+    ],
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "공백"
+    ],
+    "validation_note": "입력 형식 검사이며 실제 상품 존재 확인은 실행 시 수행"
+  },
+  "notes": "언더아머 코리아(Salesforce Commerce Cloud). 색상 스와치마다 같은 상품 페이지를 dwvar 색상 파라미터로 열어 사이즈·가격을 읽고, 공식 ld+json 이미지 중 파일명에 -{색상코드}_ 가 있는 것만 그 색상으로 자동 매핑. Scene7 이미지는 공식 변환 파라미터(wid=1000, fmt=jpg)로 JPEG 요청. 사이즈 & 핏 가이드 표(Product-SizeChart)는 상세 하단. DNA·제품 정보 설명 문단은 제외. 검증 범위: 사용자 단독 크롤러(ua_crawler.py)에서 운영 확인된 URL·선택자·응답 키를 Crawler Hub SDK 규약으로 이식. 이 코드를 작성한 환경은 해당 사이트 접속이 차단되어 실사이트 실행은 미검증이며, SDK 계약·선택 항목 생략·표 재구성은 오프라인 fixture 테스트(tests/test_oberon_brands.py)로만 확인함.",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "해당 색상 페이지 .js-size-select 사이즈 전체(품절 disabled 포함, 길이 속성 제외)."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .b-price-value.m-actual(없으면 ld+json offers.price)."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .b-price-value.m-strikethrough. 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 성별(audience) + BreadcrumbList."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 ld+json 이미지 중 파일명에 해당 색상코드가 있는 컷. 공개 접근·규격 검사."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "같은 색상 컷 검사 통과 5슬롯."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "같은 색상 나머지 컷 + 공식 사이즈 & 핏 가이드 표. HTML 고시 없음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null
+  },
+  "code_hash": "ffff7b75eba38713eda7473874068754904e70f8c89f2ffa5050c89901aa0580"
+}

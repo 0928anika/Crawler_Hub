@@ -40,6 +40,22 @@ URL·선택자·응답 키는 원본 단독 크롤러에서 운영 확인된 값
 - 제외: 레노마키즈·미니멈·지그재그는 1차와 같은 파일(중복), 볼빅은 Oberon에 이미 등록, 지그재그는 요청대로 제외.
 - 2차 6개도 실사이트 미검증이며 fixture 검사만 통과했습니다.
 
+## 3차 등록 (2026-11-18)
+
+| ID | 브랜드 | 매핑 | 원본 |
+|---|---|---|---|
+| lenic_official | 르니앤맥코이 | 혼합 (Cafe24 공통 엔진) | lenic_crawler.py |
+| lecoqgolf_official | 르꼬끄골프 (dk-on) | 자동 (ld+json hasVariant 색상별 사진) | lecoq_crawler.py |
+| underarmour_official | 언더아머 | 자동 (이미지 파일명 색상코드) | ua_crawler.py |
+| millet_official | 밀레 | 자동 (색상별 상품 페이지, 고시 색상코드 일치 필수) | millet_crawler.py |
+| fila_official | 휠라 | 자동 (색상별 Shopify 상품) | fila_crawler.py |
+
+- 원본과 달라진 점: 상세에서 설명 문단(언더아머 DNA·휠라 설명·체크포인트 공용 화보) 제외, 색상코드→한글명 변환표(르니앤맥코이)·.webp→.jpg 추측 요청 제거, 르꼬끄 setRecentViewProd(최근 본 상품 등록) 호출 제거, 르꼬끄 앞글자 전체 검색은 상품코드 정확 일치로 축소.
+- 휠라 기본 품번(색상코드 없음) 입력은 Shopify 공개 추천검색(/search/suggest.json)을 쓰며 원본 크롤러에 없던 경로라 실사이트 확인 필요.
+- 밀레 카테고리는 원본 크롤러에서 위치가 확인되지 않아 미지원으로 등록.
+- 제외(이미 등록·동일 파일): 에꼴리에·던필드·뱅뱅·빈트릴·벤제프·링스·리버클래시(페이브룩).
+- 3차 5개도 실사이트 미검증이며 fixture 검사만 통과했습니다.
+
 ## 공통 규약 적용
 
 - 결과 키: product_code / product_name / color / product_url 필수, color_name·color_code 분리, `원본 상품명` 추가 열.
@@ -53,7 +69,7 @@ URL·선택자·응답 키는 원본 단독 크롤러에서 운영 확인된 값
 
 - **실사이트 실행: 미검증.** 이 코드를 작성한 환경은 각 쇼핑몰 접속이 프록시에서 차단되어 실제 응답으로 실행하지 못했습니다.
 - **오프라인 검사: 통과.** `tests/test_oberon_brands.py` — 실제 `CrawlContext`로 각 사이트 구조를 본뜬 최소 fixture를 실행해 호출 형식, 혼합 매핑 분리, 품절 사이즈·앞자리 0 보존, 고시 표, 사이즈 그림→표 순서, 미선택 항목 무요청, 일부 링크 실패, 0건 실패를 확인했습니다.
-- `python tools/manage_brands.py check` 통과(60개 브랜드). 전체 테스트는 기존부터 실패하던 `test_prices` 1건(지프 2종이 정상가 미지원 목록에 없음) 외 통과.
+- `python tools/manage_brands.py check` 통과(65개 브랜드). 전체 테스트는 기존부터 실패하던 `test_prices` 1건(지프 2종이 정상가 미지원 목록에 없음) 외 통과.
 - 운영 투입 전 각 브랜드에서 시험 품번(설정의 guide.example)으로 새 작업을 실행해 결과 Excel·색상 매핑 화면을 확인하세요.
 
 ## 알려진 확인 필요 사항

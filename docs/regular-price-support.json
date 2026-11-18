@@ -238,5 +238,35 @@
     "profile": "byn",
     "supported": true,
     "reason": "공식 .prd-info__price-original .prd-info__price-num의 독립 정상가. 누락/0/형식 변경은 빈칸으로 계속 진행."
+  },
+  {
+    "id": "lenic_official",
+    "profile": "cafe24",
+    "supported": true,
+    "reason": "공식 소비자가 #span_product_price_custom 또는 product_custom(regular_price cafe24 프로필). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "lecoqgolf_official",
+    "profile": "dkon_ld",
+    "supported": true,
+    "reason": "공식 hasVariant offers.priceSpecification 중 name=정상가. 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "underarmour_official",
+    "profile": "sfcc",
+    "supported": true,
+    "reason": "공식 .b-price-value.m-strikethrough. 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "millet_official",
+    "profile": "millet_html",
+    "supported": true,
+    "reason": "공식 .item-detail-price del(취소선). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "fila_official",
+    "profile": "shopify",
+    "supported": true,
+    "reason": "공식 data-selected-variant compare_at_price(원 단위 환산). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
   }
 ]

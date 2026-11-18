@@ -19,7 +19,8 @@ from PIL import Image
 
 NEW = ['adhoc_official', 'bangbang_official', 'decoand_official', 'dawnfield_official', 'disneygolf_smfashion',
        'renomakids_official', 'minimum_official', 'adidas_official', 'brentwood_kolonmall', 'ping_bucketstore', 'ecolier_soiemall',
-       'jdx_official', 'sfit_official', 'elcanto_official', 'riverclassy_favlook', 'zensai_official', 'mountia_official']
+       'jdx_official', 'sfit_official', 'elcanto_official', 'riverclassy_favlook', 'zensai_official', 'mountia_official',
+       'lenic_official', 'lecoqgolf_official', 'underarmour_official', 'millet_official', 'fila_official']
 
 
 def load(key):
@@ -138,7 +139,7 @@ class Contract(unittest.TestCase):
 
 class Cafe24Hybrid(unittest.TestCase):
     def test_every_cafe24_brand_splits_linked_and_unlinked_photos(self):
-        for key in ['adhoc_official', 'bangbang_official', 'decoand_official', 'dawnfield_official', 'disneygolf_smfashion', 'renomakids_official', 'minimum_official']:
+        for key in ['adhoc_official', 'bangbang_official', 'decoand_official', 'dawnfield_official', 'disneygolf_smfashion', 'renomakids_official', 'minimum_official', 'lenic_official']:
             with self.subTest(key=key):
                 module = load(key)
                 rows, failures, error, net = run(module, key, 'TS1001', ALL, cafe24_routes(module))
@@ -394,6 +395,115 @@ class SecondBatch(unittest.TestCase):
         self.assertTrue(rows[0]['대표이미지'].startswith('https://cdn.imweb.me/'))
         rows, failures, error, net = run(module, 'zensai_official', 'ZAD4JP403', ['size'], routes)
         self.assertEqual(rows[0]['사이즈'], '95,100 (품절)')
+
+
+class ThirdBatch(unittest.TestCase):
+    def test_lecoq_variant_images_per_color_and_exact_code(self):
+        module = load('lecoqgolf_official')
+        base = 'https://dk-on.com/LECOQGOLF/product/GQ422LDJO5/'
+        variant = lambda cc, name: {'url': base + cc, 'color': name, 'image': ['//img.dk-on.com/p/GQ422LDJO5_' + cc + '_N01.jpg', '//img.dk-on.com/p/GQ422LDJO5_' + cc + '_N02.jpg', '//img.dk-on.com/p/GQ422LDJO5_' + cc + '_D01.jpg'],
+                                    'offers': {'price': 159000, 'priceSpecification': [{'name': '정상가', 'price': 229000}]}}
+        ld = {'@type': 'ProductGroup', 'name': '[르꼬끄골프] 여성 다운 점퍼', 'category': '블랙위크 > 여성 > 아우터', 'material': '나일론 100%',
+              'hasVariant': [variant('CREM', '크림'), variant('BLCK', '블랙')]}
+        page = ('<script type="application/ld+json">' + json.dumps(ld, ensure_ascii=False) + '</script>'
+                '<input data-prod-cd="GQ422LDJO5" data-color-cd="CREM" data-size-cd="085"><input data-prod-cd="GQ422LDJO5" data-color-cd="CREM" data-size-cd="090" disabled>'
+                '<input data-prod-cd="GQ422LDJO5" data-color-cd="BLCK" data-size-cd="090"><input data-prod-cd="GQ999" data-color-cd="BLCK" data-size-cd="100">'
+                '<div class="tbl-size-guide"><table><tr><th>사이즈</th><th>가슴</th></tr><tr><td>085</td><td>98</td></tr></table></div>')
+        search = '<div id="prodList"><a href="/LECOQGOLF/product/GQ422LDJO5/CREM">a</a><a href="/LECOQGOLF/product/GQ422LDJO5X/CREM">b</a></div>'
+        routes = {'https://dk-on.com/LECOQGOLF/search?keyword=GQ422LDJO5': search, base + 'CREM': page}
+        rows, failures, error, net = run(module, 'lecoqgolf_official', 'GQ422LDJO5', ALL, routes)
+        self.assertIsNone(error, failures)
+        self.assertEqual([(r['색상명'], r['색상코드'], r['사이즈']) for r in rows], [('크림', 'CREM', '085,090'), ('블랙', 'BLCK', '090')])
+        self.assertTrue(rows[1]['대표이미지'].endswith('_BLCK_N01.jpg'))
+        self.assertNotIn('CREM', rows[1]['추가이미지'] + rows[1]['상세페이지 HTML'])
+        self.assertEqual((rows[0]['상품명'], rows[0]['판매가'], rows[0]['정상가'], rows[0]['카테고리']), ('여성 다운 점퍼', 159000, 229000, '여성 > 아우터'))
+        detail = rows[0]['상세페이지 HTML']
+        self.assertIn('_CREM_D01.jpg', detail)
+        self.assertLess(detail.index('상품정보고시'), detail.index('사이즈 정보'))
+        rows, failures, error, net = run(module, 'lecoqgolf_official', 'GQ422LDJO5_BLCK', ['price'], routes)
+        self.assertIsNone(error, failures)
+        self.assertEqual([r['색상코드'] for r in rows], ['BLCK'])
+
+    def test_underarmour_color_pages_use_coded_images(self):
+        module = load('underarmour_official')
+        site = 'https://www.underarmour.co.kr'
+        url = site + '/ko-kr/p/tops/1370494.html'
+        def page(active, sizes):
+            ld = [{'@type': 'Product', 'name': 'UA 테크 반팔 티셔츠', 'audience': {'GenderType': 'male'}, 'offers': {'price': 39000},
+                   'image': ['//underarmour.scene7.com/is/image/Underarmour/V5-1370494-001_FC?rp=x', '//underarmour.scene7.com/is/image/Underarmour/V5-1370494-001_BC',
+                             '//underarmour.scene7.com/is/image/Underarmour/V5-1370494-100_FC']},
+                  {'@type': 'BreadcrumbList', 'itemListElement': [{'name': '홈'}, {'name': '상의'}]}]
+            sw = ''.join('<a class="js-swatch-link%s" data-attr-value="%s" title="%s 컬러 선택"></a>' % (' m-active' if c == active else '', c, n) for c, n in (('001', 'Black'), ('100', 'White')))
+            sz = ''.join('<button class="js-size-select%s" aria-label="size" data-attr-value="%s"></button>' % (' disabled' if s == 'XL' else '', s) for s in sizes)
+            return ('<script type="application/ld+json">' + json.dumps(ld) + '</script>' + sw + sz +
+                    '<span class="b-price-value m-actual" content="39000"></span><a href="/on/demandware.store/Sites-KR-Site/ko_KR/Product-SizeChart?cid=sizechart-men-tops">표</a>')
+        routes = {site + '/ko-kr/search/?q=1370494&lang=ko_KR': '<section class="b-products_grid-tile" data-pid="1370494"><a href="/ko-kr/p/tops/1370494.html?x=1">t</a></section>',
+                  url: page('001', ['M', 'XL']), url + '?dwvar_1370494_color=100': page('100', ['L']),
+                  site + '/on/demandware.store/Sites-KR-Site/ko_KR/Product-SizeChart?cid=sizechart-men-tops': {'html': '<table><tr><th>사이즈</th><th>가슴</th></tr><tr><td>M</td><td>100</td></tr></table>'}}
+        rows, failures, error, net = run(module, 'underarmour_official', '1370494', ALL, routes)
+        self.assertIsNone(error, failures)
+        self.assertEqual([(r['색상'], r['사이즈'], r['정상가']) for r in rows], [('Black (001)', 'M,XL', None), ('White (100)', 'L', None)])
+        self.assertTrue(rows[0]['대표이미지'].endswith('V5-1370494-001_FC?wid=1000&hei=1250&fmt=jpg&qlt=90'))
+        self.assertNotIn('-100_', rows[0]['추가이미지'] + rows[0]['상세페이지 HTML'])
+        self.assertEqual(rows[0]['카테고리'], '남성 > 상의')
+        self.assertIn('사이즈 정보', rows[0]['상세페이지 HTML'])
+        rows, failures, error, net = run(module, 'underarmour_official', '1370494', ['price'], routes)
+        self.assertFalse(any('SizeChart' in u for u in net.calls))
+
+    def test_millet_follows_color_chips_and_needs_code_evidence(self):
+        module = load('millet_official')
+        site = 'https://www.millet.co.kr'
+        def page(code, notice_color='WHITE(10), BLACK(16)'):
+            return ('<div class="item-detail-info"><div class="cate"><span>MILLET</span><span>' + code + '</span></div>'
+                    '<div class="item-detail-info-name"><span class="name">밀레 남성 티셔츠</span></div></div>'
+                    '<div class="item-detail-price"><del>89,000</del><div class="price-info"><span class="price">59,000</span></div></div>'
+                    '<div class="color-items"><a href="/front/product/22864">b</a><a href="/front/product/22863">w</a></div>'
+                    '<div class="size-choice"><input name="size" value="95" optqty="3"><input name="size" value="100" optqty="0" disabled></div>'
+                    '<div class="item-img-thumb"><img src="/upload/' + code + '_1.jpg"><img src="/upload/' + code + '_2.jpg"></div>'
+                    '<div class="item-datail-cont"><img src="/upload/d_' + code + '.jpg"><div class="swiper-slide"><img src="/upload/rec.jpg"></div></div>'
+                    '<table><tr><th>제품소재</th><td>폴리 100%</td></tr><tr><th>색상</th><td>' + notice_color + '</td></tr></table>')
+        routes = {site + '/front/product/product_list.ajax': '<li><a href="/front/product/22864">밀레 티셔츠 MTSSB970</a></li>',
+                  site + '/front/product/22864': page('MTSSB97016'), site + '/front/product/22863': page('MTSSB97010')}
+        rows, failures, error, net = run(module, 'millet_official', 'MTSSB970', ALL, routes)
+        self.assertIsNone(error, failures)
+        self.assertEqual([(r['품번'], r['색상'], r['사이즈'], r['판매가'], r['정상가']) for r in rows],
+                         [('MTSSB970', 'BLACK (16)', '95,100', 59000, 89000), ('MTSSB970', 'WHITE (10)', '95,100', 59000, 89000)])
+        self.assertIn('MTSSB97010_1', rows[1]['대표이미지'])
+        self.assertNotIn('rec.jpg', rows[0]['상세페이지 HTML'])
+        self.assertIn('<th>제품소재</th><td>폴리 100%</td>', rows[0]['상세페이지 HTML'])
+        routes[site + '/front/product/22863'] = page('MTSSB97010', 'BLACK(16)')
+        rows, failures, error, net = run(module, 'millet_official', 'MTSSB970', ['price'], routes)
+        self.assertEqual([r['색상코드'] for r in rows], ['16'])
+        self.assertIsNotNone(error)
+        self.assertTrue(any('추측하지 않음' in f for f in failures))
+
+    def test_fila_direct_handle_one_color_with_notice(self):
+        module = load('fila_official')
+        site = 'https://www.fila.co.kr'
+        ld = {'@type': 'Product', 'name': '휠라 로고 반팔 티셔츠', 'size': ['090', '095', '100'],
+              'offers': [{'name': '095', 'price': '39000', 'availability': 'InStock'}, {'name': '090', 'price': '39000', 'availability': 'OutOfStock'}]}
+        page = ('<script type="application/ld+json">' + json.dumps(ld, ensure_ascii=False) + '</script>'
+                '<script data-selected-variant>{"compare_at_price": 5900000}</script>'
+                '<div id="x__main"><p>상품코드 : FS263PO01X001001</p><p>색상 : 001 (BLACK)</p>'
+                '<div class="product__media-gallery"><img src="//www.fila.co.kr/cdn/shop/files/1100FS263PO01X001001_01.jpg?v=1"><img src="/cdn/shop/files/1100FS263PO01X001001_02.jpg"></div></div>'
+                '<div id="model_slider_1"><img src="/cdn/shop/files/1100FS263PO01X001001_M1.jpg"><img src="/cdn/shop/files/1100FS263PO01X001071_M1.jpg"></div>'
+                '<div class="accordion"><h2>상품정보고시</h2><div class="sub__content"><div class="sub__content-heading">소재</div><div class="sub__content-text">면 100%</div></div></div>')
+        routes = {site + '/products/1100fs263po01x001001': page}
+        rows, failures, error, net = run(module, 'fila_official', 'FS263PO01X001001', ALL, routes)
+        self.assertIsNone(error, failures)
+        r = rows[0]
+        self.assertEqual((r['품번'], r['색상명'], r['색상코드'], r['사이즈'], r['판매가'], r['정상가']), ('FS263PO01X001', 'BLACK', '001', '090,095', 39000, 59000))
+        self.assertTrue(r['대표이미지'].endswith('_01.jpg'))
+        self.assertIn('001001_M1', r['상세페이지 HTML'])
+        self.assertNotIn('001071', r['상세페이지 HTML'])
+        self.assertIn('<th>소재</th><td>면 100%</td>', r['상세페이지 HTML'])
+        routes = {site + '/products/1100fs263po01x001': module.CrawlError('HTTP 404: x'),
+                  site + '/search/suggest.json?q=FS263PO01X001&resources%5Btype%5D=product&resources%5Blimit%5D=10':
+                      {'resources': {'results': {'products': [{'handle': '1100fs263po01x001001'}, {'handle': '1100fs263po01x0010019'}]}}},
+                  site + '/products/1100fs263po01x001001': page}
+        rows, failures, error, net = run(module, 'fila_official', 'FS263PO01X001', ['price'], routes)
+        self.assertIsNone(error, failures)
+        self.assertEqual([r['색상코드'] for r in rows], ['001'])
 
 
 if __name__ == '__main__':
