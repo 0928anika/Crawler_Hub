@@ -20,9 +20,8 @@ from bs4 import BeautifulSoup
 from PIL import Image, ImageStat, ImageChops, ImageFilter, UnidentifiedImageError
 
 SITE = 'https://www.elandmall.co.kr'
-VENDOR = ''
-MODE = 'studio'
-REVISION = '2026-11-18-izmelbon-studio-v1'
+VENDOR = 'CN003590'
+REVISION = '2026-11-18-izmelbon-unified-v2'
 IMGHUB_BRAND = ''
 BRAND_NO = '1700005506'
 POLICY = {'checked': '2026-11-05', 'source': 'https://marketplace.coupang.com/mba/listing',
@@ -30,7 +29,7 @@ POLICY = {'checked': '2026-11-05', 'source': 'https://marketplace.coupang.com/mb
           'formats': ('JPEG', 'PNG', 'WEBP'), 'max_aspect': 1.8,
           'note': '정지 WebP와 비율 1.8은 프로젝트 정책. 등록 승인 보장은 아님.'}
 # 실제 조사: 이즈멜본 SUJF26130 공개 검색·상품·옵션.
-# MODE에 따라 지정 판매자 전용 또는 전체 판매자 스튜디오컷을 수집한다.
+# 공식 CN003590 한 상품 우선, 없으면 모든 판매자 스튜디오컷을 수집한다.
 # 실제 Hub 화면, 최종 Excel, WING 업로드는 별도 검증 대상이다.
 
 
@@ -105,12 +104,9 @@ def search(ctx, code):
         signatures.add(signature)
         seen.update(current)
         if len(seen) >= total:
-            if MODE == 'studio':
-                ctx.log('전체 판매자 상품의 스튜디오컷 검사', 'INFO')
-                return links
             selected=[u for u in links if parse_qs(urlsplit(u).query).get('lowerVendNo')==[VENDOR]]
-            ctx.log('지정 판매자 '+VENDOR+' 상품 '+str(len(selected))+'개', 'INFO')
-            return selected
+            ctx.log('공식 판매자 상품 우선: 공식만 수집' if selected else '공식 상품 없음: 모든 판매자 스튜디오컷 검사','INFO')
+            return selected or links
         page_no += 1
     raise CrawlError('검색 30페이지 초과')
 
@@ -132,7 +128,7 @@ def product_once(ctx, url, code):
         except (ValueError, KeyError, TypeError) as e:
             raise CrawlError('상품 JSON 파싱 실패: ' + url) from e
         expected_vendor=parse_qs(urlsplit(url).query).get('lowerVendNo',[''])[0]
-        if str(main.get('lowerVendNo')) != expected_vendor or (MODE != 'studio' and expected_vendor != VENDOR):
+        if str(main.get('lowerVendNo')) != expected_vendor:
             ctx.log('다른 판매자 제외: ' + final, 'INFO')
             return None
         if str(main.get('brandNo')) != BRAND_NO:
@@ -370,7 +366,7 @@ def gallery(ctx, main, cache):
         if not info:
             continue
         fmt, w, h, animated, digest, signal, plain = info
-        if MODE == 'studio' and not plain:
+        if str(main['lowerVendNo']) != VENDOR and not plain:
             ctx.log('비균일 배경 셀러 사진 제외: '+url, 'INFO')
             continue
         if signal:
@@ -515,7 +511,7 @@ def detail(ctx,d,code,cache):
         for (url,image),text in zip(batch,texts):
             if isinstance(text,Exception) or BANNER.search(re.sub(r'\s+','',text)):
                 ctx.log('셀러 안내/검사 실패 상세 이미지 제외: '+url,'INFO');continue
-            if trusted and MODE == 'studio' and not (re.search(r'(?<![A-Z0-9])'+re.escape(code)+r'(?![A-Z0-9])',text,re.I) and studio_background(image)[0]):
+            if trusted and str(d['itemMain']['lowerVendNo']) != VENDOR and not (re.search(r'(?<![A-Z0-9])'+re.escape(code)+r'(?![A-Z0-9])',text,re.I) and studio_background(image)[0]):
                 ctx.log('본사 원본 외 추가 이미지의 품번/스튜디오 근거 미확인: '+url,'INFO');continue
             parts.append(('photo','<img src="'+html.escape(url,quote=True)+'">'))
     parts.sort(key=lambda pair:order[html.unescape(BeautifulSoup(pair[1],'html.parser').img['src'])])
@@ -553,7 +549,7 @@ def _crawl(ctx):
             d, final = found
             main = d['itemMain']
             matched += 1
-            if MODE == 'studio' and not studio_product(ctx,main,cache):
+            if str(main['lowerVendNo']) != VENDOR and not studio_product(ctx,main,cache):
                 rejected += 1
                 ctx.log('스튜디오컷 없음(상품 제외): '+code+' / '+final,'INFO')
                 continue
@@ -603,6 +599,9 @@ def _crawl(ctx):
                     detail_source=final
                     ctx.log('상세는 이 상품 한 곳만 사용: '+final,'INFO')
             ctx.log('일치 상품 수집 완료: 상세는 최초 유효 본문 한 곳만 사용', 'INFO')
+            if str(main['lowerVendNo'])==VENDOR:
+                ctx.log('공식 한 상품 수집 완료: 다른 판매자 수집하지 않음','INFO')
+                break
         except CrawlError as e:
             message=str(e)
             failed(message if url in message else message + ': ' + url)
