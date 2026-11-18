@@ -4,7 +4,7 @@ ROOT=Path(__file__).resolve().parents[1];sys.path[:0]=[str(ROOT/'app'),str(ROOT/
 import crocodile_official as c
 class Tests(unittest.TestCase):
  def test_trailing_two_digit_color_codes_and_size_separation(self):
-  for source,result in [('화이트 90',('화이트','90')),('차콜 98',('차콜','98')),('다크 네이비 78',('다크 네이비','78')),('WHITE 90',('WHITE','90')),('블랙(BK)',('블랙','BK')),('(39)Ivory',('Ivory','39')),('90 화이트',('화이트','90')),('95',('95','')),('오프화이트',('오프화이트',''))]:
+  for source,result in [('화이트 90',('화이트','90')),('차콜 98',('차콜','98')),('차콜98',('차콜','98')),('화이트90',('화이트','90')),('WHITE90',('WHITE','90')),('차콜198',('차콜198','')),('다크 네이비 78',('다크 네이비','78')),('WHITE 90',('WHITE','90')),('블랙(BK)',('블랙','BK')),('(39)Ivory',('Ivory','39')),('90 화이트',('화이트','90')),('95',('95','')),('오프화이트',('오프화이트',''))]:
    self.assertEqual(c.split_color(source),result)
  def test_known_broken_host_uses_verified_official_path_only(self):
   base='https://dawnfieldmall.com/product/detail.html?product_no=8400';path='/product_images/2025/c/CDAABJK4101/size.jpg'

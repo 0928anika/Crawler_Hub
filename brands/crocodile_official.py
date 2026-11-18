@@ -162,7 +162,7 @@ def split_color(text):
                             (r'^\(\s*([A-Za-z0-9]{1,4})\s*\)\s*(.+)$', 2, 1),
                             (r'^(\d{2,3})\s+([A-Za-z가-힣].*)$', 2, 1),
                             (r'^([A-Z0-9]{1,4})_(.+)$', 2, 1),
-                            (r'^([A-Za-z가-힣].*?)\s+(\d{2})$', 1, 2)):
+                            (r'^([A-Za-z가-힣][A-Za-z가-힣 /_-]*?)\s*(\d{2})$', 1, 2)):
         match = re.match(pattern, value)
         if match:
             return match[ni].strip(), match[ci].strip().upper()
