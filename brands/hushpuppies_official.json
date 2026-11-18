@@ -1,0 +1,171 @@
+{
+  "id": "hushpuppies_official",
+  "name": "허시파피",
+  "category": "신발",
+  "crawl_source": "공식 홈페이지",
+  "script": "hushpuppies_official.py",
+  "execution_level": 1,
+  "interface": "portal_v1",
+  "mapping_mode": "manual",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명"
+  ],
+  "extensions": [],
+  "official_color_codes": false,
+  "image_color_mapping": "hybrid",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data의 색상별 전체 사이즈. 품절 포함, 매핑 후보별 size 보존."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 조합 option_price. 색상/사이즈별 공통 가격인 경우 출력, 다른 경우 빈칸."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 기본정보 소비자가. 판매가와 별개로 수집."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 xans-product-headcategory의 분류 경로."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 갤러리에 명시된 실제 URL만 사용. 공개 바이트·형식·픽셀·비율 검사. 한 색상은 자동, 여러 색상은 수동 연결."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "실제 유효 갤러리 컷. 부족하면 마지막 유효 컷을 반복해 5슬롯. 한 장뿐이면 대표 5회 반복."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 gi.esmplus.com/hpk1209의 해당 품번 상세 원본 이미지 유지. 고시/사이즈표 별도 생성 없음. 사용자 첨부 주의/배송/교환/반품/연락처 안내 bottom.jpg와 notice 공통 이미지 제외."
+    }
+  },
+  "guide": {
+    "example": "3FS6007",
+    "examples": [
+      "3FS6007"
+    ],
+    "format": "색상 접미사 없는 기본 품번. 입력 전체로 공홈 검색 후 상품코드 정확 대조.",
+    "notes": "품절 포함 전체 사이즈. 한 색상은 자동 연결, 다색상 사진은 수동 매핑. 사이트가 명시하지 않은 영문 색상코드를 추정하지 않음.",
+    "method": "공식 /product/search.html 검색과 상세 기본정보 상품코드 일치 검증.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      ""
+    ],
+    "validation_note": "빈 입력 외에 품번 형식으로 사전 거절하지 않음. 실제 상품코드 일치는 조회 후 확인."
+  },
+  "notes": "2026-11-18 3FS6007 확인. 상품명 대괄호 문구·브랜드·품번 정리. 공식 상품코드 정확 대조. 블랙 옵션의 품절 포함 225/230/235/240/245/250 보존. 한 색상 자동/다색상 수동 매핑, 추가사진 5슬롯. 사용자 첨부 이미지와 실제 new/bot/bottom.jpg 일치 확인하여 수집 전 제외. 고시·사이즈표는 원본 상세에 보존하며 별도 생성하지 않음.",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "대백몰 공개 상품/옵션 원문 확인"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "대백몰 공개 상품/옵션 원문 확인"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "대백몰 공개 상품/옵션 원문 확인"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "대백몰 공개 상품/옵션 원문 확인"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data의 색상별 전체 사이즈. 품절 포함, 매핑 후보별 size 보존."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 조합 option_price. 색상/사이즈별 공통 가격인 경우 출력, 다른 경우 빈칸."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 기본정보 소비자가. 판매가와 별개로 수집."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 xans-product-headcategory의 분류 경로."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 갤러리에 명시된 실제 URL만 사용. 공개 바이트·형식·픽셀·비율 검사. 한 색상은 자동, 여러 색상은 수동 연결."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "실제 유효 갤러리 컷. 부족하면 마지막 유효 컷을 반복해 5슬롯. 한 장뿐이면 대표 5회 반복."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 gi.esmplus.com/hpk1209의 해당 품번 상세 원본 이미지 유지. 고시/사이즈표 별도 생성 없음. 사용자 첨부 주의/배송/교환/반품/연락처 안내 bottom.jpg와 notice 공통 이미지 제외."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null
+  },
+  "code_hash": "c51cb0dcea17b4f7d08ab34400b2997e1d27757a7a225b56617fa33c99cfa6fb",
+  "hybrid_mapping": true,
+  "additional_image_count": 5
+}
