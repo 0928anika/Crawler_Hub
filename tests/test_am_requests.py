@@ -73,6 +73,20 @@ class AmMappingTests(unittest.TestCase):
    self.assertTrue(v['groups'][0]['complete'])
    v=mapping.edit_options(job,dict(action='reset',group_id=g['id'],expected_revision=v['revision']))
    self.assertEqual(set(c['label'] for c in v['groups'][0]['colors']),{'WH','BK'});self.assertFalse(v['groups'][0]['complete'])
+ def test_manual_option_adds_independently_after_am_import_and_exports(self):
+  with tempfile.TemporaryDirectory(dir=ROOT/'tests') as folder:
+   job=self.make_job(folder);v=mapping.snapshot(job)
+   v=mapping.import_am(job,dict(text='STYLE WH',expected_revision=v['revision']))
+   g=v['groups'][0];gid=g['id'];am_ids=[c['id'] for c in g['am_options']]
+   v=mapping.edit_options(job,dict(action='add',group_id=gid,color_name='차콜',color_code='CG',expected_revision=v['revision']))
+   g=v['groups'][0];manual=next(c for c in g['colors'] if c['id']==v['active_color'])
+   self.assertEqual([c['id'] for c in g['am_options']],am_ids)
+   self.assertEqual(manual['color_name'],'차콜');self.assertEqual(manual['color_code'],'CG')
+   for color in list(g['colors']):
+    v=mapping.save_color(job,dict(group_id=gid,color_id=color['id'],image_ids=[g['images'][0]['id']],expected_revision=v['revision']))
+   v=mapping.finalize(job,dict(expected_revision=v['revision']))
+   rows=mapping.final_items(job,v);self.assertEqual({r['raw']['색상코드'] for r in rows},{'WH','CG'})
+
  def test_first_row_rule_uses_known_codes_without_override(self):
   rows='티셔츠\tAB12345\tWH\n재킷\tAB12345\tBK'
   result=am.parse_requests(dict(text=rows,columns={'product':1,'color':2,'header_row':0}),['AB12345'])

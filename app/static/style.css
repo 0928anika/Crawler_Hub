@@ -9,3 +9,14 @@
 .mapping-photo{user-select:none}.mapping-dragging .mapping-photo{cursor:crosshair}#mappingDetailDialog{width:min(1000px,94vw);height:90vh}#mappingDetailContent{padding:16px;height:calc(90vh - 122px);overflow:auto}.mapping-detail-frame{width:100%;height:100%;min-height:300px;border:0}
 
 .mapping-option-tools{gap:6px;margin:4px 0 8px}.mapping-option-tools button{font-size:11px;padding:4px 8px}.mapping-product-head .mapping-colors{margin-bottom:4px}
+
+/* Keep the brand list scroll separate from the next-step action. */
+#step1{display:flex;flex-direction:column;min-height:0}#step1.hidden{display:none}
+#brandCards{max-height:clamp(140px,calc(100dvh - 560px),420px);overflow:auto;overscroll-behavior:contain;padding:3px 6px 3px 3px;scrollbar-gutter:stable;align-content:start}
+#guideShort{display:none}.creation-grid{align-items:start}.creation-main{min-width:0;min-height:0}
+.wizard-footer{position:sticky;bottom:0;background:var(--panel);z-index:5;padding-bottom:8px}
+.context-stack{display:block;min-width:0}.crawler-overview{border-top:3px solid var(--blue);box-shadow:0 4px 20px #17243b08}
+.crawler-overview .summary-list{font-size:12px;line-height:1.8}.crawler-description{border-top:1px solid var(--line);margin-top:20px;padding-top:4px}
+.crawler-description h3{font-size:13px;color:var(--ink)}#guideDetail{font-size:12px;line-height:1.85;color:#526682;overflow-wrap:anywhere}#guideDetail p{margin:10px 0}
+.crawler-site-link{display:block;color:var(--blue);overflow-wrap:anywhere}.input-meta{display:flex;justify-content:space-between;align-items:center;gap:12px}#navigation{margin-top:24px}
+@media(max-width:1000px){.crawler-overview .summary-list{grid-template-columns:90px minmax(0,1fr)}}

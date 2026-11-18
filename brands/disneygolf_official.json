@@ -2,7 +2,7 @@
   "id": "disneygolf_official",
   "name": "디즈니골프",
   "category": "골프 의류",
-  "crawl_source": "SM패션 공식몰",
+  "crawl_source": "공식 홈페이지",
   "script": "disneygolf_official.py",
   "execution_level": 1,
   "mapping_mode": "manual",
@@ -24,13 +24,13 @@
     "원본 상품명"
   ],
   "extensions": [],
-  "official_color_codes": false,
+  "official_color_codes": true,
   "image_color_mapping": "hybrid",
   "capabilities": {
     "size": {
       "supported": true,
       "status": "conditional",
-      "reason": "색상 행: 공식 option_stock_data의 해당 색상 사이즈 전체(품절 포함, 숨김 옵션 제외). 수동 후보는 모든 색상의 사이즈가 같을 때만 공통값, 다르면 빈칸."
+      "reason": "공식 option_stock_data의 색상별 전체 사이즈(품절 포함). 공통값이 달라도 수동 매핑 후보별 size를 전달해 최종 색상 행에 보존."
     },
     "price": {
       "supported": true,
@@ -60,13 +60,13 @@
     "detail_page": {
       "supported": true,
       "status": "conditional",
-      "reason": "공식 상세 영역 이미지(공통 배너·배송·로고 경로는 요청 제외)와 HTML 고시/사이즈표가 있으면 표로 재구성. 이미지 안 고시·사이즈표는 원본 유지."
+      "reason": "공식 상세 본문 원본 이미지 수집. 본문 안 고시·사이즈표 보존, 별도 고시/사이즈 HTML표를 만들지 않음. /top/ 공통 안내·배송 및 caicon 제외."
     }
   },
   "guide": {
-    "example": "DO3LJB005",
+    "example": "DQ1LTJ007",
     "examples": [
-      "DO3LJB005"
+      "DQ1LTJ007"
     ],
     "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{2,24}(?:_[A-Za-z0-9]{1,4})?$",
     "format": "색상코드를 제외한 기본 품번(영문 대문자·숫자). 자체상품코드에 색상코드가 있는 상품만 품번_색상코드 지정 가능",
@@ -81,7 +81,7 @@
     ],
     "validation_note": "입력 형식 검사이며 실제 상품 존재 확인은 실행 시 수행"
   },
-  "notes": "SM패션(smfashion.co.kr) Cafe24. 대표는 og:image(big 원본)를 우선 사용, 열리지 않으면 같은 파일 크기 후보. 상세 영역은 .xans-product-additional .guide_contents. 공통 안내·배송·공지(/top/)·caicon 요청 제외. 검증 범위: 사용자 단독 크롤러(disneygolf_crawler.py)에서 운영 확인된 URL·선택자·응답 키를 Crawler Hub SDK 규약으로 이식. 이 코드를 작성한 환경은 해당 사이트 접속이 차단되어 실사이트 실행은 미검증이며, SDK 계약·선택 항목 생략·표 재구성은 오프라인 fixture 테스트(tests/test_oberon_brands.py)로만 확인함.",
+  "notes": "SM패션(smfashion.co.kr) 디즈니골프 공식 홈페이지. DQ1LTJ007 실상품 확인: 블랙(BK)/화이트(WH), 사이즈090/095/100/105. 사진 색상 연결이 없어 수동 매핑. 다른 상품에서 공식 연결이 확인되면 자동 연결을 사용. 본문 이미지에 고시/실측표 포함, 별도 표를 생성하지 않음. 상품명에서 디즈니골프 브랜드와 품번 제거. 공통 상단/배송/공지 배너 제외. 2026-11-17 사이즈 수정: 품절로 is_display=F인 원본 재고 조합도 색상별 사이즈에 포함. 수동 매핑 후보에 색상별 size 전달하여 서로 다른 사이즈도 최종 결과에 보존.",
   "hybrid_mapping": true,
   "additional_image_count": 5,
   "interface": "portal_v1",
@@ -114,7 +114,7 @@
       "label": "사이즈",
       "supported": true,
       "status": "conditional",
-      "reason": "색상 행: 공식 option_stock_data의 해당 색상 사이즈 전체(품절 포함, 숨김 옵션 제외). 수동 후보는 모든 색상의 사이즈가 같을 때만 공통값, 다르면 빈칸."
+      "reason": "공식 option_stock_data의 색상별 전체 사이즈(품절 포함). 공통값이 달라도 수동 매핑 후보별 size를 전달해 최종 색상 행에 보존."
     },
     "price": {
       "label": "판매가",
@@ -150,7 +150,7 @@
       "label": "상세페이지",
       "supported": true,
       "status": "conditional",
-      "reason": "공식 상세 영역 이미지(공통 배너·배송·로고 경로는 요청 제외)와 HTML 고시/사이즈표가 있으면 표로 재구성. 이미지 안 고시·사이즈표는 원본 유지."
+      "reason": "공식 상세 본문 원본 이미지 수집. 본문 안 고시·사이즈표 보존, 별도 고시/사이즈 HTML표를 만들지 않음. /top/ 공통 안내·배송 및 caicon 제외."
     }
   },
   "column_fields": {
@@ -169,5 +169,5 @@
     "상세페이지 HTML": "detail_page",
     "원본 상품명": null
   },
-  "code_hash": "10070b9348a4a82fbf2b23768174ef48d9a2807640d00dbdb03f16b83f1b36a4"
+  "code_hash": "86049910f453b0880b4a6aa66dcfddc19e917b29b9ab8cf3f3b33970fc7cf180"
 }

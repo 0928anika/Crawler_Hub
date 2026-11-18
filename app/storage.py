@@ -8,7 +8,7 @@ import threading
 from collections import Counter
 from pathlib import Path
 from zipfile import ZipFile
-from openpyxl import load_workbook
+from openpyxl import load_workbook, Workbook
 from registry import ROOT
 from schema import selection, DEFAULT_SELECTION, output_headers
 
@@ -105,3 +105,21 @@ def validate_input(data,brand):
         selected=selected,unsupported=unsupported,output_headers=output_headers(brand['output_headers'],selected),
         directory=str(HOME/'jobs'),valid=not missing and not errors,notice=guide['validation_note'])
     return result,headers,rows
+
+
+def deduplicate_input(data,brand):
+    headers,rows=parse_input(data,brand)
+    seen=set();unique=[]
+    for row in rows:
+        # Keep empty codes for validation and preserve the first row of each code.
+        if row[0] and row[0] in seen:continue
+        seen.add(row[0]);unique.append(row)
+    wb=Workbook();ws=wb.active;ws.append(headers)
+    for row in unique:
+        ws.append(row)
+        for cell in ws[ws.max_row]:
+            if isinstance(cell.value,str):cell.data_type="s"
+    output=io.BytesIO()
+    try:wb.save(output)
+    finally:wb.close()
+    return dict(file=base64.b64encode(output.getvalue()).decode('ascii'),removed=len(rows)-len(unique))

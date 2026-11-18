@@ -52,3 +52,13 @@
 @media(max-width:700px){.am-column-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.am-column-grid select{font-size:11px;padding:7px 4px}}
 
 .am-upload .am-field>span{cursor:pointer;padding:9px 13px;border:1px solid #dce3ed;border-radius:7px;background:#f8fafc;color:#405c85}
+
+/* Manual options belong to the product toolbar, independent of AM imports. */
+.mapping-option-tools .mapping-add-toggle{border-color:#cbdaf6;background:#f3f7ff;color:#365b9a;font-weight:600}
+.mapping-option-tools .mapping-add-toggle:hover,.mapping-option-tools .mapping-add-toggle[aria-expanded="true"]{background:#eaf1ff;border-color:#9eb9ec}
+.mapping-product-head .mapping-manual-form{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;align-items:end;gap:12px 14px;padding:16px 18px;margin:0;border:1px solid #dce6f7;border-radius:10px;background:#f8faff}
+.mapping-manual-intro{grid-column:1/-1;display:flex;align-items:baseline;gap:12px}.mapping-manual-intro strong{font-size:13px;color:#334b70}.mapping-manual-intro>span{font-size:11px;color:#7b899e}
+.mapping-manual-field{display:flex;flex-direction:column;gap:7px;min-width:0}.mapping-manual-field>span{font-size:11px;font-weight:600;color:#62728a}.mapping-manual-form .mapping-manual-field input{width:100%;min-width:0;margin:0;background:#fff;padding:10px 12px;font-size:12px;border-radius:7px}
+.mapping-manual-actions{display:flex;align-items:center;gap:7px}.mapping-manual-actions button{padding:10px 14px;font-size:12px;border-radius:7px;white-space:nowrap}
+.mapping-manual-row{padding-top:12px;border-top:1px solid #edf0f4}
+@media(max-width:700px){.mapping-product-head .mapping-manual-form{grid-template-columns:repeat(2,minmax(0,1fr));padding:14px;gap:12px}.mapping-manual-intro{flex-direction:column;gap:4px}.mapping-manual-actions{grid-column:1/-1;justify-content:flex-end}}

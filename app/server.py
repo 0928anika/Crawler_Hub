@@ -219,6 +219,9 @@ class Handler(BaseHTTPRequestHandler):
             if self.path=='/api/admin/save':return self.send(admin.save_brand(data))
             if self.path=='/api/admin/notes':return self.send(admin.save_notes(data))
             if self.path=='/api/settings':return self.send(save_settings(data))
+            if self.path=='/api/deduplicate':
+                from storage import deduplicate_input
+                return self.send(deduplicate_input(data,get_brand(data['brand'])))
             if self.path=='/api/validate':
                 result,_,_=validate_input(data,get_brand(data['brand']));return self.send(result)
             if self.path=='/api/jobs':

@@ -1,9 +1,9 @@
 PORTAL_API_VERSION = 1
-"""디즈니골프 (SM패션 공식몰) — Cafe24 혼합 색상 매핑 크롤러
+"""디즈니골프 공식 홈페이지 — Cafe24 혼합 색상 매핑 크롤러
 
-검증 범위: 사용자 단독 크롤러(disneygolf_crawler.py)에서 운영 확인된 URL·선택자·응답 키를 Crawler Hub SDK 규약으로 이식. 이 코드를 작성한 환경은 해당 사이트 접속이 차단되어 실사이트 실행은 미검증이며, SDK 계약·선택 항목 생략·표 재구성은 오프라인 fixture 테스트(tests/test_oberon_brands.py)로만 확인함.
+DQ1LTJ007 공식 검색·옵션·원본 이미지 확인. 고시와 사이즈표는 본문 이미지에 보존하며 별도 표를 만들지 않음.
 """
-REVISION = '2026-11-12-oberon-1'
+REVISION = '2026-11-17-disneygolf-color-sizes-2'
 CONFIG = {'site': 'https://smfashion.co.kr',
  'hosts': ('smfashion.co.kr', 'www.smfashion.co.kr'),
  'brand': '디즈니골프',
@@ -172,10 +172,12 @@ def color_entry(name, code=''):
     return {'color_name': name, 'color_code': code, 'label': label}
 
 
-def palette_of(colors):
+def palette_of(colors, include_size=False):
     result = []
     for color in colors:
         entry = {'color_name': color['color_name'], 'color_code': color['color_code']}
+        if include_size:
+            entry['size'] = joined(color.get('sizes', []))
         if entry not in result:
             result.append(entry)
     if not result:
@@ -429,13 +431,14 @@ def stock_data(text):
 
 
 def page_colors(doc, text, notice):
-    """공식 옵션 → [(색상 원문, {'sizes':[], 'prices':[], 'image':''})]. 품절 옵션 포함, 숨김 옵션 제외."""
+    """공식 원본 조합의 색상별 사이즈. 품절되어 select에서 빠진 조합도 보존."""
     data = stock_data(text)
     result = {}
     if data:
         for item in data.values():
-            if str(item.get('is_display') or 'T') == 'F':
-                continue
+            # Cafe24 marks sold-out combinations is_display=F/is_selling=F
+            # and removes them from the live select. They remain official size
+            # variants in option_stock_data; do not lose the whole size/colour.
             names = item.get('option_name_original') or item.get('option_name') or []
             if isinstance(names, str):
                 names = [n.strip() for n in names.split('#$%') if n.strip()] or [names]
@@ -590,7 +593,8 @@ def detail_parts(ctx, doc, final, style):
                     pairs.append((key, value))
         if doc.select(CONFIG['notice']) and not pairs:
             raise CrawlError('공식 상품정보고시 표가 있으나 항목을 읽지 못했습니다(파싱 실패).')
-    return images, pairs, size_blocks
+    # 고시와 실측표는 원본 본문 이미지에 포함되어 있어 별도 표를 생성하지 않는다.
+    return images, [], []
 
 
 def find_products(ctx, base):
@@ -864,7 +868,7 @@ def crawl(ctx):
                 common['size'] = common_value(ctx, [joined(c['sizes']) for c in palette], '사이즈')
             if ctx.enabled('price'):
                 common['price'] = common_value(ctx, [page_price(p, c) for p in pages for c in p['colors'] if c in palette], '판매가')
-            colors = palette_of(palette)
+            colors = palette_of(palette, include_size=ctx.enabled('size'))
             for url, page in manual:
                 record = dict(common)
                 record['product_url'] = first['final']
