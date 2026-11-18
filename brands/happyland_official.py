@@ -18,8 +18,6 @@ from crawler_rules import validate_gallery_image,gallery_slots
 
 SITE='https://www.happylandmall.com'
 HOSTS=('happylandmall.com','www.happylandmall.com')
-IMAGE_HOSTS=('godomall-storage.cdn-nhncommerce.com','img.efe.co.kr')
-STORE_PREFIX='/fa361ad2073a06ae52740c330ad8fb60/'
 DETAIL_CDN='pub-020c219c6a054e3ab4d8a4c1f8bd4a5c.r2.dev'
 MAX_BYTES=30000000
 REQUEST_SECONDS=45
@@ -211,14 +209,14 @@ def search(ctx,code):
     return list(products.values())
 
 def source_url(value,base=SITE):
-    url=urljoin(base,value);p=urlsplit(url)
-    allowed=(p.hostname=='godomall-storage.cdn-nhncommerce.com' and p.path.startswith(STORE_PREFIX)
-             or p.hostname in ('img.efe.co.kr',DETAIL_CDN) and p.path.startswith(('/a/','/h/')))
-    if p.scheme not in ('http','https') or not allowed or p.username or p.password:raise CrawlError('공식 압소바 이미지 출처 확인 실패: '+url)
-    return url
+    # 호출자는 품번·브랜드가 확인된 공식 상품의 갤러리/상세 영역에서만 주소를 전달한다.
+    # CDN·저장 폴더는 수시로 바뀌므로 호스트/경로 목록으로 상품 이미지를 차단하지 않는다.
+    url=urljoin(base,html.unescape(str(value or '').strip()));p=urlsplit(url)
+    if p.scheme not in ('http','https') or not p.hostname or p.username or p.password:raise CrawlError('이미지 HTTP/HTTPS 주소 형식 오류: '+url)
+    return quote(url,safe=":/?#[]@!$&'()*+,;=%")
 
 def image(ctx,url,cache):
-    source_url(url)
+    url=source_url(url)
     if url not in cache:
         # Image transfers may stall temporarily. Keep document requests bounded
         # at45s, but give images a90s attempt and180s shared retry budget.

@@ -68,8 +68,9 @@ class AbsorbaTests(unittest.TestCase):
             self.assertTrue(all('/notice/notice.jpg' not in call.args[1] for call in loader.call_args_list))
             self.assertFalse(c.parse(result).select('table'))
 
-    def test_other_r2_bucket_is_not_trusted(self):
-        with self.assertRaises(c.CrawlError):c.source_url('https://other.r2.dev/a/2027/item.jpg')
+    def test_official_page_image_can_use_new_cdn(self):
+        url='https://other.r2.dev/new-folder/2027/item.jpg'
+        self.assertEqual(c.source_url(url),url)
 
     def test_missing_size_image_keeps_product_body(self):
         ctx=Context()
@@ -152,11 +153,20 @@ class AbsorbaTests(unittest.TestCase):
         self.assertEqual({row['detail_page'] for row in ctx.rows},{shared})
         self.assertFalse(ctx.unmapped);self.assertFalse(ctx.failures)
 
-    def test_unknown_image_owner_is_not_trusted(self):
-        with self.assertRaises(c.CrawlError):c.source_url('https://godomall-storage.cdn-nhncommerce.com/other-store/goods/1.jpg')
+    def test_official_page_image_can_use_new_store_folder(self):
+        url='https://godomall-storage.cdn-nhncommerce.com/new-store/goods/1.jpg'
+        self.assertEqual(c.source_url(url),url)
 
     def test_disabled_size_is_preserved(self):
         d=source();d.select_one('option[alt="브라운:80"]')['disabled']='disabled'
         self.assertEqual(c.option_groups(d)['브라운']['sizes'],['75','80'])
+
+    def test_new_cdn_detail_images_are_collected_and_encoded(self):
+        doc=source();area=doc.select_one('#detail .detail_explain_box');area.clear();area.append(c.parse('<img src="https://new-cdn.example.com/상품/본문.jpg"><img src="https://new-cdn.example.com/size/new_size.jpg">'))
+        with patch.object(c,'image',return_value=dict(width=800,height=2000)) as loader:result=c.detail(Context(),doc,c.SITE,{})
+        self.assertEqual(loader.call_count,2);self.assertIn('%EC%83%81%ED%92%88',result);self.assertIn('new_size.jpg',result)
+    def test_non_http_or_credential_image_urls_remain_invalid(self):
+        for url in ['data:image/png;base64,abc','file:///C:/image.jpg','https://user:pass@example.com/a.jpg']:
+            with self.assertRaises(c.CrawlError):c.source_url(url)
 
 if __name__=='__main__':unittest.main()
