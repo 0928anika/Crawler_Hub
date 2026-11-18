@@ -10,7 +10,7 @@ URL·선택자·응답 키는 원본 단독 크롤러에서 운영 확인된 값
 | bangbang_official | 뱅뱅 (공식 홈페이지) | 혼합 | bangbang_crawler.py |
 | adhoc_official | 애드호크 (공식 홈페이지) | 혼합 | adhoc_crawler.py |
 | decoand_official | 데코앤 (공식 홈페이지) | 혼합 | deco_crawler.py |
-| dawnfield_official | 던필드 (던필드몰) | 혼합 | dawnfield_crawler.py |
+| crocodile_official | 크로커다일 (던필드몰) | 혼합 | dawnfield_crawler.py |
 | disneygolf_official | 디즈니골프 (SM패션 공식몰) | 혼합 | disneygolf_crawler.py |
 | renomakids_official | 레노마키즈 (공식 홈페이지) | 혼합 | 레노마키즈 크롤러 |
 | minimum_official | 미니멈 (공식 홈페이지) | 혼합 | 미니멈 크롤러 |

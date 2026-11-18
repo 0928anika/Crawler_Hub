@@ -17,7 +17,7 @@ sys.path.insert(0, str(ROOT / 'app'))
 from crawler_sdk import CrawlContext
 from PIL import Image
 
-NEW = ['adhoc_official', 'bangbang_official', 'decoand_official', 'dawnfield_official', 'disneygolf_official',
+NEW = ['adhoc_official', 'bangbang_official', 'decoand_official', 'crocodile_official', 'disneygolf_official',
        'renomakids_official', 'minimum_official', 'adidas_official', 'brentwood_official', 'ping_official', 'ecolier_official']
 
 
@@ -137,7 +137,7 @@ class Contract(unittest.TestCase):
 
 class Cafe24Hybrid(unittest.TestCase):
     def test_every_cafe24_brand_splits_linked_and_unlinked_photos(self):
-        for key in ['adhoc_official', 'bangbang_official', 'decoand_official', 'dawnfield_official', 'disneygolf_official', 'renomakids_official', 'minimum_official']:
+        for key in ['adhoc_official', 'bangbang_official', 'decoand_official', 'crocodile_official', 'disneygolf_official', 'renomakids_official', 'minimum_official']:
             with self.subTest(key=key):
                 module = load(key)
                 rows, failures, error, net = run(module, key, 'TS1001', ALL, cafe24_routes(module))
@@ -192,9 +192,9 @@ class Cafe24Hybrid(unittest.TestCase):
         self.assertTrue(failures)
 
     def test_no_match_is_not_a_silent_success(self):
-        module = load('dawnfield_official')
+        module = load('crocodile_official')
         site = module.CONFIG['site']
-        rows, failures, error, net = run(module, 'dawnfield_official', 'ZZ9999', ALL,
+        rows, failures, error, net = run(module, 'crocodile_official', 'ZZ9999', ALL,
                                          {site + '/product/search.html?keyword=ZZ9999': '<div class="xans-search-result"></div>'})
         self.assertEqual(rows, [])
         self.assertIsNotNone(error)

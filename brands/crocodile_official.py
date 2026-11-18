@@ -1,13 +1,13 @@
 PORTAL_API_VERSION = 1
-"""던필드 (던필드몰) — Cafe24 혼합 색상 매핑 크롤러
+"""크로커다일 (던필드몰) — Cafe24 혼합 색상 매핑 크롤러
 
 검증 범위: 사용자 단독 크롤러(dawnfield_crawler.py)에서 운영 확인된 URL·선택자·응답 키를 Crawler Hub SDK 규약으로 이식. 이 코드를 작성한 환경은 해당 사이트 접속이 차단되어 실사이트 실행은 미검증이며, SDK 계약·선택 항목 생략·표 재구성은 오프라인 fixture 테스트(tests/test_oberon_brands.py)로만 확인함.
 """
 REVISION = '2026-11-12-oberon-1'
 CONFIG = {'site': 'https://dawnfieldmall.com',
  'hosts': ('dawnfieldmall.com', 'www.dawnfieldmall.com'),
- 'brand': '던필드',
- 'aliases': ['던필드', 'DAWNFIELD'],
+ 'brand': '크로커다일',
+ 'aliases': ['크로커다일', 'CROCODILE', '던필드', 'DAWNFIELD'],
  'title_brand': True,
  'input': '([A-Z0-9][A-Z0-9-]{2,24}?)(?:_([A-Z0-9]{1,4}))?',
  'format': '색상코드를 제외한 기본 품번(영문 대문자·숫자). 자체상품코드에 색상코드가 있는 상품만 품번_색상코드 지정 가능'}

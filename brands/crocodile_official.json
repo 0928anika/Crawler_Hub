@@ -1,9 +1,9 @@
 {
-  "id": "dawnfield_official",
-  "name": "던필드",
+  "id": "crocodile_official",
+  "name": "크로커다일",
   "category": "남성 의류",
   "crawl_source": "던필드몰",
-  "script": "dawnfield_official.py",
+  "script": "crocodile_official.py",
   "execution_level": 1,
   "mapping_mode": "manual",
   "image_mode": "url",
@@ -171,5 +171,5 @@
     "원본 상품명": null,
     "사이트 브랜드": null
   },
-  "code_hash": "1eb3df8738f760f3fce4282ecac76b52216baa7a3f55f949c832641a3db46f2c"
+  "code_hash": "698cf0d4021bd5248905f46a6d4940e5f2c6bc4324ac3a65e9727504f142a76f"
 }

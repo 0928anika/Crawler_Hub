@@ -42,7 +42,7 @@
     "reason": "공식 price.wishPrice(독립 가격 필드). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
   },
   {
-    "id": "dawnfield_official",
+    "id": "crocodile_official",
     "profile": "cafe24",
     "supported": true,
     "reason": "공식 소비자가 #span_product_price_custom 또는 product_custom(regular_price cafe24 프로필). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
