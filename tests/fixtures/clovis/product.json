@@ -1,0 +1,740 @@
+{
+  "navigation": {
+    "1": [
+      {
+        "cornerNo": "",
+        "dispContentsGroupNo": "",
+        "dispContentsGroupName": "",
+        "dispCategoryGroupNo": "",
+        "dispCategoryGroupName": "",
+        "dispCategoryNo": "2309002389",
+        "dispCategoryName": "코트",
+        "upperDispCategoryNo": "2309002388",
+        "basicsSortTcode": "",
+        "iconImageFileName": "",
+        "iconImageFilePathName": "",
+        "dispItemPrincipalDiscountrate": 0,
+        "selectYn": "Y",
+        "lower": [],
+        "marketingData": "",
+        "newYn": "",
+        "itemCount": ""
+      }
+    ]
+  },
+  "itemMain": {
+    "brandName": "클라비스",
+    "brandNo": "1690000333",
+    "flagName": "",
+    "flagImgPath": "",
+    "itemImage": [
+      {
+        "imageDcode": "010",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/oa/2026-10-23/18f6ba05-be9c-4bb2-ab73-689d48431210.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/oa/2026-10-23/898ce292-3d7e-48e0-b7fe-d0db6ad6b939.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/oa/2026-10-23/0d38a34d-7b3f-4ad1-970b-2ccfddbb7009.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/oa/2026-10-23/23df13c5-0c09-4cee-8d67-5204c0466272.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/oa/2026-10-23/c7f36d46-1368-4bcd-92af-32bce17cc116.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/oa/2026-10-23/d0ad8cfc-b9c4-4486-baea-82ec31930edb.jpg",
+        "imageName": ""
+      },
+      {
+        "imageDcode": "030",
+        "imageNo": "",
+        "imageFileName": "",
+        "imagePath": "r/image/oa/2026-10-23/5837cedd-4ee8-494e-8af7-e12d443eaac4.jpg",
+        "imageName": ""
+      }
+    ],
+    "videoPathObj": {
+      "itemVideoPlatformDcode": "",
+      "imagePath": "",
+      "imageDcode": ""
+    },
+    "itemNo": "2609584409",
+    "itemTcode": "10",
+    "lowerVendNo": "LV16003596",
+    "purchaseTipCon": "",
+    "iconName": [],
+    "itemName": "벨티드 미디 코트_CVJHG4V06M",
+    "briefItemName": "벨티드 미디 코트_CVJHG",
+    "addSearchwordCon": "클라비스,CLOVIS,벨티드,미디,코트,외의류,하프코트,여성,겨울,벨티드코트,미디코트,여성코트,겨울아우터,클라비스코트,벨트,코트스타일,미디길이",
+    "depth4StandardCategoryName": "하프 코트",
+    "originMarkingYn": "",
+    "wishYn": "N",
+    "freeshipYn": "N",
+    "bestYn": "N",
+    "sellprice": 199000,
+    "orgSellprice": 199000,
+    "manualApplyCouponPossYn": "Y",
+    "immeDcApplyYn": "Y",
+    "immeDcPrice": 159200,
+    "applyImmeDcProm": {
+      "promNo": "2611069881",
+      "promName": "[클라비스] 신상 베스트 20%",
+      "benefitValueDcode": "10",
+      "benefitValue": 20,
+      "promStartTs": "2026-11-08 00:00:00",
+      "promEndTs": "2026-11-15 00:00:00"
+    },
+    "doubleCpApplyPsbYn": "N",
+    "maxmembersApplyYn": "N",
+    "maxmembersApplyItemYn": "N",
+    "maxPoint": 1990,
+    "maxDcPrice": 159200,
+    "finalDcPrice": 159200,
+    "appTotalItemDcPrice": 199000,
+    "applyDoubleCpProm": {},
+    "applyMplusNProm": {},
+    "zeroIntInsBenefitImagePath": "",
+    "freeInterestCardBenefit": [
+      {
+        "cardcoDcode": "01",
+        "installmentMonthsCount": "2,3,4,5",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/34ad669d-878b-4380-a42d-e30c7396f975.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "02",
+        "installmentMonthsCount": "2,3",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/a68c2797-d298-46af-82d4-583474f7564e.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "03",
+        "installmentMonthsCount": "2,3,4,5",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/c9f328c3-9a14-4313-86bc-f91fc3a5b92f.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "04",
+        "installmentMonthsCount": "2,3",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "",
+        "cardcoCiImagePath": "r/image/display/2024-04-29/36ce6a2b-4b0a-459c-9b10-3f4dbc495da0.png",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "05",
+        "installmentMonthsCount": "2,3",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/cb564e96-d313-4e98-be1c-cd6af35834ea.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "08",
+        "installmentMonthsCount": "2,3",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/3a674a25-912e-4bf4-8ff7-1be035b71d4f.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "09",
+        "installmentMonthsCount": "2,3",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/b952cafb-802f-4177-96d8-c986aa62a2fc.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "14",
+        "installmentMonthsCount": "2,3,4,5",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "",
+        "cardcoCiImagePath": "r/image/display/2023-02-21/d66b07bf-390f-4d23-b2eb-cb305acbe88f.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "15",
+        "installmentMonthsCount": "2,3,4,5,6",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/9774af9a-671f-4986-a31e-ab82306415b2.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "17",
+        "installmentMonthsCount": "2,3,4,5",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/36d8bdf6-fe4a-4cca-b46c-37f58003354f.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "18",
+        "installmentMonthsCount": "2,3",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/a01b7848-8e11-477b-a236-da142f229b3f.gif",
+        "totalDay": "29"
+      }
+    ],
+    "partInterestCardBenefit": [
+      {
+        "cardcoDcode": "01",
+        "installmentMonthsCount": "6",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~3회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/34ad669d-878b-4380-a42d-e30c7396f975.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "01",
+        "installmentMonthsCount": "10",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~5회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/34ad669d-878b-4380-a42d-e30c7396f975.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "01",
+        "installmentMonthsCount": "12",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~6회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/34ad669d-878b-4380-a42d-e30c7396f975.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "02",
+        "installmentMonthsCount": "6",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~3회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/a68c2797-d298-46af-82d4-583474f7564e.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "02",
+        "installmentMonthsCount": "10,12",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~5회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/a68c2797-d298-46af-82d4-583474f7564e.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "02",
+        "installmentMonthsCount": "18",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~7회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/a68c2797-d298-46af-82d4-583474f7564e.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "03",
+        "installmentMonthsCount": "6",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~3회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/c9f328c3-9a14-4313-86bc-f91fc3a5b92f.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "03",
+        "installmentMonthsCount": "10",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~4회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/c9f328c3-9a14-4313-86bc-f91fc3a5b92f.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "03",
+        "installmentMonthsCount": "12",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~5회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/c9f328c3-9a14-4313-86bc-f91fc3a5b92f.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "03",
+        "installmentMonthsCount": "18",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~8회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/c9f328c3-9a14-4313-86bc-f91fc3a5b92f.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "04",
+        "installmentMonthsCount": "7",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~3회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2024-04-29/36ce6a2b-4b0a-459c-9b10-3f4dbc495da0.png",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "04",
+        "installmentMonthsCount": "11",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~5회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2024-04-29/36ce6a2b-4b0a-459c-9b10-3f4dbc495da0.png",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "04",
+        "installmentMonthsCount": "23",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~10회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2024-04-29/36ce6a2b-4b0a-459c-9b10-3f4dbc495da0.png",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "05",
+        "installmentMonthsCount": "7",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~3회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/cb564e96-d313-4e98-be1c-cd6af35834ea.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "05",
+        "installmentMonthsCount": "9",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~4회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/cb564e96-d313-4e98-be1c-cd6af35834ea.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "05",
+        "installmentMonthsCount": "11",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~5회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/cb564e96-d313-4e98-be1c-cd6af35834ea.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "05",
+        "installmentMonthsCount": "23",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~10회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/cb564e96-d313-4e98-be1c-cd6af35834ea.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "08",
+        "installmentMonthsCount": "8",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~4회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/3a674a25-912e-4bf4-8ff7-1be035b71d4f.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "08",
+        "installmentMonthsCount": "10",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~5회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/3a674a25-912e-4bf4-8ff7-1be035b71d4f.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "08",
+        "installmentMonthsCount": "12",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~6회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/3a674a25-912e-4bf4-8ff7-1be035b71d4f.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "14",
+        "installmentMonthsCount": "10",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~5회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2023-02-21/d66b07bf-390f-4d23-b2eb-cb305acbe88f.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "14",
+        "installmentMonthsCount": "12",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~6회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2023-02-21/d66b07bf-390f-4d23-b2eb-cb305acbe88f.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "15",
+        "installmentMonthsCount": "7,8,9,10",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~3회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/9774af9a-671f-4986-a31e-ab82306415b2.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "15",
+        "installmentMonthsCount": "12",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~4회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/9774af9a-671f-4986-a31e-ab82306415b2.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "15",
+        "installmentMonthsCount": "18",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~5회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/9774af9a-671f-4986-a31e-ab82306415b2.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "15",
+        "installmentMonthsCount": "24",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~6회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/9774af9a-671f-4986-a31e-ab82306415b2.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "18",
+        "installmentMonthsCount": "4,5,6,7,8,9",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/a01b7848-8e11-477b-a236-da142f229b3f.gif",
+        "totalDay": "29"
+      },
+      {
+        "cardcoDcode": "18",
+        "installmentMonthsCount": "10,11,12",
+        "principalAmount": "50000",
+        "applyStartDt": "2026-11-01",
+        "applyEndDt": "2026-11-30",
+        "partZerointerestInstallmentPhraseCon": "1~2회차 고객부담",
+        "cardcoCiImagePath": "r/image/display/2022-10-01/a01b7848-8e11-477b-a236-da142f229b3f.gif",
+        "totalDay": "29"
+      }
+    ],
+    "cardCoDiscountCoupon": [],
+    "paymentBenefits": [
+      {
+        "payMeanBenefitNo": "261100000001053",
+        "evtNo": "E261061840",
+        "payMeanKcode": "73",
+        "benefitCon": "적립프로모션",
+        "alliancecoCon": "네이버페이",
+        "benefitValue": "5,000",
+        "benefitValueDcode": "원",
+        "benefitFcode": "적립",
+        "miniOrdAmount": "200000",
+        "payMean": "네이버페이"
+      }
+    ],
+    "discountRate": 20,
+    "ratioAmountDcode": "",
+    "ratioAmountValue": 0,
+    "purchasePoint": 159,
+    "applyStartTs": "2026-09-18 13:15:09",
+    "applyEndTs": "2999-12-31 23:59:59",
+    "itemCompositionDcode": "10",
+    "incomeTaxDeductionYn": "N",
+    "shipcostInfo": "2,500원 (30,000원 이상 구매시 무료배송)",
+    "codYn": "Y",
+    "itemVendLeadtimeInfo": "2026.11.18(수) 이내",
+    "avgDispatchDayCount": "0.1",
+    "overseasDeliveryYn": "N",
+    "courierDeliveryYn": "Y",
+    "ordMakeItemYn": "N",
+    "installItemYn": "N",
+    "willcallPossYn": "N",
+    "presentgivePossYn": "N",
+    "purchasePossMiniQty": 1,
+    "onepPurchasePossMaxQty": "",
+    "oncePurchasePossMaxQty": "",
+    "memberItemOrderQty": 0,
+    "reservationSellStartTS": "",
+    "reservationSellEndTS": "",
+    "sendStartDt": "",
+    "shipStartDayAllApplyYn": "",
+    "isbnCode": "",
+    "shipcostPayFcode": "10",
+    "shipFcode": "10",
+    "pickupEndTs": "",
+    "kidikidiPickupYn": "N",
+    "pickupAddr": "경기 오산시 오산동 736-8\n8F 여성온라인센터",
+    "immidiatepurchaseYn": "N",
+    "sellStartTs": "2026-09-18 13:15:09",
+    "sellEndTs": "9999-12-31 23:59:59",
+    "sellEndYn": "N",
+    "beforesellDispStartTs": "",
+    "beforesellDispPossNoCountYn": "N",
+    "soldoutYn": "N",
+    "sellPossQty": 25,
+    "reWhsinNotificPossYn": "Y",
+    "itemOptionType": [
+      {
+        "itemOptionTypeInputNo": "1",
+        "itemOptionTypeName": "색상",
+        "itemOptionTcode": "10"
+      },
+      {
+        "itemOptionTypeInputNo": "2",
+        "itemOptionTypeName": "사이즈",
+        "itemOptionTcode": "20"
+      }
+    ],
+    "itemGiftApplyYn": "N",
+    "itemGift": [],
+    "manyUitemYn": "Y",
+    "appointMbrSellYn": "N",
+    "empExclusiveuseSellItemYn": "N",
+    "appointPurcMbrList": [],
+    "lowerVendTcode": "40",
+    "brandCode": "CV",
+    "jwYn": "N",
+    "modelNo": "CVJHG4V06M",
+    "depth1StandardCategory": {
+      "depth1StandardCategoryNo": "1600074046",
+      "depth1StandardCategoryName": "여성의류"
+    },
+    "compositionItem": [],
+    "sellingpointCon": "",
+    "dispContentsDispEndTs": "",
+    "timeSaleApply": false,
+    "immeDcBenefitValueDcode": "10",
+    "immeDcBenefitValue": 20,
+    "immeDcMaxDcAmount": 100000,
+    "countRepresentPriceY": 0,
+    "strItemNo": "",
+    "strLowerVendNo": "",
+    "moBizNo": "제 2025-서울강서-2203호",
+    "mplusNApplyYn": "N",
+    "representItem": ""
+  },
+  "itemDesc": {
+    "itemNo": "2609584409",
+    "itemDescdocumentCon": "&lt;p style=&quot;text-align:center&quot;&gt;&lt;img src=&quot;https://item-imghub.eland.co.kr/dkxfxja88dmk3jq9md9u2iut/manual/rmg0y82rk6dkp8p3eywng69x/CVJHG4V06M_detail.jpg&quot; style=&quot;width: 1080px;&quot; /&gt;&lt;/p&gt;\n&lt;p style=&quot;text-align:center&quot;&gt;&lt;img src=&quot;https://item-imghub.eland.co.kr/detail-pages/dkxfxja88dmk3jq9md9u2iut/uqhyjuub7asjwdb0n3yb2u49/r65gmgxzcx90gxf4iv71w9yc-BASE-ahd8di8i30acl1pc5ej8k3xf.jpg&quot; style=&quot;width: 1080px;&quot; /&gt;&lt;/p&gt;\n&lt;p style=&quot;text-align:center&quot;&gt;&lt;img src=&quot;https://item-imghub.eland.co.kr/detail-pages/dkxfxja88dmk3jq9md9u2iut/uqhyjuub7asjwdb0n3yb2u49/r65gmgxzcx90gxf4iv71w9yc-GOSI-wjjz6r6gs26gs6mzvw1nnazy.jpg&quot; style=&quot;width: 1080px;&quot; /&gt;&lt;/p&gt;",
+    "itemAttImagePath": "",
+    "itemCertiList": [],
+    "itemAnnounceList": [
+      {
+        "itemAnnounceNo": "261109000212896",
+        "itemAnnounceTitle": "[클라비스] WINTER SIGNATURE",
+        "itemAnnounceLocDcode": "20",
+        "itemAnnounceMediaCode": "10",
+        "itemAnnounceCon": "&lt;html&gt;\n &lt;head&gt;&lt;/head&gt;\n &lt;body&gt;\n &lt;p&gt;&lt;a href=&quot;https://clovis.elandmall.co.kr/p/planshop?exhibitionNo=202610109320&quot; data-cttn=&quot;in_261109000212896_1&quot;&gt;&lt;img alt=&quot;&quot; src=&quot;https://item.elandrs.com/r/image/item/2026-11-09/9c69eddd-d3e6-442c-88fe-a2483c53f3b7.jpg&quot; style=&quot;width: 1080px; height: 142px;&quot;&gt;&lt;/a&gt;&lt;/p&gt; \n &lt;/body&gt;\n&lt;/html&gt;"
+      },
+      {
+        "itemAnnounceNo": "261109000212896",
+        "itemAnnounceTitle": "[클라비스] WINTER SIGNATURE",
+        "itemAnnounceLocDcode": "30",
+        "itemAnnounceMediaCode": "10",
+        "itemAnnounceCon": ""
+      },
+      {
+        "itemAnnounceNo": "261109000212886",
+        "itemAnnounceTitle": "[클라비스] 한파 대비 아우터전",
+        "itemAnnounceLocDcode": "20",
+        "itemAnnounceMediaCode": "10",
+        "itemAnnounceCon": "&lt;html&gt;\n &lt;head&gt;&lt;/head&gt;\n &lt;body&gt;\n &lt;p&gt;&lt;a href=&quot;https://clovis.elandmall.co.kr/p/planshop?exhibitionNo=202610109319&quot; data-cttn=&quot;in_261109000212886_3&quot;&gt;&lt;img alt=&quot;&quot; src=&quot;https://item.elandrs.com/r/image/item/2026-11-09/fff4e0f7-0740-4d25-9895-66baf177f090.jpg&quot; style=&quot;width: 1080px; height: 142px;&quot;&gt;&lt;/a&gt;&lt;/p&gt; \n &lt;/body&gt;\n&lt;/html&gt;"
+      },
+      {
+        "itemAnnounceNo": "261109000212886",
+        "itemAnnounceTitle": "[클라비스] 한파 대비 아우터전",
+        "itemAnnounceLocDcode": "30",
+        "itemAnnounceMediaCode": "10",
+        "itemAnnounceCon": ""
+      },
+      {
+        "itemAnnounceNo": "261103000211782",
+        "itemAnnounceTitle": "[클라비스] 기모 슬랙스닝",
+        "itemAnnounceLocDcode": "20",
+        "itemAnnounceMediaCode": "10",
+        "itemAnnounceCon": "&lt;html&gt;\n &lt;head&gt;&lt;/head&gt;\n &lt;body&gt;\n &lt;p&gt;&lt;a href=&quot;https://www.elandmall.co.kr/p/planshop?exhibitionNo=202610109318&quot; data-cttn=&quot;in_261103000211782_5&quot;&gt;&lt;img alt=&quot;&quot; src=&quot;https://item.elandrs.com/r/image/item/2026-11-03/a9a06750-db8f-41c8-9116-dd344f95e49b.jpg&quot; style=&quot;width: 1080px; height: 142px;&quot;&gt;&lt;/a&gt;&lt;/p&gt; \n &lt;/body&gt;\n&lt;/html&gt;"
+      },
+      {
+        "itemAnnounceNo": "261103000211782",
+        "itemAnnounceTitle": "[클라비스] 기모 슬랙스닝",
+        "itemAnnounceLocDcode": "30",
+        "itemAnnounceMediaCode": "10",
+        "itemAnnounceCon": ""
+      },
+      {
+        "itemAnnounceNo": "261102000211668",
+        "itemAnnounceTitle": "[클라비스] 미드 시즌 세일",
+        "itemAnnounceLocDcode": "20",
+        "itemAnnounceMediaCode": "10",
+        "itemAnnounceCon": "&lt;html&gt;\n &lt;head&gt;&lt;/head&gt;\n &lt;body&gt;\n &lt;p&gt;&lt;a href=&quot;https://clovis.elandmall.co.kr/p/planshop?VTSCROLL_202610108842_tab=411&amp;amp;exhibitionNo=202610108842&quot; data-cttn=&quot;in_261102000211668_7&quot;&gt;&lt;img alt=&quot;&quot; src=&quot;https://item.elandrs.com/r/image/item/2026-11-02/c03400bc-0026-4798-ac59-874308801b31.jpg&quot; style=&quot;width: 1080px; height: 142px;&quot;&gt;&lt;/a&gt;&lt;/p&gt; \n &lt;/body&gt;\n&lt;/html&gt;"
+      },
+      {
+        "itemAnnounceNo": "261102000211668",
+        "itemAnnounceTitle": "[클라비스] 미드 시즌 세일",
+        "itemAnnounceLocDcode": "30",
+        "itemAnnounceMediaCode": "10",
+        "itemAnnounceCon": ""
+      }
+    ],
+    "itemAttList": [],
+    "itemProvideMntList": [
+      {
+        "itemProvideMntArtiName": "제품 소재 (섬유의 조성 또는 혼용률을 백분율로 표시, 기능성인 경우 성적서 또는 허가서)",
+        "itemProvideMntArtiCon": "(15)Gray\n겉감: 모 71% 폴리에스터 26% 아크릴 1% 나일론 1% 레이온 1%\n안감: 폴리에스터 100%\n(59)Navy\n겉감: 양모 : 79%, 폴리에스터 : 21%\n안감: 폴리에스터 100%"
+      },
+      {
+        "itemProvideMntArtiName": "색상",
+        "itemProvideMntArtiCon": "(15)Gray, (59)Navy"
+      },
+      {
+        "itemProvideMntArtiName": "치수",
+        "itemProvideMntArtiCon": "S(085), M(088), L(091)"
+      },
+      {
+        "itemProvideMntArtiName": "수입여부(Y,N)",
+        "itemProvideMntArtiCon": "Y"
+      },
+      {
+        "itemProvideMntArtiName": "제조사, 수입품의 경우 수입자를 함께 표기 (병행수입의 경우 병행수입 여부로 대체 가능)",
+        "itemProvideMntArtiCon": "㈜이랜드월드"
+      },
+      {
+        "itemProvideMntArtiName": "제조국",
+        "itemProvideMntArtiCon": "베트남"
+      },
+      {
+        "itemProvideMntArtiName": "세탁방법 및 취급시 주의사항",
+        "itemProvideMntArtiCon": "드라이"
+      },
+      {
+        "itemProvideMntArtiName": "제조연월",
+        "itemProvideMntArtiCon": "2026년 07월"
+      },
+      {
+        "itemProvideMntArtiName": "품질보증기준",
+        "itemProvideMntArtiCon": "관련법 및 소비자분쟁해결기준에 따름"
+      },
+      {
+        "itemProvideMntArtiName": "A/S 책임자와 전화번호",
+        "itemProvideMntArtiCon": "080-249-0456"
+      }
+    ],
+    "itemAttListToConvert": {}
+  },
+  "associationExistsYn": "N",
+  "downloadableCouponYn": "N",
+  "review": {
+    "reviewCount": 0
+  },
+  "qna": {
+    "totalCount": 0
+  },
+  "itemDetailAddInfo": {
+    "itemNo": "2609584409",
+    "lowerVendNo": "LV16003596",
+    "dispCategoryNo": "2309002389",
+    "freeshipYn": "N",
+    "bestYn": "N",
+    "hitYn": "N",
+    "newYn": "N",
+    "wishYn": "N",
+    "dispTcode": "10"
+  },
+  "photoReviewCount": 0
+}

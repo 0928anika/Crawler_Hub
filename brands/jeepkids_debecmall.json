@@ -1,0 +1,172 @@
+{
+  "id": "jeepkids_debecmall",
+  "name": "지프키즈",
+  "category": "유아동 의류",
+  "crawl_source": "대백몰",
+  "script": "jeepkids_debecmall.py",
+  "execution_level": 1,
+  "interface": "portal_v1",
+  "mapping_mode": "manual",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명"
+  ],
+  "extensions": [],
+  "official_color_codes": false,
+  "image_color_mapping": "hybrid",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 listSkuInfo의 SKU_NAME 색상/사이즈 조합. 품절 포함, 색상별 사이즈 보존."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 화면 판매가와 대응하는 prdDetail.SALE_PRICE. 할인적용가/쿠폰가는 제외."
+    },
+    "regular_price": {
+      "supported": false,
+      "status": "unsupported",
+      "reason": "독립 정상가·소비자가 표시를 확인하지 못함. LIST_PRICE를 정상가로 추정하지 않음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 분류 pool.getUpperCategory의 TREE_ITEM_LABEL."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 prdProductImage SIZE_600 원본. 사이트 제공 합성 대표사진도 원본 그대로 보존. 단일 색상 자동, 다색상 미연결 사진 수동 매핑."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 유효 갤러리 순서로 추가이미지 5슬롯 구성. 부족하면 마지막 유효 사진 반복, 한 장뿐이면 대표사진을 5회 반복."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 상세설명 /files/DETAIL/ 이미지 보존. 삭제된 404/410 파일만 생략하고 정상 본문·사이즈 원본 유지. 정상 상세가 하나도 없으면 실패. 다른 통신 오류/차단은 삭제로 간주하지 않음. 별도 공통 배너 제외."
+    }
+  },
+  "guide": {
+    "example": "KR3TPU247",
+    "examples": [
+      "KR3TPU247"
+    ],
+    "pattern": "^[A-Za-z]{2}\\d[A-Za-z]{3}\\d{3}$",
+    "format": "예 KR3TPU247, 대소문자 무관",
+    "notes": "실제 판매자 품번의 기본 모델, 숫자 등록 접미사, 영문 색상 접미사/괄호 색상, 슬래시로 명시한 셋트 구성 품번을 대조합니다. 세트 상품명·판매가는 세트 기준으로 유지합니다.",
+    "method": "대백몰 공개 상품 검색 및 상세 API",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "KR3TPU"
+    ],
+    "validation_note": "실제 상품 존재는 실행 시 확인."
+  },
+  "notes": "품번 exact VENDOR_PRODUCT_CODE와 지프키즈 브랜드 확인. 단일색상 자동/다색상 수동 매핑. 공식 합성 대표이미지 그대로 사용. 본문에 포함된 고시와 사이즈표 이미지 보존. 공통 매장픽업·축하카드 안내 제외. 판매자 품번의 숫자 접미사(-1/-2 등)는 동일 기본 품번으로 인정하고 색상은 실제 SKU_NAME 옵션에서 확인. 2026-11-17: API 통신 지연은 최대 3회 요청. 공식 이미지 404/410은 해당 파일만 제외하고 정상 상세/갤러리 보존(상세 전체가 삭제된 경우 실패). 판매자 품번 (D.B)/DO/VI 색상 접미사 및 A/B 세트 구성 코드 지원. 추가이미지는 자동 결과와 수동 매핑 최종 결과 모두 중복 허용 5슬롯. 공식 /files//DETAIL/ 이중 슬래시 원본 경로도 보존.",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "대백몰 공개 상품/옵션 원문 확인"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "대백몰 공개 상품/옵션 원문 확인"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "대백몰 공개 상품/옵션 원문 확인"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "대백몰 공개 상품/옵션 원문 확인"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 listSkuInfo의 SKU_NAME 색상/사이즈 조합. 품절 포함, 색상별 사이즈 보존."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 화면 판매가와 대응하는 prdDetail.SALE_PRICE. 할인적용가/쿠폰가는 제외."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": false,
+      "status": "unsupported",
+      "reason": "독립 정상가·소비자가 표시를 확인하지 못함. LIST_PRICE를 정상가로 추정하지 않음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 분류 pool.getUpperCategory의 TREE_ITEM_LABEL."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 prdProductImage SIZE_600 원본. 사이트 제공 합성 대표사진도 원본 그대로 보존. 단일 색상 자동, 다색상 미연결 사진 수동 매핑."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 유효 갤러리 순서로 추가이미지 5슬롯 구성. 부족하면 마지막 유효 사진 반복, 한 장뿐이면 대표사진을 5회 반복."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 상세설명 /files/DETAIL/ 이미지 보존. 삭제된 404/410 파일만 생략하고 정상 본문·사이즈 원본 유지. 정상 상세가 하나도 없으면 실패. 다른 통신 오류/차단은 삭제로 간주하지 않음. 별도 공통 배너 제외."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null
+  },
+  "code_hash": "56251aaeedf189ce4a02c8f6192d2742472801d1a0e987f3a49bbb2a567c0b09",
+  "hybrid_mapping": true,
+  "additional_image_count": 5
+}

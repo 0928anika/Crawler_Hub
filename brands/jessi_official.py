@@ -261,18 +261,22 @@ def identity(soup, no, base, final):
     if base is not None and official_base != base:
         return None
     base = official_base
-    select = soup.select_one('select[option_title="색상"]')
+    select = soup.select_one('[option_title="색상"], [option_title="컬러"]')
     if not select or select.get("option_product_no") != no:
         raise ValueError("색상 옵션과 상품 ID 연결 미확인")
-    names = []
-    for option in select.select("option"):
-        if option.get("value", "") in ("", "*", "**"):
+    names, labels = [], []
+    for option in select.select("option, li[option_value]"):
+        if option.get("option_value", option.get("value", "")) in ("", "*", "**"):
             continue
         label = re.sub(r"\s*[\[(]품절[\])]\s*$", "", text(option)).strip()
-        if not label.startswith(code + "_"):
+        if label == code:
+            names.append('')
+        elif label.startswith(code + "_"):
+            names.append(label[len(code) + 1:].strip())
+        else:
             raise ValueError("단일 색상 상품과 공식 색상 옵션 불일치: " + label)
-        names.append(label[len(code) + 1:].strip())
-    if not names or len(set(names)) != 1 or not names[0]:
+        labels.append(label)
+    if not labels:
         raise ValueError("공식 색상명 확인 실패")
     raw_name = field_value(soup, "product_name_css")
     if not raw_name:
@@ -283,7 +287,8 @@ def identity(soup, no, base, final):
     name = re.sub(r"\s+", " ", name).strip(" _-()[]")
     if not name:
         raise ValueError("브랜드/품번 정리 후 실제 상품명 없음")
-    return dict(base=base, own=own, code=code, color=names[0], name=name, raw_name=raw_name,
+    return dict(base=base, own=own, code=code, color=next((n for n in names if n), code),
+                color_name=next((n for n in names if n), ''), option_labels=list(dict.fromkeys(labels)), name=name, raw_name=raw_name,
                 product_url=verify_product_url(final, no))
 
 
@@ -324,10 +329,10 @@ def price(ctx, soup, info):
         ctx.log("공개 옵션별 가격 없음", "WARNING")
         return None
     amounts = []
-    expected = info["code"] + "_" + info["color"]
+    expected = info.get('option_labels', [info["code"] + "_" + info["color"]])
     for row in stock.values():
         original = row.get("option_value_orginal")
-        if not isinstance(original, list) or not original or original[0] != expected:
+        if not isinstance(original, list) or not original or original[0] not in expected:
             raise ValueError("가격 옵션과 해당 색상 불일치")
         if row.get("option_price") is None:
             raise ValueError("실제 옵션 판매가 누락")
@@ -437,8 +442,10 @@ def gallery(ctx, soup, no, info, cache):
 def composite_detail_url(url, own):
     parts = urlsplit(url)
     target = parse_qs(parts.query).get("url", [""])[0]
-    prefix = "js_img.etec.co.kr/ONLINE/" + own + "/"
-    return parts.scheme == "https" and parts.hostname == "images.weserv.nl" and target.startswith(prefix) and bool(re.search(r"\.(?:jpe?g|png|webp)$", target, re.I))
+    source = urlsplit(target if '://' in target else 'https://' + target)
+    return (parts.scheme == "https" and parts.hostname == "images.weserv.nl"
+            and source.hostname == 'js_img.etec.co.kr' and source.path.startswith('/ONLINE/' + own + '/')
+            and bool(re.search(r"\.(?:jpe?g|png|webp)$", source.path, re.I)))
 
 
 def detail(ctx, soup, no, info, cache):
@@ -510,8 +517,9 @@ def crawl(ctx):
                 continue
             matched.add(code)
             if code in emitted:
-                raise ValueError("동일 색상에 상품 ID 중복: " + code)
-            record = dict(product_code=base, product_name=info["name"], color=info["color"], product_url=info["product_url"], color_name=info["color"], color_code=code)
+                ctx.log("동일 공식 품번·색상의 중복 상품 페이지 생략: " + info['own'] + ' / ' + no, 'INFO')
+                continue
+            record = dict(product_code=base, product_name=info["name"], color=info["color"], product_url=info["product_url"], color_name=info.get("color_name",info["color"]), color_code=code)
             if ctx.enabled("size"):
                 record["size"] = sizes(ctx, soup, no)
             if ctx.enabled("price"):

@@ -1,0 +1,50 @@
+Intercrew official crawler — 2026-11-12
+ID: intercrew_official / 인터크루 / 공식 홈페이지
+
+Actual official source checks:
+https://intercrewkorea.co.kr/product/detail.html?product_no=8634
+https://intercrewkorea.co.kr/product/search.html?keyword=ITA3EL05A
+https://intercrewkorea.co.kr/product/image_zoom2.html?product_no=8634
+
+Public source product no. row: ITA3EL05ADG; brand: INTERCREW.
+One color option: D그레이. Base nine-character code ITA3EL05A with official
+two-character suffix DG. Full code and base code searches both returned the
+actual matching product link. Full code with _DG or -DG is also normalized.
+Other search results are verified against the official product no. before use.
+Multiple-color pages without verified image assignment fail clearly rather
+than assigning every image to an arbitrary color. No inferred visual colors.
+
+Main .keyImg img.BigImage and .listImg img are all 2000x2000 originals in this
+example, despite some paths saying small. Preserve actual declared URLs; do
+not invent URLs by replacing directory names. Identical file hashes deduplicate
+the main/small duplicate. Four distinct additional shots fill five output
+slots using the hub gallery helper's final-slot reuse.
+
+Product name removes the exact trailing full SKU and color option label.
+Sizes: select[option_title=사이즈], including disabled/sold-out choices:
+28(71),30(76),32(81),34(86). Do not substitute availability from JSON-LD, which
+incorrectly reports those variants InStock in this observed source.
+
+Selling price: #span_product_price_sale 53900; fallback to displayed
+#span_product_price_text only if no sale value is present. Independent regular
+price: #span_product_price_custom 89900. Each price is selected independently.
+Missing, zero, malformed or parsing errors in regular price stay blank and
+warn without failing the article. No copying or discount reverse calculation.
+
+Actual body: #prdDetail .cont images use ec-data-src, not src.
+ITA3EL05A_01_model.jpg is a 900x1 placeholder, skipped with warning.
+ITA3EL05ADG_01.jpg (900x4550) retained.
+ITA3EL05ADG_info_size.jpg (900x1660) retained as the original size/notice image.
+ITA3EL05A_fit_fabric.jpg (900x1080) retained.
+ITC_model_26FW.jpg (900x490) retained.
+ITY2_delivery.jpg is shipping guidance and excluded before downloading.
+No extra size table or notice table is generated. Normal body image ratios
+are not filtered using the gallery rules. Confirmed removed files warn;
+transient requests or invalid bytes fail, and no real body cannot succeed.
+
+Live worker: ITA3EL05A and ITA3EL05ADG both exit 0, one row, no item failures,
+mapped D그레이/DG, full size list, selling53900, regular89900, four body images.
+Original relevant public DOM excerpts are in tests/fixtures/intercrew.
+Eight regression tests cover identity, unsafe multicolor rejection, search,
+lazy body images, delivery exclusion, independent prices and missing normal
+prices, disabled sizes, no results and transient image failures.

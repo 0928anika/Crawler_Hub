@@ -67,7 +67,13 @@ def clean_product_name(name, brand_aliases, product_codes):
     for token in sorted(set(brand_aliases + product_codes), key=len, reverse=True):
         if token:
             name = re.sub(r'(?<![\w])' + re.escape(token) + r'(?![\w])', '', name, flags=re.I)
-    return re.sub(r'\s+', ' ', name).strip(' -_/[]()')
+    # Strip separators, not bracket characters: '(소재)' and '[핏]' are product text.
+    # Remove a pair only when token removal left its contents empty.
+    previous=None
+    while previous!=name:
+        previous=name
+        name=re.sub(r'\([\s_/-]*\)|\[[\s_/-]*\]|\{[\s_/-]*\}', '', name)
+    return re.sub(r'\s+', ' ', name).strip(' -_/')
 
 
 def resolve_input(value, official_variants, has_color_codes=False, hyphen_alias=False):

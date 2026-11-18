@@ -143,4 +143,92 @@ class JeepKidsTests(unittest.TestCase):
         self.assertEqual(meta['capabilities']['regular_price']['status'],'unsupported')
 
 
+class JeepKidsDependentOptionTests(unittest.TestCase):
+    def docs(self):return [(n,c.parse((FIX/('KO3TPU905_'+n+'.html')).read_text(encoding='utf-8'))) for n in ['986','985','984']]
+    def test_original_stock_sizes_include_soldout_and_empty_select(self):
+        for n,doc in self.docs():
+            self.assertEqual(c.sizes(doc),'120,130,145,155',n)
+        black=self.docs()[0][1]
+        self.assertFalse(black.select('select[option_title="사이즈"] option[value]:not([value="*"]):not([value="**"])'))
+    def test_detail_includes_exact_product_color_and_size_only(self):
+        for n,doc in self.docs():
+            urls=c.detail_urls(doc,c.SITE)
+            self.assertEqual(len(urls),3,n)
+            code=c.identity(doc,'KO3TPU905')['color_code']
+            self.assertTrue(any('00_KO3TPU905_'+code+'.jpg' in u for u in urls))
+            self.assertTrue(any('01_KO3TPU905_'+code+'.jpg' in u for u in urls))
+            self.assertTrue(any('KO3TPU905_size.jpg' in u for u in urls))
+            self.assertFalse(any('washing' in u or 'foot.jpg' in u for u in urls))
+    def test_wrong_external_host_product_and_color_are_excluded(self):
+        doc=self.docs()[0][1];area=doc.select_one('#prdDetail .cont')
+        for src in ['https://hollhaus.speedgabia.com/jeep/detail/00_KO3TPU905_LE.jpg','https://hollhaus.speedgabia.com/jeep/detail/00_OTHER0000_BK.jpg','https://evil.example/jeep/detail/00_KO3TPU905_BK.jpg']:
+            image=doc.new_tag('img',src=src);area.append(image)
+        urls=c.detail_urls(doc,c.SITE);self.assertEqual(len(urls),3)
+    def test_detail_has_separate_large_image_limit_and_cache(self):
+        url='https://hollhaus.speedgabia.com/jeep/detail/00_KO3TPU905_BK.jpg';cache={url:dict(status='inaccessible',reasons=['size limit'])}
+        result=dict(status='accessible',data=b'checked',reasons=[])
+        with patch.object(c,'check_public_image',return_value=result) as check:
+            self.assertIs(c.public_image(Context(),url,cache,detail=True),result)
+            self.assertEqual(check.call_args.kwargs['max_bytes'],64*1024*1024)
+            c.public_image(Context(),url,cache,detail=True);self.assertEqual(check.call_count,1)
+        self.assertEqual(cache[url]['status'],'inaccessible')
+    def test_missing_selected_detail_does_not_succeed_empty(self):
+        with self.assertRaisesRegex(ValueError,'상세페이지 수집 실패'):c.detail(Context(),[],{})
+    def test_all_three_colors_complete_with_sizes_and_original_detail(self):
+        pages={c.SITE+'/product/detail.html?product_no='+n:doc for n,doc in self.docs()}
+        with tempfile.TemporaryDirectory() as folder:
+            ctx=Context(folder,'KO3TPU905',('size','detail_page'))
+            with patch('playwright.sync_api.sync_playwright',return_value=MagicMock()),patch.object(c,'search',return_value=list(pages)),patch.object(c,'visit',side_effect=lambda ctx,page,url:(pages[url],url)),patch.object(c,'public_image',return_value={'status':'accessible'}):c.crawl(ctx)
+            self.assertFalse(ctx.failures);self.assertEqual(len(ctx.rows),3)
+            self.assertEqual({r['color_code'] for r in ctx.rows},{'BK','LE','NA'})
+            for row in ctx.rows:
+                self.assertEqual(row['size'],'120,130,145,155');self.assertEqual(row['detail_page'].count('<img'),3);self.assertNotIn('<table',row['detail_page'])
+
+
+class JeepKidsLogRegressionTests(unittest.TestCase):
+    def setup_doc(self):
+        return c.parse('''<div class="xans-product-headcategory"><ol><li><a>KIDS</a></li></ol></div>
+          <div class="infoArea"><table><tr><th>상품명</th><td>후드집업 와이드 셋업_CG</td></tr>
+          <tr><th>색상</th><td><select><option value="*">- [필수] 옵션을 선택해 주세요 -</option>
+          <option value="**">-------------------</option><option value="CG" disabled>CG [품절]</option></select></td></tr></table></div>
+          <div id="prdDetail"><div class="cont">
+          <img ec-data-src="https://hollhaus.speedgabia.com/jeepkids/detail/01_KP4TZU098_CG.jpg">
+          <img ec-data-src="https://hollhaus.speedgabia.com/jeepkids/detail/02_KP4TZU098_CG.jpg">
+          <img ec-data-src="https://hollhaus.speedgabia.com/jeepkids/detail/KP4TZU098_size.jpg">
+          <img ec-data-src="https://hollhaus.speedgabia.com/jeep/detail/KC_detail.jpg">
+          <img ec-data-src="https://hollhaus.speedgabia.com/jeep/detail/washing.jpg"></div></div>''')
+
+    def test_option_widget_does_not_pollute_color_name(self):
+        row=c.identity(self.setup_doc(),'KP4TZU098')
+        self.assertEqual(row['color'],'CG')
+        self.assertEqual(row['color_code'],'CG')
+        self.assertEqual(row['color_name'],'')
+        self.assertEqual(row['product_name'],'후드집업 와이드 셋업')
+
+    def test_jeepkids_detail_path_uses_exact_product_color_and_size(self):
+        urls=c.detail_urls(self.setup_doc(),c.SITE)
+        self.assertEqual(len(urls),3)
+        self.assertTrue(all('/jeepkids/detail/' in url for url in urls))
+
+    def test_official_shared_setup_alias_does_not_change_set_name(self):
+        row=c.identity(self.setup_doc(),'KP4TPU098')
+        self.assertEqual(row['product_code'],'KP4TPU098')
+        self.assertEqual(row['product_name'],'후드집업 와이드 셋업')
+        self.assertIsNone(c.identity(self.setup_doc(),'KP4TPU099'))
+
+    def test_suffix_is_not_sufficient_without_matching_official_image_proof(self):
+        doc=self.setup_doc()
+        doc.select_one('#prdDetail').decompose()
+        with self.assertRaises(ValueError):c.identity(doc,'KP4TZU098')
+
+    def test_mismatched_title_and_detail_color_are_rejected(self):
+        doc=c.parse(str(self.setup_doc()).replace('셋업_CG','셋업_MG'))
+        with self.assertRaises(ValueError):c.identity(doc,'KP4TZU098')
+
+    def test_literal_p_prefix_on_official_size_chart_is_preserved(self):
+        doc=self.setup_doc()
+        node=doc.select_one('img[ec-data-src$="_size.jpg"]')
+        node['ec-data-src']='https://hollhaus.speedgabia.com/jeepkids/detail/pKP4TZU098_size.jpg'
+        self.assertIn(node['ec-data-src'],c.detail_urls(doc,c.SITE))
+
 if __name__=='__main__':unittest.main()

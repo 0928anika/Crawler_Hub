@@ -2,13 +2,66 @@
 from pathlib import Path
 import uuid
 import os
+from functools import lru_cache
 from bs4 import BeautifulSoup, Comment
 
 EXCEL_TEXT_LIMIT = 32767
 OVERFLOW_NOTICE = ''  # Oversized content is a registration error, never a download placeholder.
 
 
+DETAIL_WIDTH = 860
+
+
+def registration_layout(markup):
+    """Apply our own responsive layout after removing untrusted source styles."""
+    soup = BeautifulSoup(str(markup or ''), 'html.parser')
+    if not soup.find('img'):
+        return str(soup).strip()
+    # Unwrap outer layout containers to keep repeated exports idempotent.
+    while True:
+        roots = [node for node in soup.contents if str(node).strip()]
+        if len(roots) != 1 or getattr(roots[0], 'name', None) != 'div':
+            break
+        roots[0].unwrap()
+    for image in soup.find_all('img'):
+        image.attrs.pop('height', None)
+        image['width'] = str(DETAIL_WIDTH)
+        image['style'] = ('display:block;width:100%%;max-width:%spx;height:auto;margin:0 auto'
+                          % DETAIL_WIDTH)
+    for table in soup.find_all('table'):
+        table['border'] = '1'
+        table['cellpadding'] = '8'
+        table['cellspacing'] = '0'
+        table['style'] = 'width:100%;border-collapse:collapse;margin:16px auto;font-size:14px;line-height:1.6;color:#333;text-align:left;overflow-wrap:anywhere'
+        for cell in table.find_all(['th','td']):
+            cell['style'] = 'border:1px solid #ddd;padding:10px;vertical-align:top'
+            if cell.name == 'th':cell['style'] += ';background:#f6f6f6;font-weight:bold'
+    for paragraph in soup.find_all('p'):
+        paragraph['style'] = 'font-size:14px;line-height:1.8;color:#444;margin:14px auto;text-align:left'
+    for heading in soup.find_all(['h1','h2','h3']):
+        heading['style'] = 'font-size:20px;line-height:1.5;margin:28px 0 14px'
+    wrapper = soup.new_tag('div')
+    wrapper['align'] = 'center'
+    wrapper['style'] = ('width:100%%;max-width:%spx;margin:0 auto;text-align:center'
+                        % DETAIL_WIDTH)
+    for node in list(soup.contents):
+        wrapper.append(node.extract())
+    soup.append(wrapper)
+    return str(soup).strip()
+
+
 def excel_detail(markup):
+    """Reuse immutable formatting results; cap both entry count and key size."""
+    value=str(markup or '')
+    return _cached_excel_detail(value) if len(value)<=65536 else _format_excel_detail(value)
+
+
+@lru_cache(maxsize=256)
+def _cached_excel_detail(markup):
+    return _format_excel_detail(markup)
+
+
+def _format_excel_detail(markup):
     """Produce compact registration HTML without cutting product content.
 
     Empty string + overflow=True means unusable for sheet registration, not a
@@ -56,7 +109,7 @@ def excel_detail(markup):
         content=str(tag)
         if content in seen_blocks:tag.decompose()
         else:seen_blocks.add(content)
-    compact=str(soup).strip()
+    compact=registration_layout(str(soup))
     return (compact,False) if len(compact)<=EXCEL_TEXT_LIMIT else ('',True)
 
 

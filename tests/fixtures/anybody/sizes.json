@@ -1,0 +1,58 @@
+[
+  {
+    "itemNo": "2512220870",
+    "lowerVendNo": "CN003546",
+    "itemOptionNo": "25122850831",
+    "itemOptionName": "LLL",
+    "itemOptionTcode": "20",
+    "itemOptionTypeInputNo": 2,
+    "standardItemOptionName": "L",
+    "standardItemOptionImageCon": null,
+    "soldoutYn": "N",
+    "reWhsInNotificPossYn": "Y",
+    "sellPrice": 35900,
+    "jwOptionLength": null
+  },
+  {
+    "itemNo": "2512220870",
+    "lowerVendNo": "CN003546",
+    "itemOptionNo": "25122850832",
+    "itemOptionName": "MMM",
+    "itemOptionTcode": "20",
+    "itemOptionTypeInputNo": 2,
+    "standardItemOptionName": "M",
+    "standardItemOptionImageCon": null,
+    "soldoutYn": "Y",
+    "reWhsInNotificPossYn": "Y",
+    "sellPrice": 35900,
+    "jwOptionLength": null
+  },
+  {
+    "itemNo": "2512220870",
+    "lowerVendNo": "CN003546",
+    "itemOptionNo": "25122850833",
+    "itemOptionName": "SSS",
+    "itemOptionTcode": "20",
+    "itemOptionTypeInputNo": 2,
+    "standardItemOptionName": "S",
+    "standardItemOptionImageCon": null,
+    "soldoutYn": "N",
+    "reWhsInNotificPossYn": "Y",
+    "sellPrice": 35900,
+    "jwOptionLength": null
+  },
+  {
+    "itemNo": "2512220870",
+    "lowerVendNo": "CN003546",
+    "itemOptionNo": "25122850834",
+    "itemOptionName": "XLL",
+    "itemOptionTcode": "20",
+    "itemOptionTypeInputNo": 2,
+    "standardItemOptionName": "XL",
+    "standardItemOptionImageCon": null,
+    "soldoutYn": "N",
+    "reWhsInNotificPossYn": "Y",
+    "sellPrice": 35900,
+    "jwOptionLength": null
+  }
+]

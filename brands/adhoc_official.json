@@ -30,7 +30,7 @@
     "size": {
       "supported": true,
       "status": "conditional",
-      "reason": "색상 행: 공식 option_stock_data의 해당 색상 사이즈 전체(품절 포함, 숨김 옵션 제외). 수동 후보는 모든 색상의 사이즈가 같을 때만 공통값, 다르면 빈칸."
+      "reason": "공식 색상·사이즈 조합 분리. 통합 select와 원본 재고 데이터 지원. 자동 품절로 숨겨진 사이즈 포함, 색상명 하이픈과 사이즈 앞자리 0 보존."
     },
     "price": {
       "supported": true,
@@ -114,7 +114,7 @@
       "label": "사이즈",
       "supported": true,
       "status": "conditional",
-      "reason": "색상 행: 공식 option_stock_data의 해당 색상 사이즈 전체(품절 포함, 숨김 옵션 제외). 수동 후보는 모든 색상의 사이즈가 같을 때만 공통값, 다르면 빈칸."
+      "reason": "공식 색상·사이즈 조합 분리. 통합 select와 원본 재고 데이터 지원. 자동 품절로 숨겨진 사이즈 포함, 색상명 하이픈과 사이즈 앞자리 0 보존."
     },
     "price": {
       "label": "판매가",
@@ -169,5 +169,5 @@
     "상세페이지 HTML": "detail_page",
     "원본 상품명": null
   },
-  "code_hash": "13ed39758259d712382388e8e588c442fc5be6e181020c7352ac0f2531d0611d"
+  "code_hash": "cc440145193407b803a84e476325398c0a6db771b39615834cb9683b339ffd72"
 }

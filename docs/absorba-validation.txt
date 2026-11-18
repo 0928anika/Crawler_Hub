@@ -1,0 +1,109 @@
+Absorba official crawler — 2026-11-13
+Brand ID: happyland_official / 해피랜드/압소바 / 공식 홈페이지
+
+User-provided mobile product:
+https://m.happylandmall.com/goods/goods_view.php?goodsNo=1000001384
+Verified desktop official source:
+https://www.happylandmall.com/goods/goods_view.php?goodsNo=1000001384
+Verified actual search form GET:
+https://www.happylandmall.com/goods/goods_search.php?keyword=AB2711BU04
+
+Source identity: .item_detail_list dl 모델명=AB2711BU04 and #frmView
+input[name=brandCd]=004, title prefix [압소바]. Product identity must match
+the requested model. Search card links and real pagination links only.
+Do not follow recommendation/social/review links or infer goodsNo values.
+
+Option source: #frmView select[name=optionSnoInput]. Nonempty options have
+alt 브라운:75 / 브라운:80, plus declared values with option ID, price delta0
+and stock3. Sizes include disabled/sold-out entries. There is no confirmed
+official color code, so color_name=브라운 and color_code is blank, rather
+than splitting digits off the model. One-color page maps automatically.
+Multi-color pages send validated primary shots and real color labels for
+manual mapping; no visual color guesses. SDK hybrid mode permits automatic
+completion for already mapped pages.
+
+Selling price: primary .item_detail_tit .prd-price=99000; independent regular
+price: #frmView input[name=set_goods_fixedPrice]=99000.00 and 정가 row.
+Each field is independently selected. Missing/zero/malformed regular price
+stays blank with warning and does not fail collection. Coupon/member totals
+are not used. Nonzero/differing option additional prices leave common selling
+price blank with an explanation rather than guessing a shared price.
+
+Declared gallery originals come from gd_change_image magnifyKeyID strings,
+then detailKeyID or actual main image elements. No directory substitution.
+Sample magnify image is a real730x730 JPEG, declared explicitly by official
+HTML. It is the only distinct gallery shot; five additional output slots reuse
+that valid shot with the standard helper warning. Never pad with tiny icons.
+Allowed image storage is the observed store-owned NHN prefix or img.efe.co.kr/a/.
+
+Body scope: #detail .detail_explain_box, not the whole detail tab. Preserve:
+https://img.efe.co.kr/a/2027/AB2711BU04_DC.jpg (800x6321)
+https://img.efe.co.kr/a/2026/notice_size.jpg (800x3498)
+Keep the original size/notice images; do not append an HTML notice table or
+generated size guide. Shipping, exchanges, reviews and recommendation images
+outside this body are not copied. Real body image failures are reported rather
+than silently truncating the body or replacing it with gallery photos.
+
+Actual all-field worker ab2711bu04: exit0, one automatic row, no item failures.
+Name: 포트코튼모달바디슈트조끼모자 / 브라운 / 75,80 / price99000 / regular99000.
+Original relevant public fixture excerpts: tests/fixtures/absorba.
+9 regression tests passed, covering identity, official search links, declared
+originals, source ownership, disabled sizes, original detail preservation,
+all four price selection combinations and invalid normal prices, and safe
+multi-color manual mapping. 64-brand registry/hash/syntax check passed.
+Live source files and worker results are outside repo as abs*.html and
+absorba-verification/ in the task workspace. No app/ changes required.
+
+New detail CDN follow-up — 2026-11-13:
+AB27A5RT01 (1000001334), A1510604 (1000000765), A1A10303 (7944) use the
+officially embedded shared object store:
+pub-020c219c6a054e3ab4d8a4c1f8bd4a5c.r2.dev/a/...
+It was absent from the allowed image origins, failing all three before body
+collection. Add only that observed bucket's /a/ product path, retaining old
+sources. Do not trust unrelated r2.dev buckets.
+Its /notice/notice.jpg is a verified all-white800x35 placeholder (RGB extrema
+255..255); omit this exact placeholder without fetching it during collection.
+Do not omit notice_size.jpg, which contains original size/notice content.
+Live all-field workers: all three exit0 with one result each, no failures,
+two real body images each and no generated notice/size tables.
+AB27A5RT01: 아이보리/F, automatic. A1510604: 노랑/베이지/핑크, manual candidate
+because there is no per-color image association. A1A10303: 백IVORY, automatic.
+11 regression tests and 64-brand registry/hash/syntax check passed.
+
+Shared-color automatic output follow-up — 2026-11-13:
+Current adapter ID is happyland_official (해피랜드/압소바), renamed separately.
+User confirmed previously unmapped photos show every color together and
+requested identical image use for all colors. Supersedes manual/hybrid rules
+above: mapping_mode=automatic, no emit_unmapped path. Each real option color
+gets the same primary/additional image set and body HTML. Keep its own exact
+size options, rather than assigning the union of sizes from all colors.
+Multi-color shared photos are file/format/size checked without pretending they
+are single-color pictures. No inferred color code or separate size/notice table.
+Live A1510604: exit0, three rows 노랑/베이지/핑크, one common main and additional
+image set, zero unmapped events, sizes70,75,80 for each actual option color.
+12 regression tests and65-brand registry/hash/syntax check passed.
+New jobs use automatic mode; previously started jobs retain frozen old scripts.
+
+Both official brands and transfer retry follow-up — 2026-11-13:
+H1110306 and HL2651AN06 were rejected because renaming metadata alone left
+the original adapter's brand004/title압소바 and image /a/ restrictions intact.
+Observed H1110306 (8017) and HL2651AN06 (1000000870) both declare brand002,
+title prefix[해피랜드], and original detail URLs under the same official R2
+bucket /h/. Accept only the two verified brand-ID/title pairs002해피랜드 and
+004압소바, matching the requested actual model. Accept both /h/ and /a/ on
+the known official body hosts. Wrong ID/title pairings still fail. No arbitrary
+other brand, CDN bucket or model is accepted.
+Live H1110306: two automatic colors 연노랑/연핑크, no failures.
+Live HL2651AN06: two automatic colors 베이지/핑크, no failures.
+
+AB26D3SS04's reported45s response deadline could not be reproduced: direct
+public GET returned584691-byte800x5700JPEG in about1s. It was a temporary
+transfer delay rather than an absent product. Image requests now have a90s
+attempt cap within180s shared budget, allowing a fresh retry after one slow
+attempt. Ordinary document/search requests retain45s. Socket waits remain15s;
+progress logs every5s while bytes arrive, byte/pixel bounds and checkpoints
+remain. Never skip a timed-out original image and report a complete body.
+Regression test advances a fake clock past the first90s attempt and verifies
+a fresh connection can still succeed within the overall budget.
+Live AB26D3SS04 all-field worker succeeds with오프화이트 and no failures.
+15 tests and65-brand registry/hash/syntax check passed.

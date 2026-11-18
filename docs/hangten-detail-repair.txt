@@ -1,0 +1,11 @@
+2026-11-13:14590-110-803-41 detail repair
+Reproduced product14523 failure: original HTML has an empty center followed by
+body images directly inside #prdDetail > .cont. Previous selector required
+center > img and discarded all real body images. Select descendant images
+inside that official detail container; retain exact model/color CDN path check.
+Do not request intro_teens.jpg or info.jpg; preserve TEENS_SIZE.jpg.
+Live worker all fields:exit0,no item failures,two colors Black100 and Offwhite003.
+Each color:5 original body images; sizes130,140,150,160,170;selling55900,
+regular119800. No generated notice or size tables. Two regression tests passed.
+Actual HTML regression fixture:tests/fixtures/hangten/14523_detail.html.
+Live log and result workbook in shared workspace hangten-verification/.

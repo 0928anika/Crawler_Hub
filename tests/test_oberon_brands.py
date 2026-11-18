@@ -17,8 +17,8 @@ sys.path.insert(0, str(ROOT / 'app'))
 from crawler_sdk import CrawlContext
 from PIL import Image
 
-NEW = ['adhoc_official', 'bangbang_official', 'decoand_official', 'dawnfield_official', 'disneygolf_smfashion',
-       'renomakids_official', 'minimum_official', 'adidas_official', 'brentwood_kolonmall', 'ping_bucketstore', 'ecolier_soiemall',
+NEW = ['adhoc_official', 'bangbang_official', 'decoand_official', 'crocodile_official', 'disneygolf_official',
+       'renomakids_official', 'minimum_official', 'adidas_official', 'brentwood_official', 'ping_official', 'ecolier_official',
        'jdx_official', 'sfit_official', 'elcanto_official', 'riverclassy_favlook', 'zensai_official', 'mountia_official',
        'lenic_official', 'lecoqgolf_official', 'underarmour_official', 'millet_official', 'fila_official',
        'redface_official']
@@ -63,6 +63,20 @@ class Network:
         return dict(status='accessible', url=url, final_url=url, data=data, width=w, height=h, format='PNG', reasons=[], warnings=[])
 
 
+PRESENTATION = __import__('re').compile(r'\s(?:style|border|cellpadding|cellspacing|align|width)="[^"]*"')
+
+
+def plain_html(record):
+    """상세 HTML 비교용: 허브 excel_detail이 덧붙이는 표시용 속성(style 등)만 지우고 내용·구조(rowspan 등)는 그대로 비교."""
+    for key in ('상세페이지 HTML',):
+        if isinstance(record.get(key), str):
+            record[key] = PRESENTATION.sub('', record[key]).replace('/>', '>')
+    unmapped = record.get('_unmapped')
+    if isinstance(unmapped, dict) and isinstance(unmapped.get('shared_detail_html'), str):
+        unmapped['shared_detail_html'] = PRESENTATION.sub('', unmapped['shared_detail_html']).replace('/>', '>')
+    return record
+
+
 def run(module, key, code, selected, routes):
     meta = json.loads((ROOT / 'brands' / (key + '.json')).read_text(encoding='utf-8'))
     net = Network(module, routes)
@@ -78,7 +92,7 @@ def run(module, key, code, selected, routes):
             error = exc
     rows = [d for k, d in events if k == 'row' and not d.get('header')]
     headers = [d['row'] for k, d in events if k == 'row' and d.get('header')][-1]
-    records = [dict(dict(zip(headers, d['row'])), _unmapped=d.get('unmapped')) for d in rows]
+    records = [plain_html(dict(dict(zip(headers, d['row'])), _unmapped=d.get('unmapped'))) for d in rows]
     failures = [d['message'] for k, d in events if k == 'item_failure']
     return records, failures, error, net
 
@@ -144,7 +158,7 @@ class Contract(unittest.TestCase):
 
 class Cafe24Hybrid(unittest.TestCase):
     def test_every_cafe24_brand_splits_linked_and_unlinked_photos(self):
-        for key in ['adhoc_official', 'bangbang_official', 'decoand_official', 'dawnfield_official', 'disneygolf_smfashion', 'renomakids_official', 'minimum_official', 'lenic_official']:
+        for key in ['adhoc_official', 'bangbang_official', 'decoand_official', 'crocodile_official', 'disneygolf_official', 'renomakids_official', 'minimum_official', 'lenic_official']:
             with self.subTest(key=key):
                 module = load(key)
                 rows, failures, error, net = run(module, key, 'TS1001', ALL, cafe24_routes(module))
@@ -199,9 +213,9 @@ class Cafe24Hybrid(unittest.TestCase):
         self.assertTrue(failures)
 
     def test_no_match_is_not_a_silent_success(self):
-        module = load('dawnfield_official')
+        module = load('crocodile_official')
         site = module.CONFIG['site']
-        rows, failures, error, net = run(module, 'dawnfield_official', 'ZZ9999', ALL,
+        rows, failures, error, net = run(module, 'crocodile_official', 'ZZ9999', ALL,
                                          {site + '/product/search.html?keyword=ZZ9999': '<div class="xans-search-result"></div>'})
         self.assertEqual(rows, [])
         self.assertIsNotNone(error)
@@ -236,7 +250,7 @@ class Others(unittest.TestCase):
         self.assertFalse(any('videos' in u for u in net.images))
 
     def test_brentwood_color_products_and_size_figure_before_table(self):
-        module = load('brentwood_kolonmall')
+        module = load('brentwood_official')
         product = {'code': 'BRUAW26451BK', 'baseProductCode': 'BRUAW26451', 'name': '브렌우드 울 블레이저', 'style': 'BLACK',
                    'images': [{'imageLZ': {'url': 'https://img.kolonmall.com/a_LZ.jpg'}}, {'imageLZ': {'url': 'https://img.kolonmall.com/b_LZ.jpg'}}],
                    'variantOptions': [{'variantOptionQualifiers': [{'qualifier': 'size', 'value': '095'}]}],
@@ -248,7 +262,7 @@ class Others(unittest.TestCase):
             return 'self[Symbol.for("ApolloSSRDataTransport")] ??= []).push(' + json.dumps({'rehydrate': {'x': {'data': data}}}) + ')</script>'
         routes = {'https://www.kolonmall.com/Brands/BRENTWOOD/Search?keyword=BRUAW26451': page({'products': {'results': [{'code': 'BRUAW26451BK'}, {'code': 'BRUAW264519'}]}}),
                   'https://www.kolonmall.com/Brands/BRENTWOOD/Product/BRUAW26451BK': page({'productDetail': {'product': product}})}
-        rows, failures, error, net = run(module, 'brentwood_kolonmall', 'BRUAW26451', ALL, routes)
+        rows, failures, error, net = run(module, 'brentwood_official', 'BRUAW26451', ALL, routes)
         self.assertIsNone(error, failures)
         self.assertEqual(len(rows), 1)
         self.assertEqual((rows[0]['색상명'], rows[0]['색상코드'], rows[0]['품번']), ('BLACK', 'BK', 'BRUAW26451'))
@@ -257,7 +271,7 @@ class Others(unittest.TestCase):
         self.assertLess(detail.index('diagram.jpg'), detail.index('<table', detail.index('사이즈 정보')))
 
     def test_bucketstore_color_code_and_notice(self):
-        module = load('ping_bucketstore')
+        module = load('ping_official')
         goods = {'goodsName': 'PING 남성 긴팔 이너', 'brandName': 'PING',
                  'optionList': [{'goodsCode': '111E3TI001_BK', 'option1Name': '블랙', 'option2List': [{'option2Name': '095'}, {'option2Name': '100'}]}],
                  'imageList': ['https://image.bucketstore.com/goods/1.jpg', 'https://image.bucketstore.com/goods/2.jpg']}
@@ -269,7 +283,7 @@ class Others(unittest.TestCase):
                   'https://bucketstore.com/goods/detail/111E3TI001_BK': rsc,
                   'https://bucketstore.com/bucketapi/goods/111E3TI001_BK/detail*': {'data': {'goodsDescription': '<img src="https://image.bucketstore.com/desc/d1.jpg">',
                       'notificationInfoList': [{'item': '소재', 'content': '폴리 90%\r\n스판 10%'}]}}}
-        rows, failures, error, net = run(module, 'ping_bucketstore', '111E3TI001', ALL, routes)
+        rows, failures, error, net = run(module, 'ping_official', '111E3TI001', ALL, routes)
         self.assertIsNone(error, failures)
         self.assertEqual(len(rows), 1)
         row = rows[0]
@@ -278,7 +292,7 @@ class Others(unittest.TestCase):
         self.assertEqual(row['상품명'], '남성 긴팔 이너')
 
     def test_ecolier_brand_scope_and_manual_candidates(self):
-        module = load('ecolier_soiemall')
+        module = load('ecolier_official')
         search = ('<div class="goods_list_cont"><div class="item_cont"><a href="../goods/goods_view.php?goodsNo=1001"></a>'
                   '<span class="item_brand">에꼴리에</span><strong class="item_name">플레어 원피스 (25D0901)</strong></div>'
                   '<div class="item_cont"><a href="../goods/goods_view.php?goodsNo=1002"></a><span class="item_brand">소이</span>'
@@ -296,7 +310,7 @@ class Others(unittest.TestCase):
         routes = {'https://www.soiemall.co.kr/goods/goods_search.php?keyword=25D0901&page=1': search,
                   'https://www.soiemall.co.kr/goods/goods_search.php?keyword=25D0901&page=2': '<div></div>',
                   'https://www.soiemall.co.kr/goods/goods_view.php?goodsNo=1001': view}
-        rows, failures, error, net = run(module, 'ecolier_soiemall', '25D0901', ALL, routes)
+        rows, failures, error, net = run(module, 'ecolier_official', '25D0901', ALL, routes)
         self.assertIsNone(error, failures)
         self.assertEqual(len(rows), 2)
         self.assertTrue(all(r['_unmapped'] for r in rows))
@@ -304,7 +318,8 @@ class Others(unittest.TestCase):
         self.assertEqual(rows[0]['사이즈'], '55,66,77')
         self.assertIsNone(rows[0]['정상가'])
         self.assertEqual(rows[0]['상품명'], '플레어 원피스')
-        self.assertIn('<th>제조국</th><td>대한민국</td>', rows[0]['상세페이지 HTML'])
+        detail=module.soup(rows[0]['상세페이지 HTML'])
+        self.assertEqual(detail.find('th',string='제조국').find_next_sibling('td').get_text(strip=True),'대한민국')
         self.assertNotIn('top1', rows[0]['상세페이지 HTML'])
 
 
@@ -593,7 +608,7 @@ class RedfaceLocalCrop(unittest.TestCase):
                 error = exc
         rows = [d for k, d in events if k == 'row' and not d.get('header')]
         headers = [d['row'] for k, d in events if k == 'row' and d.get('header')][-1]
-        records = [dict(dict(zip(headers, d['row'])), _unmapped=d.get('unmapped')) for d in rows]
+        records = [plain_html(dict(dict(zip(headers, d['row'])), _unmapped=d.get('unmapped'))) for d in rows]
         failures = [d['message'] for k, d in events if k == 'item_failure']
         return records, failures, error, calls
 

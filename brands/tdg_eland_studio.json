@@ -1,0 +1,178 @@
+{
+  "id": "tdg_eland_studio",
+  "name": "더데이걸",
+  "category": "아동복",
+  "crawl_source": "이랜드몰 스튜디오컷",
+  "script": "tdg_eland_studio.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_color_mapping": "manual",
+  "official_color_codes": true,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명",
+    "판매자번호",
+    "원본 옵션"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "조회 상품과 같은 판매자의 실제 색상 하위 사이즈 옵션(품절 포함)을 합집합으로 수집."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "판매가 itemMain.sellprice 및 조회 판매자 옵션.sellPrice 공통값. 링크/옵션별 가격이 다르면 빈칸."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.orgSellprice 독립 최초출시/정상가.  선택 시에만 파싱, 누락/0/잘못된 형식은 빈칸과 경고로 수집 계속. 판매가 복사/역산 없음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.depth4StandardCategoryName. 브랜드 분류를 대신 넣지 않음."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식판매자가 있으면 한 상품, 없으면 전체 판매자의 균일 배경 스튜디오컷만 통합. 색상 수동 매핑."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식판매자가 있으면 한 상품, 없으면 전체 판매자의 균일 배경 스튜디오컷만 통합. 색상 수동 매핑."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "한 상품 링크의 본문 원본 및 포함된 고시·사이즈 이미지 보존. 배송·판매처 배너 제외. 표 별도 생성 없음."
+    }
+  },
+  "guide": {
+    "example": "TGAK26A04",
+    "examples": [
+      "TGAK26A04",
+      "TGMS25T02",
+      "https://www.elandmall.co.kr/i/item?itemNo=2512217779&lowerVendNo=LV19015810"
+    ],
+    "pattern": "^.+$",
+    "format": "더데이걸 기본 품번 또는 이랜드몰 상품 링크",
+    "notes": "기존 공식판매자 크롤러와 별도. 공식 LV17008491 상품이 있으면 첫 링크 하나만 수집. 없으면 다른 판매자의 스튜디오컷과 옵션 전체 통합. 상세는 한 링크의 본사 원본 이미지와 고시·사이즈 이미지만 보존. 배송·판매처·행사 배너 제외. 이름에 BANNER가 있어도 공식 SIZE/GOSI 이미지는 보존. 실제 403/404인 원본만 건너뛰고 별도 표는 생성하지 않음. 수동 색상 매핑. 상품 링크 입력 시 해당 링크만 수집하고 실제 modelNo를 결과 품번으로 사용.",
+    "method": "이랜드몰 공식 판매자 우선 → 전체 사진 균일 배경 검사 → 통과 링크 사진/옵션 통합 → 한 링크 상세 본문",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      ""
+    ],
+    "validation_note": "실제 공식 품번·브랜드·판매자 확인."
+  },
+  "notes": "기존 공식판매자 크롤러와 별도. 공식 LV17008491 상품이 있으면 첫 링크 하나만 수집. 없으면 다른 판매자의 스튜디오컷과 옵션 전체 통합. 상세는 한 링크의 본사 원본 이미지와 고시·사이즈 이미지만 보존. 배송·판매처·행사 배너 제외. 이름에 BANNER가 있어도 공식 SIZE/GOSI 이미지는 보존. 실제 403/404인 원본만 건너뛰고 별도 표는 생성하지 않음. 수동 색상 매핑. 품번 입력란에 이랜드몰 상품 URL 입력 가능. 직접 링크는 공식판매자 우선 검색을 생략하고 지정 링크만 수집하며 실제 품번으로 출력.",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "additional_image_count": 5,
+  "group_manual_pending": true,
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "조회 상품과 같은 판매자의 실제 색상 하위 사이즈 옵션(품절 포함)을 합집합으로 수집."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "판매가 itemMain.sellprice 및 조회 판매자 옵션.sellPrice 공통값. 링크/옵션별 가격이 다르면 빈칸."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.orgSellprice 독립 최초출시/정상가.  선택 시에만 파싱, 누락/0/잘못된 형식은 빈칸과 경고로 수집 계속. 판매가 복사/역산 없음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.depth4StandardCategoryName. 브랜드 분류를 대신 넣지 않음."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식판매자가 있으면 한 상품, 없으면 전체 판매자의 균일 배경 스튜디오컷만 통합. 색상 수동 매핑."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식판매자가 있으면 한 상품, 없으면 전체 판매자의 균일 배경 스튜디오컷만 통합. 색상 수동 매핑."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "한 상품 링크의 본문 원본 및 포함된 고시·사이즈 이미지 보존. 배송·판매처 배너 제외. 표 별도 생성 없음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null,
+    "판매자번호": null,
+    "원본 옵션": null
+  },
+  "code_hash": "71dc7ab112a975639ba144e503b32c8900b174a77e78b86be4370df88d05e1cc"
+}

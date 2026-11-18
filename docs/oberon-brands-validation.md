@@ -10,14 +10,14 @@ URL·선택자·응답 키는 원본 단독 크롤러에서 운영 확인된 값
 | bangbang_official | 뱅뱅 (공식 홈페이지) | 혼합 | bangbang_crawler.py |
 | adhoc_official | 애드호크 (공식 홈페이지) | 혼합 | adhoc_crawler.py |
 | decoand_official | 데코앤 (공식 홈페이지) | 혼합 | deco_crawler.py |
-| dawnfield_official | 던필드 (던필드몰) | 혼합 | dawnfield_crawler.py |
-| disneygolf_smfashion | 디즈니골프 (SM패션 공식몰) | 혼합 | disneygolf_crawler.py |
+| crocodile_official | 크로커다일 (던필드몰) | 혼합 | dawnfield_crawler.py |
+| disneygolf_official | 디즈니골프 (SM패션 공식몰) | 혼합 | disneygolf_crawler.py |
 | renomakids_official | 레노마키즈 (공식 홈페이지) | 혼합 | 레노마키즈 크롤러 |
 | minimum_official | 미니멈 (공식 홈페이지) | 혼합 | 미니멈 크롤러 |
-| ecolier_soiemall | 에꼴리에 (소이몰) | 혼합 | ecolier_crawler_1.py |
+| ecolier_official | 에꼴리에 (소이몰) | 혼합 | ecolier_crawler_1.py |
 | adidas_official | 아디다스 (공식 홈페이지) | 자동 | adidas_crawler.py |
-| brentwood_kolonmall | 브렌우드 (코오롱몰) | 자동 | brentwood_crawler.py |
-| ping_bucketstore | 핑 (버킷스토어) | 자동 | bucketstore_crawler.py |
+| brentwood_official | 브렌우드 (코오롱몰) | 자동 | brentwood_crawler.py |
+| ping_official | 핑 (버킷스토어) | 자동 | bucketstore_crawler.py |
 
 혼합 매핑(`mapping_mode: manual`, `hybrid_mapping: true`)은 후아유와 같은 방식입니다.
 색상 옵션이 1개인 상품 페이지와 공식 색상 연결 사진(Cafe24 `link_image`, 데코앤 색상 슬라이드)은 자동 결과로 저장하고,
@@ -79,7 +79,7 @@ URL·선택자·응답 키는 원본 단독 크롤러에서 운영 확인된 값
 
 - **실사이트 실행: 미검증.** 이 코드를 작성한 환경은 각 쇼핑몰 접속이 프록시에서 차단되어 실제 응답으로 실행하지 못했습니다.
 - **오프라인 검사: 통과.** `tests/test_oberon_brands.py` — 실제 `CrawlContext`로 각 사이트 구조를 본뜬 최소 fixture를 실행해 호출 형식, 혼합 매핑 분리, 품절 사이즈·앞자리 0 보존, 고시 표, 사이즈 그림→표 순서, 미선택 항목 무요청, 일부 링크 실패, 0건 실패를 확인했습니다.
-- `python tools/manage_brands.py check` 통과(66개 브랜드). 전체 테스트는 기존부터 실패하던 `test_prices` 1건(지프 2종이 정상가 미지원 목록에 없음) 외 통과.
+- `python tools/manage_brands.py check` 통과(54개 브랜드). 전체 테스트는 기존부터 실패하던 `test_prices` 1건(지프 2종이 정상가 미지원 목록에 없음) 외 통과.
 - 운영 투입 전 각 브랜드에서 시험 품번(설정의 guide.example)으로 새 작업을 실행해 결과 Excel·색상 매핑 화면을 확인하세요.
 
 ## 알려진 확인 필요 사항

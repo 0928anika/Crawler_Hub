@@ -27,7 +27,7 @@
     "size": {
       "supported": true,
       "status": "conditional",
-      "reason": "공식 상품의 별도 사이즈 및 색상:사이즈 통합 select 옵션 전체 수집. 품절 여부로 제외하지 않음"
+      "reason": "공식 별도 사이즈 및 색상:사이즈/색상_사이즈 통합 옵션을 분리해 해당 색상별 사이즈 수집. 품절 옵션 포함, 앞자리 0 보존."
     },
     "price": {
       "supported": true,
@@ -113,7 +113,7 @@
       "label": "사이즈",
       "supported": true,
       "status": "conditional",
-      "reason": "공식 상품의 별도 사이즈 및 색상:사이즈 통합 select 옵션 전체 수집. 품절 여부로 제외하지 않음"
+      "reason": "공식 별도 사이즈 및 색상:사이즈/색상_사이즈 통합 옵션을 분리해 해당 색상별 사이즈 수집. 품절 옵션 포함, 앞자리 0 보존."
     },
     "price": {
       "label": "판매가",
@@ -167,5 +167,5 @@
     "상세페이지 HTML": "detail_page",
     "정상가": "regular_price"
   },
-  "code_hash": "e9adafc5609360432314ca3521509ca5fe26d9845e3236b1fabb53bbd6998b37"
+  "code_hash": "8922884294237fad3c0ea7759bfc1287f799726d97e9299f36f00e0c3c9e4ea1"
 }

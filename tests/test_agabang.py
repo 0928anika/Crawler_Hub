@@ -25,6 +25,19 @@ class Context:
 
 
 class AgabangTests(unittest.TestCase):
+    def test_poxo_cdn_gallery_preserves_actual_large_image_url(self):
+        doc=c.soup((ROOT/'tests/fixtures/agabang_54637.html').read_text('utf-8'))
+        urls=c.gallery_urls(doc,c.SITE)
+        self.assertEqual(len(urls),1)
+        self.assertTrue(urls[0].startswith('https://cafe24img.poxo.com/ecimg.cafe24img.com/'))
+        self.assertIn('/web/product/big/',urls[0])
+        self.assertFalse(c.gallery_urls(c.soup('<div class="imgArea"><img src="'+urls[0].replace('/ecimg.cafe24img.com/','/untrusted/')+'"></div>'),c.SITE))
+        stream=io.BytesIO();Image.new('RGB',(1000,1000),'white').save(stream,format='JPEG')
+        image=dict(status='accessible',data=stream.getvalue(),width=1000,height=1000,format='JPEG')
+        with patch.object(c,'public_image',return_value=image):
+            main,extra,_=c.gallery(Context(),doc,c.SITE,{})
+        self.assertEqual(main,urls[0]);self.assertEqual(extra,[main]*5)
+
     def setUp(self):
         self.source=(ROOT/'tests/fixtures/agabang_55628.html').read_text(encoding='utf-8')
         self.doc=c.soup(self.source)

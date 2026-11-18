@@ -1,0 +1,167 @@
+{
+  "id": "crocs_eland_tnc",
+  "name": "크록스",
+  "category": "캐주얼 풋웨어",
+  "crawl_source": "이랜드몰 티앤씨아이엔티",
+  "script": "crocs_eland_tnc.py",
+  "execution_level": 1,
+  "interface": "portal_v1",
+  "mapping_mode": "automatic",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "verified",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "지정 판매자의 사이즈 옵션, 품절 포함 및 앞자리 0 보존."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 sellprice만 사용. 쿠폰·회원 혜택 제외."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "독립 orgSellprice 등 이랜드몰 정상가 표준 필드. 없으면 빈칸."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "이랜드몰 상품 분류 경로."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "동일 판매자·색상별 modelNo 상품의 첫 갤러리 원본."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "동일 색상 상품 갤러리 순서 유지, 5슬롯."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "해당 모델 본문 이미지만 수집. 첨부 안내/판매자 사이즈표/고시 별도 생성 제외. 저장된 크록스 공홈 성인/키즈 공식 표 추가."
+    }
+  },
+  "guide": {
+    "example": "202651-3C7",
+    "examples": [
+      "202651-3C7",
+      "202651"
+    ],
+    "pattern": "^.+$",
+    "format": "품번-색상코드 또는 기본 품번",
+    "notes": "판매자 LV20020853만 수집. 기본 품번이면 해당 판매자의 색상별 상품 모두 조회.",
+    "method": "이랜드몰 검색 및 상세 lowerVendNo/modelNo 검증",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [],
+    "validation_note": "형식으로 선제 제외하지 않고 검색 결과에서 공식 모델명 대조"
+  },
+  "notes": "첨부 브랜드·배송/관리·판매자 사이즈표 및 공통 안내 전부 제외. 고시 별도 생성 없음. 공홈 성인 3종 사이즈표 동일, 키즈 표는 차이 확인. 공식 성인/키즈 표를 코드 안에 저장해 M/W·C/J 옵션에 맞게 삽입. 구분할 근거가 없으면 두 공식 안내표를 명시적으로 함께 표시.",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 필수 정보"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 필수 정보"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 필수 정보"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 필수 정보"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "지정 판매자의 사이즈 옵션, 품절 포함 및 앞자리 0 보존."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 sellprice만 사용. 쿠폰·회원 혜택 제외."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "독립 orgSellprice 등 이랜드몰 정상가 표준 필드. 없으면 빈칸."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "이랜드몰 상품 분류 경로."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "동일 판매자·색상별 modelNo 상품의 첫 갤러리 원본."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "동일 색상 상품 갤러리 순서 유지, 5슬롯."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "해당 모델 본문 이미지만 수집. 첨부 안내/판매자 사이즈표/고시 별도 생성 제외. 저장된 크록스 공홈 성인/키즈 공식 표 추가."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page"
+  },
+  "code_hash": "8596dcc2f8e5971b4c73aac99f135b89e45f1da664e687c47e42e542dabd6ace"
+}

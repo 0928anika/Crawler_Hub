@@ -1,0 +1,175 @@
+{
+  "id": "ilodilo_boribori",
+  "name": "일로딜로",
+  "category": "아동복",
+  "crawl_source": "보리보리 스튜디오컷",
+  "script": "ilodilo_boribori.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_color_mapping": "manual",
+  "official_color_codes": true,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명",
+    "원본 옵션"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "실제 치수 옵션, 품절 포함."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 상품 가격 데이터 selPrc. 쿠폰/카드 혜택 제외."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 상품 가격 데이터 normPrc. 선택 시만 사용, 누락은 빈칸."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 stdCtgrNm3."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "균일 배경 검사 통과 원본 상품사진."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "통과 상품사진 수동 매핑. 같은 사진을 여러 색상에 사용 가능."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "한 링크에서 품번이 확인되는 본문·사이즈/고시 이미지만. 매장/배송/교환/공통 타이틀 배너 제외. 별도 표 생성 없음."
+    }
+  },
+  "guide": {
+    "example": "IDJP26W50",
+    "examples": [
+      "IDJP26W50",
+      "IDLA2680Z"
+    ],
+    "pattern": "^.+$",
+    "format": "일로딜로 기본 품번, 대소문자 구분 없음",
+    "notes": "이랜드몰과 별도 보리보리 크롤러. 대표사진 스튜디오컷 통과 상품만 수집하며 각 추가사진도 검사해 통과 컷만 수동 매핑. 원본 품번 본문 및 사이즈/고시만 확인해 한 링크 상세 사용, 파일명 불명확한 셀러 배너는 제외. 지역/매장명 제거. 다중 판매 링크의 가격이 다르면 빈칸.",
+    "method": "보리보리 공개 검색 → 브랜드/품번 대조 → 전체 갤러리 검사 → 본문 한 링크",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      ""
+    ],
+    "validation_note": "실제 공식 응답에서 상품 존재와 색상·사이즈 확인"
+  },
+  "notes": "이랜드몰과 별도 보리보리 크롤러. 대표사진 스튜디오컷 통과 상품만 수집하며 각 추가사진도 검사해 통과 컷만 수동 매핑. 원본 품번 본문 및 사이즈/고시만 확인해 한 링크 상세 사용, 파일명 불명확한 셀러 배너는 제외. 지역/매장명 제거. 다중 판매 링크의 가격이 다르면 빈칸.",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "additional_image_count": 5,
+  "group_manual_pending": true,
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "실제 치수 옵션, 품절 포함."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 상품 가격 데이터 selPrc. 쿠폰/카드 혜택 제외."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 상품 가격 데이터 normPrc. 선택 시만 사용, 누락은 빈칸."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 stdCtgrNm3."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "균일 배경 검사 통과 원본 상품사진."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "통과 상품사진 수동 매핑. 같은 사진을 여러 색상에 사용 가능."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "한 링크에서 품번이 확인되는 본문·사이즈/고시 이미지만. 매장/배송/교환/공통 타이틀 배너 제외. 별도 표 생성 없음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null,
+    "원본 옵션": null
+  },
+  "code_hash": "cd484f3b271932873d0d79a411cb9fdb51ebfb5f772ed577b7b0234139abc0f6"
+}

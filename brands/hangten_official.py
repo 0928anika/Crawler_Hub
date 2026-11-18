@@ -211,12 +211,15 @@ def identity(soup, no, base):
     return own, code, names[0], options, name
 
 
-def clean_name(name, own, base):
+def clean_name(name, own, base, color_name=""):
     patterns = [r"행텐\s*틴즈", r"HANG\s*TEN\s*TEENS", r"HANG\s*TEN", r"행텐"]
     patterns += [re.escape(v) for v in (own, base, base.replace("-", ""))]
     for pattern in patterns:
         name = re.sub(r"(?<![A-Za-z0-9가-힣])(?:" + pattern + r")(?![A-Za-z0-9가-힣])", " ", name, flags=re.I)
     name = re.sub(r"\s+", " ", name).strip(" _-/()[]")
+    if color_name:
+        color = re.escape(color_name.strip())
+        name = re.sub(r"(?:[\s_/\-]+" + color + r"|\s*[\[(]\s*" + color + r"\s*[\])])$", "", name, flags=re.I).strip(" _-/()[]")
     if not name:
         raise ValueError("브랜드/품번 제거 후 실제 상품명이 없음")
     return name
@@ -390,9 +393,9 @@ def gallery(ctx, soup, url, no, code, own):
 
 def detail_page(ctx, soup, url, base, code):
     ctx.stage("색상 " + code + " 상세 원본 이미지 수집")
-    # 실제 확인한 상품 상세 영역의 직접 자식 이미지만 조사한다.
+    # 공식 상세 영역 내부를 조사한다. 일부 상품은 빈 center 뒤에 이미지가 있다.
     # URL을 생성하지 않고 이 영역에 실제 있는 공식 링크만 선택한다.
-    images = soup.select("#prdDetail > .cont > center > img")
+    images = soup.select("#prdDetail > .cont img")
     prefix = base + "-" + code
     product_path = re.compile(
         r"^/Product/HTN/[^/]+/detail/" + re.escape(prefix) + r"_[^/]+\.(?:jpe?g|png|webp)$",
@@ -476,7 +479,7 @@ def crawl(ctx):
                 continue
             if code in emitted:
                 raise ValueError("동일 색상에 공식 상품 ID가 중복됨: " + code)
-            record = dict(product_code=base, product_name=clean_name(raw_name, own, base), product_url=final,
+            record = dict(product_code=base, product_name=clean_name(raw_name, own, base, color_name), product_url=final,
                           color=color_name or code, color_name=color_name, color_code=code)
             if ctx.enabled("size"):
                 record["size"] = sizes(options)

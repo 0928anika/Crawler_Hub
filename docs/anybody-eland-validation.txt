@@ -1,0 +1,47 @@
+2026-11-13 Anybody Eland official
+Brand ID:anybody_eland_official. Independent manual-mapping adapter.
+Public source:https://www.elandmall.co.kr/i/item?itemNo=2512220870&lowerVendNo=CN003546
+Verified brandNo1690000447,modelNoANJS26165,vendorCN003546.
+Only select specified vendor from search,then revalidate main and option rows.
+Actual color78 NAVY is parsed to code78/nameNAVY. Sold-out sizes retained.
+Official raw option names LLL,MMM,SSS,XLL are preserved as supplied by API.
+Selling35900,normal39900,independently selected.No coupon-price substitution.
+Original body contains six JPEG images,all1080px wide,heights1852,4533,2396,
+11436,4494,1126. Image5 includes Size Guide; image6 contains washing care.
+Preserve source body images in original order;do not generate size/notice tables.
+First accepted product detail is shared across manual candidates;no merging
+of other products' descriptions. Gallery5 photos verified for manual mapping.
+Live all-field worker ANJS26165 exit0,five candidate rows,no item failures.
+6 regression tests passed;68-brand registration/hash/syntax check passed.
+Fixtures are relevant public product/color/size source fields only.
+Live evidence is outside repository:anybody_sample.json,anybody_colors.json,
+anybody_eland-verification/ANJS26165.log and workbook in shared workspace.
+
+
+2026-11-13 UPDATED SOURCE POLICY (supersedes official-only rules above)
+Source display:이랜드몰 스튜디오컷. Existing brand ID retained for compatibility.
+Search every seller; if CN003546(anybody)/LV16003596(clovis) appears, collect
+only that official seller. Official source photos are retained even when staged
+backgrounds are complex. When official seller absent, require a uniform-color
+representative background (same 10-patch metric as Renoma Fashionplus,7 matches).
+Then merge all accepted links' gallery photos and actual option labels,including
+freeform option type99; revalidate each response against its requested vendor.
+Retain raw options for manual editing;do not invent color codes. Sizes use union.
+Group pending review by model via group_manual_pending:true. Shared description
+is only the first accepted source link,independent of color-mapping choices.
+No generated size or notice table. Seller detail file1.partnerbk.com confirmed
+embedded in live item2609556364; allow for original body images only.
+Live workers:ANJS26165 exit0/5photos,CVJHG4V06M exit0/7photos,
+CVBWG3701M fallback vendorLV17006173 exit0/4photos/colors아이보리,네이비,
+size unionS,M,L,one original body image. All no item failures.
+27 regression tests (8 Anybody,13 Clovis,6 shared studio) passed.
+
+ANPM26A17 packshot repair: broad inset background patches overlapped the large
+product, matching only6/10 despite a white studio background. Retain the existing
+rule and add narrow2% outer-border patches:10/12 matches required,at least2
+on each of4 sides,same variance/distance thresholds and foreground variation.
+This supports large product shots without accepting busy borders or blank files.
+Both adapters updated. Actual representative regression fixture retained.
+Live ANPM26A17 worker exit0,zero failures,all4 seller links accepted,6 unique
+manual photo candidates,original two-image body includes AN-SIZE.jpg.
+29 regression tests passed (8 shared studio,8 Anybody,13 Clovis).

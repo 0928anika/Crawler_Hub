@@ -1,0 +1,174 @@
+{
+  "id": "duranfit_official",
+  "name": "뒤란핏",
+  "category": "스포츠웨어",
+  "crawl_source": "공식 홈페이지",
+  "script": "duranfit_official.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명"
+  ],
+  "extensions": [],
+  "official_color_codes": false,
+  "image_color_mapping": "manual",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 주상품 옵션 조합의 색상별 사이즈. 품절 옵션과 문자열 앞자리 0 보존."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 조합의 판매가. 예시 50000. 쿠폰/회원 혜택가 제외."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 독립 소비자가 #span_product_price_custom. 예시108000. 없으면 빈칸."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 .xans-product-headcategory 경로."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 주상품 갤러리 개별 컷. 색상 연결 없는 사진은 수동 매핑. 공식 연결 확인된 사진만 자동 결과."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "동일 공식 갤러리에서 규격·역할 검사한 사진 후보. 수동 매핑 후 대표1·추가5슬롯."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 #-description의 품번별 본문·사이즈 이미지. 회원 혜택/배송/공통 소개/추천상품 제외. 실제 HTML 사이즈표·고시만 표로 포함."
+    }
+  },
+  "guide": {
+    "example": "DBF6W-9242",
+    "examples": [
+      "DBF6W-9242",
+      "DBF6W9242"
+    ],
+    "pattern": "^[A-Za-z][A-Za-z0-9]*[A-Za-z]-?[0-9]{4}$",
+    "format": "공식 품번 또는 하이픈을 생략한 품번",
+    "notes": "하이픈 없는 입력은 공식 검색용 하이픈 품번으로 변환합니다. 예: DBF6W9242 → DBF6W-9242.",
+    "method": "공식 품번 검색과 모델 필드 대조. 옵션 연결 사진이 없는 갤러리는 수동 매핑 후보로 제공합니다.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "DBF6W-",
+      "DBF6W9242_"
+    ],
+    "validation_note": "입력 형식 검사이며 실제 상품 존재 확인은 실행 시 수행"
+  },
+  "notes": "회원 혜택·배송·공통 안내 제외. 상품명에서 품번과 n colors 제거. 본문의 사이즈 이미지는 원본 유지하며 별도 표를 만들지 않음. 실제 HTML 사이즈표·상품고시가 있으면 표로 포함. 없는 자료는 생략.",
+  "hybrid_mapping": true,
+  "additional_image_count": 5,
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 주상품 옵션 조합의 색상별 사이즈. 품절 옵션과 문자열 앞자리 0 보존."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 조합의 판매가. 예시 50000. 쿠폰/회원 혜택가 제외."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 독립 소비자가 #span_product_price_custom. 예시108000. 없으면 빈칸."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 .xans-product-headcategory 경로."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 주상품 갤러리 개별 컷. 색상 연결 없는 사진은 수동 매핑. 공식 연결 확인된 사진만 자동 결과."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "동일 공식 갤러리에서 규격·역할 검사한 사진 후보. 수동 매핑 후 대표1·추가5슬롯."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 #-description의 품번별 본문·사이즈 이미지. 회원 혜택/배송/공통 소개/추천상품 제외. 실제 HTML 사이즈표·고시만 표로 포함."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null
+  },
+  "code_hash": "137ee8997f6d657d4acef1c831694a588fd4d254fa7c08df5feceb8b8157c125"
+}

@@ -1,0 +1,170 @@
+{
+  "id": "usall_eland_studio",
+  "name": "유솔",
+  "category": "주니어복",
+  "crawl_source": "이랜드몰 스튜디오컷",
+  "script": "usall_eland_studio.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_color_mapping": "manual",
+  "official_color_codes": true,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 API의 품절 포함 사이즈. 모든 색상·상품 링크의 옵션이 같을 때만 공통 사이즈 출력, 다르면 빈 값과 경고."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "옵션 API sellPrice의 쿠폰 전 KRW 판매가. 가격이 다르면 첫 지정 상품/옵션 가격 하나를 선택하고 경고만 기록하며 성공 처리."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "itemMain.depth4StandardCategoryName. 정확히 일치하는 상품 링크의 분류가 같을 때 출력."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식은 기존 본사 갤러리 유지. 비공식은 대표사진의 균일·무늬 없는 배경 검사부터 통과한 상품만 채택하며 개별 사진에도 동일 검사 적용. 벽돌/타일 등 비스튜디오 배경 제외."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "채택한 모든 상품 링크의 통과 사진을 실제 파일 해시로 중복 제거하여 수동 매핑 후보로 전달."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "한 상품 본문만 수집. 셀러 배너 제외, 본사 품번/사이즈 원본 우선. 상세 선택 시 안전한 원본이 없으면 상세페이지 수집 실패로 구분하며 빈 상세를 성공 처리하지 않음."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.orgSellprice. 링크별 값이 다르거나 누락되면 공통 정상가는 빈칸이며 실패 처리하지 않음."
+    }
+  },
+  "guide": {
+    "example": "ULTM26N02",
+    "examples": [
+      "ULTM26N02",
+      "ULMT24855"
+    ],
+    "pattern": "^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$",
+    "format": "색상 접미사가 없는 기본 품번",
+    "notes": "기본 품번으로 모든 검색 일치 상품과 품절 색상 후보를 수집한 뒤 허브에서 색상을 매핑합니다. 품번_색상코드 지정은 지원하지 않습니다. 대표 또는 추가이미지를 선택하세요.",
+    "method": "공식 판매자 LV17008492 검색 결과가 있으면 해당 판매자만 수집. 없으면 전체 판매자 중 정확한 유솔 브랜드·품번 및 스튜디오컷 통과 상품을 모두 수집.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "",
+      "ULJP24W01_01"
+    ],
+    "validation_note": "기본 품번과 실제 브랜드/판매자를 확인. 상세는 여러 상품을 합치지 않고 한 상품만 사용."
+  },
+  "notes": "기존 usall_eland 항목을 usall_eland_studio로 변경한 버전. 공식 판매자 LV17008492 상품이 있으면 공식만, 없으면 모든 판매자의 통과 스튜디오컷을 수집. 옵션은 조회 판매자에 맞춰 요청. 상세는 안전한 본문을 제공하는 한 상품만 사용. Winstudio 품번/사이즈 원본 우선, 셀러 공지·배너 제외. UUID 본문 이미지는 Windows 한국어 OCR로 전체 타일 검사 후 셀러 안내 제외(검사 불가 이미지는 생략). 사진은 수동 색상 매핑. 고시·사이즈표는 원본 유지하며 별도 생성 없음. 상품 JSON 일시 누락 시 최대 2회 재조회. 비공식 상품은 대표사진 스튜디오 검사부터 통과해야 함. 평균 배경색뿐 아니라 무늬 없는 배경 5개 이상을 확인하여 벽돌/타일/옷걸이 매장 사진을 제외. 검색 0건·정확한 품번 불일치·스튜디오컷 없음·사진 조회 실패를 구분. 상세 선택 후 안전한 원본이 없으면 상세 수집 실패로 처리하고 성공으로 표시하지 않음.",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 API의 품절 포함 사이즈. 모든 색상·상품 링크의 옵션이 같을 때만 공통 사이즈 출력, 다르면 빈 값과 경고."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "옵션 API sellPrice의 쿠폰 전 KRW 판매가. 가격이 다르면 첫 지정 상품/옵션 가격 하나를 선택하고 경고만 기록하며 성공 처리."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "itemMain.depth4StandardCategoryName. 정확히 일치하는 상품 링크의 분류가 같을 때 출력."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식은 기존 본사 갤러리 유지. 비공식은 대표사진의 균일·무늬 없는 배경 검사부터 통과한 상품만 채택하며 개별 사진에도 동일 검사 적용. 벽돌/타일 등 비스튜디오 배경 제외."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "채택한 모든 상품 링크의 통과 사진을 실제 파일 해시로 중복 제거하여 수동 매핑 후보로 전달."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "한 상품 본문만 수집. 셀러 배너 제외, 본사 품번/사이즈 원본 우선. 상세 선택 시 안전한 원본이 없으면 상세페이지 수집 실패로 구분하며 빈 상세를 성공 처리하지 않음."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.orgSellprice. 링크별 값이 다르거나 누락되면 공통 정상가는 빈칸이며 실패 처리하지 않음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "정상가": "regular_price"
+  },
+  "code_hash": "107a2722de60a77bda923c39b0263e980df788ba6acf6acb9aeefd501f01d9cf"
+}

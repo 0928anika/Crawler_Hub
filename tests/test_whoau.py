@@ -24,6 +24,14 @@ class Context:
 
 
 class WhoauTests(unittest.TestCase):
+    def test_current_official_cdn_retains_color_links_and_gallery(self):
+        doc=c.parse((ROOT/'tests/fixtures/whoau/5669.html').read_text(encoding='utf-8'))
+        colors=c.colors(doc,True)
+        self.assertEqual([x['color_code'] for x in colors],['39','AC'])
+        self.assertTrue(all(x['image'].startswith('https://cafe24img.poxo.com/whoaukr/') for x in colors))
+        self.assertEqual(len(c.gallery_urls(doc,c.SITE)),2)
+        self.assertEqual(c.image_url('https://cafe24img.poxo.com/another-shop/product.jpg'),'')
+
     def setUp(self):
         self.sources = {n: (ROOT / 'tests/fixtures/whoau' / (n + '.html')).read_text(encoding='utf-8') for n in ('5696','5692')}
         self.doc = c.parse(self.sources['5696'])
@@ -108,6 +116,37 @@ class WhoauTests(unittest.TestCase):
         cache={'linked':official,'alias':official,'unknown':unknown}
         self.assertEqual(c.manual_photos(Context(),['linked','alias','unknown'],{'linked'},cache),['unknown'])
 
+
+    def test_product_without_productgroup_uses_real_color_size_stock_pair(self):
+        doc=c.parse((ROOT/'tests/fixtures/whoau/WHWHG3741F.html').read_text('utf-8'))
+        self.assertEqual(c.variants(doc),[])
+        self.assertEqual(c.sizes(doc,'(59)Navy'),'FREE(999)')
+        with self.assertRaises(ValueError):c.sizes(doc,'(10)White')
+
+    def test_single_color_displayed_size_is_safe_fallback(self):
+        doc=c.parse('<ul option_title="Color" option_product_no="5126"><li option_value="(59)Navy"></li></ul><ul option_title="Size" option_product_no="5126"><li option_value="FREE(999)"></li></ul>')
+        self.assertEqual(c.sizes(doc,'(59)Navy'),'FREE(999)')
+        doc.select_one('[option_title="Color"]').append(c.parse('<li option_value="(10)White"></li>').li)
+        with self.assertRaises(ValueError):c.sizes(doc,'(59)Navy')
+
+    def test_korean_slug_is_encoded_before_http_request(self):
+        from unittest.mock import MagicMock
+        response=MagicMock();response.__enter__.return_value=response;response.geturl.return_value=c.SITE+'/product/%EA%B3%B5%ED%99%88/4616/';response.read.return_value=b'ok';response.headers.get_content_charset.return_value='utf-8'
+        opener=MagicMock();opener.open.return_value=response
+        with patch.object(c,'build_opener',return_value=opener):c.fetch(Context(),c.SITE+'/product/공홈/4616/')
+        request=opener.open.call_args.args[0];self.assertIn('%EA%B3%B5%ED%99%88',request.full_url);self.assertNotIn('공홈',request.full_url)
+
+    def test_no_search_results_are_distinct_from_color_failure(self):
+        ctx=Context(code='WHWHG3822F')
+        with patch.object(c,'search',return_value=[]),self.assertRaisesRegex(ValueError,'공식 품번 검색 결과 없음'):c.crawl(ctx)
+        self.assertIn('공식 품번 검색 결과 없음',ctx.errors[0])
+
+    def test_elandrs_product_detail_images_are_preserved_in_order(self):
+        urls=['https://item.elandrs.com/r/image/item/2026-04-02/'+name+'.jpg' for name in ['d348f430-92d3-48bc-b655-be296fa402a7','ee7a172e-f577-457b-a017-b5e08135ddf7','abad71ad-705f-4dba-9985-b2d1aa4804a1','bc4dd7b6-024b-407e-8218-a7ac85c96eed']]
+        doc=c.parse('<div id="prdDetailContent">'+''.join('<img ec-data-src="'+u+'">' for u in urls)+'</div>')
+        self.assertEqual(c.details(doc,c.SITE),urls)
+        with patch.object(c,'detail_image',return_value={'status':'accessible'}):self.assertEqual(c.detail(Context(),urls,{}).count('<img'),4)
+        self.assertEqual(c.image_url('https://item.elandrs.com/other/image.jpg'),'')
 
 if __name__ == '__main__':
     unittest.main()

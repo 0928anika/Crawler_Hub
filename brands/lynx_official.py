@@ -111,20 +111,28 @@ def combined_options(soup):
             if opt_id and opt_name and re.sub(r'\s+', '', opt_name[1]) == '색상:사이즈':
                 combined_ids.add(opt_id[1])
     for select in soup.select('select[label]'):
-        if re.sub(r'\s+', '', select['label']) != '색상:사이즈' and select.get('opt_id') not in combined_ids:
+        label = re.sub(r'\s+', '', select['label'])
+        declared = label == '색상:사이즈' or select.get('opt_id') in combined_ids
+        values = option_values(select)
+        # 구형 통합 옵션은 optionJsonData가 비어 있고 label="옵션",
+        # 실제 선택값만 BK_64 / KH_67 형태로 제공된다.
+        fallback = label == '옵션' and 'basic_option' in select.get('class', []) and values and all(
+            re.fullmatch(r'[A-Za-z0-9]+\s*[_:]\s*[^_:]+', value) for value in values)
+        if not declared and not fallback:
             continue
-        for value in option_values(select):
-            parts = value.split(':')
+        for value in values:
+            parts = re.split(r'[_:]', value, maxsplit=1)
             if len(parts) != 2 or not all(p.strip() for p in parts):
                 raise RuntimeError('색상:사이즈 통합 옵션 형식 오류: ' + value)
             yield parts[0].strip().upper(), parts[1].strip()
 
 
-def product_sizes(soup):
+def product_sizes(soup, color=None):
     sizes = []
     for select in soup.select('select[label="사이즈"]'):
         sizes.extend(option_values(select))
-    sizes.extend(size for _, size in combined_options(soup))
+    sizes.extend(size for option_color, size in combined_options(soup)
+                 if color is None or option_color == color.upper())
     return list(dict.fromkeys(sizes))
 
 
@@ -141,7 +149,18 @@ def identity(soup):
     if len(matches) != 1:
         raise RuntimeError('상품명에서 단일 품번_색상코드를 확인할 수 없음: ' + title)
     base, color = matches[0]
-    return base, color, {'name': title, 'title_code': base + '_' + color}
+    raw_code = base + '_' + color
+    spaced = re.search(re.escape(base) + r'_([A-Z0-9]+(?:\s+[A-Z0-9]+)+)\s*$', title, re.I)
+    if spaced:
+        normalized = re.sub(r'\s+', '', spaced[1]).upper()
+        option_colors = {option_color for option_color, _ in combined_options(soup)}
+        for select in soup.select('select[label="색상"]'):
+            option_colors.update(value.upper() for value in option_values(select))
+        if normalized not in option_colors:
+            raise RuntimeError('공백이 포함된 상품명 색상코드를 공식 옵션과 연결할 수 없음: ' + spaced[1])
+        color = normalized
+        raw_code = spaced[0].strip()
+    return base, color, {'name': title, 'title_code': base + '_' + color, 'title_code_raw': raw_code}
 
 
 def notice_rows(soup):
@@ -320,13 +339,13 @@ def crawl(ctx):
         ctx.checkpoint()
         try:
             ctx.stage('색상 수집: ' + color)
-            name = clean_product_name(product['name'], brand_aliases=['링스골프', '링스 골프', '링스', 'LYNX'], product_codes=[product['title_code'], base])
+            name = clean_product_name(product['name'], brand_aliases=['링스골프', '링스 골프', '링스', 'LYNX'], product_codes=[product['title_code'], product.get('title_code_raw', ''), base])
             if not name:
                 raise RuntimeError('상품명 누락')
             record = dict(product_code=base, product_name=name, color=color,
                 color_code=color, color_name='', product_url=final)
             if ctx.enabled('size'):
-                sizes = product_sizes(soup)
+                sizes = product_sizes(soup, color)
                 record['size'] = ','.join(sizes)
                 if not sizes:
                     ctx.log('공식 사이즈 옵션 없음', 'WARNING')

@@ -1,0 +1,171 @@
+{
+  "id": "indian_official",
+  "name": "인디안",
+  "category": "남성 의류",
+  "crawl_source": "공식 홈페이지",
+  "script": "indian_official.py",
+  "execution_level": 1,
+  "interface": "portal_v1",
+  "mapping_mode": "manual",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "hybrid",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data의 색상별 전체 사이즈. 품절 포함, 매핑 후보별 size 보존."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 조합 option_price. 색상/사이즈별 공통 가격인 경우 출력, 다른 경우 빈칸."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 기본정보 소비자가. 판매가와 별개로 수집."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 xans-product-headcategory의 분류 경로."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 갤러리에 명시된 실제 URL만 사용. 공개 바이트·형식·픽셀·비율 검사. 한 색상은 자동, 여러 색상은 수동 연결."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "실제 유효 갤러리 컷. 부족하면 마지막 유효 컷을 반복해 5슬롯. 한 장뿐이면 대표 5회 반복."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "images.sejungglobal.com/sejung의 해당 모델 상세/고시/사이즈 원본 이미지와 HTML 고시. 공통 banner/notice/배송/교환 안내 제외."
+    }
+  },
+  "guide": {
+    "example": "INTKA26WA406",
+    "examples": [
+      "INTKA26WA406"
+    ],
+    "format": "기본 모델 품번 전체 입력",
+    "notes": "품절 포함 전체 사이즈. 한 색상은 자동 연결, 다색상 사진은 수동 매핑. 사이트가 명시하지 않은 영문 색상코드를 추정하지 않음.",
+    "method": "세정몰 공식 검색 후 상세 브랜드 인디안과 모델명 정확 일치 검증.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      ""
+    ],
+    "validation_note": "빈 입력 외에 품번 형식으로 사전 거절하지 않음. 실제 상품코드 일치는 조회 후 확인."
+  },
+  "notes": "2026-11-18 세정몰 INTKA26WA406 실사이트 검증. 공식 브랜드 인디안 및 모델명 정확 일치. 공식 숫자 색상코드(54) 수집. 품절 포함 사이즈 전체. 한 색상 자동, 다색상 수동 매핑. 추가이미지 5슬롯. 모델별 원본 INFO/사이즈 이미지 및 HTML 고시 유지, 공통 notice/브랜드/배송 배너 제외.",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "세정몰 공식 상품/옵션 원문 확인"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "세정몰 공식 상품/옵션 원문 확인"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "세정몰 공식 상품/옵션 원문 확인"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "세정몰 공식 상품/옵션 원문 확인"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data의 색상별 전체 사이즈. 품절 포함, 매핑 후보별 size 보존."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 조합 option_price. 색상/사이즈별 공통 가격인 경우 출력, 다른 경우 빈칸."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 기본정보 소비자가. 판매가와 별개로 수집."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 xans-product-headcategory의 분류 경로."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 갤러리에 명시된 실제 URL만 사용. 공개 바이트·형식·픽셀·비율 검사. 한 색상은 자동, 여러 색상은 수동 연결."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "실제 유효 갤러리 컷. 부족하면 마지막 유효 컷을 반복해 5슬롯. 한 장뿐이면 대표 5회 반복."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "images.sejungglobal.com/sejung의 해당 모델 상세/고시/사이즈 원본 이미지와 HTML 고시. 공통 banner/notice/배송/교환 안내 제외."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null
+  },
+  "code_hash": "226882b2d94aad07a8af6b5c70f7e8750388c3f08cae74d7c647a631c6411f29",
+  "hybrid_mapping": true,
+  "additional_image_count": 5
+}

@@ -1,0 +1,26 @@
+2026-11-14 Perimitz Eland studio source
+ID perimitz_eland;display 페리미츠 / 이랜드몰 스튜디오컷;manual grouped mapping.
+Official seller LV23003771;brandNo1600002341. Example P2632B310 matches actual
+model P2632B310_09 exactly by base+explicit suffix;no prefix-only fuzzy match.
+Source https://www.elandmall.co.kr/i/item?itemNo=2609595250&lowerVendNo=LV23003771
+Official seller links take priority;when absent,search all sellers.
+Inspect every gallery image for uniform background. If any clean products exist,
+exclude mixed links entirely. If only one matching product exists and it is
+mixed,keep its studio photographs/options and filter its description. If several
+mixed products and no clean ones exist,report explicit no eligible clean link.
+Body always from one chosen link,not all matched listings. In single-mixed mode,
+reject known bad gallery URLs/digests,nonstudio individual images and unverified
+long composites;preserve explicitly named size/GOSI images. If none remain,
+leave detail blank with warning rather than adding seller shots or tables.
+Common the8ight.cafe24.com/CO/notice,top1,top2,brand,bottom and shared
+P263_title.jpg are excluded before requesting. Separate announce banners excluded.
+Actual product body retained:https://cmcrftp.godohosting.com/perimitz/P263/
+P2632B310_M.jpg andP2632B310_page.jpg. No generated notice or size table.
+Actual palette 브라운,size100,110,120,130,140,150;selling31780,normal80000.
+No numeric code inferred from suffix09 when source option only says브라운.
+Live all-field manual worker P2632B310 exit0,two candidate rows,no item failures,
+common two-img body,no CO/season title/banner URLs. Product title cleaned to
+올리비안 체크 셔츠.8regression tests and71-brand metadata/hash/syntax passed.
+Relevant public product fixture under tests/fixtures/perimitz. Live evidence
+outside repository:perimitz_sample.json,perimitz_live_verify.txt,and
+perimitz_eland-verification/P2632B310.log and.xlsx in shared workspace.

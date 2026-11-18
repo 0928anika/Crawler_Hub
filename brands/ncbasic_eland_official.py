@@ -31,6 +31,10 @@ class MissingResource(CollectionError):
     """Permanent HTTP 404; site itself removes these gallery slots on error."""
 
 
+class AccessDenied(CollectionError):
+    """Official public source returned HTTP 403."""
+
+
 def public_opener(ctx, deadline):
     """Request-local dual-stack fallback; never change global socket settings.
 
@@ -116,6 +120,8 @@ def fetch(ctx, url, limit=4_000_000):
             ctx.log('공개 요청 완료 %.1f초: %s' % (time.monotonic()-started, url), 'INFO')
             return b''.join(chunks)
         except urllib.error.HTTPError as exc:
+            if exc.code == 403:
+                raise AccessDenied('HTTP 403: ' + url) from exc
             if exc.code == 404:
                 raise MissingResource('HTTP 404: ' + url) from exc
             if exc.code not in (429, 500, 502, 503, 504) or attempt:
@@ -170,7 +176,7 @@ def search(ctx, code):
     raise CollectionError('검색 100페이지 안전 한도 초과: 미완료')
 
 
-def product(ctx, url, code):
+def product(ctx, url, code, diagnostics=None):
     params = parse_qs(urlsplit(url).query)
     if params.get('lowerVendNo') != [VENDOR_NO]:
         ctx.log('지정 판매자 외 상세 조회 생략: '+url,'INFO')
@@ -190,7 +196,9 @@ def product(ctx, url, code):
             ctx.log('공식 응답의 판매자번호 불일치 제외: '+url,'WARNING')
             return None
         if str(main.get('brandNo'))!=BRAND_NO or str(main.get('modelNo','')).strip().upper()!=code:
-            ctx.log('다른 브랜드/공식 품번 제외: '+url,'INFO')
+            reason='검색 결과는 있으나 실제 공식 품번/브랜드 불일치: 요청 %s, 실제 %s, 브랜드 %s / %s' % (code, main.get('modelNo'), main.get('brandNo'), url)
+            if diagnostics is not None:diagnostics.append(reason)
+            ctx.log(reason,'WARNING')
             return None
         params = parse_qs(urlsplit(url).query)
         if str(main.get('itemNo'))!=params['itemNo'][0] or str(main.get('lowerVendNo'))!=params['lowerVendNo'][0]:
@@ -396,7 +404,7 @@ def gallery(ctx, main, cache):
     return result
 
 
-def detail_images(ctx, detail, code, cache):
+def detail_images(ctx, detail, code, cache, fallback_images=()):
     desc = detail.get('itemDesc') or {}
     markup = desc.get('itemDescdocumentCon') or ''
     if not markup.strip():
@@ -409,7 +417,7 @@ def detail_images(ctx, detail, code, cache):
     for notice in desc.get('itemAnnounceList') or []:
         note=BeautifulSoup(html.unescape(notice.get('itemAnnounceCon') or ''),'html.parser')
         announce_urls.update(urljoin(SITE,n.get('src') or n.get('data-src') or '') for n in note.find_all('img'))
-    result = []
+    result = []; body_available=False; body_unavailable=False
     for image in fragment.find_all('img'):
         ctx.checkpoint()
         url = urljoin(SITE,image.get('src') or image.get('data-src') or '')
@@ -425,21 +433,28 @@ def detail_images(ctx, detail, code, cache):
             ctx.log('공통 배너/저작권/셀러 안내 제외 (요청 안 함): '+url,'INFO')
             continue
         studio = parsed.hostname=='img-studio.elandmall.com' and parsed.path.startswith('/Winstudio/')
-        product = bool(re.fullmatch(re.escape(code)+r'(?:[_-][A-Za-z0-9]+)?\.(?:jpg|jpeg|png|webp)',name,re.I))
-        size = bool(re.fullmatch(r'(?:NC|DC)[A-Za-z0-9_-]*SIZE[A-Za-z0-9_-]*\.(?:jpg|jpeg|png|webp)',name,re.I))
         cdn = parsed.hostname=='item.elandrs.com' and parsed.path.startswith('/r/image/item/')
-        if not ((studio and (product or size)) or cdn):
+        # The verified official body also uses UI-SIZE.jpg and other shared
+        # product/size filenames. Filename prefixes do not establish image role.
+        if not (studio or cdn):
             raise CollectionError('상품 본문/공통 안내 구분 미확인 이미지: '+url)
         # Observed official HTTPS endpoint serves the original HTTP-authored URL.
         if parsed.scheme=='http':
             url = 'https:'+url[5:]
+        is_size=bool(re.search(r'size|사이즈',name,re.I))
         try:
             image_info(ctx,url,cache,detail=True)
-        except MissingResource as exc:
-            ctx.log('존재하지 않는 상세 원본 404 제외: '+str(exc),'WARNING')
+        except (MissingResource,AccessDenied) as exc:
+            body_unavailable=body_unavailable or not is_size
+            ctx.log('공식 상세 원본 접근 불가(403/404) 제외: '+str(exc),'WARNING')
             continue
+        body_available=body_available or not is_size
         if url not in result:
             result.append(url)
+    if body_unavailable and not body_available:
+        if not fallback_images:raise CollectionError('공식 본문 접근 불가 및 대체할 검증 상품컷 없음')
+        ctx.log('공식 본문 접근 불가: 검증된 상품컷 전체와 남아 있는 원본 사이즈 이미지로 상세 구성','WARNING')
+        result=list(dict.fromkeys(list(fallback_images)+result))
     if not result:
         raise CollectionError('본문이 있지만 허용된 상품 이미지 파싱 결과 없음')
     return result
@@ -458,11 +473,12 @@ def crawl(ctx):
     except CollectionError as exc:
         ctx.fail_item(str(exc));raise
     products,errors,cache = [],[],{}
+    diagnostics=[]
     for link in links:
         ctx.checkpoint()
         try:
             ctx.stage('공식 브랜드·품번 확인: '+link)
-            data = product(ctx,link,code)
+            data = product(ctx,link,code,diagnostics=diagnostics)
             if data is None:
                 continue
             main = data['itemMain']
@@ -475,13 +491,16 @@ def crawl(ctx):
             photos = gallery(ctx,main,cache)
             if not photos:
                 raise CollectionError('유효 개별 상품 사진 0장: '+link)
-            body = detail_images(ctx,data,code,cache) if ctx.enabled('detail_page') else []
+            body = detail_images(ctx,data,code,cache,fallback_images=[url for url,digest in photos]) if ctx.enabled('detail_page') else []
             products.append((record,palette,photos,body))
         except (CollectionError,KeyError,UnicodeError) as exc:
             message = link+' / '+str(exc)
             ctx.fail_item(message);errors.append(message)
     if not products:
-        message = '정확한 NC베이직 브랜드/품번과 색상·사진을 확인할 수 없음: '+code
+        if diagnostics:message=' / '.join(dict.fromkeys(diagnostics))
+        elif errors:message='공식 검색 상품은 있으나 수집 처리 실패: '+code
+        elif links:message='검색 결과가 있으나 지정 브랜드/품번 검증 불일치: '+code
+        else:message='공식 검색에서 지정 판매자 상품 조회 안 됨(전체 사이트 미등록으로 단정하지 않음): '+code
         ctx.fail_item(message)
         raise CollectionError(message+(' / '+'; '.join(errors) if errors else ''))
     palette,photos,bodies,digests = [],[],[],set()

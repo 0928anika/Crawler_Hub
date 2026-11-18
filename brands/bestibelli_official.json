@@ -1,0 +1,169 @@
+{
+  "id": "bestibelli_official",
+  "name": "베스띠벨리",
+  "category": "여성복",
+  "crawl_source": "네이버 공식",
+  "script": "bestibelli_official.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_color_mapping": "manual",
+  "official_color_codes": true,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 options와 optionCombinations로 색상별 사이즈 전체를 확인. 품절 포함. 전 색상이 동일한 경우에만 공통 값 출력, 다르면 빈칸."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 benefitsView.discountedSalePrice 현재 공개 판매가. 모든 옵션 추가금 0이 확인된 경우만 공통 값 출력, 다른 경우 빈칸."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 product.category.wholeCategoryName."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 productImages 전체의 REPRESENTATIVE/OPTIONAL 개별 컷. 공개 바이트·형식·픽셀·용량·비율 및 분할 띠 검사 후 색상 추측 없이 수동 후보 전달."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "대표와 같은 전체 후보를 수동 매핑으로 전달. 매핑 전에 후보 수를 제한하지 않음."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "실제 contents.renderContent의 공식 품번 폴더 본문 이미지 보존. 고시는 본문 이미지에 포함되므로 별도 표 생성 없음. event/공통 안내/배송/관리/리뷰/추천 제외."
+    },
+    "regular_price": {
+      "supported": false,
+      "status": "unsupported",
+      "reason": "독립 정상가/소비자가 필드 미확인. salePrice는 할인 전 기본 판매가 필드이므로 정상가 대체값으로 재사용하지 않음."
+    }
+  },
+  "guide": {
+    "example": "BPDJX7626",
+    "examples": [
+      "BPDJX7626",
+      "BPDJX7623"
+    ],
+    "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{4,29}$",
+    "format": "색상 접미사 없는 기본 품번",
+    "notes": "사진의 색상을 수동 매핑합니다. 품번_색상코드 지정은 지원하지 않습니다.",
+    "method": "공식 스토어 검색 q와 keywordSearch.simpleProducts의 모델명 확인, 상품 응답의 모델명·상품번호·채널 ID 재확인.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "BPDJX7626_GY"
+    ],
+    "validation_note": "형식 검사이며 실제 상품 존재는 실행 시 확인. 최초 요청서의 ER3CL862는 미검증. 사용자 제공 검색·상품·상세 HTML로 ES4OKL55를 검증했으며 스마트스토어 자동 접속 성공을 의미하지 않음."
+  },
+  "notes": "Microsoft Edge와 Playwright가 필요합니다. 일반 Edge 비로그인 공개 상품 응답을 수집하며 로그인 쿠키·인증정보를 코드에 넣지 않습니다. 모든 개별 상품 사진과 공식 색상 후보를 수동 매핑 화면에 전달합니다. 사이즈/가격이 전 색상 공통인 경우에만 기입하며 차이가 있으면 빈칸입니다. 공식 품번 폴더의 본문 이미지만 보존하며 이미지에 포함된 고시를 별도 표로 생성하지 않습니다. 정상가는 독립 공식 필드 미확인으로 미지원입니다. 네이버 접근 제한은 우회하지 않고 원인을 표시합니다.",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": false,
+      "status": "unsupported",
+      "reason": "독립 결과 컬럼 없음"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 options와 optionCombinations로 색상별 사이즈 전체를 확인. 품절 포함. 전 색상이 동일한 경우에만 공통 값 출력, 다르면 빈칸."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 benefitsView.discountedSalePrice 현재 공개 판매가. 모든 옵션 추가금 0이 확인된 경우만 공통 값 출력, 다른 경우 빈칸."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 product.category.wholeCategoryName."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 productImages 전체의 REPRESENTATIVE/OPTIONAL 개별 컷. 공개 바이트·형식·픽셀·용량·비율 및 분할 띠 검사 후 색상 추측 없이 수동 후보 전달."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "대표와 같은 전체 후보를 수동 매핑으로 전달. 매핑 전에 후보 수를 제한하지 않음."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "실제 contents.renderContent의 공식 품번 폴더 본문 이미지 보존. 고시는 본문 이미지에 포함되므로 별도 표 생성 없음. event/공통 안내/배송/관리/리뷰/추천 제외."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": false,
+      "status": "unsupported",
+      "reason": "독립 정상가/소비자가 필드 미확인. salePrice는 할인 전 기본 판매가 필드이므로 정상가 대체값으로 재사용하지 않음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "정상가": "regular_price",
+    "상품 링크": "product_url"
+  },
+  "code_hash": "e6d1aa5168129480f7abfd460243717e0f4bb61199527812de53498fd23d490c",
+  "image_mode": "url"
+}

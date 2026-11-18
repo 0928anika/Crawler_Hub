@@ -31,25 +31,77 @@ class HybridMappingTests(unittest.TestCase):
             items=items,selected=['main_image','additional_images'],queue=[dict(id='0',status='SUCCESS',code='WHKAG4T35U')],dir=Path(folder),state='completed',
             data_lock=threading.RLock(),save_lock=threading.RLock(),checkpoint=lambda:None,save=lambda:None)
 
-    def test_only_unknown_photos_are_visible_and_auto_rows_survive_finalization(self):
+    def test_source_order_keeps_official_cover_before_preassigned_details(self):
         with tempfile.TemporaryDirectory(dir=ROOT/'tests') as folder:
-            job=self.job(folder,[item(0,'WHKAG4T35U','60','https://img/auto-black.jpg'),item(1,'WHKAG4T35U','AC','https://img/auto-gray.jpg'),item(2,'WHKAG4T35U','60','https://img/model.jpg',True)])
-            view=mapping.snapshot(job)
-            self.assertEqual([i['url'] for i in view['groups'][0]['images']],['https://img/model.jpg'])
-            pending=mapping.export_sheet(job)
-            self.assertEqual(len(pending),4)
-            self.assertEqual(pending[1][-1],'공식 색상 자동 매핑 완료')
+            job=self.job(folder,[item(0,'STYLE','60','https://img/cover.jpg',True),item(1,'STYLE','60','https://img/extra.jpg',True),item(2,'STYLE','60','https://img/detail.jpg')])
+            job.brand['mapping_image_order']='source'
+            view=mapping.snapshot(job);group=view['groups'][0]
+            self.assertEqual([i['url'] for i in group['images']],['https://img/cover.jpg','https://img/extra.jpg','https://img/detail.jpg'])
+            self.assertTrue(group['images'][2]['assigned_colors'])
+            for color in list(group['colors']):
+                if color['color_code']!='60':
+                    view=mapping.edit_options(job,dict(expected_revision=view['revision'],group_id=group['id'],action='delete',color_id=color['id']));continue
+                view=mapping.save_color(job,dict(expected_revision=view['revision'],group_id=group['id'],color_id=color['id'],image_ids=[i['id'] for i in reversed(group['images'])]))
+            view=mapping.finalize(job,dict(expected_revision=view['revision']))
+            row=mapping.final_items(job,view)[0]
+            self.assertEqual(row['raw']['대표이미지'],'https://img/cover.jpg')
+
+    def test_entire_pending_code_is_visible_with_existing_assignments(self):
+        with tempfile.TemporaryDirectory(dir=ROOT/'tests') as folder:
+            job=self.job(folder,[item(0,'WHKAG4T35U','60','https://img/auto-black.jpg'),item(1,'WHKAG4T35U','AC','https://img/auto-gray.jpg'),item(2,'WHKAG4T35U','60','https://img/model.jpg',True),item(3,'FULLAUTO','60','https://img/full.jpg')])
+            view=mapping.snapshot(job);self.assertEqual(len(view['groups']),1)
             group=view['groups'][0]
+            self.assertEqual([i['url'] for i in group['images']],['https://img/auto-black.jpg','https://img/auto-gray.jpg','https://img/model.jpg'])
+            self.assertTrue(group['images'][0]['assigned_colors']);self.assertTrue(group['images'][1]['assigned_colors']);self.assertFalse(group['images'][2]['assigned_colors'])
+            self.assertEqual([i['code'] for i in mapping.automatic_items(job)],['FULLAUTO'])
             for color in group['colors']:
+                selected=[i['id'] for i in group['images'] if color['id'] in i['assigned_colors'] or (color['color_code']=='60' and i['url']=='https://img/model.jpg')]
+                view=mapping.save_color(job,dict(expected_revision=view['revision'],group_id=group['id'],color_id=color['id'],image_ids=selected))
+            view=mapping.finalize(job,dict(expected_revision=view['revision']));rows=mapping.final_items(job,view)
+            self.assertEqual(len(rows),3)
+            black=next(i for i in rows if i['code']=='WHKAG4T35U' and i['raw']['색상코드']=='60')
+            self.assertEqual(black['raw']['대표이미지'],'https://img/auto-black.jpg');self.assertIn('https://img/model.jpg',black['raw']['추가이미지'])
+
+    def test_editing_preassigned_shots_does_not_resurrect_original_auto_row(self):
+        with tempfile.TemporaryDirectory(dir=ROOT/'tests') as folder:
+            job=self.job(folder,[item(0,'STYLE','60','https://img/old.jpg'),item(1,'STYLE','60','https://img/new.jpg',True)])
+            view=mapping.snapshot(job);group=view['groups'][0]
+            for color in group['colors']:
+                if color['color_code']!='60':
+                    view=mapping.edit_options(job,dict(expected_revision=view['revision'],group_id=group['id'],action='delete',color_id=color['id']));continue
+                new=next(i['id'] for i in group['images'] if i['url']=='https://img/new.jpg')
+                view=mapping.save_color(job,dict(expected_revision=view['revision'],group_id=group['id'],color_id=color['id'],image_ids=[new]))
+            view=mapping.finalize(job,dict(expected_revision=view['revision']));rows=mapping.final_items(job,view)
+            self.assertEqual(len(rows),1);self.assertEqual(rows[0]['raw']['대표이미지'],'https://img/new.jpg');self.assertNotIn('old.jpg',str(rows[0]['raw']))
+
+    def test_legacy_saved_mapping_adds_auto_photos_once_without_losing_choices(self):
+        import json
+        with tempfile.TemporaryDirectory(dir=ROOT/'tests') as folder:
+            job=self.job(folder,[item(0,'STYLE','60','https://img/auto.jpg'),item(1,'STYLE','60','https://img/manual.jpg',True)])
+            group=mapping.snapshot(job)['groups'][0];color=next(c for c in group['colors'] if c['color_code']=='60')
+            photo=next(i for i in group['images'] if i['url']=='https://img/manual.jpg')
+            legacy=dict(revision=1,groups={group['id']:dict(assignments={photo['id']:color['id']},confirmed=[color['id']],image_signature=mapping.key(json.dumps([photo['id']])) )})
+            (job.dir/'color_mapping.json').write_text(json.dumps(legacy),encoding='utf-8')
+            view=mapping.snapshot(job);images=view['groups'][0]['images']
+            self.assertTrue(all(color['id'] in i['assigned_colors'] for i in images))
+            view=mapping.save_color(job,dict(expected_revision=view['revision'],group_id=group['id'],color_id=color['id'],image_ids=[photo['id']]))
+            auto=next(i for i in mapping.snapshot(job)['groups'][0]['images'] if i['url']=='https://img/auto.jpg')
+            self.assertEqual(auto['assigned_colors'],[])
+
+    def test_optional_raw_name_code_format_for_manual_final_color(self):
+        with tempfile.TemporaryDirectory(dir=ROOT/'tests') as folder:
+            job=self.job(folder,[item(0,'AWK','60','https://img/photo.jpg',True)])
+            job.brand['color_label_format']='name_code'
+            view=mapping.snapshot(job);group=view['groups'][0]
+            for color in group['colors']:
+                if color['color_code']!='60':
+                    view=mapping.edit_options(job,dict(expected_revision=view['revision'],group_id=group['id'],action='delete',color_id=color['id']));continue
                 view=mapping.save_color(job,dict(expected_revision=view['revision'],group_id=group['id'],color_id=color['id'],image_ids=[group['images'][0]['id']] if color['color_code']=='60' else []))
             view=mapping.finalize(job,dict(expected_revision=view['revision']))
             rows=mapping.final_items(job,view)
-            self.assertEqual(len(rows),2)
-            self.assertEqual(rows[0]['raw']['대표이미지'],'https://img/auto-black.jpg')
-            self.assertIn('https://img/model.jpg',rows[0]['raw']['추가이미지'])
-            self.assertEqual(len(rows[0]['raw']['추가이미지'].split(',')),5)
-            self.assertEqual(rows[1]['raw']['대표이미지'],'https://img/auto-gray.jpg')
-            self.assertEqual(len(mapping.export_sheet(job)),3)
+            self.assertEqual(rows[0]['raw']['색상'],'Charcoal60')
+            self.assertEqual(rows[0]['raw']['색상명'],'Charcoal')
+            self.assertEqual(rows[0]['raw']['색상코드'],'60')
 
     def test_all_auto_job_is_complete_without_mapping_groups(self):
         with tempfile.TemporaryDirectory(dir=ROOT/'tests') as folder:

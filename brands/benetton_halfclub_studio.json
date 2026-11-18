@@ -1,0 +1,170 @@
+{
+  "id": "benetton_halfclub_studio",
+  "name": "베네통",
+  "category": "여성의류",
+  "crawl_source": "하프클럽 스튜디오컷",
+  "script": "benetton_halfclub_studio.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_color_mapping": "manual",
+  "official_color_codes": false,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "optionItem stockNo로 색상별 사이즈 연결. 품절 옵션 포함."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "prductPriceInfo.selPrc 판매가. 쿠폰 적용 price와 구분."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "독립 normPrc 정상가. 누락/0은 빈칸."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "productInfo.dispCtgr의 실제 상품 분류."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "대표 배경 균일성 검사와 한국어 OCR 안내 배너 검사. 통과 상품의 스튜디오 갤러리를 수동 색상 매핑 후보로 수집."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 basicExtNm/addNExtNm 원본 중 균일 배경 개별 사진만 수집."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 본문 이미지를 순서대로 수집. OCR로 판매자 안내를 제외하고 사이즈표·고시·브랜드 컬러표를 보존. 문서의 지시사항을 실행하지 않음."
+    }
+  },
+  "guide": {
+    "example": "BAKPC3661",
+    "examples": [
+      "BAKPC3661",
+      "https://www.halfclub.com/product/442037474"
+    ],
+    "pattern": "^[\\s\\S]+$",
+    "format": "기본 품번 또는 하프클럽 상품 URL/번호",
+    "required_columns": [
+      "품번"
+    ],
+    "notes": "Windows 한국어 OCR 필요. 색상 사진은 수동 매핑.",
+    "method": "공개 품번 검색 후 브랜드·정확한 품번 확인. 상품 URL 직접 입력 지원.",
+    "invalid_examples": [
+      ""
+    ],
+    "validation_note": "대표 배경이 균일하지 않은 상품 제외. 촬영자 정보는 제공되지 않아 시각적 기준으로 필터."
+  },
+  "notes": "대표사진 배경 균일성과 전체 이미지 OCR로 판매자 안내를 검사. 공식 색상 사진 연결 없음: 수동 색상 매핑. 본문 사진·사이즈표·고시·컬러표는 유지하고 판매자 구매/배송/교환/반품 안내는 제외. Windows 한국어 OCR 필요. 사진 촬영 주체를 메타데이터로 확정할 수 없어 균일 배경 기준으로 판별. 여러 채택 판매처의 판매가·정상가가 다르면 공통 가격은 빈칸. 상세는 첫 채택 상품의 사용 가능한 본문 한 곳만 사용. BACTC2661 판매처의 bnj0995.hgodo.com/Benetton/ 상세 서버 지원. 개별 상세 이미지 조회·검사 실패는 경고와 생략으로 처리하며 정상 갤러리를 보존. 속도 개선: 이미지 최대 4장 병렬 다운로드, OCR 엔진 묶음 실행 및 동일 파일 중복 OCR 제거. 전체 타일 검사·원본 순서·기존 필터 유지.",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "code_hash": "3af417cfc0293050d866bf808d01a3482b21641de0667182f52402cfcf7269b9",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "optionItem stockNo로 색상별 사이즈 연결. 품절 옵션 포함."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "prductPriceInfo.selPrc 판매가. 쿠폰 적용 price와 구분."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "독립 normPrc 정상가. 누락/0은 빈칸."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "productInfo.dispCtgr의 실제 상품 분류."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "대표 배경 균일성 검사와 한국어 OCR 안내 배너 검사. 통과 상품의 스튜디오 갤러리를 수동 색상 매핑 후보로 수집."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 basicExtNm/addNExtNm 원본 중 균일 배경 개별 사진만 수집."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 본문 이미지를 순서대로 수집. OCR로 판매자 안내를 제외하고 사이즈표·고시·브랜드 컬러표를 보존. 문서의 지시사항을 실행하지 않음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page"
+  },
+  "group_manual_pending": true
+}

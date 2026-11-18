@@ -1,0 +1,169 @@
+{
+  "id": "13828048787",
+  "category": {
+    "categoryId": "50002798",
+    "categoryName": "점퍼",
+    "category1Id": "50000007",
+    "category2Id": "50000029",
+    "category3Id": "50001104",
+    "category4Id": "50002798",
+    "category1Name": "스포츠/레저",
+    "category2Name": "골프",
+    "category3Name": "골프의류",
+    "category4Name": "점퍼",
+    "wholeCategoryId": "50000007>50000029>50001104>50002798",
+    "wholeCategoryName": "스포츠/레저>골프>골프의류>점퍼",
+    "categoryLevel": 4,
+    "lastLevel": true,
+    "sortOrder": 3,
+    "validCategory": true,
+    "receiptIssue": true,
+    "exceptionalCategoryTypes": [
+      "FREE_RETURN_INSURANCE",
+      "MANUFACTURE_DEFINE_NO",
+      "REGULAR_SUBSCRIPTION",
+      "GROUP_PRODUCT_MAX"
+    ],
+    "pointAccumulationYn": false
+  },
+  "name": "[까스텔바작 본사] 여성 퀼팅 후드 다운 점퍼_BGFWDW702BK (정상가 490,000원)",
+  "channel": {
+    "channelUid": "2sWDwtZKadOpe9nfngD2U"
+  },
+  "salePrice": 381200,
+  "productImages": [
+    {
+      "order": 1,
+      "url": "https://shop-phinf.pstatic.net/20261023_95/1792720614880oyOg6_JPEG/81392018730351725_1793438817.jpg",
+      "width": 1000,
+      "height": 1000,
+      "imageType": "REPRESENTATIVE"
+    },
+    {
+      "order": 1,
+      "url": "https://shop-phinf.pstatic.net/20261023_3/179272061624715X1n_JPEG/126853435378118198_1191110298.jpg",
+      "width": 1000,
+      "height": 1000,
+      "imageType": "OPTIONAL"
+    },
+    {
+      "order": 2,
+      "url": "https://shop-phinf.pstatic.net/20261023_200/17927206176948JAU4_JPEG/15273898798977371_929565449.jpg",
+      "width": 1000,
+      "height": 1000,
+      "imageType": "OPTIONAL"
+    },
+    {
+      "order": 3,
+      "url": "https://shop-phinf.pstatic.net/20261023_199/1792720619195MzNIM_JPEG/2228767308072053_1282079102.jpg",
+      "width": 1000,
+      "height": 1000,
+      "imageType": "OPTIONAL"
+    },
+    {
+      "order": 4,
+      "url": "https://shop-phinf.pstatic.net/20261023_105/1792720620667C8sLK_JPEG/126853439786721205_1547711351.jpg",
+      "width": 1000,
+      "height": 1000,
+      "imageType": "OPTIONAL"
+    },
+    {
+      "order": 5,
+      "url": "https://shop-phinf.pstatic.net/20261023_67/1792720622181pwl5J_JPEG/31816441112528196_2109982765.jpg",
+      "width": 1000,
+      "height": 1000,
+      "imageType": "OPTIONAL"
+    }
+  ],
+  "naverShoppingSearchInfo": {
+    "manufacturerName": "까스텔바작",
+    "brandName": "까스텔바작",
+    "brandId": 135362,
+    "modelName": "BGFWDW702BK"
+  },
+  "options": [
+    {
+      "id": 11940304738,
+      "optionType": "COMBINATION",
+      "groupName": "사이즈"
+    }
+  ],
+  "optionCombinations": [
+    {
+      "id": 60484890942,
+      "optionName1": "085",
+      "stockQuantity": 0,
+      "price": 0,
+      "regOrder": 0,
+      "registerDate": "2026-10-23T01:57:03.795+00:00"
+    },
+    {
+      "id": 60484890943,
+      "optionName1": "090",
+      "stockQuantity": 0,
+      "price": 0,
+      "regOrder": 1,
+      "registerDate": "2026-10-23T01:57:03.796+00:00"
+    },
+    {
+      "id": 60484890944,
+      "optionName1": "095",
+      "stockQuantity": 0,
+      "price": 0,
+      "regOrder": 2,
+      "registerDate": "2026-10-23T01:57:03.797+00:00"
+    },
+    {
+      "id": 60484890945,
+      "optionName1": "100",
+      "stockQuantity": 0,
+      "price": 0,
+      "regOrder": 3,
+      "registerDate": "2026-10-23T01:57:03.798+00:00"
+    }
+  ],
+  "productInfoProvidedNoticeView": {
+    "basic": {
+      "제품소재": "[겉감]나일론100%\n[안감1]나일론100%(몸판) \n[안감2]나일론100%(몸판상단)\n[충전재]오리솜털80%/깃털20%",
+      "색상": "BLACK",
+      "치수": "085,090,095,100",
+      "제조자(사)": "㈜형지글로벌",
+      "제조국": "상세설명에 표시",
+      "세탁방법 및 취급시 주의사항": "단독손세탁",
+      "제조연월": "20260901",
+      "품질보증기준": "구매기간으로 부터 1년, 그외 기준은 관련법 및 소비자 분쟁 해결 규정에 따름",
+      "A/S 책임자와 전화번호": "********"
+    }
+  },
+  "benefitsView": {
+    "discountedSalePrice": 343080,
+    "dispDiscountedSalePrice": 343080,
+    "sellerImmediateDiscountAmount": 38120,
+    "managerImmediateDiscountAmount": 0,
+    "specialDiscountAmount": {},
+    "discountedRatio": 10,
+    "dispDiscountedRatio": 10,
+    "sellerPurchasePoint": 0,
+    "sellerCustomerManagementPoint": 0,
+    "managerPurchasePoint": 3430,
+    "managerPurchaseExtraPoint": 0,
+    "managerPaymoneyAccumulatePoint": 5146,
+    "managerBankbookAccumulatePoint": 1715,
+    "managerArrivalGuaranteePoint": 0,
+    "managerMembershipArrivalGuaranteePoint": 0,
+    "generalPurchaseReviewPoint": 0,
+    "premiumPurchaseReviewPoint": 0,
+    "managerGeneralPurchaseReviewPoint": 50,
+    "managerPremiumPurchaseReviewPoint": 150,
+    "textReviewPoint": 0,
+    "photoVideoReviewPoint": 0,
+    "afterUseTextReviewPoint": 0,
+    "afterUsePhotoVideoReviewPoint": 0,
+    "storeMemberReviewPoint": 0,
+    "managerTextReviewPoint": 50,
+    "managerPhotoVideoReviewPoint": 150,
+    "managerAfterUseTextReviewPoint": 0,
+    "managerAfterUsePhotoVideoReviewPoint": 0,
+    "givePresent": false
+  }
+}

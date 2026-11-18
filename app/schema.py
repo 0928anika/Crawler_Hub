@@ -1,4 +1,5 @@
 """UI normalization and Level 1 export selection; source values remain untouched."""
+from functools import lru_cache
 import re
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
@@ -60,6 +61,7 @@ def slots(values):
         result.append(item)
     return result
 
+@lru_cache(maxsize=128)
 def sanitized_html(markup):
     soup = BeautifulSoup(markup or '', 'html.parser')
     allowed = {'div','p','br','span','b','strong','table','caption','thead','tbody','tfoot','tr','th','td','img','ul','ol','li','h1','h2','h3','h4','h5','h6','pre','code'}
@@ -76,7 +78,8 @@ def sanitized_html(markup):
         if src and (urlparse(src).scheme in ('http','https') or src.startswith('/sample/')):
             tag['src'] = src
             tag['referrerpolicy'] = 'no-referrer'
-    return str(soup)
+    from detail_store import registration_layout
+    return registration_layout(str(soup))
 
 def preview(headers, row, selected=None, allow_empty_product_name=False):
     selected = selection(selected)

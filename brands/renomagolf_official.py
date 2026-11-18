@@ -14,7 +14,7 @@ from bs4 import BeautifulSoup
 from PIL import Image, UnidentifiedImageError
 
 SITE = 'https://hansungmall.net'
-CRAWLER_REVISION = '2026-11-09-renomagolf-v1'
+CRAWLER_REVISION = '2026-11-15-renomagolf-v3-pattern'
 POLICY = {'checked': '2026-11-09', 'source': 'https://marketplace.coupang.com/mba/listing',
           'route': 'WING 웹/엑셀', 'min_side': 500, 'max_bytes': 10000000,
           'formats': ('JPEG', 'PNG', 'WEBP'), 'max_aspect': 1.8,
@@ -84,7 +84,25 @@ def content_signal(im):
         if 2 <= area <= 120 and x1-x0 < 32 and y1-y0 < 20:
             small_count += 1
             small_area += area
-    if small_count >= 150 and 0 < total_dark < w*h*.16 and small_area > total_dark*.35:
+    # 작은 연결 성분만으로 판단하면 꽃무늬 의류도 글자처럼 보인다.
+    # 넓은 글줄 사이의 빈 행이 반복되는 문서 형태가 함께 있어야 제외한다.
+    bands, start, gap = [], None, 0
+    for y in range(h):
+        xs = [x for x in range(w) if max(px[y*w+x]) < 170]
+        ink = len(xs) >= 3 and xs[-1]-xs[0] >= w*.65
+        if ink:
+            if start is None:
+                start = y
+            gap = 0
+        elif start is not None:
+            gap += 1
+            if gap >= 2:
+                bands.append(y-gap+1-start)
+                start, gap = None, 0
+    if start is not None:
+        bands.append(h-gap-start)
+    text_lines = sum(2 <= height <= 20 for height in bands)
+    if small_count >= 150 and 0 < total_dark < w*h*.16 and small_area > total_dark*.35 and text_lines >= 4:
         return '작은 글자 성분이 지배적인 라벨/고시/측정 안내 의심'
     # 밝은 배경 전체가 아닌 내부 구분선 양쪽에 독립 사진 영역이 있는지 확인.
     gray = im.convert('L')
@@ -217,6 +235,20 @@ def price(ctx, doc):
     return int(match[1].replace(',',''))
 
 
+def gallery_url(raw,final):
+    if not raw:return ''
+    url=urljoin(final,raw);parsed=urlsplit(url)
+    if parsed.scheme not in ('http','https') or parsed.username or parsed.password:return ''
+    path=unquote(parsed.path)
+    if parsed.hostname in ('hansungmall.net','www.hansungmall.net'):
+        prefix='/web/product/'
+    elif parsed.hostname=='cafe24img.poxo.com':
+        prefix='/hansungimall/web/product/'
+    else:return ''
+    if '..' in path.split('/') or not re.match(re.escape(prefix)+r'(?:big/|extra/big/)',path):return ''
+    return url
+
+
 def gallery(ctx, doc, final, cache):
     urls = []
     # HTML이 제공하는 실제 big 원본만 사용. small URL의 경로를 임의 변조하지 않는다.
@@ -224,10 +256,8 @@ def gallery(ctx, doc, final, cache):
         src = image.get('ec-data-src') or image.get('data-src') or image.get('src')
         if not src:
             continue
-        url = urljoin(final,src)
-        parsed = urlsplit(url)
-        if parsed.hostname not in ('hansungmall.net','www.hansungmall.net') or not re.match(r'/web/product/(?:big/|extra/big/)',parsed.path):
-            continue
+        url = gallery_url(src,final)
+        if not url:continue
         if url not in urls:
             urls.append(url)
     accepted, hashes = [], set()
@@ -250,8 +280,7 @@ def gallery(ctx, doc, final, cache):
         if len(accepted)==6:
             break
     if not accepted:
-        ctx.log('통과한 갤러리 사진 0장: 이미지 빈칸, 필수 상품정보 유지','WARNING')
-        return '', ''
+        raise CrawlError('대표·추가이미지 수집 미완료: 공식 갤러리에서 통과한 사진 0장')
     extras = accepted[1:] or accepted[:1]
     if len(accepted)==1:
         ctx.log('유효한 사진 1장만 있어 추가에도 재사용합니다.','WARNING')

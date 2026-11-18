@@ -59,11 +59,18 @@ def product_page(ctx, index, base):
     if index.get('meta', {}).get('style_code') != base or (product.get('code') and product['code'] != base):
         raise ValueError('공식 인덱스 품번 불일치')
     number = str(product.get('cafe24_no') or '')
+    stale = ''
     if number.isdecimal():
-        return fetch(ctx, SITE + '/product/detail.html?' + urlencode({'product_no': number}))
+        try:
+            return fetch(ctx, SITE + '/product/detail.html?' + urlencode({'product_no': number}))
+        except HTTPError as exc:
+            if exc.code not in (404, 410):
+                raise
+            stale = '인덱스 상품번호 ' + number + '의 상세페이지 HTTP ' + str(exc.code) + '. '
+            ctx.log(stale + '공식 사이트맵에서 현재 상품 링크를 다시 확인합니다.', 'WARNING')
     # v1 인덱스에는 product/cafe24_no가 없다. 상품번호를 추측하지 않고
     # 공식 사이트맵의 실제 상품 링크를 찾은 뒤 crawl에서 자체상품코드를 대조한다.
-    ctx.stage('구형 상품 인덱스: 공식 사이트맵에서 상품 링크 확인')
+    ctx.stage('공식 사이트맵에서 상품 링크 확인')
     source, _ = fetch(ctx, SITE + '/sitemap.xml')
     root = ET.fromstring(source)
     for node in root.iter():
@@ -76,7 +83,7 @@ def product_page(ctx, index, base):
                 and re.fullmatch(r'/product/[^/]+/\d+/?', path)
                 and re.search(r'(?<![A-Za-z0-9])' + re.escape(base) + r'(?![A-Za-z0-9])', path, re.I)):
             return fetch(ctx, url)
-    raise ValueError('공식 사이트맵에서 해당 품번의 상품 링크를 확인할 수 없습니다: ' + base)
+    raise ValueError(stale + '공식 사이트맵에서 해당 품번의 상품 링크를 확인할 수 없습니다: ' + base)
 
 
 def normal(value):
@@ -116,7 +123,9 @@ def colors(doc, index, mapping):
             matches = [(code, value) for code, value in official.items()
                        if normal(label) in (normal(code), normal(value.get('name')))]
         if len(matches) != 1:
-            raise ValueError('공식 옵션과 색상 이미지 연결 확인 실패: ' + label)
+            result.append(dict(code=candidates[0] if len(candidates) == 1 else '', label=label, data={},
+                               error='[색상 이미지 연결 불가] ' + label + ' / 공식 옵션은 있으나 이미지 인덱스에서 대응 색상을 확인할 수 없습니다.'))
+            continue
         code, value = matches[0]
         result.append(dict(code=code, label=label, data=value))
     return result
@@ -306,9 +315,19 @@ def crawl(ctx):
         index = json.loads(source)
     except HTTPError as exc:
         if exc.code == 404:
-            raise ValueError('해당 품번의 공식 상품 인덱스가 없습니다: ' + base) from exc
+            message = '[공식 상품 인덱스 없음] ' + base + ' / 공식 이미지·색상 인덱스 HTTP 404. 상품 검색 0건이나 색상 매핑 오류와는 별개입니다.'
+            ctx.fail_item(message)
+            raise ValueError(message) from exc
+        ctx.fail_item('[공식 인덱스 접근 실패] ' + base + ' / HTTP ' + str(exc.code))
         raise
-    source, final = product_page(ctx, index, base)
+    except (OSError, ValueError) as exc:
+        ctx.fail_item('[공식 인덱스 조회 실패] ' + base + ' / ' + str(exc))
+        raise
+    try:
+        source, final = product_page(ctx, index, base)
+    except (OSError, ValueError) as exc:
+        ctx.fail_item(str(exc))
+        raise
     doc = BeautifulSoup(source, 'html.parser')
     identity = doc.select_one('.detailArea[data-code]')
     if not identity or normal(identity['data-code']) != base or normal(field(doc, '.ma_product_code_css td')) != base:
@@ -335,6 +354,8 @@ def crawl(ctx):
     for color in chosen:
         try:
             ctx.stage('리스트 색상 수집: ' + color['label'])
+            if color.get('error') and any(ctx.enabled(key) for key in ('main_image','additional_images','detail_page')):
+                raise ValueError(color['error'])
             record = dict(common, color=color['label'], color_name=color['label'], color_code=color['code'])
             rows = color_stocks(option_rows, color['label']) if option_rows else []
             if ctx.enabled('size'):

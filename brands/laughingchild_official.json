@@ -1,0 +1,171 @@
+{
+  "id": "laughingchild_official",
+  "name": "래핑차일드",
+  "category": "아동복",
+  "crawl_source": "공식 홈페이지",
+  "script": "laughingchild_official.py",
+  "execution_level": 1,
+  "interface": "portal_v1",
+  "mapping_mode": "manual",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "hybrid",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 사이즈 옵션 전체, 품절 포함."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 할인판매가 우선, 없으면 판매가. 쿠폰 최적할인가 제외."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 소비자가 독립 수집. 없거나0이면 빈칸."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 경로 마지막 표시 분류. 프로모션 분류일 수 있음."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "검증된 단일 색상 상품의 실제 공식 갤러리 원본."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "단일 색상은 공식 갤러리 5슬롯. 복수 색상 수동 매핑은 갤러리와 본문에서 같은 스타일의 원본 품번이 명시된 개별 상품컷을 함께 후보로 수집. 배너·아이콘·표·통짜 이미지는 후보 제외."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 소개·사진별 설명 복원, 색상/소재 정보와 사이즈/고시 표 구조화. 구매TIP·AI 안내·공통 소개/배송 배너만 제외. APP 공통 폭/정렬/표와 문단 디자인 적용."
+    }
+  },
+  "guide": {
+    "example": "86C1916070",
+    "examples": [
+      "86C1916070",
+      "86C19-160-70"
+    ],
+    "pattern": "^[A-Za-z0-9]{5}-?[0-9]{3}-?[0-9]{2}$",
+    "format": "두 형식 모두 가능. 하이픈 형식으로 정규화해 공홈 검색.",
+    "notes": "정확 검색 후 미조회면 동일 스타일 검색으로 확대하고 실제 본문 원본 이미지의 품번까지 검증. 단일 색상은 자동 매핑, 실제 공홈 복수 색상은 품번 전체를 수동 매핑 후보로 수집. 색상·사진 연결 추측 없음. 상세 본문과 원문 사이즈/고시 표 유지.",
+    "method": "하이픈 품번 정확 검색 → 결과 없으면 스타일 검색 → 브랜드·제목/원본 사진 품번 대조 → 실제 단일/복수 색상에 맞춰 수집.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      ""
+    ],
+    "validation_note": "하이픈 없는 품번도 공식 검색용 5-3-2 하이픈 형식으로 변환."
+  },
+  "notes": "정확 검색 후 미조회면 동일 스타일 검색으로 확대하고 실제 본문 원본 이미지의 품번까지 검증. 단일 색상은 자동 매핑, 실제 공홈 복수 색상은 품번 전체를 수동 매핑 후보로 수집. 색상·사진 연결 추측 없음. 상세 본문과 원문 사이즈/고시 표 유지. 상세 디자인은 상품사진과 구조화된 정보/사이즈/고시 표 중심으로 간소화. 마케팅/AI 안내/구매TIP 제외. 접속 확인 화면은 미등록으로 판정하지 않음. 공홈이 BR 등 영문2자리 코드를 명시한 경우만 색상코드로 분리. BROWN 이름으로 BR을 추측하지 않음. 단일 자동 결과와 복수 수동 후보 모두 SDK 완료 검사 지원. 복수 색상 수동 매핑에 본문 동일 스타일의 명시적 품번 상품컷도 추가. 상품 설명과 사진별 설명은 보존하고 구매TIP/AI 안내만 제외.",
+  "code_hash": "d9b64e1900d0bb39fc6a03943af01b3748e33e929b165281463d4f5e1efce068",
+  "hybrid_mapping": true,
+  "group_manual_pending": true,
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 사이즈 옵션 전체, 품절 포함."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 할인판매가 우선, 없으면 판매가. 쿠폰 최적할인가 제외."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 소비자가 독립 수집. 없거나0이면 빈칸."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 경로 마지막 표시 분류. 프로모션 분류일 수 있음."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "검증된 단일 색상 상품의 실제 공식 갤러리 원본."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "단일 색상은 공식 갤러리 5슬롯. 복수 색상 수동 매핑은 갤러리와 본문에서 같은 스타일의 원본 품번이 명시된 개별 상품컷을 함께 후보로 수집. 배너·아이콘·표·통짜 이미지는 후보 제외."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 소개·사진별 설명 복원, 색상/소재 정보와 사이즈/고시 표 구조화. 구매TIP·AI 안내·공통 소개/배송 배너만 제외. APP 공통 폭/정렬/표와 문단 디자인 적용."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page"
+  }
+}

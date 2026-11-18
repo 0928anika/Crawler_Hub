@@ -12,6 +12,10 @@ def normalize_palette(values):
         cid=hashlib.sha256((name+'\0'+code).encode('utf-8')).hexdigest()[:24]
         if cid in seen:continue
         seen.add(cid)
-        result.append(dict(id=cid,color_name=name,color_code=code,label=name+' ('+code+')' if name and code else name or code))
+        color=dict(id=cid,color_name=name,color_code=code,label=name+' ('+code+')' if name and code else name or code)
+        if 'size' in value:
+            if not isinstance(value['size'],str):raise ValueError('색상별 사이즈는 문자열이어야 합니다.')
+            color['size']=value['size']
+        result.append(color)
     if not result:raise ValueError('실제 색상 후보가 없습니다.')
     return result

@@ -1,0 +1,172 @@
+{
+  "id": "happyland_official",
+  "name": "해피랜드/압소바",
+  "category": "유아동",
+  "crawl_source": "공식 홈페이지",
+  "script": "happyland_official.py",
+  "execution_level": 1,
+  "mapping_mode": "automatic",
+  "image_color_mapping": "verified",
+  "official_color_codes": false,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션의 색상:사이즈 원문을 각 색상별로 분리해 유지. 품절/disabled 포함."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .item_detail_tit .prd-price 판매가 또는 주상품 판매가 항목. 옵션별 추가금이0으로 공통임을 확인한 경우만. 쿠폰가 제외. 예시99000."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 독립 정가 input[name=set_goods_fixedPrice] 및 정가 항목. 예시99000. 누락/0/형식오류는 None과 경고로 나머지 계속."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .location_cont .location_tit 실제 선택 분류."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 모델명·브랜드 검증 주상품 확대보기 원본. 전색상 함께 노출된 사진임을 사용자 확인하여 모든 실제 옵션 색상에 동일 사용."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 주상품 갤러리의 동일 검증 이미지 세트를 모든 색상 행에 공통 적용. 수동 매핑 없음."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "#detail .detail_explain_box의 원본 본문 이미지 순서 보존. notice_size.jpg 등 사이즈·고시 이미지 유지. 별도 표 생성 없음. 리뷰·배송·반품·추천 제외."
+    }
+  },
+  "guide": {
+    "example": "AB2711BU04",
+    "examples": [
+      "AB2711BU04",
+      "H1110306",
+      "HL2651AN06"
+    ],
+    "pattern": "^[\\s\\S]+$",
+    "format": "공식 모델명(예: AB2711BU04). 대소문자 구분 없이 검색.",
+    "notes": "공식 압소바004/해피랜드002와 각 브랜드 상품명·모델명 정확 대조. 모든 색상에 공통 상품컷 동일 사용(사용자 확인). 색상별 사이즈 유지, 색상코드 미확인은 빈칸.",
+    "method": "해피랜드몰 공식 검색에서 실제 상품 링크를 확인한 뒤 주상품 모델명·브랜드 검증.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      ""
+    ],
+    "validation_note": "원본 상세의 사이즈표·고시를 유지하며 별도 표는 만들지 않음."
+  },
+  "notes": "해피랜드002·압소바004 공식 모델을 각각 검증. 원본 이미지 /h/·/a/ 지원. 전색상 공통 사진을 모든 색상에 동일 자동 적용, 수동 매핑 없음. 사이즈는 각 색상별 유지. 원본 사이즈표·고시 이미지 보존. 이미지 전송은 시도90초·전체180초 범위에서 새 연결 재시도, 일반문서는45초 제한. 공식 상품의 갤러리·상세 영역에 실린 이미지 주소는 CDN·폴더 제한 없이 실제 파일을 확인해 수집. 고정 이미지 출처 허용 목록 제거, 한글 주소 URL 인코딩 지원.",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "code_hash": "d6e312b9dc34c34c5387a7065db3750406033a94ec33a066f9214c22de55772f",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션의 색상:사이즈 원문을 각 색상별로 분리해 유지. 품절/disabled 포함."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .item_detail_tit .prd-price 판매가 또는 주상품 판매가 항목. 옵션별 추가금이0으로 공통임을 확인한 경우만. 쿠폰가 제외. 예시99000."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 독립 정가 input[name=set_goods_fixedPrice] 및 정가 항목. 예시99000. 누락/0/형식오류는 None과 경고로 나머지 계속."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .location_cont .location_tit 실제 선택 분류."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 모델명·브랜드 검증 주상품 확대보기 원본. 전색상 함께 노출된 사진임을 사용자 확인하여 모든 실제 옵션 색상에 동일 사용."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 주상품 갤러리의 동일 검증 이미지 세트를 모든 색상 행에 공통 적용. 수동 매핑 없음."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "#detail .detail_explain_box의 원본 본문 이미지 순서 보존. notice_size.jpg 등 사이즈·고시 이미지 유지. 별도 표 생성 없음. 리뷰·배송·반품·추천 제외."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null
+  }
+}

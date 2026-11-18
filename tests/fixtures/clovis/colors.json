@@ -1,0 +1,30 @@
+[
+  {
+    "itemNo": "2609584409",
+    "lowerVendNo": "LV16003596",
+    "itemOptionNo": "26094770709",
+    "itemOptionName": "(15)Gray",
+    "itemOptionTcode": "10",
+    "itemOptionTypeInputNo": 1,
+    "standardItemOptionName": "회색",
+    "standardItemOptionImageCon": "#A6A6A6",
+    "soldoutYn": "N",
+    "reWhsInNotificPossYn": "Y",
+    "sellPrice": 199000,
+    "jwOptionLength": null
+  },
+  {
+    "itemNo": "2609584409",
+    "lowerVendNo": "LV16003596",
+    "itemOptionNo": "26094770710",
+    "itemOptionName": "(59)Navy",
+    "itemOptionTcode": "10",
+    "itemOptionTypeInputNo": 1,
+    "standardItemOptionName": "남색",
+    "standardItemOptionImageCon": "#123478",
+    "soldoutYn": "N",
+    "reWhsInNotificPossYn": "Y",
+    "sellPrice": 199000,
+    "jwOptionLength": null
+  }
+]

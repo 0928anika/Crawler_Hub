@@ -41,6 +41,48 @@ def document(data):
 
 
 class NCBasicTests(unittest.TestCase):
+    def test_search_alias_reports_actual_model_instead_of_absence(self):
+        ctx=Context(('main_image',),code='NCLA26W51');data=source('NCLA26T51')
+        link=c.SITE+'/i/item?itemNo=2609594384&lowerVendNo='+c.VENDOR_NO
+        with patch.object(c,'search',return_value=[link]),patch.object(c,'page',return_value=document(data)):
+            with self.assertRaises(c.CollectionError) as error:c.crawl(ctx)
+        self.assertIn('NCLA26W51',str(error.exception));self.assertIn('NCLA26T51',str(error.exception))
+        self.assertIn('불일치',str(error.exception))
+        self.assertFalse(ctx.rows)
+
+    def test_denied_body_uses_verified_shots_and_original_size(self):
+        ctx=Context();data=source('NCJM26T05')
+        shots=['https://item.elandrs.com/r/image/item/shot1.jpg','https://item.elandrs.com/r/image/item/shot2.jpg']
+        def load(ctx,url,cache,detail=False):
+            if url.endswith('/NCJM26T05.jpg'):raise c.AccessDenied('HTTP 403')
+            return ('JPEG',780,1857,'size',False)
+        with patch.object(c,'image_info',side_effect=load):
+            urls=c.detail_images(ctx,data,'NCJM26T05',{},fallback_images=shots)
+        self.assertEqual(urls,shots+['https://img-studio.elandmall.com/Winstudio/UI-SIZE.jpg'])
+        self.assertTrue(any('상품컷 전체' in log[0] for log in ctx.logs))
+
+    def test_transient_detail_failure_does_not_trigger_fallback(self):
+        with patch.object(c,'image_info',side_effect=c.CollectionError('TLS timeout')):
+            with self.assertRaises(c.CollectionError):
+                c.detail_images(Context(),source('NCJM26T05'),'NCJM26T05',{},fallback_images=['https://item.elandrs.com/shot.jpg'])
+
+    def test_official_shared_size_filename_is_preserved(self):
+        ctx=Context();data=source('NCCK26T02')
+        with patch.object(c,'image_info',return_value={}) as image:
+            urls=c.detail_images(ctx,data,'NCCK26T02',{})
+        self.assertEqual(urls,[
+            'https://img-studio.elandmall.com/Winstudio/NCCK26T02.jpg',
+            'https://img-studio.elandmall.com/Winstudio/UI-SIZE.jpg'])
+        self.assertEqual([call.args[1] for call in image.call_args_list],urls)
+        self.assertFalse(any('DN-BANNER' in call.args[1] for call in image.call_args_list))
+
+    def test_official_body_filename_need_not_contain_product_code(self):
+        data=source('NCCK26T02')
+        data['itemDesc']['itemDescdocumentCon']='<img src="https://img-studio.elandmall.com/Winstudio/new_product_body.jpg"><img src="https://img-studio.elandmall.com/Winstudio/UI-SIZE.jpg">'
+        with patch.object(c,'image_info',return_value={}):
+            urls=c.detail_images(Context(),data,'NCCK26T02',{})
+        self.assertEqual(len(urls),2)
+
     def test_search_counts_all_results_but_returns_only_requested_vendor(self):
         doc=c.BeautifulSoup('<b data-searchresult-total>2</b><a class="ui-item__link" href="/i/item?itemNo=2411568415&amp;lowerVendNo=LV24013164"></a><a class="ui-item__link" href="/i/item?itemNo=2610597760&amp;lowerVendNo=LV26024017"></a>','html.parser')
         with patch.object(c,'page',return_value=doc) as page:

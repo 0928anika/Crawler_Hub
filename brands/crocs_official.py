@@ -17,7 +17,7 @@ from bs4 import BeautifulSoup
 from crawler_rules import check_public_image, validate_gallery_image, gallery_slots, clean_product_name
 
 ORIGIN = 'https://www.crocs.co.kr'
-ADAPTER_REVISION = '2026-11-09-worker-compat-2'
+ADAPTER_REVISION = '2026-11-16-official-gallery-order'
 POLICY = {'checked_on': '2026-11-09', 'source': 'https://marketplace.coupang.com/mba/listing',
           'route': 'WING 웹/엑셀', 'min_side': 500, 'max_bytes': 10000000,
           'formats': ['JPEG', 'PNG', 'WEBP'], 'max_aspect': 1.8}
@@ -334,6 +334,22 @@ def gallery(ctx, product, color, cache, doc=None):
             else:
                 ctx.log(f'상품컷 통과 {result["format"]} {result["width"]}x{result["height"]}: ' + url, 'INFO')
             candidates.append({'url': url, 'validation': validation})
+    # imageGroups is an unordered backend list; the displayed gallery is the
+    # authoritative cover/order. Apply its pose order to hidden colors too,
+    # keeping each color's own asset. Never substitute a different color image.
+    displayed_order={}
+    if doc is not None:
+        for node in doc.select('[data-slot="pdp-gallery"] img'):
+            path=unquote(urlsplit(node.get('src','')).path)
+            match=re.search(r'/products/'+re.escape(base)+r'_[^/]+_ALT(\d+)(?:/|$)',path)
+            if match and match[1] in CATALOG_POSES:
+                displayed_order.setdefault(match[1],len(displayed_order))
+    fallback={pose:index for index,pose in enumerate(CATALOG_POSES)}
+    def gallery_order(candidate):
+        match=re.search(r'_ALT(\d+)(?:/|$)',unquote(urlsplit(candidate['url']).path))
+        pose=match[1] if match else ''
+        return displayed_order.get(pose,len(displayed_order)+fallback.get(pose,len(fallback)))
+    candidates.sort(key=gallery_order)
     return gallery_slots(candidates)
 
 

@@ -25,7 +25,7 @@ from PIL import Image
 # 실제 갤러리 JPEG 1500x2000 확인. 0재고/손상/WebP/콜라주 신호 등은 오프라인 검증.
 # Crawler Hub 최종 Excel/재시작 교체/검수 정제기와 WING 등록은 별도 확인 필요.
 ORIGIN = "https://pc.babathe.com"
-CRAWLER_REVISION = "2026-11-09-skip-unsupported-size"
+CRAWLER_REVISION = "2026-11-17-search-before-format"
 IMAGE_ORIGIN = "https://image.babathe.com"
 MAX_HTML = 3_000_000
 MAX_IMAGE = 10_000_000
@@ -45,7 +45,11 @@ NEGATIVE = re.compile(
     r"사이즈|실측|측정|고시|콜라주|합성|배너|로고|스와치|배송|세탁", re.I)
 GALLERY = "#contentGoodsDtlGoodsDefaultBox .gallery-top .swiper-slide img"
 DETAIL_IMAGES = ".prd-detail .img-box > div > img"
-INPUT_PATTERN = re.compile(r"^([A-Z0-9]{10})(?:[_-]([A-Z0-9]{2,8}))?$")
+LEGACY_COLOR_INPUT_PATTERN = re.compile(r"^([A-Z0-9]{10})[_-]([A-Z0-9]{2,8})$")
+
+
+class ModelNotFound(ValueError):
+    """The official lookup completed successfully with no matching model."""
 
 
 
@@ -167,10 +171,25 @@ def api(ctx, endpoint, **params):
 
 
 def split_input(value):
-    match = INPUT_PATTERN.fullmatch(str(value).strip().upper())
-    if not match:
-        raise ValueError("품번은 영문/숫자 10자리, 색상 지정은 _BLL0 또는 -BLL0 형식입니다")
-    return match.groups()
+    raw = str(value or '').strip().upper()
+    if not raw:
+        raise ValueError("품번이 비어 있습니다")
+    return raw, None
+
+
+def resolve_model(ctx, value):
+    raw, _ = split_input(value)
+    # A new length or delimiter can be part of a real official model number.
+    # Always query the complete user input before interpreting legacy suffixes.
+    try:
+        return raw, None, model_ids(ctx, raw)
+    except ModelNotFound:
+        match = LEGACY_COLOR_INPUT_PATTERN.fullmatch(raw)
+        if not match:
+            raise
+        base, color = match.groups()
+        ctx.log('전체 입력 조회 0건: 기존 색상 지정 방식으로 기본 품번 재조회 / '+base, 'INFO')
+        return base, color, model_ids(ctx, base)
 
 
 def model_ids(ctx, base):
@@ -189,7 +208,7 @@ def model_ids(ctx, base):
         if gid not in result:
             result.append(gid)
     if not result:
-        raise ValueError("공식 품번 검색 결과 없음: " + base)
+        raise ModelNotFound("공식 품번 검색 결과 없음: " + base)
     if len(result) > 100:
         raise ValueError("동일 품번 색상 수 안전 상한 초과")
     return result
@@ -548,9 +567,8 @@ def crawl(ctx):
     ctx.log("더아이잗 기본 공홈 크롤러 " + CRAWLER_REVISION, "INFO")
     failures, matched, emitted = [], set(), set()
     try:
-        base, requested = split_input(ctx.product_code)
-        ctx.stage("공식 동일 품번 전체 색상 조회: " + base)
-        ids = model_ids(ctx, base)
+        ctx.stage("공식 동일 품번 전체 색상 조회: " + str(ctx.product_code).strip())
+        base, requested, ids = resolve_model(ctx, ctx.product_code)
     except Exception as exc:
         ctx.fail_item(str(exc))
         raise

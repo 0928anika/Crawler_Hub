@@ -135,7 +135,7 @@ class GiordanoTests(unittest.TestCase):
         ctx = Context(('main_image',))
         with patch.object(c, 'gallery_urls', return_value=[]), patch.object(c, 'gallery', return_value=('', [], '')) as gallery:
             c.collect(ctx, self.doc, c.SITE + '/shop/detail.php?pno=verified', '05586901', '01', set(), {})
-            self.assertTrue(gallery.call_args.kwargs['filter_background'])
+            self.assertFalse(gallery.call_args.kwargs['filter_background'])
         self.assertEqual(ctx.rows[0]['product_name'], '울캐시 발마칸 코트')
 
     def test_real_scene_backgrounds_are_rejected_and_plain_shots_remain(self):
@@ -167,6 +167,67 @@ class GiordanoTests(unittest.TestCase):
             c.gallery(Context(), ['https://example.com/a.jpg'], '01', {})
             background.assert_not_called()
 
+
+    def test_studio_lighting_gradient_does_not_remove_real_gallery(self):
+        for name in ('studio_gradient_white.jpg','studio_gradient_blue.jpg'):
+            self.assertTrue(c.uniform_background((ROOT/'tests/fixtures/giordano/background'/name).read_bytes())[0])
+
+    def test_wrong_size_extension_uses_verified_same_basename_png(self):
+        original=c.SITE+'/_gio_on/2026/01026980size.jpg';correct=original[:-4]+'.png';cache={}
+        def image(ctx,url,cache):
+            if url==correct:return {'data':b'validated'}
+            cache[url]=dict(status='inaccessible',reasons=['로그인·오류 HTML 응답']);return None
+        with patch.object(c,'public_image',side_effect=image):result=c.detail(Context(),[original],cache)
+        self.assertIn(correct,result);self.assertNotIn(original,result)
+
+    def test_transient_detail_failure_does_not_guess_another_extension(self):
+        original=c.SITE+'/_gio_on/2026/01026980size.jpg'
+        with patch.object(c,'public_image',return_value=None) as image,self.assertRaises(ValueError):
+            c.detail(Context(),[original],{original:dict(status='unknown',reasons=['timeout'])})
+        self.assertEqual(image.call_count,1)
+
+    def test_person_names_with_or_without_brackets_are_removed(self):
+        for raw in ('[변우석] 기모 테리 맨투맨','변우석 기모 테리 맨투맨','[문가영] 기모 테리 맨투맨'):
+            self.doc.select_one('input[name=product_name]')['value']=raw
+            self.assertEqual(c.identity(self.doc,'05586901')['product_name'],'기모 테리 맨투맨')
+            self.assertTrue(c.named_campaign(raw))
+        self.assertFalse(c.named_campaign('[남성] 기모 테리 맨투맨'))
+
+    def test_campaign_first_gallery_is_skipped_only_when_multiple(self):
+        self.assertEqual(c.skip_first_campaign_image(['first','second'],True),['second'])
+        self.assertEqual(c.skip_first_campaign_image(['first'],True),['first'])
+        self.assertEqual(c.skip_first_campaign_image(['first','second'],False),['first','second'])
+        self.doc.select_one('input[name=product_name]')['value']='[변우석] 기모 맨투맨'
+        urls=[c.SITE+'/_data/attach/first.jpg',c.SITE+'/_data/attach/second.jpg']
+        with patch.object(c,'gallery_urls',return_value=urls),patch.object(c,'gallery',return_value=('second',['second']*5,'')) as gallery:
+            c.collect(Context(('main_image','additional_images')),self.doc,c.SITE+'/shop/detail.php?pno=x','05586901','01',set(),{})
+        self.assertEqual(gallery.call_args.args[1],urls[1:])
+
+    def test_campaign_detail_keeps_single_body_plus_size_and_notice(self):
+        def doc(count):
+            body=''.join('<img src="/_gio_on/2026/body'+str(n)+'.jpg">' for n in range(count))
+            return c.parse('<div id="detail"><div class="detail_info"><div class="wing-detail-more-contents">'+body+'</div></div></div><div id="det_size_info"><div class="size_img"><img src="/_gio_on/2026/size.png"></div></div><div class="prd_detail_content_gio"><img data-layer_title="상품정보고시" src="/_gio_on/2026/notice.png"></div>')
+        one=c.detail_urls(doc(1),c.SITE,exclude_first=True)
+        self.assertEqual(one,[c.SITE+'/_gio_on/2026/body0.jpg',c.SITE+'/_gio_on/2026/size.png',c.SITE+'/_gio_on/2026/notice.png'])
+        two=c.detail_urls(doc(2),c.SITE,exclude_first=True)
+        self.assertEqual(two,[c.SITE+'/_gio_on/2026/body1.jpg',c.SITE+'/_gio_on/2026/size.png',c.SITE+'/_gio_on/2026/notice.png'])
+
+    def test_missing_year_uses_year_from_same_product_body(self):
+        doc=c.parse('<div id="detail"><div class="detail_info"><div class="wing-detail-more-contents"><img src="/_gio_on/2026/01076921_.jpg"></div></div></div><div class="prd_detail_content_gio"><img data-layer_title="상품정보고시" src="/_gio_on//01076921info.jpg"></div>')
+        self.assertIn(c.SITE+'/_gio_on/2026/01076921info.jpg',c.detail_urls(doc,c.SITE))
+
+    def test_official_soft_error_image_is_omitted_but_valid_body_remains(self):
+        good=c.SITE+'/_gio_on/2026/body.jpg';bad=c.SITE+'/_gio_on/2026/01026957size.jpg';cache={}
+        def image(ctx,url,cache):
+            if url==good:return {'data':b'validated'}
+            cache[url]=dict(status='inaccessible',reasons=['로그인·오류 HTML 응답']);return None
+        with patch.object(c,'public_image',side_effect=image),patch.object(c,'fetch',return_value=('<!-- ERROR PAGE -->[페이지 접근 불가]',bad)):
+            result=c.detail(Context(),[good,bad],cache)
+        self.assertIn(good,result);self.assertNotIn(bad,result)
+
+    def test_login_html_is_not_silently_omitted(self):
+        bad=c.SITE+'/_gio_on/2026/body.jpg';cache={bad:dict(status='inaccessible',reasons=['로그인·오류 HTML 응답'])}
+        with patch.object(c,'public_image',return_value=None),patch.object(c,'fetch',return_value=('<html>로그인</html>',bad)),self.assertRaises(ValueError):c.detail(Context(),[bad],cache)
 
 if __name__ == '__main__':
     unittest.main()
