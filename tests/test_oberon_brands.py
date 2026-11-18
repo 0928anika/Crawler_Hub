@@ -538,7 +538,7 @@ class RedfaceLocalCrop(unittest.TestCase):
     def run_redface(self, selected, extra_routes=None, ocr=None):
         module = load('redface_official')
         if ocr is not None:
-            module.ocr_labels = ocr
+            module.ocr_tiles = ocr
         stock = {'P1': {'option_name_original': ['색상', '사이즈'], 'option_value_orginal': ['블랙(BK)', '090'], 'option_price': 189000, 'is_display': 'T'},
                  'P2': {'option_name_original': ['색상', '사이즈'], 'option_value_orginal': ['블랙(BK)', '095'], 'option_price': 189000, 'is_selling': 'F'},
                  'P3': {'option_name_original': ['색상', '사이즈'], 'option_value_orginal': ['네이비(NV)', '090'], 'option_price': 189000},
@@ -559,7 +559,7 @@ class RedfaceLocalCrop(unittest.TestCase):
             'https://theredface.com/product/search.html?keyword=REWFJKWBF560':
                 '<div class="xans-search-result"><ul class="prdList"><li id="anchorBoxId_4413"><a href="/product/루미-재킷-rewfjkwbf560/4413/category/1/display/1/">루미 재킷 REWFJKWBF560</a></li>'
                 '<li><a href="/product/x-rewfjkwbf5600/9999/">비슷한 품번 REWFJKWBF5600</a></li></ul></div>',
-            'https://theredface.com/product/detail.html?product_no=4413': page,
+            'https://theredface.com/product/%EB%A3%A8%EB%AF%B8-%EC%9E%AC%ED%82%B7-rewfjkwbf560/4413/category/1/display/1/': page,
             'https://theredface.com/web/product/option_button/bk.jpg': solid((800, 800), (10, 10, 10)),
             'https://theredface.com/web/product/big/main.jpg': solid((1000, 1000), (60, 60, 160)),
             'https://theredface.com/web/product/extra/big/ex1.jpg': solid((900, 1200), (90, 40, 40)),
@@ -568,7 +568,7 @@ class RedfaceLocalCrop(unittest.TestCase):
         routes.update(extra_routes or {})
         calls = []
 
-        def request(ctx, url, limit=0, optional=False, site_only=True):
+        def request(ctx, url, limit=0, optional=False, site_only=True, timeout=25):
             url = module.public_url(url)
             calls.append(url)
             if url not in routes:
@@ -576,6 +576,8 @@ class RedfaceLocalCrop(unittest.TestCase):
                     return None
                 raise module.CrawlError('HTTP 404: ' + url)
             value = routes[url]
+            if isinstance(value, Exception):
+                raise module.CrawlError(str(value))  # 이 실행에서 불러온 모듈의 예외로 재현
             return value if isinstance(value, bytes) else value.encode()
         module.request = request
         meta = json.loads((ROOT / 'brands' / 'redface_official.json').read_text(encoding='utf-8'))
@@ -621,8 +623,8 @@ class RedfaceLocalCrop(unittest.TestCase):
 
     def test_ocr_label_maps_only_unique_official_color(self):
         seen = []
-        def fake_ocr(ctx, image, labels, work):
-            seen.append(len(labels))
+        def fake_ocr(ctx, tiles, work):
+            seen.append(len(tiles))
             return {0: 'BLACK', 1: '블랙 / 네이비'}   # 두 번째 띠는 두 색 동시 일치 → 미매핑
         rows, failures, error, calls = self.run_redface(ALL, ocr=fake_ocr)
         self.assertIsNone(error, failures)
@@ -642,6 +644,14 @@ class RedfaceLocalCrop(unittest.TestCase):
         self.assertIsNone(module.match_color('블랙 카키', colors)[0])
         self.assertIsNone(module.match_color('NEW ARRIVAL', colors)[0])
         self.assertIsNone(module.match_color('BLACKISH', colors)[0])
+
+    def test_slow_image_is_skipped_and_slug_page_used_first(self):
+        module = load('redface_official')
+        rows, failures, error, calls = self.run_redface(ALL, extra_routes={
+            'https://theredface.com/web/product/extra/big/ex1.jpg': module.CrawlError('네트워크 오류 timed out: x')})
+        self.assertIsNone(error, failures)
+        self.assertEqual(len(rows), 5)                        # 실패한 추가컷 1장만 빠지고 나머지는 계속
+        self.assertFalse(any('detail.html' in u for u in calls))  # 검증된 상품 링크로 바로 열고 fallback 미사용
 
     def test_optional_fields_skipped(self):
         rows, failures, error, calls = self.run_redface(['main_image'])

@@ -30,12 +30,13 @@ from urllib.request import Request, build_opener
 from bs4 import BeautifulSoup
 from PIL import Image, ImageChops, ImageOps
 
-REVISION = '2026-11-18-redface-2'
+REVISION = '2026-11-18-redface-3'
 ORIGIN = 'https://theredface.com'
 HOSTS = ('theredface.com', 'www.theredface.com', 'm.theredface.com')
 ALIASES = ('레드페이스', 'REDFACE', 'RED FACE', 'THE REDFACE')
 MAX_DOCUMENT = 3_000_000
 MAX_IMAGE = 10_000_000
+MAX_OCR_TILES = 40
 COLOR_TITLE = re.compile(r'색상|컬러|color|colour', re.I)
 SIZE_TITLE = re.compile(r'사이즈|size|치수|호수', re.I)
 SKIP_IMAGE = re.compile(r'/common/|/_d1/img/|/web/upload/icon|icon_|ico_|btn_|logo|banner|bn_|cashreceipt|escrow|allat|noimg|no_img|blank|'
@@ -102,7 +103,7 @@ def public_url(value, base=ORIGIN):
     return quote(url, safe=":/?=&%+;,@!~*'()-._#")
 
 
-def request(ctx, url, limit=MAX_DOCUMENT, optional=False, site_only=True):
+def request(ctx, url, limit=MAX_DOCUMENT, optional=False, site_only=True, timeout=25):
     url = public_url(url)
     if site_only and urlsplit(url).hostname not in HOSTS:
         raise CrawlError('레드페이스 공식몰 밖 주소는 문서로 요청하지 않습니다: ' + url)
@@ -111,8 +112,9 @@ def request(ctx, url, limit=MAX_DOCUMENT, optional=False, site_only=True):
         ctx.log('GET ' + url, 'INFO')
         failure, retry = None, False
         try:
-            req = Request(url, headers={'User-Agent': 'Mozilla/5.0 CrawlerHub', 'Accept-Encoding': 'identity', 'Referer': ORIGIN + '/'})
-            with build_opener().open(req, timeout=25) as response:
+            req = Request(url, headers={'User-Agent': 'Mozilla/5.0 CrawlerHub', 'Accept': '*/*', 'Accept-Language': 'ko-KR,ko;q=0.9',
+                                        'Accept-Encoding': 'identity', 'Referer': ORIGIN + '/'})
+            with build_opener().open(req, timeout=timeout) as response:
                 data = bytearray()
                 while True:
                     ctx.checkpoint()
@@ -125,7 +127,7 @@ def request(ctx, url, limit=MAX_DOCUMENT, optional=False, site_only=True):
             result = bytes(data)
         except HTTPError as exc:
             failure = 'HTTP ' + str(exc.code) + ': ' + url
-            if optional and exc.code in (403, 404, 410):
+            if optional and 400 <= exc.code < 500 and exc.code not in (408, 429):
                 ctx.log(failure + ' → 이 자료만 제외', 'WARNING')
                 return None
             retry = exc.code in (408, 429, 500, 502, 503, 504)
@@ -423,7 +425,11 @@ def build_detail(ctx, products):
 def load_image(ctx, url, cache):
     if url in cache:
         return None if cache[url] is True else cache[url]  # True = 이미 잘라서 닫은 원본
-    payload = request(ctx, url, MAX_IMAGE, optional=True, site_only=False)
+    try:
+        payload = request(ctx, url, MAX_IMAGE, optional=True, site_only=False, timeout=15)
+    except CrawlError as exc:
+        ctx.log('이미지 다운로드 실패로 이 사진만 제외: ' + str(exc), 'WARNING')
+        payload = None
     image = None
     if payload:
         try:
@@ -545,24 +551,26 @@ def segment(image):
     return out, labels
 
 
-def ocr_labels(ctx, image, labels, work):
-    """Windows 기본 OCR로 글자 띠만 읽는다. 윈도우가 아니거나 실패하면 빈 결과(→ 미매핑)."""
-    if not labels:
+def ocr_tiles(ctx, tiles, work):
+    """Windows 기본 OCR로 글자 띠들을 한 번에 읽는다(상품당 PowerShell 1회). 윈도우가 아니거나 실패하면 빈 결과(→ 미매핑)."""
+    if not tiles:
         return {}
     if os.name != 'nt':
         ctx.log('Windows가 아니어서 색상명 OCR을 건너뜁니다 → 사진은 수동 매핑', 'INFO')
         return {}
+    if len(tiles) > MAX_OCR_TILES:
+        ctx.log('색상명 후보 띠가 ' + str(len(tiles)) + '개로 많아 앞 ' + str(MAX_OCR_TILES) + '개만 OCR합니다(나머지 컷은 수동 매핑)', 'WARNING')
+        tiles = tiles[:MAX_OCR_TILES]
     work = Path(work)
     work.mkdir(parents=True, exist_ok=True)
     items = []
-    for i, box in enumerate(labels):
+    for i, tile in enumerate(tiles):
         ctx.checkpoint()
-        tile = image.crop(tuple(box))
         factor = min(2.0, 2400 / tile.width, 3500 / max(1, tile.height))
-        tile = tile.resize((max(1, round(tile.width * factor)), max(1, round(tile.height * factor))), Image.Resampling.LANCZOS)
+        big = tile.resize((max(1, round(tile.width * factor)), max(1, round(tile.height * factor))), Image.Resampling.LANCZOS)
         path = work / ('label_' + str(i) + '.png')
-        tile.save(path)
-        tile.close()
+        big.save(path)
+        big.close()
         items.append({'index': i, 'path': str(path.resolve())})
     script = work / 'recognize.ps1'
     script.write_text(POWERSHELL_OCR, encoding='utf-8-sig')
@@ -572,7 +580,7 @@ def ocr_labels(ctx, image, labels, work):
     texts = {}
     with tempfile.TemporaryFile() as stdout, tempfile.TemporaryFile() as stderr:
         process = subprocess.Popen(command, stdout=stdout, stderr=stderr, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
-        deadline = time.monotonic() + max(45, len(items) * 12)
+        deadline = time.monotonic() + min(120, 40 + len(items) * 2)
         try:
             while process.poll() is None:
                 ctx.checkpoint()
@@ -634,38 +642,30 @@ def save_cut(ctx, image, box, seen):
     return path
 
 
-def cuts_from(ctx, url, image, seen, colors=None, work=None):
-    """한 원본에서 개별 컷 목록 [(path, box, 사전매핑, 근거)].
-    원래 비율이 개별 컷이면 통째, 통이미지면 여백 경계로 분할 + (윈도우) 색상명 띠 OCR."""
+def cuts_from(ctx, url, image, seen, tiles=None):
+    """한 원본에서 개별 컷 목록 [(path, box, 글자띠 번호|None)].
+    원래 비율이 개별 컷이면 통째, 통이미지면 여백 경계로 분할. 색상명 후보 띠는 tiles에 모아 나중에 한 번에 OCR."""
     w, h = image.size
     if min(w, h) >= 500 and max(w, h) / min(w, h) <= 1.8:
         path = save_cut(ctx, image, None, seen)
-        return [(path, None, None, '')] if path else []
+        return [(path, None, None)] if path else []
     if max(w, h) / min(w, h) <= 1.8:
         return []
     photos, labels = segment(image)
     if not photos:
         ctx.log('여백 경계로 안전하게 나눌 수 있는 개별 컷이 없어 제외: ' + url, 'INFO')
         return []
-    used = sorted({label for _, label in photos if label is not None})
-    texts = ocr_labels(ctx, image, [labels[i] for i in used], work) if colors and used and work else {}
-    decided = {}
-    for k, index in enumerate(used):
-        if k not in texts:
-            continue
-        color, why = match_color(texts[k], colors)
-        if color:
-            decided[index] = (color, 'Windows OCR "' + re.sub(r'\s+', ' ', texts[k]).strip()[:60] + '" → ' + why + ' / 사진 바로 위 글자 띠 y=' +
-                              str(labels[index][1]) + '~' + str(labels[index][3]) + ' / ' + url)
-        else:
-            ctx.log('색상명 띠 OCR "' + texts[k].strip()[:40] + '" ' + (why or '공식 색상과 불일치') + ' → 아래 컷은 수동 매핑', 'INFO')
+    keys = {}
+    if tiles is not None:
+        for label in sorted({label for _, label in photos if label is not None}):
+            keys[label] = len(tiles)
+            tiles.append((image.crop(tuple(labels[label])), url, labels[label]))
     out = []
     for box, label in photos:
         ctx.checkpoint()
         path = save_cut(ctx, image, list(box), seen)
         if path:
-            color, evidence = decided.get(label, (None, ''))
-            out.append((path, list(box), color, evidence))
+            out.append((path, list(box), keys.get(label)))
     return out
 
 
@@ -699,7 +699,8 @@ def crawl(ctx):
     for gid, href in links:
         ctx.checkpoint()
         try:
-            raw = decode(request(ctx, ORIGIN + '/product/detail.html?product_no=' + gid, optional=True) or request(ctx, href))
+            raw = request(ctx, href, optional=True) or request(ctx, ORIGIN + '/product/detail.html?product_no=' + gid)
+            raw = decode(raw)
             product = parse_product(ctx, raw, code, href)
             if product is None:
                 ctx.log('상세의 상품명·자체상품코드에 품번이 없어 제외: ' + href, 'INFO')
@@ -739,20 +740,36 @@ def crawl(ctx):
             mapped = entries[0] if len({color_key(e) for e in entries}) == 1 else None
             evidence = ('Cafe24 색상 옵션 "' + mapped['color_name'] + (' (' + mapped['color_code'] + ')' if mapped['color_code'] else '') +
                         '"의 공식 link_image: ' + url) if mapped else ''
-            for path, box, _, _ in cuts_from(ctx, url, image, seen):
-                pending.append((path, mapped, evidence, url, box))
+            for path, box, _ in cuts_from(ctx, url, image, seen):
+                pending.append([path, mapped, evidence, url, box, None])
             release(cache, image)
     # 2) 갤러리(미매핑) + 상세 통이미지(색상명 띠 OCR 일치 시에만 사전 매핑). 색감·파일명으로 추측 안 함
-    for product in products:
-        for url in product['gallery'] + product['detail']:
-            if url in linked:
+    sources = unique(u for product in products for u in product['gallery'] + product['detail'] if u not in linked)
+    tiles = []
+    for n, url in enumerate(sources, 1):
+        ctx.stage('이미지 ' + str(n) + '/' + str(len(sources)) + ' 다운로드·컷 저장')
+        image = load_image(ctx, url, cache)
+        if image is not None:
+            for path, box, key in cuts_from(ctx, url, image, seen, tiles):
+                pending.append([path, None, '', url, box, key])
+            release(cache, image)
+    if tiles:
+        ctx.stage('색상명 글자 띠 OCR (' + str(len(tiles)) + '개, 1회 실행)')
+        texts = ocr_tiles(ctx, [t for t, _, _ in tiles], work)
+        decided = {}
+        for key, (tile, source, ybox) in enumerate(tiles):
+            tile.close()
+            if key not in texts:
                 continue
-            ctx.checkpoint()
-            image = load_image(ctx, url, cache)
-            if image is not None:
-                for path, box, color, evidence in cuts_from(ctx, url, image, seen, colors, work / str(len(pending))):
-                    pending.append((path, color, evidence, url, box))
-                release(cache, image)
+            color, why = match_color(texts[key], colors)
+            if color:
+                decided[key] = (color, 'Windows OCR "' + re.sub(r'\s+', ' ', texts[key]).strip()[:60] + '" → ' + why +
+                                ' / 사진 바로 위 글자 띠 y=' + str(ybox[1]) + '~' + str(ybox[3]) + ' / ' + source)
+            else:
+                ctx.log('색상명 띠 OCR "' + texts[key].strip()[:40] + '" ' + (why or '공식 색상과 불일치') + ' → 아래 컷은 수동 매핑', 'INFO')
+        for entry in pending:
+            if entry[5] in decided:
+                entry[1], entry[2] = decided[entry[5]]
     if not pending:
         ctx.fail_item('규격(양변 500px·비율 1.8 이하)을 통과한 개별 상품 컷이 없습니다.')
         raise CrawlError('개별 컷 없음')
@@ -766,7 +783,7 @@ def crawl(ctx):
         except CrawlError as exc:
             ctx.fail_item(str(exc))
             raise
-    for path, mapped, evidence, source, box in pending:
+    for path, mapped, evidence, source, box, _ in pending:
         ctx.checkpoint()
         record = dict(base)
         record['크롭 원본 이미지'] = source
