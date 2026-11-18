@@ -1,0 +1,29 @@
+[3번 이미지저장·크롭 프롬프트 — 레드페이스 작성본]
+사용법: 이 작성본과 prompts/03_이미지저장_제작프롬프트.txt 전체를 함께 전달한다. 아래 값이 원본의 [내가 작성하는 정보] 작성란을 대신한다.
+
+[내가 작성하는 정보]
+브랜드 ID: redface_official
+브랜드명: 레드페이스
+카테고리: 아웃도어
+크롤링 소스: 공식 홈페이지
+브랜드 몰 또는 스토어 URL: https://theredface.com/
+시험할 기본 품번 2~3개: REWFJKWBF560, REWMJKWBF512, REWFTSWBF550
+추가 참고사항 또는 기존 크롤러:
+- 쇼핑몰 플랫폼: Cafe24 (푸터 '카페24' 호스팅, /product/{상품명}/{상품번호}/category/{분류}/display/{n}/ 주소 구조로 확인)
+- 예시 품번은 공식몰 메인 화면의 상품 링크에서 확인(REWFTSWBF550=4403, REWMJKWBF512=4412, REWFJKWBF560=4413, REWMPAWBF411=4410)
+- 검색: /product/search.html?keyword={품번} (Cafe24 표준, 실조회 전)
+- 상세: /product/detail.html?product_no={번호} — 2026-11-18 작업 환경에서는 상품 상세 페이지를 열지 못함(승인 대기). 선택자·통이미지 배치는 Cafe24 표준 기준이며 실사이트 확인 필요
+- 크롭 방식: 상세 통이미지를 '전체 폭 배경 여백(가로 띠)'과 블록 안 '세로 배경 여백'으로만 나눈다. 고정 좌표·등분 금지. 글자·표·실측선처럼 내용 밀도가 낮은 블록, 500px 미만, 비율 1.8 초과 컷은 제외. 세로로 긴 컷은 원본 배경 픽셀로만 좌우를 넓힌다.
+- 사전 매핑: Cafe24 색상 옵션의 공식 link_image 사진만(옵션 ↔ 이미지 DOM 연결). 갤러리·통이미지 크롭 컷은 미매핑. OCR 미사용.
+
+[구현 결과 — Oberon 브랜치 brands/redface_official.py / .json]
+- mapping_mode=manual, image_mode=local, image_color_mapping=manual, additional_image_count=5
+- 출력 추가 열: 원본 상품명, 크롭 원본 이미지, 크롭 좌표
+- 상세: 전 색상 공통 HTML(#prdDetail 공식 상세 이미지 + 상품정보고시 2열 표 + 사이즈 표, 공통 배너·배송·공지·이벤트 이미지 제외)
+- 사이즈/판매가/정상가/카테고리: option_stock_data·#span_product_price_*·headcategory. 색상·상품 링크 간 값이 다르면 빈칸
+
+[미확인 범위 — 실행 전 확인할 것]
+1. 레드페이스 상세 HTML 실제 구조(#prdDetail 위치, 색상 옵션 option_title, link_image 유무, 자체상품코드 표기)
+2. 상세 통이미지가 흰 배경 + 여백으로 컷이 구분되는지(배경이 회색·사진 간 여백 없음이면 분할 결과 0장 → 갤러리 사진만 후보)
+3. 상품정보고시가 표(table)인지 이미지인지(이미지면 고시 표 없이 상세 완성)
+4. 위 3개 품번으로 Crawler Hub에서 실행 → 색상 매핑 화면에서 컷 경계·누락 확인

@@ -20,7 +20,8 @@ from PIL import Image
 NEW = ['adhoc_official', 'bangbang_official', 'decoand_official', 'dawnfield_official', 'disneygolf_smfashion',
        'renomakids_official', 'minimum_official', 'adidas_official', 'brentwood_kolonmall', 'ping_bucketstore', 'ecolier_soiemall',
        'jdx_official', 'sfit_official', 'elcanto_official', 'riverclassy_favlook', 'zensai_official', 'mountia_official',
-       'lenic_official', 'lecoqgolf_official', 'underarmour_official', 'millet_official', 'fila_official']
+       'lenic_official', 'lecoqgolf_official', 'underarmour_official', 'millet_official', 'fila_official',
+       'redface_official']
 
 
 def load(key):
@@ -130,8 +131,12 @@ class Contract(unittest.TestCase):
                 self.assertIn('판매가', meta['output_headers'])
                 self.assertIn('정상가', meta['output_headers'])
                 self.assertIn('상품 링크', meta['output_headers'])
-                self.assertNotIn('emit_local_image(', code)
-                if meta['mapping_mode'] == 'manual':
+                if meta.get('image_mode') != 'local':
+                    self.assertNotIn('emit_local_image(', code)
+                else:
+                    self.assertEqual((meta['mapping_mode'], meta['image_color_mapping']), ('manual', 'manual'))
+                    self.assertNotIn('emit_unmapped(', code)
+                if meta['mapping_mode'] == 'manual' and meta.get('image_mode') != 'local':
                     self.assertTrue(meta.get('hybrid_mapping'))
                     self.assertNotIn('mapping_verified=False', code)
                 self.assertNotIn('import requests', code)
@@ -504,6 +509,123 @@ class ThirdBatch(unittest.TestCase):
         rows, failures, error, net = run(module, 'fila_official', 'FS263PO01X001', ['price'], routes)
         self.assertIsNone(error, failures)
         self.assertEqual([r['색상코드'] for r in rows], ['001'])
+
+
+def redface_strip():
+    """흰 배경 통이미지: 색상명 띠 → 단독 컷 → 나란한 2컷 → 실측표(듬성한 선) 순서."""
+    from PIL import ImageDraw
+    img = Image.new('RGB', (1400, 2600), 'white')
+    d = ImageDraw.Draw(img)
+    d.rectangle((600, 60, 800, 90), fill=(20, 20, 20))          # 색상명 문구(얇은 띠)
+    d.rectangle((400, 180, 1000, 980), fill=(30, 60, 120))       # 단독 컷 600x800
+    d.rectangle((80, 1150, 640, 1850), fill=(150, 30, 30))       # 왼쪽 컷 560x700
+    d.rectangle((760, 1150, 1320, 1850), fill=(30, 120, 60))     # 오른쪽 컷
+    for y in range(2000, 2500, 50):                              # 실측표: 듬성한 격자선
+        d.line((100, y, 1300, y), fill=(0, 0, 0), width=2)
+    for x in range(100, 1301, 200):
+        d.line((x, 2000, x, 2450), fill=(0, 0, 0), width=2)
+    buf = io.BytesIO(); img.save(buf, 'JPEG', quality=90)
+    return buf.getvalue()
+
+
+def solid(size, color):
+    buf = io.BytesIO(); Image.new('RGB', size, color).save(buf, 'PNG')
+    return buf.getvalue()
+
+
+class RedfaceLocalCrop(unittest.TestCase):
+    def run_redface(self, selected, extra_routes=None):
+        module = load('redface_official')
+        stock = {'P1': {'option_name_original': ['색상', '사이즈'], 'option_value_orginal': ['블랙(BK)', '090'], 'option_price': 189000, 'is_display': 'T'},
+                 'P2': {'option_name_original': ['색상', '사이즈'], 'option_value_orginal': ['블랙(BK)', '095'], 'option_price': 189000, 'is_selling': 'F'},
+                 'P3': {'option_name_original': ['색상', '사이즈'], 'option_value_orginal': ['네이비(NV)', '090'], 'option_price': 189000},
+                 'P4': {'option_name_original': ['색상', '사이즈'], 'option_value_orginal': ['네이비(NV)', '095'], 'option_price': 189000}}
+        page = ('<html><head><meta property="og:image" content="https://theredface.com/web/product/big/main.jpg">'
+                '<link rel="canonical" href="https://theredface.com/product/x/4413/"></head><body>'
+                "<script>var product_name = '[사은품증정] 레드페이스 루미 구스 헤비 다운 우먼 재킷 REWFJKWBF560'; var option_stock_data = '"
+                + json.dumps(stock, ensure_ascii=False).replace('"', '\\"') + "';</script>"
+                '<div class="infoArea"><span id="span_product_price_text">189,000원</span><span id="span_product_price_custom">389,000원</span></div>'
+                '<div class="xans-product-headcategory"><ol><li>홈</li><li>여성</li><li>다운</li></ol></div>'
+                '<div class="xans-product-addimage"><img src="//theredface.com/web/product/extra/small/ex1.jpg"></div>'
+                '<ul option_title="색상"><li option_value="블랙(BK)" link_image="//theredface.com/web/product/option_button/bk.jpg"></li><li option_value="네이비(NV)"></li></ul>'
+                '<div id="prdDetail"><img src="/web/upload/common/top_banner.jpg"><img ec-data-src="/web/product_detail/REWFJKWBF560_strip.jpg">'
+                '<table><tr><th>제품소재</th><td>나일론 100%</td></tr><tr><th>제조국</th><td>베트남</td></tr><tr><th>세탁방법 및 취급시 주의사항</th><td>드라이클리닝</td></tr></table>'
+                '<table><tr><th>사이즈</th><th>가슴</th><th>총장</th></tr><tr><td>090</td><td rowspan="2">100</td><td>68</td></tr><tr><td>095</td><td>70</td></tr></table>'
+                '</div></body></html>')
+        routes = {
+            'https://theredface.com/product/search.html?keyword=REWFJKWBF560':
+                '<div class="xans-search-result"><ul class="prdList"><li id="anchorBoxId_4413"><a href="/product/루미-재킷-rewfjkwbf560/4413/category/1/display/1/">루미 재킷 REWFJKWBF560</a></li>'
+                '<li><a href="/product/x-rewfjkwbf5600/9999/">비슷한 품번 REWFJKWBF5600</a></li></ul></div>',
+            'https://theredface.com/product/detail.html?product_no=4413': page,
+            'https://theredface.com/web/product/option_button/bk.jpg': solid((800, 800), (10, 10, 10)),
+            'https://theredface.com/web/product/big/main.jpg': solid((1000, 1000), (60, 60, 160)),
+            'https://theredface.com/web/product/extra/big/ex1.jpg': solid((900, 1200), (90, 40, 40)),
+            'https://theredface.com/web/product_detail/REWFJKWBF560_strip.jpg': redface_strip(),
+        }
+        routes.update(extra_routes or {})
+        calls = []
+
+        def request(ctx, url, limit=0, optional=False, site_only=True):
+            url = module.public_url(url)
+            calls.append(url)
+            if url not in routes:
+                if optional:
+                    return None
+                raise module.CrawlError('HTTP 404: ' + url)
+            value = routes[url]
+            return value if isinstance(value, bytes) else value.encode()
+        module.request = request
+        meta = json.loads((ROOT / 'brands' / 'redface_official.json').read_text(encoding='utf-8'))
+        events, error = [], None
+        with tempfile.TemporaryDirectory() as folder:
+            ctx = CrawlContext('unused', Path(folder) / 'result.xlsx', 0, selected, meta['output_headers'], lambda: None,
+                               lambda kind, **data: events.append((kind, data)), input_item={'품번': 'REWFJKWBF560'},
+                               mapping_mode=meta['mapping_mode'], image_mode=meta['image_mode'])
+            try:
+                module.crawl(ctx)
+                ctx.finish()
+            except Exception as exc:
+                error = exc
+        rows = [d for k, d in events if k == 'row' and not d.get('header')]
+        headers = [d['row'] for k, d in events if k == 'row' and d.get('header')][-1]
+        records = [dict(dict(zip(headers, d['row'])), _unmapped=d.get('unmapped')) for d in rows]
+        failures = [d['message'] for k, d in events if k == 'item_failure']
+        return records, failures, error, calls
+
+    def test_cuts_mapping_and_shared_detail(self):
+        rows, failures, error, calls = self.run_redface(ALL)
+        self.assertIsNone(error, failures)
+        crops = [json.loads(r['크롭 좌표']) for r in rows if r['크롭 좌표']]
+        self.assertEqual(len(rows), 6)            # link_image + 대표 + 추가 + 통이미지 3컷
+        self.assertEqual(len(crops), 3)           # 문구 띠·실측표는 제외
+        for l, t, r, b in crops:
+            self.assertGreaterEqual(min(r - l, b - t), 500)
+            self.assertLessEqual(max(r - l, b - t) / min(r - l, b - t), 1.8)
+            self.assertLess(b, 2000)               # 실측표 영역 미포함
+        mapped = [r for r in rows if r['_unmapped'].get('preassigned_color_id')]
+        self.assertEqual(len(mapped), 1)
+        self.assertIn('link_image', mapped[0]['_unmapped']['mapping_evidence'])
+        self.assertTrue(all(len(r['_unmapped']['colors']) == 2 for r in rows))
+        r = rows[0]
+        self.assertEqual((r['상품명'], r['사이즈'], r['판매가'], r['정상가'], r['카테고리']), ('루미 구스 헤비 다운 우먼 재킷', '090,095', 189000, 389000, '여성 > 다운'))
+        detail = r['상세페이지 HTML']
+        self.assertIn('REWFJKWBF560_strip.jpg', detail)
+        self.assertNotIn('top_banner', detail)
+        self.assertIn('<th>제조국</th><td>베트남</td>', detail)
+        self.assertIn('rowspan="2"', detail)
+        self.assertTrue(all(x['상세페이지 HTML'] == detail for x in rows))
+        self.assertFalse(any('9999' in u for u in calls))  # 비슷한 품번 미요청
+
+    def test_optional_fields_skipped(self):
+        rows, failures, error, calls = self.run_redface(['main_image'])
+        self.assertIsNone(error, failures)
+        self.assertTrue(rows)
+        self.assertTrue(all(r.get('상세페이지 HTML') in (None, '') and r.get('사이즈') in (None, '') for r in rows))
+
+    def test_no_image_fields_is_explicit_failure(self):
+        rows, failures, error, calls = self.run_redface(['price'])
+        self.assertIsNotNone(error)
+        self.assertFalse(any('detail.html' in u for u in calls))
 
 
 if __name__ == '__main__':
