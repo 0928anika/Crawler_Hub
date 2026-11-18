@@ -1,0 +1,175 @@
+{
+  "id": "pierrecardin_official",
+  "name": "피에르가르뎅",
+  "category": "남성 의류",
+  "crawl_source": "공식 홈페이지",
+  "script": "pierrecardin_official.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명",
+    "사이트 브랜드"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "hybrid",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상 행: 공식 option_stock_data의 해당 색상 사이즈 전체(품절 포함, 숨김 옵션 제외). 수동 후보는 모든 색상의 사이즈가 같을 때만 공통값, 다르면 빈칸."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data 색상별 option_price가 하나로 같을 때 그 값, 없으면 #span_product_price_sale/#span_product_price_text. 사이즈별 상이하면 빈칸."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 소비자가 #span_product_price_custom 또는 product_custom(regular_price cafe24 프로필). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 .xans-product-headcategory 경로."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상 옵션 1개 페이지는 해당 색상 자동, 다색상 페이지는 공식 link_image(색상 연결 사진)만 자동, 나머지 갤러리 개별 컷은 수동 색상 매핑 후보. og:image 원본 우선, 공개 접근·JPEG/PNG/정지 WebP·500px·10MB·비율 1.8 검사."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "자동 색상은 공식 연결 사진으로 5슬롯, 수동 후보는 갤러리 전체를 자르지 않고 전달. 최종 개수는 Hub가 적용."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상세 영역 이미지(공통 배너·배송·로고 경로는 요청 제외)와 HTML 고시/사이즈표가 있으면 표로 재구성. 이미지 안 고시·사이즈표는 원본 유지."
+    }
+  },
+  "guide": {
+    "example": "PRKR3901",
+    "examples": [
+      "PRKR3901"
+    ],
+    "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{2,24}(?:_[A-Za-z0-9]{1,4})?$",
+    "format": "색상코드를 제외한 기본 품번(영문 대문자·숫자). 자체상품코드에 색상코드가 있는 상품만 품번_색상코드 지정 가능",
+    "notes": "기본 품번으로 공식 색상 전체 조회. 색상명과 숫자 색상코드를 분리하며 미연결 사진은 수동 매핑.",
+    "method": "pierrecardinkorea.com의 공식 검색·품번·옵션 재고 데이터를 대조. 색상 연결 사진은 자동, 미연결 상품컷은 수동 매핑.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "공백",
+      "PRTS2410_"
+    ],
+    "validation_note": "입력 형식 검사이며 실제 상품 존재 확인은 실행 시 수행"
+  },
+  "notes": "기존 Cafe24 혼합 색상 매핑 엔진 기반. 피에르가르뎅 공식몰 PRKR3901의 상품·옵션·상세 실제 확인. 색상명 뒤 두 자리 코드를 공백 유무와 관계없이 분리. 본문 상품·사이즈·고시 이미지 유지, common 경로 배너 제외. PRKR3901 본문의 품번 폴더 뒤 공백 오타는 실제 존재하는 동일 파일 경로로 정리. 없는 별도 고시·사이즈 표는 생성하지 않음.",
+  "hybrid_mapping": true,
+  "additional_image_count": 5,
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상 행: 공식 option_stock_data의 해당 색상 사이즈 전체(품절 포함, 숨김 옵션 제외). 수동 후보는 모든 색상의 사이즈가 같을 때만 공통값, 다르면 빈칸."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data 색상별 option_price가 하나로 같을 때 그 값, 없으면 #span_product_price_sale/#span_product_price_text. 사이즈별 상이하면 빈칸."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 소비자가 #span_product_price_custom 또는 product_custom(regular_price cafe24 프로필). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 .xans-product-headcategory 경로."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상 옵션 1개 페이지는 해당 색상 자동, 다색상 페이지는 공식 link_image(색상 연결 사진)만 자동, 나머지 갤러리 개별 컷은 수동 색상 매핑 후보. og:image 원본 우선, 공개 접근·JPEG/PNG/정지 WebP·500px·10MB·비율 1.8 검사."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "자동 색상은 공식 연결 사진으로 5슬롯, 수동 후보는 갤러리 전체를 자르지 않고 전달. 최종 개수는 Hub가 적용."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상세 영역 이미지(공통 배너·배송·로고 경로는 요청 제외)와 HTML 고시/사이즈표가 있으면 표로 재구성. 이미지 안 고시·사이즈표는 원본 유지."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null,
+    "사이트 브랜드": null
+  },
+  "code_hash": "bf19855e525d8f85621e88ff96fc9c37be8309883542cc2e761e682433b417f6"
+}
