@@ -75,6 +75,16 @@ URL·선택자·응답 키는 원본 단독 크롤러에서 운영 확인된 값
 - 조회·옵션·상세는 fashionplus_item 로직, 분할·OCR은 레드페이스 크롭 엔진 재사용. 색상명 위치 'below'.
 - 작성 프롬프트: docs/prompts/fashionplus_item_crop_03_image_crop.txt
 
+## 6차 등록 — 레드페이스 OCR 추천 버전 (2026-11-19)
+
+| ID | 브랜드 | 유형 | 근거 |
+|---|---|---|---|
+| redface_official_ocr | 레드페이스 OCR | 3번 로컬 이미지 저장·크롭 (manual/local) + 스와치 추천 매핑 | REWFJKWBF560 실이미지(브라우저 계산) + fixture |
+
+- 기존 redface_official은 그대로 유지. 수집·크롭 동일, ③ 스와치 추천만 추가.
+- COLOR 영역 색상명(OCR, 공식 옵션명 정답지) 아래 스와치(저장 안 함)의 상품 색과 같은 화소 비율로 컷별 추천. 20% 이상 + 2위의 2배 이상일 때만 선택, 글자 없는 스와치가 1위면 미매핑.
+- 560 실측: 갤러리 블랙컷 블랙 0.92 / 카키컷 카키 0.88 / 아이보리 단독·모델컷 아이보리 0.68~0.93, 통이미지 큰 컷 7장 모두 아이보리 0.85~0.99(2위 0.07 이하).
+
 ## 공통 규약 적용
 
 - 결과 키: product_code / product_name / color / product_url 필수, color_name·color_code 분리, `원본 상품명` 추가 열.

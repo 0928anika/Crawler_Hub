@@ -1,0 +1,180 @@
+{
+  "id": "redface_official_ocr",
+  "name": "레드페이스 OCR",
+  "category": "아웃도어",
+  "crawl_source": "공식 홈페이지",
+  "script": "redface_official_ocr.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_mode": "local",
+  "additional_image_count": 5,
+  "image_color_mapping": "manual",
+  "official_color_codes": false,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명",
+    "OCR 근거",
+    "크롭 원본 이미지",
+    "크롭 좌표"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 option_stock_data의 색상-사이즈 조합(품절·비노출 포함, 앞자리 0 유지). 모든 색상의 사이즈가 같을 때만 쉼표 구분 공통값, 다르면 빈칸(합집합 출력 안 함). (레드페이스 상품 상세 실조회 전 — Cafe24 표준 구조 기준 구현, 실사이트 확인 필요)"
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 #span_product_price_sale 또는 #span_product_price_text. 옵션별 가격이 다르면 빈칸. (레드페이스 상품 상세 실조회 전 — Cafe24 표준 구조 기준 구현, 실사이트 확인 필요)"
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 소비자가 #span_product_price_custom 또는 product_custom(Cafe24 표준). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음. 상품 링크 간 값이 다르면 빈칸. (레드페이스 상품 상세 실조회 전 — Cafe24 표준 구조 기준 구현, 실사이트 확인 필요)"
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 .xans-product-headcategory 경로. 상품 링크 간 다르면 빈칸. (레드페이스 상품 상세 실조회 전 — Cafe24 표준 구조 기준 구현, 실사이트 확인 필요)"
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "갤러리 사진은 그대로, 상세 통이미지는 배경 여백·가는 흰 선 경계로만 개별 컷을 잘라 로컬 JPEG 저장(500px 미만·비율 1.8 초과 제외, 확대 없음). 사전 매핑(Windows 기본 OCR): ① 색상 옵션 공식 link_image ② 사진 바로 위 색상명 글자가 공식 옵션명과 하나만 일치하면 그 아래 컷 ③ 스와치 추천 — COLOR 영역 색상명 글자 아래 스와치(저장 안 함)의 상품 색과 같은 화소가 컷의 20% 이상이고 2위의 2배 이상일 때 그 색상으로 미리 선택. ③은 색감 비교 '추천'이며 매핑 화면에서 자유롭게 수정. 맥·OCR 실패·차이 작음은 수동 매핑."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "대표와 같은 후보에서 사용자가 선택. 허브가 대표 1장 + 추가 5칸 규칙 적용. (레드페이스 상품 상세 실조회 전 — Cafe24 표준 구조 기준 구현, 실사이트 확인 필요)"
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "전 색상 공통 HTML: #prdDetail 공식 상세 이미지(공통 배너·배송·공지·이벤트 이미지 제외) + 상품정보고시 2열 표 + 사이즈 머리글이 있는 공식 표(rowspan/colspan 보존). 고시·사이즈표가 없는 상품은 그 부분 없이 완성. (레드페이스 상품 상세 실조회 전 — Cafe24 표준 구조 기준 구현, 실사이트 확인 필요)"
+    }
+  },
+  "guide": {
+    "example": "REWFJKWBF560",
+    "examples": [
+      "REWFJKWBF560",
+      "REWMJKWBF512",
+      "REWFTSWBF550"
+    ],
+    "pattern": "^[A-Za-z0-9-]{6,20}$",
+    "format": "색상코드를 제외한 기본 품번",
+    "notes": "수집 후 색상 매핑하기에 OCR·스와치 추천으로 미리 선택된 사진이 표시됩니다. 틀린 사진은 클릭해서 바꾸세요.",
+    "method": "공식 검색(/product/search.html?keyword=) 결과 중 상품명·링크에 품번이 정확히 들어간 상품만 열고, 상세의 상품명 또는 자체상품코드로 다시 대조합니다.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "공백",
+      "REWFJKWBF56"
+    ],
+    "validation_note": "입력 형식 검사이며 실제 상품 존재 확인은 실행 시 수행"
+  },
+  "notes": "레드페이스 OCR 추천 버전. 기존 '레드페이스'(redface_official)와 수집·크롭은 같고 ③ 스와치 추천 매핑만 추가. 2026-11-19 실조회(560·512·550·411 공통): 통이미지 COLOR 영역 = 색상명 한 줄 + 바로 아래 색상별 스와치(약 185~340px, 저장 규격 미달). 큰 컷(FRONT/BACK/DETAIL VIEW)·갤러리에는 색상 글자가 없고 옵션 link_image도 비어 있어 기존 방식으로는 사전 매핑 0장 → OCR로 스와치 색상을 확정한 뒤 그 스와치의 상품 색(CIELAB 중앙값)과 각 컷의 상품 색 화소 비율(ΔE<12)을 비교해 추천. 사용자 요청으로 이 브랜드에 한해 '색감으로 확정 금지'를 '추천+수정 가능'으로 완화. 글자 없는 스와치가 1위이거나 2위와 차이가 작으면 미매핑. 결과의 OCR 근거 열에 비율·2위 기록.",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공개 option_stock_data의 색상-사이즈 조합(품절·비노출 포함, 앞자리 0 유지). 모든 색상의 사이즈가 같을 때만 쉼표 구분 공통값, 다르면 빈칸(합집합 출력 안 함). (레드페이스 상품 상세 실조회 전 — Cafe24 표준 구조 기준 구현, 실사이트 확인 필요)"
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 #span_product_price_sale 또는 #span_product_price_text. 옵션별 가격이 다르면 빈칸. (레드페이스 상품 상세 실조회 전 — Cafe24 표준 구조 기준 구현, 실사이트 확인 필요)"
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 소비자가 #span_product_price_custom 또는 product_custom(Cafe24 표준). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음. 상품 링크 간 값이 다르면 빈칸. (레드페이스 상품 상세 실조회 전 — Cafe24 표준 구조 기준 구현, 실사이트 확인 필요)"
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 .xans-product-headcategory 경로. 상품 링크 간 다르면 빈칸. (레드페이스 상품 상세 실조회 전 — Cafe24 표준 구조 기준 구현, 실사이트 확인 필요)"
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "갤러리 사진은 그대로, 상세 통이미지는 배경 여백·가는 흰 선 경계로만 개별 컷을 잘라 로컬 JPEG 저장(500px 미만·비율 1.8 초과 제외, 확대 없음). 사전 매핑(Windows 기본 OCR): ① 색상 옵션 공식 link_image ② 사진 바로 위 색상명 글자가 공식 옵션명과 하나만 일치하면 그 아래 컷 ③ 스와치 추천 — COLOR 영역 색상명 글자 아래 스와치(저장 안 함)의 상품 색과 같은 화소가 컷의 20% 이상이고 2위의 2배 이상일 때 그 색상으로 미리 선택. ③은 색감 비교 '추천'이며 매핑 화면에서 자유롭게 수정. 맥·OCR 실패·차이 작음은 수동 매핑."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "대표와 같은 후보에서 사용자가 선택. 허브가 대표 1장 + 추가 5칸 규칙 적용. (레드페이스 상품 상세 실조회 전 — Cafe24 표준 구조 기준 구현, 실사이트 확인 필요)"
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "전 색상 공통 HTML: #prdDetail 공식 상세 이미지(공통 배너·배송·공지·이벤트 이미지 제외) + 상품정보고시 2열 표 + 사이즈 머리글이 있는 공식 표(rowspan/colspan 보존). 고시·사이즈표가 없는 상품은 그 부분 없이 완성. (레드페이스 상품 상세 실조회 전 — Cafe24 표준 구조 기준 구현, 실사이트 확인 필요)"
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null,
+    "OCR 근거": null,
+    "크롭 원본 이미지": null,
+    "크롭 좌표": null
+  },
+  "code_hash": "3c06c3a94f06b4f377be09c4ab5994edf8df6de08858d75944010ca2642a7198"
+}
