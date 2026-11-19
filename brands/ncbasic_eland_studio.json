@@ -1,9 +1,9 @@
 {
-  "id": "ncbasic_eland_official",
+  "id": "ncbasic_eland_studio",
   "name": "NC베이직",
   "category": "캐주얼 의류",
-  "crawl_source": "이랜드몰 공식",
-  "script": "ncbasic_eland_official.py",
+  "crawl_source": "이랜드몰 스튜디오컷",
+  "script": "ncbasic_eland_studio.py",
   "execution_level": 1,
   "mapping_mode": "manual",
   "image_color_mapping": "manual",
@@ -50,17 +50,17 @@
     "main_image": {
       "supported": true,
       "status": "conditional",
-      "reason": "공식 브랜드 ID 2400112310 및 정확한 modelNo를 확인한 상품의 itemMain.itemImage imageDcode=010/030. 공개 정지 JPEG/PNG/WebP, 양변 500px 이상, 비율 1.8 이하 검사. 흰 배경 여부는 보조 로그이며 첫 장면형 사진/복잡 배경/같은 상품 세트 구성만으로 제외하지 않음. 명시적 매장촬영·셀러컷/배너/표 표기가 있으면 제외, 불명확한 사진은 수동 검수. 공식 판매자 LV24013164 응답만 허용."
+      "reason": "공식 상품은 기존 갤러리 유지. 공식이 없으면 대표 이미지의 균일 배경 검사를 통과한 전체 판매처의 개별 스튜디오컷을 수동 매핑 후보로 수집."
     },
     "additional_images": {
       "supported": true,
       "status": "conditional",
-      "reason": "대표와 같은 공식 상품 갤러리 전체 후보. 색상 추측·사전 개수 제한 없음. 모든 링크 색상/상세 취합 후 URL·실제 이미지 해시 중복 제거. 최종 대표/추가 개수 제한은 허브에 위임. 공식 판매자 LV24013164 응답만 허용."
+      "reason": "채택한 전체 판매처의 스튜디오컷을 해시 중복 제거 후 수동 매핑 후보로 취합."
     },
     "detail_page": {
       "supported": true,
       "status": "conditional",
-      "reason": "공식 itemDesc.itemDescdocumentCon 상품 본문 이미지 원본만 유지. itemAnnounceList 쿠폰/행사 및 본문에 중복된 안내 이미지 제외. 이미지 내 고시·사이즈표 보존, 별도 표 생성 없음. 상세 선택 시에만 파싱/조회. 원본 본문 전체가403/404로 접근 불가하면 검증된 상품컷과 남은 원본 사이즈 이미지로 상세 구성하며 경고."
+      "reason": "한 상품의 본문만 사용. 공통 행사·판매자·배송 이미지는 안내목록/파일명/타일 OCR로 제외. 원본 사이즈·고시 이미지 보존, 별도 표 생성 없음."
     }
   },
   "guide": {
@@ -71,8 +71,8 @@
     ],
     "pattern": "^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$",
     "format": "색상코드 없는 기본 품번",
-    "notes": "공식 판매자 LV24013164만 수집합니다. 개별 사진과 실제 색상 후보는 수집 후 수동 매핑하세요. AA 대표칼라는 실제 색상에서 제외하며 품절 색상·사이즈는 유지합니다.",
-    "method": "이랜드몰 공개 품번 검색 후 lowerVendNo=LV24013164 링크만 조회. 응답 lowerVendNo·brandNo=2400112310·modelNo를 대조.",
+    "notes": "품절 포함 실제 색상·사이즈 보존. 수동 색상 매핑. 공식 최우선, 없으면 스튜디오컷 상품 취합.",
+    "method": "공식판매자 LV24013164 상품이 있으면 검증된 한 상품만 수집. 없으면 NC베이직 브랜드·품번이 일치하는 모든 판매처 중 대표·개별 이미지 스튜디오컷 통과 상품 수집. 상세는 한 곳만 사용.",
     "required_columns": [
       "품번"
     ],
@@ -81,7 +81,7 @@
     ],
     "validation_note": "실제 공식 품번과 판매자 일치는 실행 시 확인합니다."
   },
-  "notes": "공식 계정 판매자번호 LV24013164 상품만 수집. 검색 링크 및 itemMain 응답의 판매자번호를 이중 확인하며 다른 판매자는 제외합니다. 색상은 추측하지 않고 기존 수동 매핑 화면에 전체 개별 사진과 실제 색상 후보를 전달합니다. 상세는 itemDescdocumentCon 본문 원본만 보존하고 itemAnnounceList 쿠폰·심야특가·행사 이미지는 요청하지 않습니다. 고시·사이즈는 본문 이미지에 있으므로 별도 표를 만들지 않습니다. 원본 상품명과 판매자번호를 추가 열에 보존합니다.",
+  "notes": "기존 공식 크롤러 대체. 공식 LV24013164가 있으면 한 상품만 수집하고 없으면 전체 판매처 스튜디오컷을 취합. 상세는 한 곳의 본문만 사용. 공통 배너·배송·판매자 안내 이미지는 경로·중복·타일 OCR로 제외. 본문 원본 사이즈·고시 보존, 별도 표 생성 없음. 기존 본문 403/404 시 검증된 해당 상품컷과 원본 사이즈 이미지로 대체하는 기능 유지.",
   "image_mode": "url",
   "interface": "portal_v1",
   "fields": {
@@ -169,6 +169,6 @@
     "원본 상품명": null,
     "판매자번호": null
   },
-  "code_hash": "dd419d179caa3bf847f2e5e28d04198322261d7c61d4fb225c2fd2e71fb6ed2c",
+  "code_hash": "c14058fcf162772a62d1d34a7cf39ee08d232f5b7edab2d951ffa7bc4ab2cbcc",
   "additional_image_count": 5
 }

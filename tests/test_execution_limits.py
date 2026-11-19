@@ -52,7 +52,7 @@ class LimitsTests(unittest.TestCase):
     def test_all_published_crawlers_classified_and_shared_malls_conflict(self):
         catalog={b['id']:b for b in brands()}
         self.assertTrue(all(b['execution_resources']['known'] for b in catalog.values()))
-        for first,second in [('blackyak_official','blackyakkids_official'),('polham_official','andz_official'),('leviskids_official','moimoln_official'),('tdg_eland_studio','ncbasic_eland_official'),('jeep_official','jeepkids_official')]:
+        for first,second in [('blackyak_official','blackyakkids_official'),('polham_official','andz_official'),('leviskids_official','moimoln_official'),('tdg_eland_studio','ncbasic_eland_studio'),('jeep_official','jeepkids_official')]:
             running=[dict(id='1',name=first,resources=catalog[first]['execution_resources'])]
             self.assertIn('같은 사이트',blocked_reason(catalog[second]['execution_resources'],running))
         for name in ['agabang_official','crocs_naver_official','redface_fashionplus']:

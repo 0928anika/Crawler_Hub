@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path[:0]=[str(ROOT/'app'),str(ROOT/'brands')]
-import ncbasic_eland_official as c
+import ncbasic_eland_studio as c
 FIX=ROOT/'tests/fixtures/ncbasic'
 LINK=c.SITE+'/i/item?itemNo=2411568415&lowerVendNo=LV24013164'
 
@@ -89,10 +89,11 @@ class NCBasicTests(unittest.TestCase):
             self.assertEqual(c.search(Context(),'DCJD24A02'),[LINK])
             page.assert_called_once()
 
-    def test_other_vendor_url_is_not_even_requested(self):
-        with patch.object(c,'page') as page:
-            self.assertIsNone(c.product(Context(),LINK.replace('LV24013164','LV26024017'),'DCJD24A02'))
-            page.assert_not_called()
+    def test_fallback_vendor_is_allowed_but_response_identity_stays_checked(self):
+        data=source();data['itemMain']['lowerVendNo']='LV26024017';link=LINK.replace('LV24013164','LV26024017')
+        with patch.object(c,'page',return_value=document(data)):self.assertIsNotNone(c.product(Context(),link,'DCJD24A02'))
+        data['itemMain']['lowerVendNo']='OTHER'
+        with patch.object(c,'page',return_value=document(data)):self.assertIsNone(c.product(Context(),link,'DCJD24A02'))
 
     def test_response_vendor_and_model_are_verified_without_brand_title_requirement(self):
         data=source();data['itemMain']['itemName']='베이직 푸퍼 다운'
@@ -163,5 +164,47 @@ class NCBasicTests(unittest.TestCase):
     def test_name_removes_only_explicit_brand_and_model_tokens(self):
         self.assertEqual(c.clean_name('NC베이직 [덕다운 8:2] 베이직 푸퍼 다운 DCJD24A02','DCJD24A02'),'[덕다운 8:2] 베이직 푸퍼 다운')
 
+
+    def test_fallback_search_returns_all_vendors_only_without_official(self):
+        doc=c.BeautifulSoup('<b data-searchresult-total>2</b><a class="ui-item__link" href="/i/item?itemNo=1&amp;lowerVendNo=LV26024017"></a><a class="ui-item__link" href="/i/item?itemNo=2&amp;lowerVendNo=LV25019267"></a>','html.parser')
+        with patch.object(c,'page',return_value=doc):self.assertEqual(len(c.search(Context(),'DCJD24A02')),2)
+    def test_fallback_merges_all_studio_photos_but_one_detail(self):
+        ctx=Context(('main_image','detail_page'));data=[source(),source()];vendors=['LV26024017','LV25019267'];links=[LINK.replace(c.VENDOR_NO,v) for v in vendors]
+        for d,v in zip(data,vendors):d['itemMain']['lowerVendNo']=v
+        with patch.object(c,'search',return_value=links),patch.object(c,'product',side_effect=data),patch.object(c,'options',side_effect=options),patch.object(c,'image_info',return_value=('JPEG',800,1000,'hash',True)),patch.object(c,'gallery',side_effect=[[('https://item.elandrs.com/one.jpg','one')],[('https://item.elandrs.com/two.jpg','two')]]),patch.object(c,'detail_images',return_value=['https://item.elandrs.com/body.jpg']) as detail:
+            c.crawl(ctx)
+        self.assertFalse(ctx.errors);self.assertEqual(len(ctx.rows),2);self.assertEqual(detail.call_count,1);self.assertTrue(all(r['detail'].count('<img')==1 for r in ctx.rows));self.assertTrue(all(r['record']['판매자번호']==','.join(vendors) for r in ctx.rows))
+    def test_official_only_one_product_and_no_studio_gate(self):
+        ctx=Context(('main_image','detail_page'))
+        with patch.object(c,'search',return_value=[LINK,LINK]),patch.object(c,'product',return_value=source()) as product,patch.object(c,'options',side_effect=options),patch.object(c,'image_info',side_effect=AssertionError('official is not studio gated')),patch.object(c,'gallery',return_value=[('https://item.elandrs.com/one.jpg','one')]),patch.object(c,'detail_images',return_value=['https://item.elandrs.com/body.jpg']) as detail:
+            c.crawl(ctx)
+        self.assertEqual(product.call_count,1);self.assertEqual(detail.call_count,1);self.assertEqual(len(ctx.rows),1)
+    def test_nonstudio_fallback_is_excluded_before_options(self):
+        ctx=Context(('main_image',));data=source();data['itemMain']['lowerVendNo']='LV26024017'
+        with patch.object(c,'search',return_value=[LINK.replace(c.VENDOR_NO,'LV26024017')]),patch.object(c,'product',return_value=data),patch.object(c,'image_info',return_value=('JPEG',800,1000,'hash',False)),patch.object(c,'options') as api:
+            with self.assertRaises(c.CollectionError):c.crawl(ctx)
+        api.assert_not_called();self.assertFalse(ctx.rows)
+    def test_opaque_seller_banner_in_body_is_excluded_by_ocr(self):
+        import io
+        from PIL import Image
+        data=source();data['itemDesc']={'itemDescdocumentCon':'<img src="https://item.elandrs.com/r/image/item/uuid.jpg">'}
+        out=io.BytesIO();Image.new('RGB',(600,1000),'white').save(out,format='JPEG');cache={('raw','https://item.elandrs.com/r/image/item/uuid.jpg'):out.getvalue()}
+        with patch.object(c,'image_info',return_value=('JPEG',600,1000,'x',False)),patch.object(c,'ocr_many',return_value=['판매자 안내 배송 안내 반품 안내']):
+            with self.assertRaises(c.CollectionError):c.detail_images(Context(),data,'DCJD24A02',cache)
+
+    def test_waiting_room_is_distinct_from_absent_product(self):
+        doc=c.BeautifulSoup('<title>Common UI</title><script>WG_StartWebGate({});</script>','html.parser')
+        with patch.object(c,'page',return_value=doc):
+            with self.assertRaisesRegex(c.CollectionError,'접속 대기실 응답'):c.product(Context(),LINK,'DCJD24A02')
+    def test_fallback_gallery_requires_actual_smooth_background(self):
+        import io
+        from PIL import Image,ImageDraw
+        data=source();data['itemMain']['lowerVendNo']='LV26024017';data['itemMain']['itemImage']=[dict(imageDcode='010',imagePath='/r/image/item/photo.jpg')]
+        image=Image.new('RGB',(800,1000),'white');ImageDraw.Draw(image).rectangle((200,100,600,900),fill='navy');buf=io.BytesIO();image.save(buf,format='JPEG')
+        with patch.object(c,'fetch',return_value=buf.getvalue()):self.assertEqual(len(c.gallery(Context(),data['itemMain'],{})),1)
+        draw=ImageDraw.Draw(image)
+        for x in range(0,800,4):draw.line((x,0,x,1000),fill='black',width=2)
+        buf=io.BytesIO();image.save(buf,format='JPEG')
+        with patch.object(c,'fetch',return_value=buf.getvalue()):self.assertEqual(c.gallery(Context(),data['itemMain'],{}),[])
 
 if __name__=='__main__':unittest.main()
