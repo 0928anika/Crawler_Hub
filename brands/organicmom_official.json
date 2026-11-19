@@ -1,0 +1,172 @@
+{
+  "id": "organicmom_official",
+  "name": "오가닉맘",
+  "category": "유아동복",
+  "crawl_source": "공식 홈페이지",
+  "script": "organicmom_official.py",
+  "execution_level": 1,
+  "interface": "portal_v1",
+  "mapping_mode": "manual",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명"
+  ],
+  "extensions": [],
+  "official_color_codes": false,
+  "image_color_mapping": "hybrid",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data의 색상별 전체 사이즈. 품절 포함, 매핑 후보별 size 보존."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 조합 option_price. 색상/사이즈별 공통 가격인 경우 출력, 다른 경우 빈칸."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 기본정보 소비자가. 판매가와 별개로 수집."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 xans-product-headcategory의 분류 경로."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 갤러리에 명시된 실제 URL만 사용. 공개 바이트·형식·픽셀·비율 검사. 한 색상은 자동, 여러 색상은 수동 연결."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "유효 갤러리 사진 최대 9장, 5장 미만이면 유효 사진을 반복해 최소 5슬롯."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 kkm2524.diskn.com의 해당 품번 상세 원본(상품 고시 포함) 및 사이트 사이즈차트. TOP/배송/교환/세탁 안내/GIF/추천상품 제외."
+    }
+  },
+  "guide": {
+    "example": "MLZLVE07",
+    "examples": [
+      "MLZLVE07",
+      "MLWLVE03"
+    ],
+    "format": "공식 기본 품번 전체 입력",
+    "notes": "색상 미표시 상품은 Windows 한국어 OCR 필요. 색상코드는 추정하지 않음.",
+    "method": "공식 검색 결과 영역과 상품명 품번 정확 대조, 공식 옵션 및 품번 상세 원본 확인.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      ""
+    ],
+    "validation_note": "빈 입력 외 형식 사전 거절 없음."
+  },
+  "notes": "오가닉맘 공식 organicmommall.co.kr. 공식 상품명 품번 정확 일치. Cafe24 품절 포함 전체 사이즈. 색상 옵션이 없으면 공식 품번 상세 PRODUCT INFO의 색상명을 Windows 한국어 OCR로 읽음. 색상코드 추정 없음. 한 색상 자동/다색상 수동 매핑. 해당 모델 상세 원본과 사이트 사이즈차트만 유지. TOP/배송/교환/세탁 안내 및 GIF/추천상품 제외. 추가이미지 최대9장, 최소5슬롯 반복.",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "오가닉맘 공식 상품명/옵션/상품정보 이미지 원문 확인"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "오가닉맘 공식 상품명/옵션/상품정보 이미지 원문 확인"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "오가닉맘 공식 상품명/옵션/상품정보 이미지 원문 확인"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "오가닉맘 공식 상품명/옵션/상품정보 이미지 원문 확인"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data의 색상별 전체 사이즈. 품절 포함, 매핑 후보별 size 보존."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 조합 option_price. 색상/사이즈별 공통 가격인 경우 출력, 다른 경우 빈칸."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 기본정보 소비자가. 판매가와 별개로 수집."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 xans-product-headcategory의 분류 경로."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 갤러리에 명시된 실제 URL만 사용. 공개 바이트·형식·픽셀·비율 검사. 한 색상은 자동, 여러 색상은 수동 연결."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "유효 갤러리 사진 최대 9장, 5장 미만이면 유효 사진을 반복해 최소 5슬롯."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 kkm2524.diskn.com의 해당 품번 상세 원본(상품 고시 포함) 및 사이트 사이즈차트. TOP/배송/교환/세탁 안내/GIF/추천상품 제외."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null
+  },
+  "code_hash": "a13b41b46d6515605148c3e3b5f875f9ec3c457d17cc9df6dcdb4b0644b74361",
+  "hybrid_mapping": true,
+  "additional_image_count": 9
+}
