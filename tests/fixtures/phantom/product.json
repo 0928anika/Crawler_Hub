@@ -1,0 +1,186 @@
+{
+  "goodsCode": "211F3CB201_TQ",
+  "goodsName": "남성 스탠드 캐디백",
+  "brandId": 2,
+  "brandName": "FANTOM",
+  "badgeList": [],
+  "isFavorite": false,
+  "reviewCount": 0,
+  "optionList": [
+    {
+      "goodsCode": "211F3CB201_TQ",
+      "option1Name": "터쿠아즈",
+      "image": "https://cdn.bucketstore.com/goods/2/1/1/F/3/CB/201/211F3CB201_TQ_01.jpg",
+      "isSoldout": false,
+      "displayOrder": 1,
+      "option2List": [
+        {
+          "option2Name": "F",
+          "optionCode": "TQF",
+          "stockQty": 17,
+          "isSoldout": false,
+          "availableMinQty": 1,
+          "availableMaxQty": 17,
+          "displayOrder": 1
+        }
+      ]
+    }
+  ],
+  "priceInfo": {
+    "tagPrice": 758000,
+    "currentPrice": 530600,
+    "instantDiscountedPrice": 504070,
+    "discountRate": 33,
+    "maxDiscountedPrice": 454070,
+    "priceDiscount": {
+      "id": null,
+      "name": "기본 할인 30%",
+      "discountAmount": 227400,
+      "buttonType": "HIDE",
+      "showCheckBox": false,
+      "checkBoxDisabled": true,
+      "checkBoxChecked": false,
+      "type": "basic"
+    },
+    "instantCouponDiscount": [
+      {
+        "id": 40810,
+        "name": "[팬텀] 26 신상 5% 추가 혜택",
+        "discountAmount": 26530,
+        "buttonType": "HIDE",
+        "showCheckBox": true,
+        "checkBoxDisabled": false,
+        "checkBoxChecked": true,
+        "type": "instant"
+      }
+    ],
+    "cartCouponDiscount": [
+      {
+        "id": 44042,
+        "name": "26년 11월 신규가입 15% 쿠폰",
+        "discountAmount": 50000,
+        "buttonType": "HIDE",
+        "showCheckBox": true,
+        "checkBoxDisabled": false,
+        "checkBoxChecked": true,
+        "type": "cart"
+      }
+    ],
+    "cardPromotionCouponDiscount": [
+      {
+        "promotionId": 2026111611,
+        "promotionName": "토스 퀵계좌이체 15만원↑ 6천원할인",
+        "startDate": "2026-11-16",
+        "endDate": "2026-11-30",
+        "couponId": 202611161104,
+        "discountAmount": 6000,
+        "buttonType": "HIDE",
+        "showCheckBox": true,
+        "checkBoxDisabled": false,
+        "checkBoxChecked": false,
+        "couponNameList": [
+          "15만원 이상 6천원 즉시할인"
+        ],
+        "type": "paymentMethod"
+      }
+    ],
+    "pointDiscount": {
+      "id": null,
+      "name": "보유 포인트 모두 사용",
+      "discountAmount": 0,
+      "buttonType": "HIDE",
+      "showCheckBox": true,
+      "checkBoxDisabled": true,
+      "checkBoxChecked": false,
+      "type": "point"
+    }
+  },
+  "expectedPointAmount": 10612,
+  "expectedPointRate": 2,
+  "freeDeliveryMinOrderAmount": 30000,
+  "maxInterestFreeInstallmentMonths": 6,
+  "interestFreeInstallmentDetailList": [
+    {
+      "cardCompanyName": "BC카드",
+      "minInstallmentMonths": 2,
+      "maxInstallmentMonths": 5,
+      "minOrderAmount": 50000,
+      "cardCompanyImage": "https://contents.creasmall.com/card-company/BC.png"
+    },
+    {
+      "cardCompanyName": "NH카드",
+      "minInstallmentMonths": 2,
+      "maxInstallmentMonths": 6,
+      "minOrderAmount": 50000,
+      "cardCompanyImage": "https://contents.creasmall.com/card-company/NH.png"
+    },
+    {
+      "cardCompanyName": "국민카드",
+      "minInstallmentMonths": 2,
+      "maxInstallmentMonths": 3,
+      "minOrderAmount": 50000,
+      "cardCompanyImage": "https://contents.creasmall.com/card-company/KB.png"
+    },
+    {
+      "cardCompanyName": "롯데카드",
+      "minInstallmentMonths": 2,
+      "maxInstallmentMonths": 3,
+      "minOrderAmount": 50000,
+      "cardCompanyImage": "https://contents.creasmall.com/card-company/LOTTE.png"
+    },
+    {
+      "cardCompanyName": "삼성카드",
+      "minInstallmentMonths": 2,
+      "maxInstallmentMonths": 3,
+      "minOrderAmount": 50000,
+      "cardCompanyImage": "https://contents.creasmall.com/card-company/SAMSUNG.png"
+    },
+    {
+      "cardCompanyName": "신한카드",
+      "minInstallmentMonths": 2,
+      "maxInstallmentMonths": 3,
+      "minOrderAmount": 50000,
+      "cardCompanyImage": "https://contents.creasmall.com/card-company/SHINHAN.png"
+    },
+    {
+      "cardCompanyName": "우리카드",
+      "minInstallmentMonths": 2,
+      "maxInstallmentMonths": 5,
+      "minOrderAmount": 50000,
+      "cardCompanyImage": "https://contents.creasmall.com/card-company/WOORI.png"
+    },
+    {
+      "cardCompanyName": "하나카드",
+      "minInstallmentMonths": 2,
+      "maxInstallmentMonths": 5,
+      "minOrderAmount": 50000,
+      "cardCompanyImage": "https://contents.creasmall.com/card-company/HANA.png"
+    },
+    {
+      "cardCompanyName": "현대카드",
+      "minInstallmentMonths": 2,
+      "maxInstallmentMonths": 3,
+      "minOrderAmount": 10000,
+      "cardCompanyImage": "https://contents.creasmall.com/card-company/HYUNDAI.png"
+    }
+  ],
+  "imageList": [
+    "https://cdn.bucketstore.com/goods/2/1/1/F/3/CB/201/211F3CB201_TQ_01.jpg",
+    "https://cdn.bucketstore.com/goods/2/1/1/F/3/CB/201/211F3CB201_TQ_02.jpg",
+    "https://cdn.bucketstore.com/goods/2/1/1/F/3/CB/201/211F3CB201_TQ_03.jpg",
+    "https://cdn.bucketstore.com/goods/2/1/1/F/3/CB/201/211F3CB201_TQ_04.jpg",
+    "https://cdn.bucketstore.com/goods/2/1/1/F/3/CB/201/211F3CB201_TQ_05.jpg",
+    "https://cdn.bucketstore.com/goods/2/1/1/F/3/CB/201/211F3CB201_TQ_06.jpg",
+    "https://cdn.bucketstore.com/goods/2/1/1/F/3/CB/201/211F3CB201_TQ_07.jpg",
+    "https://cdn.bucketstore.com/goods/2/1/1/F/3/CB/201/211F3CB201_TQ_08.jpg",
+    "https://cdn.bucketstore.com/goods/2/1/1/F/3/CB/201/211F3CB201_TQ_09.jpg"
+  ],
+  "relatedGoods": null,
+  "mixNMatch": null,
+  "maxOrderQtyPerUser": 20,
+  "isStop": false,
+  "styleCodyId": null,
+  "isSelfGoods": true,
+  "isClothes": false,
+  "isMonoOption": false
+}
