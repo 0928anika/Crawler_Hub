@@ -38,11 +38,11 @@ def registration_layout(markup):
             if cell.name == 'th':cell['style'] += ';background:#f6f6f6;font-weight:bold'
     for paragraph in soup.find_all('p'):
         paragraph['style'] = 'font-size:14px;line-height:1.8;color:#444;margin:14px auto;text-align:left'
-    for heading in soup.find_all(['h1','h2','h3']):
-        heading['style'] = 'font-size:20px;line-height:1.5;margin:28px 0 14px'
+    for heading in soup.find_all(['h1','h2','h3','h4','h5','h6']):
+        heading['style'] = 'font-size:20px;line-height:1.5;margin:28px 0 14px;text-align:left'
     wrapper = soup.new_tag('div')
     wrapper['align'] = 'center'
-    wrapper['style'] = ('width:100%%;max-width:%spx;margin:0 auto;text-align:center'
+    wrapper['style'] = ('width:100%%;max-width:%spx;margin:0 auto;text-align:left'
                         % DETAIL_WIDTH)
     for node in list(soup.contents):
         wrapper.append(node.extract())

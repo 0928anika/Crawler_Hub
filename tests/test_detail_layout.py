@@ -35,4 +35,16 @@ class DetailLayoutTests(unittest.TestCase):
   self.assertEqual(len(before.select('td,th')),len(after.select('td,th')))
   self.assertIn('overflow-wrap:anywhere',after.table['style']);self.assertIn('text-align:left',after.table['style'])
   self.assertEqual(excel_detail(output)[0],output)
+ def test_descriptive_text_and_list_items_align_left_without_moving_images_or_tables(self):
+  source='<img src="https://example.com/a.jpg"><h3>기능 소개</h3><ul><li>보온 기능</li></ul><h4>제품 정보</h4><ol><li>면 혼방</li></ol><p>제품 설명</p><table><tr><th>사이즈</th><td>95</td></tr></table>'
+  output,overflow=excel_detail(source);self.assertFalse(overflow)
+  for markup in [output,sanitized_html(output)]:
+   doc=BeautifulSoup(markup,'html.parser')
+   self.assertIn('text-align:left',doc.div['style'])
+   self.assertIn('text-align:left',doc.h3['style']);self.assertIn('text-align:left',doc.h4['style'])
+   self.assertIn('text-align:left',doc.p['style'])
+   self.assertEqual([li.get_text() for li in doc.select('li')],['보온 기능','면 혼방'])
+   self.assertIn('margin:0 auto',doc.img['style']);self.assertEqual(doc.img['width'],'860')
+   self.assertIn('margin:16px auto',doc.table['style'])
+  self.assertEqual(excel_detail(output)[0],output)
 if __name__=='__main__':unittest.main()
