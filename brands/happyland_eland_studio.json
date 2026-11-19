@@ -1,0 +1,169 @@
+{
+  "id": "happyland_eland_studio",
+  "name": "해피랜드",
+  "category": "유아동복",
+  "crawl_source": "이랜드몰 스튜디오컷",
+  "script": "happyland_eland_studio.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_color_mapping": "manual",
+  "official_color_codes": true,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 API의 품절 포함 색상별 사이즈를 매핑 후보에 전달. 전 색상 동일 시 공통값도 출력."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "옵션 API sellPrice의 쿠폰 전 KRW 판매가. 가격이 다르면 첫 지정 상품/옵션 가격 하나를 선택하고 경고만 기록하며 성공 처리."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "itemMain.depth4StandardCategoryName. 정확히 일치하는 상품 링크의 분류가 같을 때 출력."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식은 기존 본사 갤러리 유지. 비공식은 대표사진의 균일·무늬 없는 배경 검사부터 통과한 상품만 채택하며 개별 사진에도 동일 검사 적용. 벽돌/타일 등 비스튜디오 배경 제외."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "채택한 모든 상품 링크의 통과 사진을 실제 파일 해시로 중복 제거하여 수동 매핑 후보로 전달."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "한 상품의 원본 착장/디테일 및 BASE/GOSI·실측 이미지 유지. 고시/사이즈표 별도 생성 없음. 판매자/배송/리뷰 배너를 출처·안내 이미지 대조·전체 타일 OCR로 제외."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.orgSellprice. 링크별 값이 다르거나 누락되면 공통 정상가는 빈칸이며 실패 처리하지 않음."
+    }
+  },
+  "guide": {
+    "example": "HL2672SE10",
+    "examples": [
+      "HL2672SE10",
+      "HL2651AN13"
+    ],
+    "format": "공식 모델 품번 전체",
+    "notes": "공식 판매자 우선, 없으면 다른 판매자 스튜디오컷 전체. 상세는 한 상품만 사용.",
+    "method": "브랜드1700008270·품번 정확 일치 검증, LV24008647 공식 우선.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      ""
+    ],
+    "validation_note": "빈 입력 외 형식 사전 거절 없음."
+  },
+  "notes": "해피랜드 이랜드몰 스튜디오컷. 공식 LV24008647이 있으면 공식 한 상품 우선, 없으면 전체 판매자의 대표/개별 스튜디오컷 검사. 브랜드1700008270와 품번 정확 대조. 상세는 한 상품만 사용. img.efe.co.kr 및 공식 R2 /h/ 품번 상세 원본과 notice_size.jpg 치수 안내 유지. 공통 /notice/notice.jpg 및 판매자/배송/교환/리뷰 배너는 경로·공지이미지 대조·OCR로 제외. 품절 포함 색상별 사이즈, 수동 매핑. 추가이미지 최대9장.",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 API의 품절 포함 색상별 사이즈를 매핑 후보에 전달. 전 색상 동일 시 공통값도 출력."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "옵션 API sellPrice의 쿠폰 전 KRW 판매가. 가격이 다르면 첫 지정 상품/옵션 가격 하나를 선택하고 경고만 기록하며 성공 처리."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "itemMain.depth4StandardCategoryName. 정확히 일치하는 상품 링크의 분류가 같을 때 출력."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식은 기존 본사 갤러리 유지. 비공식은 대표사진의 균일·무늬 없는 배경 검사부터 통과한 상품만 채택하며 개별 사진에도 동일 검사 적용. 벽돌/타일 등 비스튜디오 배경 제외."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "채택한 모든 상품 링크의 통과 사진을 실제 파일 해시로 중복 제거하여 수동 매핑 후보로 전달."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "한 상품의 원본 착장/디테일 및 BASE/GOSI·실측 이미지 유지. 고시/사이즈표 별도 생성 없음. 판매자/배송/리뷰 배너를 출처·안내 이미지 대조·전체 타일 OCR로 제외."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.orgSellprice. 링크별 값이 다르거나 누락되면 공통 정상가는 빈칸이며 실패 처리하지 않음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "정상가": "regular_price"
+  },
+  "code_hash": "3e12cdc1fff5a78dfb50acced0f892b97c08c6eacbe7e391296c6336466211ba",
+  "additional_image_count": 9
+}
