@@ -321,6 +321,7 @@ def final_items(job,view):
             urls=[e['filename'] for e in entries] if entries is not None else [i['url'] for i in images]
             extras=urls[:count] if entries is not None and 'main_image' not in job.selected else urls[1:count+1] or urls[:1]
             if entries is None and job.brand.get('export_all_additional_images'):extras=(urls[1:] if 'main_image' in job.selected else urls) or urls[:1]
+            extras=extras[:9]
             while len(extras)<5:extras.append(extras[-1])
             values=[]
             for header in headers:
@@ -426,7 +427,7 @@ def grouped_pending_items(job):
             field=field_for(header)
             if field=='color':raw[header]=','.join(c['label'] for c in group['colors'])
             elif field=='main_image':raw[header]=urls[0]
-            elif field=='additional_images':raw[header]=','.join(urls[1:])
+            elif field=='additional_images':raw[header]=','.join(urls[1:10])
             elif field=='product_url':raw[header]=first_product_link(job,group['code'])
         values=[raw.get(h) for h in headers]
         item=preview(headers,values,job.selected,allow_empty_product_name=bool(job.brand.get('allow_empty_product_name',False)))

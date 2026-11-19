@@ -7,6 +7,17 @@ import local_images
 from unittest.mock import patch
 class SharedPhotoMappingTests(unittest.TestCase):
  def make_job(self,folder):return helper.HybridMappingTests().job(folder,[helper.item(0,'STYLE','60','https://img/shared.jpg',True)])
+ def test_many_selected_photos_export_at_most_nine_extras(self):
+  with tempfile.TemporaryDirectory(dir=ROOT/'tests') as folder:
+   job=self.make_job(folder)
+   job.items=[helper.item(i,'STYLE','60','https://img/photo'+str(i)+'.jpg',True) for i in range(15)]
+   job.brand.update(export_all_additional_images=True,additional_image_count=9)
+   view=m.snapshot(job);g=view['groups'][0]
+   for color in g['colors']:
+    view=m.save_color(job,dict(group_id=g['id'],color_id=color['id'],image_ids=[i['id'] for i in g['images']],expected_revision=view['revision']))
+   rows=m.final_items(job,view)
+   self.assertEqual(len(rows),2)
+   for row in rows:self.assertEqual(len(row['raw']['추가이미지'].split(',')),9)
  def test_detail_preview_is_product_scoped_read_only_and_sanitized(self):
   with tempfile.TemporaryDirectory(dir=ROOT/'tests') as folder:
    job=self.make_job(folder);job.selected.append('detail_page')
