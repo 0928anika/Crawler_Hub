@@ -42,7 +42,7 @@ class Tests(unittest.TestCase):
             self.assertTrue((stage/'app/server.py').exists())
             self.assertFalse((stage/'jobs').exists());self.assertFalse((stage/'settings.json').exists())
             self.assertFalse((stage/'.env').exists());self.assertFalse((stage/'tests').exists())
-            self.assertTrue((stage/'tools/update_develop.py').is_file())
+            self.assertTrue((stage/'admin/update_develop.py').is_file());self.assertFalse((stage/'tools').exists())
 
     def test_unsafe_archive_paths_rejected(self):
         for name in ['repo/app/../../settings.json','/repo/app/a.py',
@@ -69,8 +69,8 @@ class Tests(unittest.TestCase):
             (root/'settings.json').write_bytes(b'personal settings')
             (root/'venv').mkdir();(root/'venv/marker').write_bytes(b'runtime')
             (root/'tools').mkdir();(root/'tools/update_develop.py').write_bytes(b'keep manual updater')
-            (stage/'tools').mkdir();(stage/'tools/update_develop.py').write_bytes(b'NEW_UPDATER = True')
-            (stage/'Update.bat').write_bytes(b'@echo new updater')
+            (stage/'admin').mkdir();(stage/'admin/update_develop.py').write_bytes(b'NEW_UPDATER = True')
+            (stage/'admin/Update.bat').write_bytes(b'@echo new updater')
             (root/'brands/removed.py').write_bytes(b'old crawler')
             with patch.object(u,'ensure_closed'):
                 backup=u.install(root,stage,'a'*40)
@@ -78,9 +78,10 @@ class Tests(unittest.TestCase):
             self.assertEqual((root/'jobs/task/result.xlsx').read_bytes(),b'old result')
             self.assertEqual((root/'settings.json').read_bytes(),b'personal settings')
             self.assertEqual((root/'venv/marker').read_bytes(),b'runtime')
-            self.assertEqual((root/'tools/update_develop.py').read_bytes(),b'NEW_UPDATER = True')
-            self.assertEqual((root/'Update.bat.new').read_bytes(),b'@echo new updater')
-            self.assertEqual((backup/'tools/update_develop.py').read_bytes(),b'keep manual updater')
+            self.assertEqual((root/'tools/update_develop.py').read_bytes(),b'keep manual updater')
+            self.assertEqual((root/'admin/update_develop.py').read_bytes(),b'NEW_UPDATER = True')
+            self.assertEqual((root/'admin/Update.bat.new').read_bytes(),b'@echo new updater')
+            self.assertFalse((root/'Update.bat.new').exists())
             self.assertFalse((root/'brands/removed.py').exists())
             self.assertTrue((backup/'brands/removed.py').exists())
             self.assertIn('old',(backup/'app/server.py').read_text())
@@ -121,15 +122,15 @@ class Tests(unittest.TestCase):
     def test_updater_pair_is_included_in_fingerprint_but_caches_are_not(self):
         with tempfile.TemporaryDirectory() as temp:
             root=source(Path(temp));before=u.source_fingerprint(root)
-            (root/'tools').mkdir();(root/'tools/update_develop.py').write_bytes(b'manual')
-            (root/'Update.bat').write_bytes(b'manual bat')
+            (root/'admin').mkdir();(root/'admin/update_develop.py').write_bytes(b'manual')
+            (root/'admin/Update.bat').write_bytes(b'manual bat')
             (root/'app/__pycache__').mkdir();(root/'app/__pycache__/x.pyc').write_bytes(b'cache')
             self.assertNotEqual(u.source_fingerprint(root),before)
             before=u.source_fingerprint(root)
             (root/'app/__pycache__/x.pyc').write_bytes(b'changed cache')
             self.assertEqual(u.source_fingerprint(root),before)
             self.assertTrue((root/'brands/demo.json').exists())
-            self.assertFalse((root/'.crawler-update-state.json').exists())
+            self.assertFalse((root/'admin/.crawler-update-state.json').exists())
 
     def test_git_checkout_and_nested_user_data_are_protected(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -204,8 +205,8 @@ class Tests(unittest.TestCase):
             active=root/'개발자 도구';active.mkdir()
             (active/'Update.bat').write_bytes(b'old bat')
             (active/'update_develop.py').write_bytes(b'old python')
-            (stage/'tools').mkdir();(stage/'tools/update_develop.py').write_bytes(b'VERSION=3')
-            (stage/'Update.bat').write_bytes(b'@echo new')
+            (stage/'admin').mkdir();(stage/'admin/update_develop.py').write_bytes(b'VERSION=3')
+            (stage/'admin/Update.bat').write_bytes(b'@echo new')
             with patch.object(u,'ensure_closed'),patch.dict(os.environ,CRAWLER_HUB_UPDATER_DIR=str(active)):
                 backup=u.install(root,stage,'f'*40)
             self.assertEqual((active/'Update.bat').read_bytes(),b'old bat')
@@ -216,7 +217,7 @@ class Tests(unittest.TestCase):
 
     def test_partial_updater_pair_fails_validation(self):
         with tempfile.TemporaryDirectory() as temp:
-            stage=source(Path(temp));(stage/'Update.bat').write_text('@echo hi')
+            stage=source(Path(temp));(stage/'admin').mkdir();(stage/'admin/Update.bat').write_text('@echo hi')
             with self.assertRaisesRegex(ValueError,'쌍'):u.validate(stage)
 
     def test_self_update_failure_rolls_back_app_and_updater(self):
@@ -224,11 +225,11 @@ class Tests(unittest.TestCase):
             p=Path(temp);root=source(p/'installed','old');stage=source(p/'new')
             (root/'tools').mkdir();(root/'tools/update_develop.py').write_bytes(b'old python')
             (root/'Update.bat').write_bytes(b'old bat')
-            (stage/'tools').mkdir();(stage/'tools/update_develop.py').write_bytes(b'NEW=True')
-            (stage/'Update.bat').write_bytes(b'new bat')
+            (stage/'admin').mkdir();(stage/'admin/update_develop.py').write_bytes(b'NEW=True')
+            (stage/'admin/Update.bat').write_bytes(b'new bat')
             rename=Path.rename
             def fail(path,target):
-                if path==stage/'Update.bat.new':raise OSError('simulated updater lock')
+                if path==stage/'admin/Update.bat.new':raise OSError('simulated updater lock')
                 return rename(path,target)
             with patch.object(u,'ensure_closed'),patch.object(Path,'rename',fail):
                 with self.assertRaisesRegex(OSError,'simulated'):u.install(root,stage,'b'*40)
@@ -239,15 +240,15 @@ class Tests(unittest.TestCase):
 
     def test_pending_bat_fingerprint_matches_after_activation(self):
         with tempfile.TemporaryDirectory() as temp:
-            root=source(Path(temp));(root/'Update.bat').write_bytes(b'old')
-            (root/'Update.bat.new').write_bytes(b'new')
+            root=source(Path(temp));(root/'admin').mkdir();(root/'admin/Update.bat').write_bytes(b'old')
+            (root/'admin/Update.bat.new').write_bytes(b'new')
             fingerprint=u.source_fingerprint(root)
-            (root/'Update.bat.new').replace(root/'Update.bat')
+            (root/'admin/Update.bat.new').replace(root/'admin/Update.bat')
             self.assertEqual(u.source_fingerprint(root),fingerprint)
 
     def test_keep_five_complete_backups_preserves_unknown_and_incomplete(self):
         with tempfile.TemporaryDirectory() as temp:
-            root=Path(temp);parent=root/'.crawler-update-backups';parent.mkdir()
+            root=Path(temp);parent=root/'admin/backups';parent.mkdir(parents=True)
             for n in range(8):
                 folder=parent/str(n);folder.mkdir()
                 (folder/'backup.json').write_text(json.dumps(dict(repository=u.REPO,complete=True)))
@@ -277,14 +278,14 @@ class Tests(unittest.TestCase):
     @unittest.skipUnless(os.name=='nt','Windows BAT integration')
     def test_real_bat_success_failure_check_and_pending_activation(self):
         with tempfile.TemporaryDirectory() as temp:
-            root=source(Path(temp)/'install with spaces');(root/'tools').mkdir()
-            bat=root/'Update.bat';bat.write_bytes((ROOT/'Update.bat').read_bytes())
-            script=root/'tools/update_develop.py'
+            root=source(Path(temp)/'install with spaces');(root/'admin').mkdir()
+            bat=root/'admin/Update.bat';bat.write_bytes((ROOT/'Update.bat').read_bytes())
+            script=root/'admin/update_develop.py'
             script.write_text('import sys; print("FAKE_UPDATE"); raise SystemExit(0)')
-            (root/'Crawler_Hub_Windows.bat').write_text('@echo off\n echo launched>launched.txt\nexit /b 0\n')
+            (root/'Crawler_Hub_Windows.bat').write_text('@echo off\n echo launched>"%~dp0launched.txt"\nexit /b 0\n')
             env=dict(os.environ,LOCALAPPDATA=str(Path(temp)/'empty'),PATH=str(Path(sys.executable).parent)+os.pathsep+os.environ['PATH'])
             def run(args=''):
-                return subprocess.run(['cmd.exe','/d','/c','call Update.bat '+args],cwd=root,env=env,
+                return subprocess.run(['cmd.exe','/d','/c','call Update.bat '+args],cwd=root/'admin',env=env,
                     stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,timeout=30)
             self.assertEqual(run('--check-only').returncode,0);self.assertFalse((root/'launched.txt').exists())
             self.assertEqual(run('--no-launch').returncode,0);self.assertFalse((root/'launched.txt').exists())
@@ -310,13 +311,33 @@ class Tests(unittest.TestCase):
     def test_updater_inside_tools_does_not_copy_same_file(self):
         with tempfile.TemporaryDirectory() as temp:
             p=Path(temp);root=source(p/'old');stage=source(p/'new')
-            (root/'tools').mkdir();(stage/'tools').mkdir()
-            (stage/'tools/update_develop.py').write_bytes(b'NEW=True')
-            (stage/'Update.bat').write_bytes(b'@echo new')
+            (root/'tools').mkdir();(stage/'admin').mkdir()
+            (stage/'admin/update_develop.py').write_bytes(b'NEW=True')
+            (stage/'admin/Update.bat').write_bytes(b'@echo new')
             with patch.object(u,'ensure_closed'),patch.dict(os.environ,CRAWLER_HUB_UPDATER_DIR=str(root/'tools')):
                 u.install(root,stage,'a'*40)
-            self.assertEqual((root/'tools/update_develop.py').read_bytes(),b'NEW=True')
-            self.assertTrue((root/'tools/Update.bat.new').exists())
+            self.assertEqual((root/'admin/update_develop.py').read_bytes(),b'NEW=True');self.assertFalse((root/'tools/update_develop.py').exists())
+            self.assertTrue((root/'admin/Update.bat.new').exists());self.assertFalse((root/'Update.bat.new').exists())
+
+    def test_only_admin_holds_management_files_and_single_pending_bat(self):
+        with tempfile.TemporaryDirectory() as temp:
+            p=Path(temp);root=source(p/'installed','old');stage=source(p/'new')
+            admin=root/'admin';admin.mkdir()
+            (admin/'Update.bat').write_bytes(b'old bat')
+            (admin/'update_develop.py').write_bytes(b'old updater')
+            (stage/'admin').mkdir()
+            (stage/'admin/Update.bat').write_bytes(b'new bat')
+            (stage/'admin/update_develop.py').write_bytes(b'new updater')
+            with patch.object(u,'ensure_closed'),patch.dict(os.environ,CRAWLER_HUB_UPDATER_DIR=str(admin)):
+                with u.update_lock(root):backup=u.install(root,stage,'a'*40)
+                self.assertTrue(u.already_current(root,'a'*40))
+                (admin/'Update.bat.new').replace(admin/'Update.bat')
+                self.assertTrue(u.already_current(root,'a'*40))
+            self.assertEqual({n.name for n in root.iterdir()},{'app','brands','admin'})
+            self.assertEqual(backup.parent,admin/'backups')
+            self.assertTrue((admin/'.crawler-update.lock').is_file())
+            self.assertTrue((admin/'.crawler-update-state.json').is_file())
+            self.assertFalse(list(root.glob('*.new')))
 
 
 if __name__=='__main__':unittest.main()

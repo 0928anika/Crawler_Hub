@@ -28,7 +28,6 @@ set "hubInstallRoot=%hubParent%"
 goto findroot
 :foundroot
 set "hubUpdateScript=%~dp0update_develop.py"
-if not exist "%hubUpdateScript%" set "hubUpdateScript=%hubInstallRoot%tools\update_develop.py"
 if not exist "%hubUpdateScript%" goto noscript
 set "hubUpdatePython="
 call :tryPython "%LOCALAPPDATA%\CrawlerHub\venv\Scripts\python.exe"

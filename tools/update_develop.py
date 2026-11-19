@@ -19,13 +19,30 @@ import zipfile
 
 REPO = '0928anika/Crawler_Hub'
 BRANCH = 'develop'
-UPDATER_VERSION = '2026-11-19-updater-v3'
+UPDATER_VERSION = '2026-11-19-admin-only-v4'
 DIRECTORIES = ('app', 'brands')
 LAUNCHERS = ('Crawler_Hub_Windows.bat', 'Crawler_Hub_Mac.command')
 UPDATER_FILES = ('Update.bat', 'tools/update_develop.py')
 BACKUP_KEEP = 5
 MAX_ARCHIVE = 100 * 1024 * 1024
 MAX_EXPANDED = 400 * 1024 * 1024
+
+
+def admin_dir(root):
+    """Use the active admin folder; legacy root/tools locations fall back to admin."""
+    root = root.resolve()
+    configured = os.environ.get('CRAWLER_HUB_UPDATER_DIR')
+    active = Path(configured).resolve() if configured else root / 'admin'
+    if active == root or active.is_relative_to(root / 'tools'):
+        active = root / 'admin'
+    if not active.is_relative_to(root) or any(active.is_relative_to(root / d) for d in DIRECTORIES):
+        raise ValueError('업데이트 관리 폴더는 설치 폴더 아래 app/brands 밖에 두세요.')
+    for path in (active, *active.parents):
+        if path == root:
+            break
+        if path.is_symlink() or (hasattr(path, 'is_junction') and path.is_junction()):
+            raise ValueError('업데이트 관리 폴더 링크는 사용할 수 없습니다.')
+    return active
 
 
 def find_install_root(start):
@@ -42,18 +59,21 @@ def source_fingerprint(root):
     for name in DIRECTORIES:
         files.extend(p for p in (root / name).rglob('*') if p.is_file()
                      and '__pycache__' not in p.parts and p.suffix not in ('.pyc', '.pyo'))
-    files.extend(root / name for name in LAUNCHERS + UPDATER_FILES if (root / name).is_file())
+    files.extend(root / name for name in LAUNCHERS if (root / name).is_file())
+    admin = admin_dir(root)
+    files.extend(admin / name for name in ('Update.bat', 'update_develop.py')
+                 if (admin / name).is_file() or (name == 'Update.bat' and (admin / 'Update.bat.new').is_file()))
     digest = hashlib.sha256()
     for path in sorted(files):
         digest.update(path.relative_to(root).as_posix().encode('utf-8') + b'\0')
-        pending = root / 'Update.bat.new' if path == root / 'Update.bat' else path
+        pending = admin / 'Update.bat.new' if path == admin / 'Update.bat' else path
         digest.update(hashlib.sha256((pending if pending.is_file() else path).read_bytes()).digest())
     return digest.hexdigest()
 
 
 def already_current(root, sha):
     try:
-        state = json.loads((root / '.crawler-update-state.json').read_text(encoding='utf-8'))
+        state = json.loads((admin_dir(root) / '.crawler-update-state.json').read_text(encoding='utf-8'))
         return (state.get('repository') == REPO and state.get('branch') == BRANCH
                 and state.get('commit') == sha and state.get('fingerprint') == source_fingerprint(root))
     except (OSError, ValueError):
@@ -130,6 +150,8 @@ def unpack(archive, staging):
             relative = Path(*path.parts[1:])
             if relative.parts[0] not in DIRECTORIES and relative.as_posix() not in LAUNCHERS + UPDATER_FILES:
                 continue
+            if relative.as_posix() in UPDATER_FILES:
+                relative = Path('admin') / ('Update.bat' if relative.as_posix() == 'Update.bat' else 'update_develop.py')
             # Match Windows case-insensitive paths on every test platform.
             key = relative.as_posix().casefold()
             if key in names:
@@ -145,7 +167,7 @@ def validate(staging):
     for name in ('bootstrap.py', 'server.py', 'schema.py', 'brand_catalog.py'):
         if not (staging / 'app' / name).is_file():
             raise ValueError('앱 필수 파일 누락: ' + name)
-    if (staging / 'Update.bat').is_file() != (staging / 'tools/update_develop.py').is_file():
+    if (staging / 'admin/Update.bat').is_file() != (staging / 'admin/update_develop.py').is_file():
         raise ValueError('업데이트 BAT/Python 쌍 누락')
     definitions = list((staging / 'brands').glob('*.json'))
     if not definitions:
@@ -163,8 +185,8 @@ def validate(staging):
         if meta.get('code_hash') and hashlib.sha256(body).hexdigest() != meta['code_hash']:
             raise ValueError('브랜드 코드 해시 불일치: ' + brand_id)
     # Parse/compile only: do not import or execute downloaded Python code.
-    if (staging / 'tools/update_develop.py').is_file():
-        ast.parse((staging / 'tools/update_develop.py').read_bytes())
+    if (staging / 'admin/update_develop.py').is_file():
+        ast.parse((staging / 'admin/update_develop.py').read_bytes())
     for folder in DIRECTORIES:
         for path in (staging / folder).rglob('*.py'):
             ast.parse(path.read_bytes(), filename=str(path))
@@ -240,7 +262,9 @@ def check_destination(root):
 @contextmanager
 def update_lock(root):
     # OS releases this lock even after a crash. Keep the file to avoid unlink races.
-    path = root / '.crawler-update.lock'
+    folder = admin_dir(root)
+    folder.mkdir(parents=True, exist_ok=True)
+    path = folder / '.crawler-update.lock'
     if path.is_symlink():
         raise ValueError('업데이트 잠금 파일이 링크입니다.')
     with path.open('a+b') as handle:
@@ -297,8 +321,9 @@ def change_summary(root, staging):
 
 
 def prune_backups(root, keep=BACKUP_KEEP):
-    parent = root / '.crawler-update-backups'
-    if not parent.is_dir() or parent.is_symlink() or parent.resolve().parent != root.resolve():
+    admin = admin_dir(root)
+    parent = admin / 'backups'
+    if not parent.is_dir() or parent.is_symlink() or parent.resolve().parent != admin:
         return 0
     eligible = []
     for folder in parent.iterdir():
@@ -323,41 +348,35 @@ def install(root, staging, sha):
     check_destination(root)
     ensure_closed(root)
     name = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ') + '_' + sha[:12]
-    backup = root / '.crawler-update-backups' / name
-    parent = root / '.crawler-update-backups'
-    if parent.is_symlink() or parent.resolve().parent != root.resolve():
+    active = admin_dir(root)
+    backup = active / 'backups' / name
+    parent = active / 'backups'
+    if parent.is_symlink() or parent.resolve().parent != active:
         raise ValueError('백업 폴더 링크/외부 경로 거부')
     backup.mkdir(parents=True)
-    if (root / 'Update.bat').is_file():
-        shutil.copy2(root / 'Update.bat', backup / 'Update.bat')
     targets = [Path(p) for p in DIRECTORIES if (staging / p).is_dir()]
     targets += [Path(p) for p in LAUNCHERS if (staging / p).is_file()]
     # Python has loaded its source already; BAT is deferred until its next run.
-    targets += [Path('tools/update_develop.py')] if (staging / 'tools/update_develop.py').is_file() else []
-    if (staging / 'Update.bat').is_file():
-        (staging / 'Update.bat').rename(staging / 'Update.bat.new')
-        targets.append(Path('Update.bat.new'))
-    active = Path(os.environ.get('CRAWLER_HUB_UPDATER_DIR') or root).resolve()
-    if active != root and active.is_relative_to(root) and not any(active.is_relative_to(root / d) for d in DIRECTORIES):
-        relative = active.relative_to(root)
-        for source, name in [('tools/update_develop.py', 'update_develop.py'), ('Update.bat.new', 'Update.bat.new')]:
-            if (staging / source).is_file():
-                destination = relative / name
-                if destination == Path(source):
-                    continue
-                (staging / destination).parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(staging / source, staging / destination)
-                targets.append(destination)
-        if (active / 'Update.bat').is_file():
-            previous = backup / relative / 'Update.bat'
-            previous.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(active / 'Update.bat', previous)
+    relative = active.relative_to(root)
+    for source_name, target_name in [('update_develop.py', 'update_develop.py'), ('Update.bat', 'Update.bat.new')]:
+        source = staging / 'admin' / source_name
+        if source.is_file():
+            destination = relative / target_name
+            staged = staging / destination
+            staged.parent.mkdir(parents=True, exist_ok=True)
+            if source != staged:
+                source.rename(staged)
+            targets.append(destination)
+    if (active / 'Update.bat').is_file():
+        previous = backup / relative / 'Update.bat'
+        previous.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(active / 'Update.bat', previous)
     for relative in targets:
         target = root / relative
         if target.is_symlink() or target.parent.resolve() != (root / relative.parent).absolute():
             raise ValueError('교체 대상 링크/외부 경로 거부: ' + str(relative))
     moved, installed = [], []
-    state = root / '.crawler-update-state.json'
+    state = active / '.crawler-update-state.json'
     previous_state = state.read_bytes() if state.is_file() else None
     try:
         for relative in targets:
@@ -369,7 +388,7 @@ def install(root, staging, sha):
             target.parent.mkdir(parents=True, exist_ok=True)
             (staging / relative).rename(target)
             installed.append(relative)
-        temporary = root / '.crawler-update-state.tmp'
+        temporary = active / '.crawler-update-state.tmp'
         temporary.write_text(json.dumps(dict(repository=REPO, branch=BRANCH, commit=sha,
                                             backup=str(backup), fingerprint=source_fingerprint(root)),
                                         indent=2), encoding='utf-8')
@@ -410,7 +429,7 @@ def main(argv=None):
             updater_folder = Path(os.environ.get('CRAWLER_HUB_UPDATER_DIR') or __file__).resolve()
             if any(updater_folder.is_relative_to(root / name) for name in DIRECTORIES):
                 raise ValueError('업데이트 프로그램은 교체 대상인 app/brands 밖의 폴더에 두세요.')
-        with update_lock(root), tempfile.TemporaryDirectory(prefix='.crawler-update-', dir=root) as temp:
+        with update_lock(root), tempfile.TemporaryDirectory(prefix='.crawler-update-', dir=admin_dir(root)) as temp:
             work = Path(temp)
             print('최신 버전 확인 중...', flush=True)
             sha = latest_commit(work)
