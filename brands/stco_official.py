@@ -10,7 +10,7 @@ import socket
 import time
 import urllib.error
 import urllib.request
-from urllib.parse import urljoin,urlsplit,urlencode,parse_qs,quote
+from urllib.parse import urljoin,urlsplit,urlencode,parse_qs,quote,unquote
 from bs4 import BeautifulSoup
 from PIL import Image,UnidentifiedImageError
 from crawler_rules import validate_gallery_image,gallery_slots
@@ -23,6 +23,9 @@ SOCKET_SECONDS=15
 REQUEST_ATTEMPTS=3
 class CrawlError(RuntimeError):
     """Official source or collection failure."""
+class ExcludedGif(CrawlError):
+    """GIF is excluded from product image collection."""
+
 class ProductUnavailable(CrawlError):
     """The official detail explicitly says this product cannot be purchased."""
 
@@ -98,6 +101,8 @@ def fetch(ctx, url, limit=4_000_000):
             # Retry with a fresh connection after TLS/temporary network failures.
             opener = public_opener(ctx, deadline)
             with opener.open(request, timeout=min(SOCKET_SECONDS, remaining)) as response:
+                if str(response.headers.get('Content-Type','')).split(';')[0].strip().lower()=='image/gif':
+                    raise ExcludedGif('GIF 이미지 제외: '+url)
                 if int(response.headers.get('Content-Length', '0')) > limit:
                     raise CrawlError('응답 크기 초과: ' + url)
                 chunks, size = [], 0
@@ -216,12 +221,18 @@ def regular_price(ctx,doc):
     return value
 
 
+def is_gif(url):
+    return unquote(urlsplit(url).path).lower().endswith('.gif')
+
+
 def image(ctx,url,cache):
+    if is_gif(url):raise ExcludedGif('GIF 이미지 제외: '+url)
     if url not in cache:
         raw=fetch(ctx,url,MAX_BYTES)
         try:
             with Image.open(io.BytesIO(raw)) as pic:
-                if pic.format not in ('JPEG','PNG','WEBP','GIF') or pic.width*pic.height>80000000:raise CrawlError('이미지 형식/크기 확인 실패: '+url)
+                if pic.format=='GIF':raise ExcludedGif('GIF 이미지 제외: '+url)
+                if pic.format not in ('JPEG','PNG','WEBP') or pic.width*pic.height>80000000:raise CrawlError('이미지 형식/크기 확인 실패: '+url)
                 pic.load();cache[url]={'raw':raw,'width':pic.width,'height':pic.height,'digest':hashlib.sha256(raw).hexdigest()}
         except (OSError,UnidentifiedImageError) as exc:raise CrawlError('공식 이미지 해독 실패: '+url) from exc
     return cache[url]
@@ -233,6 +244,7 @@ def gallery_urls(doc,link,sku):
     for node in doc.select('.prodDetailTopWrap .swpMainVisual img'):
         url=urljoin(link,node.get('data-zoom-image') or node.get('data-src') or node.get('src') or '')
         parts=urlsplit(url);filename=parts.path.rsplit('/',1)[-1]
+        if is_gif(url):continue
         if parts.hostname not in IMAGE_HOSTS or not filename.upper().startswith(sku+'_'):continue
         if url not in urls:urls.append(url)
     return urls
@@ -241,7 +253,9 @@ def gallery_urls(doc,link,sku):
 def gallery(ctx,doc,link,sku,cache):
     shots=[];seen=set()
     for url in gallery_urls(doc,link,sku):
-        info=image(ctx,url,cache)
+        try:info=image(ctx,url,cache)
+        except ExcludedGif:
+            ctx.log('GIF 이미지 제외: '+url,'INFO');continue
         validation=validate_gallery_image(info['raw'],role='product_shot',mapping_verified=True,single_shot_verified=True,mapping_evidence='주상품 .swpMainVisual의 전체 품번 파일명 + 주상품/고시 품번 대조',content_evidence='공식 주상품 갤러리 개별 사진; 코디 옵션 영역 제외')
         if validation['passed'] and info['digest'] not in seen:
             seen.add(info['digest']);shots.append({'url':url,'validation':validation})
@@ -259,6 +273,7 @@ def body_urls(doc,link):
     for node in area.find_all('img'):
         url=urljoin(link,node.get('data-original') or node.get('data-src') or node.get('src') or '')
         parts=urlsplit(url)
+        if is_gif(url):continue
         if parts.hostname not in IMAGE_HOSTS:raise CrawlError('미확인 본문 이미지 출처: '+url)
         if not parts.path or parts.path.endswith('/'):
             continue  # Empty filename: host root or /promotion/ banner placeholder.
@@ -283,6 +298,8 @@ def detail(ctx,doc,link,cache):
     parts=[];has_product_body=False
     for url in body_urls(doc,link):
         try:info=image(ctx,url,cache)
+        except ExcludedGif:
+            ctx.log('GIF 이미지 제외: '+url,'INFO');continue
         except MissingResource:
             ctx.log('공식 원본에서 삭제된 상세 이미지(404) 제외: '+url,'WARNING')
             continue
