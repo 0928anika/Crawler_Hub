@@ -20,6 +20,7 @@ from bs4 import BeautifulSoup
 from PIL import Image, ImageStat, ImageChops, ImageFilter, UnidentifiedImageError
 
 SITE = 'https://www.elandmall.co.kr'
+REVISION = '2026-11-19-ncbasic-studio-2'
 BRAND_NO = '2400112310'
 VENDOR_NO = 'LV24013164'
 DETAIL_MAX_BYTES = 64 * 1024 * 1024
@@ -159,14 +160,14 @@ def search(ctx, code):
             ctx.checkpoint()
             parsed = urlsplit(urljoin(SITE,node['href']))
             params = parse_qs(parsed.query)
-            if parsed.hostname!='www.elandmall.co.kr' or parsed.path!='/i/item':
+            if not (parsed.hostname=='elandmall.co.kr' or (parsed.hostname or '').endswith('.elandmall.co.kr')) or parsed.path!='/i/item':
                 continue
             if not params.get('itemNo') or not params.get('lowerVendNo'):
                 continue
             key = params['itemNo'][0],params['lowerVendNo'][0]
             if key not in current:
                 current.append(key)
-            # 검색 전체 건수는 모든 판매자를 세되 수집 링크는 지정 계정만 허용.
+            # 공식 후보뿐 아니라 전체 판매처 링크를 보존한 뒤 상품 응답으로 우선순위를 확정한다.
             links[key] = SITE+'/i/item?'+urlencode({'itemNo':key[0],'lowerVendNo':key[1]})
         signature = tuple(current)
         if total and (not current or signature in signatures):
@@ -175,8 +176,9 @@ def search(ctx, code):
         seen.update(current)
         if len(seen)>=total:
             official=[u for key,u in links.items() if key[1]==VENDOR_NO]
-            ctx.log('공식판매자 한 상품 우선 수집' if official else '공식 없음: 전체 판매처 스튜디오컷 검사','INFO')
-            return official or list(links.values())
+            others=[u for key,u in links.items() if key[1]!=VENDOR_NO]
+            ctx.log('검색 0건: 모든 판매처에서 해당 검색 결과 없음' if not links else '검색 후보: 공식 '+str(len(official))+'개 / 다른 판매처 '+str(len(others))+'개. 실제 품번 확인 후 공식 우선 선택.','INFO')
+            return official+others
     raise CollectionError('검색 100페이지 안전 한도 초과: 미완료')
 
 
@@ -599,6 +601,7 @@ def detail_images(ctx, detail, code, cache, fallback_images=()):
 
 def crawl(ctx):
     code = str(ctx.product_code).strip().upper()
+    ctx.log('NC베이직 스튜디오컷 실행 버전: '+REVISION,'INFO')
     if not re.fullmatch(r'[A-Z0-9]+(?:-[A-Z0-9]+)*',code):
         ctx.fail_item('색상코드 없는 기본 품번 형식을 확인하세요')
         raise CollectionError('잘못된 입력 품번')
@@ -612,19 +615,28 @@ def crawl(ctx):
     products,errors,cache = [],[],{}
     diagnostics=[]
     detail_source=None
+    official_matched=False;fallback_logged=False;matched=0;rejected_studio=0
+    links=sorted(links,key=lambda u:parse_qs(urlsplit(u).query).get('lowerVendNo')!=[VENDOR_NO])
     for link in links:
         ctx.checkpoint()
+        is_official=parse_qs(urlsplit(link).query).get('lowerVendNo')==[VENDOR_NO]
+        if official_matched and not is_official:break
+        if not is_official and not fallback_logged:
+            ctx.log('일치하는 공식판매자 상품 없음: 다른 판매처 전체 스튜디오컷 수집을 진행합니다.','INFO');fallback_logged=True
         try:
             ctx.stage('공식 브랜드·품번 확인: '+link)
             data = product(ctx,link,code,diagnostics=diagnostics)
             if data is None:
                 continue
             main = data['itemMain']
+            matched+=1
+            if str(main['lowerVendNo'])==VENDOR_NO:official_matched=True
             if str(main['lowerVendNo'])!=VENDOR_NO:
                 primary=next((i for i in main.get('itemImage',[]) if str(i.get('imageDcode'))=='010' and i.get('imagePath')),None)
                 if not primary:raise CollectionError('대표 이미지 주소 없음: '+link)
                 info=image_info(ctx,urljoin('https://item.elandrs.com/',primary['imagePath']),cache)
                 if not info[4]:
+                    rejected_studio+=1
                     ctx.log('스튜디오컷 아닌 판매처 상품 제외: '+link,'INFO');continue
             name = clean_name(main['itemName'],code)
             if not name:
@@ -644,9 +656,10 @@ def crawl(ctx):
             ctx.fail_item(message);errors.append(message)
     if not products:
         if diagnostics:message=' / '.join(dict.fromkeys(diagnostics))
-        elif errors:message='공식 검색 상품은 있으나 수집 처리 실패: '+code
+        elif errors:message='검색 상품 처리 실패: '+code
+        elif matched and rejected_studio:message='스튜디오컷 조건 통과 상품 없음: '+code+' / 정확한 품번 '+str(matched)+'개 중 비스튜디오 '+str(rejected_studio)+'개 제외'
         elif links:message='검색 결과가 있으나 지정 브랜드/품번 검증 불일치: '+code
-        else:message='공식 검색에서 지정 판매자 상품 조회 안 됨(전체 사이트 미등록으로 단정하지 않음): '+code
+        else:message='이랜드몰 품번 검색 0건(판매처 전체): '+code
         ctx.fail_item(message)
         raise CollectionError(message+(' / '+'; '.join(errors) if errors else ''))
     palette,photos,bodies,digests = [],[],[],set()

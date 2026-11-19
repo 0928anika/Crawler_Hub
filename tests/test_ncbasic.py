@@ -86,7 +86,7 @@ class NCBasicTests(unittest.TestCase):
     def test_search_counts_all_results_but_returns_only_requested_vendor(self):
         doc=c.BeautifulSoup('<b data-searchresult-total>2</b><a class="ui-item__link" href="/i/item?itemNo=2411568415&amp;lowerVendNo=LV24013164"></a><a class="ui-item__link" href="/i/item?itemNo=2610597760&amp;lowerVendNo=LV26024017"></a>','html.parser')
         with patch.object(c,'page',return_value=doc) as page:
-            self.assertEqual(c.search(Context(),'DCJD24A02'),[LINK])
+            self.assertEqual(c.search(Context(),'DCJD24A02'),[LINK,LINK.replace('itemNo=2411568415','itemNo=2610597760').replace('LV24013164','LV26024017')])
             page.assert_called_once()
 
     def test_fallback_vendor_is_allowed_but_response_identity_stays_checked(self):
@@ -206,5 +206,18 @@ class NCBasicTests(unittest.TestCase):
         for x in range(0,800,4):draw.line((x,0,x,1000),fill='black',width=2)
         buf=io.BytesIO();image.save(buf,format='JPEG')
         with patch.object(c,'fetch',return_value=buf.getvalue()):self.assertEqual(c.gallery(Context(),data['itemMain'],{}),[])
+
+    def test_alias_official_result_does_not_hide_other_seller(self):
+        ctx=Context(('main_image','detail_page'));other=LINK.replace(c.VENDOR_NO,'LV26024017');data=source();data['itemMain']['lowerVendNo']='LV26024017'
+        with patch.object(c,'search',return_value=[other,LINK]),patch.object(c,'product',side_effect=[None,data]) as product,patch.object(c,'options',side_effect=options),patch.object(c,'image_info',return_value=('JPEG',800,1000,'hash',True)),patch.object(c,'gallery',return_value=[('https://item.elandrs.com/one.jpg','one')]),patch.object(c,'detail_images',return_value=['https://item.elandrs.com/body.jpg']):c.crawl(ctx)
+        self.assertEqual([call.args[1] for call in product.call_args_list],[LINK,other]);self.assertEqual(len(ctx.rows),1);self.assertFalse(ctx.errors)
+    def test_zero_search_and_studio_rejection_have_distinct_reasons(self):
+        ctx=Context(('main_image',))
+        with patch.object(c,'search',return_value=[]):
+            with self.assertRaisesRegex(c.CollectionError,'검색 0건'):c.crawl(ctx)
+        self.assertFalse(any('지정 판매자 상품 조회 안' in message for message in ctx.errors))
+    def test_search_accepts_official_brand_subdomain_links(self):
+        doc=c.BeautifulSoup('<b data-searchresult-total>1</b><a class="ui-item__link" href="https://ncbasic.elandmall.co.kr/i/item?itemNo=1&amp;lowerVendNo=LV26024017"></a>','html.parser')
+        with patch.object(c,'page',return_value=doc):self.assertEqual(c.search(Context(),'CODE'),[c.SITE+'/i/item?itemNo=1&lowerVendNo=LV26024017'])
 
 if __name__=='__main__':unittest.main()
