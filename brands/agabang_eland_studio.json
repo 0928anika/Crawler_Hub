@@ -1,0 +1,169 @@
+{
+  "id": "agabang_eland_studio",
+  "name": "아가방",
+  "category": "유아동복",
+  "crawl_source": "이랜드몰 스튜디오컷",
+  "script": "agabang_eland_studio.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_color_mapping": "manual",
+  "official_color_codes": true,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 API의 품절 포함 색상별 사이즈를 매핑 후보에 전달. 전 색상 동일 시 공통값도 출력."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "옵션 API sellPrice의 쿠폰 전 KRW 판매가. 가격이 다르면 첫 지정 상품/옵션 가격 하나를 선택하고 경고만 기록하며 성공 처리."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "itemMain.depth4StandardCategoryName. 정확히 일치하는 상품 링크의 분류가 같을 때 출력."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식은 기존 본사 갤러리 유지. 비공식은 대표사진의 균일·무늬 없는 배경 검사부터 통과한 상품만 채택하며 개별 사진에도 동일 검사 적용. 벽돌/타일 등 비스튜디오 배경 제외."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "채택한 모든 상품 링크의 통과 사진을 실제 파일 해시로 중복 제거하여 수동 매핑 후보로 전달."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "한 상품의 원본 착장/디테일 및 BASE/GOSI·실측 이미지 유지. 고시/사이즈표 별도 생성 없음. 판매자/배송/리뷰 배너를 출처·안내 이미지 대조·전체 타일 OCR로 제외."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.orgSellprice. 링크별 값이 다르거나 누락되면 공통 정상가는 빈칸이며 실패 처리하지 않음."
+    }
+  },
+  "guide": {
+    "example": "01S752005",
+    "examples": [
+      "01S752005",
+      "01O11761003"
+    ],
+    "format": "공식 모델 품번 전체",
+    "notes": "공식 판매자 우선. 없으면 모든 판매자의 스튜디오컷 검증. 색상 수동 매핑, 품절 포함 사이즈.",
+    "method": "이랜드몰 검색 후 브랜드 1690000462·품번 정확 일치. LV22035111 공식 우선.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      ""
+    ],
+    "validation_note": "빈 입력 외 형식 사전 거절 없음. 상세는 한 상품만 사용."
+  },
+  "notes": "아가방 이랜드몰 스튜디오컷. 기존 로엠과 동일하게 공식 LV22035111이 있으면 공식 한 상품 우선, 없으면 전체 판매자의 스튜디오컷 검사. 브랜드 1690000462 정확 일치. 갤러리 파일 해시 중복 제거, 수동 색상 매핑, 품절 포함 색상별 사이즈. 상세는 한 상품만 보존. 공식 item.nextmom.co.kr/magaline_img/goods/agabang/ 모델명 원본 보존, event/brand/bottom/공통 모델 안내 및 배송/판매자 배너 제외. 고시/사이즈표 별도 생성 없음. 추가이미지 최대 9장. 사이즈 단독 옵션은 상품명에 명시된 색상을 사용하며 모델 끝 숫자를 색상코드로 추정하지 않음. 2026-11-19 01S752005 공식 검색부터 3색상 옵션·원본 상세3개·갤러리1개·SDK 엑셀 생성 실검증.",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 API의 품절 포함 색상별 사이즈를 매핑 후보에 전달. 전 색상 동일 시 공통값도 출력."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "옵션 API sellPrice의 쿠폰 전 KRW 판매가. 가격이 다르면 첫 지정 상품/옵션 가격 하나를 선택하고 경고만 기록하며 성공 처리."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "itemMain.depth4StandardCategoryName. 정확히 일치하는 상품 링크의 분류가 같을 때 출력."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식은 기존 본사 갤러리 유지. 비공식은 대표사진의 균일·무늬 없는 배경 검사부터 통과한 상품만 채택하며 개별 사진에도 동일 검사 적용. 벽돌/타일 등 비스튜디오 배경 제외."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "채택한 모든 상품 링크의 통과 사진을 실제 파일 해시로 중복 제거하여 수동 매핑 후보로 전달."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "한 상품의 원본 착장/디테일 및 BASE/GOSI·실측 이미지 유지. 고시/사이즈표 별도 생성 없음. 판매자/배송/리뷰 배너를 출처·안내 이미지 대조·전체 타일 OCR로 제외."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 itemMain.orgSellprice. 링크별 값이 다르거나 누락되면 공통 정상가는 빈칸이며 실패 처리하지 않음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "정상가": "regular_price"
+  },
+  "code_hash": "67a22866bb1b0aafc17b7d143def422de1ccdd9da70b862c5600a8cec4bf1cc0",
+  "additional_image_count": 9
+}
