@@ -200,7 +200,6 @@ def sizes(doc,sku):
         if node.get('data-prd_no')!=sku:continue
         value=str(node.get('value') or '').strip()
         if value and value not in values:values.append(value)
-    if not values:raise CrawlError('주상품 공식 사이즈 옵션 없음')
     return ','.join(values)
 
 
@@ -313,7 +312,9 @@ def crawl(ctx):
         try:
             doc=parse(fetch(ctx,link,MAX_BYTES));record=identity(doc,sku)
             record.update(product_code=query,product_url=link)
-            if ctx.enabled('size'):record['size']=sizes(doc,sku)
+            if ctx.enabled('size'):
+                record['size']=sizes(doc,sku)
+                if not record['size']:ctx.log('주상품 공식 사이즈 옵션 없음: 사이즈 빈칸으로 나머지 수집 계속 / '+sku,'WARNING')
             if ctx.enabled('price'):record['price']=amount(text(doc.select_one('.prodOptionBox .priceBox .priceNew')))
             if ctx.enabled('regular_price'):record['regular_price']=regular_price(ctx,doc)
             if ctx.enabled('category'):

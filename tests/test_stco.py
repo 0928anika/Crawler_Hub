@@ -71,6 +71,17 @@ class StcoTests(unittest.TestCase):
         node['data-qty']='0';node['disabled']='disabled'
         self.assertEqual(c.sizes(doc,'DDSXD01CCD'),'95,100,105,110')
 
+    def test_missing_primary_sizes_still_collects_product(self):
+        doc=source()
+        for node in doc.select('.prodOptionBox .listOption input[data-name="사이즈"][data-prd_no="DDSXD01CCD"]'):node.decompose()
+        self.assertEqual(c.sizes(doc,'DDSXD01CCD'),'')
+        ctx=Context(['size','price'])
+        with patch.object(c,'search',return_value=[('DDSXD01CCD',c.SITE+'/detail/index/DDSXD01CCD')]),patch.object(c,'fetch',return_value=str(doc).encode('utf8')):
+            c.crawl(ctx)
+        self.assertFalse(ctx.failures);self.assertEqual(len(ctx.rows),1)
+        self.assertEqual(ctx.rows[0]['size'],'');self.assertEqual(ctx.rows[0]['price'],59900)
+        self.assertTrue(any('사이즈 빈칸' in log[0] for log in ctx.logs))
+
     def test_complete_body_includes_shared_size_image(self):
         doc=source();urls=c.body_urls(doc,c.SITE)
         self.assertEqual(len(urls),6)
