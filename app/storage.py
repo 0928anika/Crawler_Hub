@@ -96,6 +96,7 @@ def validate_input(data,brand):
                 if match and row[headers.index(match)] in ('',None):errors.append(dict(row=i+2,code=code,message=col+' 값이 비어 있습니다.'))
     if data.get('demo',False):missing=[]
     selected=selection(data.get('selected'))
+    selected=list(dict.fromkeys(selected+brand.get('required_optional_fields',[])))
     unsupported=[k for k in selected if not brand['fields'][k]['supported']]
     selected=[k for k in selected if brand['fields'][k]['supported']]
     counts=Counter(r[0] for r in rows)

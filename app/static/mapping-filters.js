@@ -8,7 +8,9 @@
    const selected=drafts[key]||new Set(group.images.filter(i=>(i.assigned_colors||[i.assigned_to]).includes(color.id)).map(i=>i.id));
    for(const id of selected)assigned.add(id);
   }
-  const complete=group.colors.every(c=>group.confirmed.includes(c.id)&&!dirty.has(group.id+':'+c.id));
+  if(group.detail)for(const id of drafts[group.id+':'+group.detail.id]||group.detail.selected||[])assigned.add(id);
+  const detailComplete=!group.detail||(group.detail.confirmed&&!dirty.has(group.id+':'+group.detail.id));
+  const complete=detailComplete&&group.colors.every(c=>group.confirmed.includes(c.id)&&!dirty.has(group.id+':'+c.id));
   return {complete,unassigned:group.images.filter(i=>!assigned.has(i.id)).length};
  }
  function matches(state,filter){

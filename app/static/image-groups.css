@@ -62,3 +62,14 @@
 .mapping-manual-actions{display:flex;align-items:center;gap:7px}.mapping-manual-actions button{padding:10px 14px;font-size:12px;border-radius:7px;white-space:nowrap}
 .mapping-manual-row{padding-top:12px;border-top:1px solid #edf0f4}
 @media(max-width:700px){.mapping-product-head .mapping-manual-form{grid-template-columns:repeat(2,minmax(0,1fr));padding:14px;gap:12px}.mapping-manual-intro{flex-direction:column;gap:4px}.mapping-manual-actions{grid-column:1/-1;justify-content:flex-end}}
+
+/* Detail selections are a separate ordered layer, never color ownership. */
+.mapping-detail-option{flex:0 0 auto;align-self:flex-start;border:2px solid #a78bdf;background:#f6f0ff;color:#7042a3;padding:10px 16px;border-radius:9px;font-weight:700;margin-right:12px}
+.mapping-detail-option.selected{background:#7042a3;color:white;border-color:#7042a3}
+.mapping-detail-grid .mapping-photo.selected{border-color:#9564c8;background:#faf6ff}
+.mapping-detail-grid .mapping-photo.selected .mapping-photo-badge{background:#7042a3;color:white;font-size:18px;font-weight:800}
+.detail-mapping-required-badge{display:inline-block;font-size:10px;font-weight:700;padding:4px 7px;border-radius:5px;background:#f1e7fb;color:#7042a3;margin:0 6px 6px 0}
+
+.mapping-product .mapping-detail-grid .mapping-photo.selected::before{content:attr(data-selection-order);background:#7042a3;border-color:#7042a3;color:white}
+
+.detail-mapping-required-badge{display:inline-flex;align-items:center;width:fit-content;padding:4px 8px;border-radius:6px;margin-bottom:8px}

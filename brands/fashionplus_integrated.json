@@ -1,0 +1,195 @@
+{
+  "id": "fashionplus_integrated",
+  "name": "패션플러스 통합",
+  "category": "브랜드 공통",
+  "crawl_source": "전체 브랜드",
+  "script": "fashionplus_integrated.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_color_mapping": "manual",
+  "official_color_codes": true,
+  "output_headers": [
+    "상위품목ID",
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "패션플러스 품목번호",
+    "브랜드",
+    "판매자",
+    "판매자 상품번호",
+    "원본 옵션",
+    "상품정보 원문",
+    "전체 상품사진",
+    "원본 상세 텍스트",
+    "원본 상세 데이터"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 원문에서 분리 가능한 사이즈만 사용. 분리 불가는 원본 옵션 컬럼에 보존."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "할인내역 판매가 행. 쿠폰할인가 제외."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "할인내역 독립 희망소비자가 행. 없으면 빈칸."
+    },
+    "category": {
+      "supported": false,
+      "status": "unsupported",
+      "reason": "실제 상품 분류 경로가 표시될 때만 수집. 브랜드를 카테고리로 대체하지 않음."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "스튜디오 배경 제한 없이 전체 썸네일·본문 후보 중 사용자가 색상별 대표사진을 선택."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "썸네일·본문의 긴 이미지·사이즈·고시 이미지를 포함한 후보에서 색상별 사진을 사용자가 선택. 상세 선택과 독립."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "상세페이지 고정 옵션에서 선택한 사진을 클릭한 순서대로 조합. 색상별 선택과 독립."
+    }
+  },
+  "guide": {
+    "example": "IF95NSEJ6230",
+    "examples": [
+      "IF95NSEJ6230",
+      "RMDVM4382"
+    ],
+    "pattern": "^[A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)*$",
+    "format": "브랜드와 무관한 상품 품번",
+    "notes": "대표·추가·상세 함께 수집. 상세페이지 옵션에서 선택한 순서대로 상세 HTML 구성. 색상 선택과 독립.",
+    "method": "패션플러스 전체 브랜드 검색 후 공식 상품번호(SKU) 또는 상품명의 정확한 품번 일치 상품 전체 수집. 스튜디오컷 필터 없음.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [],
+    "validation_note": "SKU/상품명 품번 대조. 배너·배송 이미지 1차 제외. 상세페이지 옵션은 고정·삭제 불가."
+  },
+  "notes": "모든 브랜드 통합 품번 검색. 검색 결과 전체의 SKU/상품명을 검증하고 썸네일·본문의 모든 이미지 후보와 원본 상세 데이터를 수집. 스튜디오컷/긴 이미지 필터 없음. 판매자·배송·쿠폰 이미지는 경로와 전체 타일 OCR로 1차 제외. 모든 사진을 수동 매핑하며 상세 선택은 색상과 독립된 순서 목록으로 저장. 상세 옵션은 고정. AM 옵션에 상세페이지가 들어가도 중복 생성하지 않음.",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "group_manual_pending": true,
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션 원문에서 분리 가능한 사이즈만 사용. 분리 불가는 원본 옵션 컬럼에 보존."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "할인내역 판매가 행. 쿠폰할인가 제외."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "할인내역 독립 희망소비자가 행. 없으면 빈칸."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": false,
+      "status": "unsupported",
+      "reason": "실제 상품 분류 경로가 표시될 때만 수집. 브랜드를 카테고리로 대체하지 않음."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "스튜디오 배경 제한 없이 전체 썸네일·본문 후보 중 사용자가 색상별 대표사진을 선택."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "썸네일·본문의 긴 이미지·사이즈·고시 이미지를 포함한 후보에서 색상별 사진을 사용자가 선택. 상세 선택과 독립."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "상세페이지 고정 옵션에서 선택한 사진을 클릭한 순서대로 조합. 색상별 선택과 독립."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "패션플러스 품목번호": null,
+    "브랜드": null,
+    "판매자": null,
+    "판매자 상품번호": null,
+    "원본 옵션": null,
+    "상품정보 원문": null,
+    "전체 상품사진": null,
+    "상위품목ID": null
+  },
+  "code_hash": "9bd2662e61f79360dc31fceb6de1bcfb7eea7f0354b35aa62259dd79e720ced8",
+  "hybrid_mapping": false,
+  "mapping_image_order": "source",
+  "export_all_additional_images": true,
+  "mapping_detail_mode": "manual_ordered",
+  "required_optional_fields": [
+    "main_image",
+    "additional_images",
+    "detail_page"
+  ]
+}

@@ -4,12 +4,18 @@ import html
 import json
 from copy import deepcopy
 from schema import field_for, preview, output_headers, sanitized_html
-from detail_store import excel_detail
+from detail_store import excel_detail, registration_layout
 from storage import atomic_json
 from color_palette import normalize_palette
 import local_images
 import am_requests
 
+
+DETAIL_OPTION_ID='__detail__'
+
+def manual_detail(job):return job.brand.get('mapping_detail_mode')=='manual_ordered'
+
+def reserved_detail(color):return color.get('id')==DETAIL_OPTION_ID or str(color.get('color_name') or color.get('label') or '').replace(' ','')=='상세페이지'
 
 def key(value):
     return hashlib.sha256(str(value).encode('utf-8')).hexdigest()[:24]
@@ -44,6 +50,7 @@ def source_groups(job):
         code=str(item['code']).strip().upper()
         gid=key(code);group=groups.setdefault(gid,dict(id=gid,code=code,name=item['name'],colors=[],images=[]))
         for color in raw['colors']:
+            if manual_detail(job) and reserved_detail(color):continue
             match=next((c for c in group['colors'] if same_color(c,color)),None)
             if match:
                 if not match['color_code'] and color['color_code']:match['color_code']=color['color_code']
@@ -122,11 +129,12 @@ def snapshot(job, *, groups=None, state=None):
         group['signature']=key(json.dumps([i['id'] for i in group['images']]))
         group['original_colors']=[dict(c) for c in group['colors']]
         group['am_options']=deepcopy((state.get('am_requests') or {}).get('products',{}).get(am_requests.code_key(group['code']),[]))
+        if manual_detail(job):group['am_options']=[c for c in group['am_options'] if not reserved_detail(c)]
         group['am_mode']=state.get('am_requests') is not None
         group['option_sources']=deepcopy(saved.get('option_sources',{}))
         for color in saved.get('added_colors',[]):
             if not any(c['id']==color['id'] for c in group['colors']):group['colors'].append(dict(color,manual=True))
-        group['colors']=[c for c in group['colors'] if c['id'] not in saved.get('hidden_colors',[])]
+        group['colors']=[c for c in group['colors'] if c['id'] not in saved.get('hidden_colors',[]) and not (manual_detail(job) and reserved_detail(c))]
         valid_colors={c['id'] for c in group['colors']};valid_images={i['id'] for i in group['images']}
         assignments={iid:[cid for cid in (value if isinstance(value,list) else [value]) if cid in valid_colors] for iid,value in saved.get('assignments',{}).items() if iid in valid_images}
         signature_matches=saved.get('image_signature')==group['signature'] or saved.get('signature')==legacy_signature
@@ -143,12 +151,18 @@ def snapshot(job, *, groups=None, state=None):
         confirmed=[cid for cid in confirmed if any(cid in ids for ids in assignments.values())]
         group['confirmed']=confirmed
         group['complete']=len(confirmed)==len(valid_colors)
+        if manual_detail(job):
+            selected=list(dict.fromkeys(i for i in saved.get('detail_selected',[]) if i in valid_images))
+            ready=bool(signature_matches and saved.get('detail_confirmed') and selected)
+            group['detail']=dict(id=DETAIL_OPTION_ID,label='상세페이지',selected=selected,confirmed=ready,locked=True)
+            group['complete']=group['complete'] and ready
+            total+=1;done+=int(ready)
         total+=len(valid_colors);done+=len(confirmed)
     finalized=bool(state.get('finalized') and state.get('fingerprint')==fingerprint and groups and all(g['complete'] for g in groups))
     if is_hybrid(job) and not groups and automatic_items(job):finalized=True
     excluded=[dict(code=q['code'],status=q['status'],error=q.get('error','')) for q in job.queue if q['status']!='SUCCESS']
     return dict(revision=state.get('revision',0),groups=groups,total_colors=total,saved_colors=done,excluded_tasks=excluded,image_mode=job.brand.get('image_mode','url'),
-                finalized=finalized,fingerprint=fingerprint,am_import=state.get('am_requests'),unassigned=sum(not i['assigned_to'] for g in groups for i in g['images']))
+                finalized=finalized,fingerprint=fingerprint,am_import=state.get('am_requests'),unassigned=sum(not i['assigned_to'] and i['id'] not in (g.get('detail') or {}).get('selected',[]) for g in groups for i in g['images']))
 
 
 def initial_saved(group):
@@ -164,6 +178,15 @@ def save_color(job,data):
         group=next((g for g in view['groups'] if g['id']==data.get('group_id')),None)
         if not group:raise ValueError('품번을 찾을 수 없습니다.')
         color=data.get('color_id')
+        if color==DETAIL_OPTION_ID:
+            if not manual_detail(job):raise ValueError('상세페이지 수동 매핑 작업이 아닙니다.')
+            selected=data.get('image_ids');valid={i['id'] for i in group['images']}
+            if not isinstance(selected,list) or not selected or any(i not in valid for i in selected):raise ValueError('상세페이지에 넣을 현재 품번의 사진을 최소 1장 선택하세요.')
+            saved=state.setdefault('groups',{}).setdefault(group['id'],initial_saved(group))
+            saved.update(detail_selected=list(dict.fromkeys(selected)),detail_confirmed=True,image_signature=group['signature'])
+            state.update(revision=view['revision']+1,finalized=False,fingerprint=view['fingerprint'])
+            atomic_json(job.dir/'color_mapping.json',state)
+            return snapshot(job,groups=groups,state=state)
         reference=next((c for c in group['original_colors'] if c['id']==color),None) if group.get('am_mode') else None
         if color not in {c['id'] for c in group['colors']} and not reference:raise ValueError('잘못된 색상입니다.')
         selected=data.get('image_ids')
@@ -197,10 +220,12 @@ def edit_options(job,data):
         if not group:raise ValueError('품번을 찾을 수 없습니다.')
         saved=state.setdefault('groups',{}).setdefault(group['id'],initial_saved(group))
         action=data.get('action');active=None;transfers={}
+        if manual_detail(job) and data.get('color_id')==DETAIL_OPTION_ID:raise ValueError('상세페이지 옵션은 삭제하거나 변경할 수 없습니다.')
         if action=='add':
             name=data.get('color_name','');code=data.get('color_code','')
             if not isinstance(name,str) or not isinstance(code,str) or max(len(name),len(code))>80:raise ValueError('색상명·코드는 각각 80자 이하로 입력하세요.')
             color=normalize_palette([dict(color_name=name,color_code=code)])[0]
+            if manual_detail(job) and reserved_detail(color):raise ValueError('상세페이지 옵션은 항상 맨 앞에 고정되어 있습니다.')
             if any(same_color(c,color) for c in group['colors']):raise ValueError('같은 색상 옵션이 이미 있습니다.')
             previous=next((c for c in group['original_colors']+saved.get('added_colors',[]) if same_color(c,color)),None)
             if previous:
@@ -227,6 +252,12 @@ def edit_options(job,data):
     return result
 
 
+def selected_detail(job,group):
+    selected=(group.get('detail') or {}).get('selected',[])
+    images={i['id']:i for i in group['images']}
+    return registration_layout(''.join('<img src="'+html.escape(images[i]['url'],quote=True)+'" alt="상품 상세">' for i in selected if i in images))
+
+
 def shared_detail(job,group):
     """The same collected site detail for every color, across all product links."""
     collected=[];legacy=[];seen=set();modern=False
@@ -251,6 +282,7 @@ def detail_preview(job,group_id):
     group=next((g for g in view['groups'] if g['id']==group_id),None)
     if group is None:raise ValueError('매핑할 품번을 찾을 수 없습니다.')
     markup='';notice=''
+    if manual_detail(job):return dict(code=group['code'],name=group['name'],html=selected_detail(job,group),notice='선택한 순서대로 구성한 상세페이지입니다.' if group['detail']['selected'] else '상세페이지 옵션에서 사진을 선택하세요.',product_url=first_product_link(job,group['code']))
     if 'detail_page' not in job.selected:notice='이 작업에서는 상세페이지 수집을 선택하지 않았습니다.'
     else:
         entry=local_images.detail_entry(job,group['code']) if local_images.enabled(job) else None
@@ -293,7 +325,7 @@ def final_items(job,view):
     for group in view['groups']:
         first_link=first_product_link(job,group['code'])
         detail=local_images.detail_entry(job,group['code']) if local_images.enabled(job) else None
-        compact,overflow=(detail['filename'],False) if detail else excel_detail(shared_detail(job,group)) if 'detail_page' in job.selected else ('',False)
+        compact,overflow=(detail['filename'],False) if detail else excel_detail(selected_detail(job,group) if manual_detail(job) else shared_detail(job,group)) if 'detail_page' in job.selected else ('',False)
         if overflow:raise ValueError(group['code']+': 공통 상세 HTML이 셀 한도를 초과합니다.')
         for color in group['colors']:
             images=[i for i in group['images'] if color['id'] in i.get('assigned_colors',[i.get('assigned_to')])]
@@ -392,7 +424,7 @@ def finalize(job,data):
         view=snapshot(job)
         if data.get('expected_revision')!=view['revision']:raise ValueError('매핑이 변경되었습니다. 다시 확인하세요.')
         if not view['groups']:raise ValueError('매핑할 수집 성공 품번이 없습니다. 실패·미완료 품번은 결과에서 제외됩니다.')
-        if not all(g['complete'] for g in view['groups']):raise ValueError('수집에 성공한 품번의 색상 선택을 모두 저장하세요. 모든 색상에 사진을 최소 1장 선택하세요. 사용하지 않는 색상은 옵션을 삭제하세요.')
+        if not all(g['complete'] for g in view['groups']):raise ValueError('상세페이지와 색상 선택을 모두 저장하세요. 사진을 최소 1장 선택하고 사용하지 않는 색상은 삭제하세요.' if manual_detail(job) else '수집에 성공한 품번의 색상 선택을 모두 저장하세요. 모든 색상에 사진을 최소 1장 선택하세요. 사용하지 않는 색상은 옵션을 삭제하세요.')
         final_items(job,view)  # Validate every row before changing final status.
         previous=read_state(job);state=dict(previous,finalized=True,fingerprint=view['fingerprint'],revision=view['revision']+1)
         if local_images.enabled(job):state['file_export']=local_images.prepare_export(job,view,state['revision'])
@@ -465,6 +497,7 @@ def configure_options(saved,group,entries):
         if not isinstance(entry,dict):raise ValueError('작업 옵션 형식이 올바르지 않습니다.')
         source=entry.get('source');original=catalog.get(source,{}).get(entry.get('id'))
         if not original:raise ValueError('현재 품번의 AM/수집 옵션만 선택할 수 있습니다.')
+        if group.get('detail') and reserved_detail(original):continue
         ids={original['id']};color={k:original.get(k,'') for k in ('color_name','color_code')}
         if entry.get('linked_crawl_id'):raise ValueError('옵션 연결은 지원하지 않습니다.')
         if 'size' in original:color['size']=original['size']
@@ -489,7 +522,12 @@ def configure_options(saved,group,entries):
 
 def preview_am(job,data):
     with job.data_lock:known=[g['code'] for g in source_groups(job)]
-    return am_requests.parse_requests(data,known)
+    parsed=am_requests.parse_requests(data,known)
+    if manual_detail(job):
+        for code,options in parsed.get('products',{}).items():parsed['products'][code]=[c for c in options if not reserved_detail(c)]
+        parsed['products']={code:options for code,options in parsed.get('products',{}).items() if options}
+        parsed['option_count']=sum(len(v) for v in parsed.get('products',{}).values())
+    return parsed
 
 
 def import_am(job,data):

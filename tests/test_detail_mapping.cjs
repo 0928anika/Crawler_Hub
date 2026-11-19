@@ -1,0 +1,10 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const source=fs.readFileSync('app/static/app.js','utf8');
+const ctx={S:{mappingActive:{g:'__detail__'},mappingDrafts:{},mappingDirty:new Set()}};vm.createContext(ctx);vm.runInContext(source.slice(source.indexOf('const mappingKey='),source.indexOf('async function openMapping(')),ctx);
+const group={id:'g',detail:{id:'__detail__',label:'상세페이지',selected:[],confirmed:false},colors:[{id:'red',label:'red'},{id:'blue',label:'blue'}],confirmed:[],images:[{id:'a',assigned_colors:['red']},{id:'b',assigned_colors:['blue']},{id:'c',assigned_colors:[]}]};
+assert.equal(ctx.mappingRequiredOptions(group)[0].id,'__detail__');
+ctx.toggleMappingPhoto(group,'__detail__','b');ctx.toggleMappingPhoto(group,'__detail__','a');assert.deepEqual([...ctx.mappingDraft(group,'__detail__')],['b','a']);assert.equal(ctx.mappingPhotoBadge(group,'__detail__','b',true),'1');assert.equal(ctx.mappingPhotoBadge(group,'__detail__','a',true),'2');
+assert.deepEqual(ctx.mappingOwners(group,'b').map(c=>c.id),['__detail__']);ctx.S.mappingActive.g='red';assert.deepEqual([...ctx.mappingDraft(group,'red')],['a']);assert.equal(ctx.mappingOwners(group,'b').length,1);assert.equal(ctx.mappingOwners(group,'b')[0].id,'blue');
+ctx.S.mappingActive.g='__detail__';ctx.selectRemainingMappingPhotos(group,'__detail__');assert.deepEqual([...ctx.mappingDraft(group,'__detail__')],['b','a','c']);ctx.S.mappingActive.g='red';ctx.selectRemainingMappingPhotos(group,'red');assert.deepEqual([...ctx.mappingDraft(group,'red')],['a','c']);
+const filters=require('../app/static/mapping-filters.js');assert.equal(filters.status({...group,confirmed:['red','blue']}).complete,false);assert.equal(filters.status({...group,confirmed:['red','blue'],detail:{...group.detail,confirmed:true,selected:['a']}}).complete,true);
+console.log('Detail option first; click-order numbers; detail/color ownership and select-remaining independent; detail confirmation required.');
