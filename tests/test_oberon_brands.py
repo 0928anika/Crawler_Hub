@@ -16,6 +16,22 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'app'))
 from crawler_sdk import CrawlContext
 from PIL import Image
+from bs4 import BeautifulSoup
+
+def detail_headings(markup):
+    """Presentation attributes may change; heading content must remain intact."""
+    return [node.get_text(' ', strip=True) for node in BeautifulSoup(markup, 'html.parser').find_all('h3')]
+
+
+def detail_rows(markup):
+    """Check adjacent header/value cells in the same row, not text anywhere."""
+    rows = []
+    for row in BeautifulSoup(markup, 'html.parser').select('table tr'):
+        cells = row.find_all(['th', 'td'], recursive=False)
+        if len(cells) == 2 and cells[0].name == 'th' and cells[1].name == 'td':
+            rows.append(tuple(cell.get_text(' ', strip=True) for cell in cells))
+    return rows
+
 
 NEW = ['adhoc_official', 'bangbang_official', 'decoand_official', 'crocodile_official', 'disneygolf_official',
        'renomakids_official', 'minimum_official', 'adidas_official', 'brentwood_official', 'ping_official', 'ecolier_official']
@@ -161,8 +177,8 @@ class Cafe24Hybrid(unittest.TestCase):
                 self.assertNotIn('bn_pay', detail)
                 self.assertNotIn('d404', detail)
                 if module.CONFIG.get('notice'):
-                    self.assertIn('<h3>상품정보고시</h3>', detail)
-                    self.assertIn('<th>세탁방법 및 취급시 주의사항</th><td>단독 손세탁</td>', detail)
+                    self.assertIn('상품정보고시', detail_headings(detail))
+                    self.assertIn(('세탁방법 및 취급시 주의사항', '단독 손세탁'), detail_rows(detail))
                 self.assertEqual(manual[0]['_unmapped']['shared_detail_html'], detail)
 
     def test_single_color_page_is_fully_automatic(self):
@@ -225,7 +241,7 @@ class Others(unittest.TestCase):
         self.assertIsNone(row['정상가'])
         self.assertNotIn(',f_auto', row['대표이미지'])
         self.assertIn('/images/w_1000/', row['대표이미지'])
-        self.assertIn('<th>제조국</th><td>베트남</td>', row['상세페이지 HTML'])
+        self.assertIn(('제조국', '베트남'), detail_rows(row['상세페이지 HTML']))
         self.assertFalse(any('videos' in u for u in net.images))
 
     def test_brentwood_color_products_and_size_figure_before_table(self):
@@ -267,7 +283,7 @@ class Others(unittest.TestCase):
         self.assertEqual(len(rows), 1)
         row = rows[0]
         self.assertEqual((row['색상코드'], row['사이즈'], row['판매가'], row['정상가'], row['카테고리']), ('BK', '095,100', 79000, 99000, 'MEN > 티셔츠'))
-        self.assertIn('<th>소재</th><td>폴리 90% 스판 10%</td>', row['상세페이지 HTML'])
+        self.assertIn(('소재', '폴리 90% 스판 10%'), detail_rows(row['상세페이지 HTML']))
         self.assertEqual(row['상품명'], '남성 긴팔 이너')
 
     def test_ecolier_brand_scope_and_manual_candidates(self):
