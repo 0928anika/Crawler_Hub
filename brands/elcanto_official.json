@@ -1,0 +1,171 @@
+{
+  "id": "elcanto_official",
+  "name": "엘칸토",
+  "category": "신발",
+  "crawl_source": "공식 홈페이지",
+  "script": "elcanto_official.py",
+  "execution_level": 1,
+  "interface": "portal_v1",
+  "mapping_mode": "manual",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명"
+  ],
+  "extensions": [],
+  "official_color_codes": false,
+  "image_color_mapping": "hybrid",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 optionJsonData 색상별 조합의 전체 사이즈. 품절/HIDE 포함."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 Product offers KRW 가격과 옵션 조합 sto_price 추가금. 색상별 모든 사이즈 가격 동일 시 출력."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .price_wrap strike 가격. 판매가를 대신 넣지 않음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 xans-product-headcategory의 분류 경로."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 갤러리에 명시된 실제 URL만 사용. 공개 바이트·형식·픽셀·비율 검사. 한 색상은 자동, 여러 색상은 수동 연결."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "유효 갤러리 사진 최대 9장, 5장 미만이면 유효 사진을 반복해 최소 5슬롯."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "해당 품번 speedgabia 폴더의 원본 상품/치수 이미지 및 #productWrap HTML 고시. 공통 상단/배송/교환 배너와 GIF 제외."
+    }
+  },
+  "guide": {
+    "example": "LCWD89I513",
+    "examples": [
+      "LCWD89I513"
+    ],
+    "format": "기본 품번 전체 입력",
+    "notes": "사진 색상 수동 매핑. 품절 포함 전체 사이즈.",
+    "method": "공식 검색 후 Product MPN 정확 대조와 공식 옵션 조합 확인.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      ""
+    ],
+    "validation_note": "빈 입력 외 품번 형식 사전 거절 없음."
+  },
+  "notes": "엘칸토 공식 elcanto.co.kr. 공식 Product MPN 정확 대조. Makeshop optionJsonData 조합의 색상/사이즈/추가금 확인, 품절/HIDE 포함 전체 옵션. 실제 색상코드 미표시는 추정하지 않음. 한 색상 자동/다색상 수동 매핑. 상품별 speedgabia 품번 폴더 상세 원본과 HTML 고시 유지. 공통 상단/배송/교환 배너와 GIF 제외. 추가이미지 최대9장, 최소5슬롯 반복.",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "엘칸토 공식 Product/옵션 원문 확인"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "엘칸토 공식 Product/옵션 원문 확인"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "엘칸토 공식 Product/옵션 원문 확인"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "엘칸토 공식 Product/옵션 원문 확인"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 optionJsonData 색상별 조합의 전체 사이즈. 품절/HIDE 포함."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 Product offers KRW 가격과 옵션 조합 sto_price 추가금. 색상별 모든 사이즈 가격 동일 시 출력."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .price_wrap strike 가격. 판매가를 대신 넣지 않음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 xans-product-headcategory의 분류 경로."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 갤러리에 명시된 실제 URL만 사용. 공개 바이트·형식·픽셀·비율 검사. 한 색상은 자동, 여러 색상은 수동 연결."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "유효 갤러리 사진 최대 9장, 5장 미만이면 유효 사진을 반복해 최소 5슬롯."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "해당 품번 speedgabia 폴더의 원본 상품/치수 이미지 및 #productWrap HTML 고시. 공통 상단/배송/교환 배너와 GIF 제외."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null
+  },
+  "code_hash": "952903ba3aee0a62fbeabbc523fb3259384d1ebd12918f749f0c217a4a417fcd",
+  "hybrid_mapping": true,
+  "additional_image_count": 9
+}
