@@ -122,6 +122,15 @@ class RemoteAccessTests(unittest.TestCase):
         self.assertEqual(status, 429)
         self.assertIn('잠겼'.encode(), body)
 
+    def test_pc_screen_shows_phone_address_and_pin_but_phone_does_not(self):
+        self.remote.urls = ['http://192.168.0.5:8765']
+        with patch.object(server, 'settings', side_effect=lambda: {}):
+            status, _, body = self.call('/api/settings', phone=False)
+            data = json.loads(body)
+            self.assertEqual((data['phone_urls'], data['phone_pin']), (['http://192.168.0.5:8765'], self.remote.pin))
+            status, _, body = self.call('/api/settings', headers={'Cookie': self.cookie()})
+            self.assertNotIn('phone_pin', json.loads(body))
+
     def test_spoofed_host_from_other_device_is_not_local(self):
         self.assertTrue(remote_access.is_local_request('127.0.0.1', '127.0.0.1:8765', 8765))
         self.assertFalse(remote_access.is_local_request('192.168.0.23', '127.0.0.1:8765', 8765))

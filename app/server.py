@@ -164,7 +164,9 @@ class Handler(BaseHTTPRequestHandler):
         if path.startswith('/api/admin/brands/'):return self.send(admin.read_brand(path.rsplit('/',1)[-1]))
         if path.startswith('/api/brands/'):
             parts=path.split('/');b=get_brand(parts[3]);return self.send(b['guide'] if parts[-1]=='input-guide' else b)
-        if path=='/api/settings':return self.send(dict(settings(),directory=str(HOME/'jobs'),runtime=str(Path(sys.executable).resolve()),version=VERSION,local_only=REMOTE is None,remote=REMOTE is not None,level=1))
+        if path=='/api/settings':
+            phone=dict(phone_urls=getattr(REMOTE,'urls',[]),phone_pin=REMOTE.pin) if REMOTE is not None and self.is_local() else {}
+            return self.send(dict(settings(),directory=str(HOME/'jobs'),runtime=str(Path(sys.executable).resolve()),version=VERSION,local_only=REMOTE is None,remote=REMOTE is not None,level=1,**phone))
         if path=='/api/history':
             rows=history();seen={x['id'] for x in rows}
             rows=[JOBS[x['id']].summary() if x['id'] in JOBS else x for x in rows]
@@ -323,13 +325,17 @@ def main():
     parser.add_argument('--reset-pin',action='store_true',help='휴대폰 PIN을 새로 만들고 기존 휴대폰 로그인을 모두 해제');args=parser.parse_args()
     if args.remote:REMOTE=remote_access.RemoteAccess(HOME,reset=args.reset_pin)
     server=ThreadingHTTPServer(('0.0.0.0' if REMOTE else '127.0.0.1',args.port),Handler)
-    url=f'http://127.0.0.1:{server.server_port}';print('Crawler Hub '+VERSION+': '+url,flush=True)
+    url=f'http://127.0.0.1:{server.server_port}';print('Crawler Hub '+VERSION+': '+url+('  (PC 전용 주소 — 휴대폰에서는 아래 주소)' if REMOTE else ''),flush=True)
     if REMOTE:
+        REMOTE.urls=[f'http://{ip}:{server.server_port}' for ip in remote_access.lan_addresses()]
         print('',flush=True)
-        print('[휴대폰 접속 켜짐] 휴대폰 크롬에서 아래 주소 중 하나를 여세요 (PC와 같은 와이파이 또는 Tailscale).',flush=True)
-        for ip in remote_access.lan_addresses() or ['(PC의 IP 주소)']:print(f'  http://{ip}:{server.server_port}',flush=True)
-        print('  PIN: '+REMOTE.pin+'   (바꾸려면 Crawler_Hub_Remote_Windows.bat --reset-pin)',flush=True)
-        print('  이 창을 닫으면 휴대폰 접속도 끊깁니다.',flush=True)
+        print('='*60,flush=True)
+        print(' [휴대폰 접속] 휴대폰 크롬 주소창에 아래 주소를 입력하세요',flush=True)
+        print(' (127.0.0.1은 PC 자신이라 휴대폰에서는 열리지 않습니다)',flush=True)
+        for phone_url in REMOTE.urls or ['(PC의 IP 주소를 찾지 못했습니다 — 와이파이 연결 확인)']:print('    '+phone_url,flush=True)
+        print(' PIN: '+REMOTE.pin,flush=True)
+        print(' PC와 휴대폰이 같은 와이파이여야 하고, 이 창을 닫으면 끊깁니다.',flush=True)
+        print('='*60,flush=True)
         print('',flush=True)
     if not args.no_browser:webbrowser.open(url)
     try:server.serve_forever()
