@@ -20,11 +20,42 @@ import zipfile
 
 REPO = '0928anika/Crawler_Hub'
 BRANCH = 'develop'
-DIRECTORIES = ('app', 'brands', 'tools')
-LAUNCHERS = ('Crawler_Hub_Windows.bat', 'Crawler_Hub_Mac.command',
-             'Crawler_Hub_Develop_Windows.bat')
+UPDATER_VERSION = '2026-11-19-runtime-only-v2'
+DIRECTORIES = ('app', 'brands')
+LAUNCHERS = ('Crawler_Hub_Windows.bat', 'Crawler_Hub_Mac.command')
 MAX_ARCHIVE = 100 * 1024 * 1024
 MAX_EXPANDED = 400 * 1024 * 1024
+
+
+def find_install_root(start):
+    start = Path(start).resolve()
+    for folder in (start, *start.parents):
+        if (folder / 'app/bootstrap.py').is_file() and (folder / 'brands').is_dir():
+            return folder
+    raise ValueError('상위 폴더에서 Crawler_Hub 설치 위치를 찾지 못했습니다. --root로 지정하세요.')
+
+
+def source_fingerprint(root):
+    """Skip an unchanged commit only if installed managed files are unchanged too."""
+    files = []
+    for name in DIRECTORIES:
+        files.extend(p for p in (root / name).rglob('*') if p.is_file()
+                     and '__pycache__' not in p.parts and p.suffix not in ('.pyc', '.pyo'))
+    files.extend(root / name for name in LAUNCHERS if (root / name).is_file())
+    digest = hashlib.sha256()
+    for path in sorted(files):
+        digest.update(path.relative_to(root).as_posix().encode('utf-8') + b'\0')
+        digest.update(hashlib.sha256(path.read_bytes()).digest())
+    return digest.hexdigest()
+
+
+def already_current(root, sha):
+    try:
+        state = json.loads((root / '.crawler-update-state.json').read_text(encoding='utf-8'))
+        return (state.get('repository') == REPO and state.get('branch') == BRANCH
+                and state.get('commit') == sha and state.get('fingerprint') == source_fingerprint(root))
+    except (OSError, ValueError):
+        return False
 
 
 def download(url, destination, limit=MAX_ARCHIVE):
@@ -210,7 +241,8 @@ def install(root, staging, sha):
         state = root / '.crawler-update-state.json'
         temporary = root / '.crawler-update-state.tmp'
         temporary.write_text(json.dumps(dict(repository=REPO, branch=BRANCH, commit=sha,
-                                            backup=str(backup)), indent=2), encoding='utf-8')
+                                            backup=str(backup), fingerprint=source_fingerprint(root)),
+                                        indent=2), encoding='utf-8')
         temporary.replace(state)
     except Exception:
         # Roll back source only. User home, jobs, settings and venv are never touched.
@@ -228,20 +260,26 @@ def install(root, staging, sha):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description='공개 GitHub develop 앱/브랜드 업데이트 (로그인 불필요)')
-    parser.add_argument('--root', type=Path, default=Path(__file__).resolve().parents[1])
+    parser.add_argument('--root', type=Path, help='생략하면 보조 Python 파일의 상위에서 앱 폴더 자동 탐색')
     parser.add_argument('--check-only', action='store_true', help='다운로드와 검증만 수행, 설치 파일 변경 없음')
     args = parser.parse_args(argv)
-    root = args.root.resolve()
     try:
+        root = args.root.resolve() if args.root else find_install_root(Path(__file__).resolve().parent)
         if sys.version_info < (3, 10):
             raise ValueError('Python 3.10 이상이 필요합니다.')
         if not args.check_only:
             check_destination(root)
-            ensure_closed()
+            updater_folder = Path(os.environ.get('CRAWLER_HUB_UPDATER_DIR') or __file__).resolve()
+            if any(updater_folder.is_relative_to(root / name) for name in DIRECTORIES):
+                raise ValueError('업데이트 프로그램은 교체 대상인 app/brands 밖의 폴더에 두세요.')
         with update_lock(root), tempfile.TemporaryDirectory(prefix='.crawler-update-', dir=root) as temp:
             work = Path(temp)
+            print('업데이트 도구 ' + UPDATER_VERSION, flush=True)
             print('공개 develop 버전 확인 중...', flush=True)
             sha = latest_commit(work)
+            if not args.check_only and already_current(root, sha):
+                print('이미 최신 develop입니다: ' + sha[:12] + ' / ZIP 다운로드·폴더 교체 생략')
+                return 0
             print('다운로드: ' + sha, flush=True)
             archive = work / 'source.zip'
             download('https://codeload.github.com/' + REPO + '/zip/' + sha, archive)

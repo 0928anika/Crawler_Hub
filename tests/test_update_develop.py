@@ -37,6 +37,7 @@ class Tests(unittest.TestCase):
             self.assertTrue((stage/'app/server.py').exists())
             self.assertFalse((stage/'jobs').exists());self.assertFalse((stage/'settings.json').exists())
             self.assertFalse((stage/'.env').exists());self.assertFalse((stage/'tests').exists())
+            self.assertFalse((stage/'tools').exists())
 
     def test_unsafe_archive_paths_rejected(self):
         for name in ['repo/app/../../settings.json','/repo/app/a.py',
@@ -62,6 +63,8 @@ class Tests(unittest.TestCase):
             (root/'jobs/task').mkdir(parents=True);(root/'jobs/task/result.xlsx').write_bytes(b'old result')
             (root/'settings.json').write_bytes(b'personal settings')
             (root/'venv').mkdir();(root/'venv/marker').write_bytes(b'runtime')
+            (root/'tools').mkdir();(root/'tools/update_develop.py').write_bytes(b'keep manual updater')
+            (stage/'tools').mkdir();(stage/'tools/update_develop.py').write_bytes(b'must not replace')
             (root/'brands/removed.py').write_bytes(b'old crawler')
             with patch.object(u,'ensure_closed'):
                 backup=u.install(root,stage,'a'*40)
@@ -69,6 +72,7 @@ class Tests(unittest.TestCase):
             self.assertEqual((root/'jobs/task/result.xlsx').read_bytes(),b'old result')
             self.assertEqual((root/'settings.json').read_bytes(),b'personal settings')
             self.assertEqual((root/'venv/marker').read_bytes(),b'runtime')
+            self.assertEqual((root/'tools/update_develop.py').read_bytes(),b'keep manual updater')
             self.assertFalse((root/'brands/removed.py').exists())
             self.assertTrue((backup/'brands/removed.py').exists())
             self.assertIn('old',(backup/'app/server.py').read_text())
@@ -83,6 +87,34 @@ class Tests(unittest.TestCase):
             with patch.object(u,'ensure_closed'),patch.object(Path,'rename',fail):
                 with self.assertRaisesRegex(OSError,'simulated'):u.install(root,stage,'b'*40)
             self.assertIn('old',(root/'app/server.py').read_text())
+
+    def test_arbitrary_nested_developer_folder_finds_installation(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=source(Path(temp))
+            developer=root/'any name'/'nested';developer.mkdir(parents=True)
+            self.assertEqual(u.find_install_root(developer),root)
+
+    def test_same_commit_skips_zip_but_local_content_change_forces_update(self):
+        with tempfile.TemporaryDirectory() as temp:
+            p=Path(temp);root=source(p/'installed','old');stage=source(p/'new')
+            with patch.object(u,'ensure_closed'):u.install(root,stage,'e'*40)
+            def get(url,destination,limit=u.MAX_ARCHIVE):
+                self.assertIn('api.github.com',url,'ZIP must not be requested')
+                destination.write_text(json.dumps(dict(ref='refs/heads/develop',object=dict(sha='e'*40))))
+            with patch.object(u,'download',side_effect=get) as download,patch.object(u,'ensure_closed',side_effect=AssertionError('no replacement needed')):
+                self.assertEqual(u.main(['--root',str(root)]),0)
+                self.assertEqual(download.call_count,1)
+            self.assertTrue(u.already_current(root,'e'*40))
+            (root/'brands/demo.py').write_bytes(b'changed locally')
+            self.assertFalse(u.already_current(root,'e'*40))
+
+    def test_tools_and_manual_updater_do_not_affect_runtime_fingerprint(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=source(Path(temp));before=u.source_fingerprint(root)
+            (root/'tools').mkdir();(root/'tools/update_develop.py').write_bytes(b'manual')
+            (root/'Crawler_Hub_Update_Windows.bat').write_bytes(b'manual bat')
+            (root/'app/__pycache__').mkdir();(root/'app/__pycache__/x.pyc').write_bytes(b'cache')
+            self.assertEqual(u.source_fingerprint(root),before)
             self.assertTrue((root/'brands/demo.json').exists())
             self.assertFalse((root/'.crawler-update-state.json').exists())
 
