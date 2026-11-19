@@ -1,4 +1,6 @@
 import hashlib
+from contextlib import redirect_stdout, redirect_stderr
+import io
 import importlib.util
 import json
 from pathlib import Path
@@ -101,9 +103,11 @@ class Tests(unittest.TestCase):
             def get(url,destination,limit=u.MAX_ARCHIVE):
                 self.assertIn('api.github.com',url,'ZIP must not be requested')
                 destination.write_text(json.dumps(dict(ref='refs/heads/develop',object=dict(sha='e'*40))))
-            with patch.object(u,'download',side_effect=get) as download,patch.object(u,'ensure_closed',side_effect=AssertionError('no replacement needed')):
+            output=io.StringIO()
+            with patch.object(u,'download',side_effect=get) as download,patch.object(u,'ensure_closed',side_effect=AssertionError('no replacement needed')),redirect_stdout(output):
                 self.assertEqual(u.main(['--root',str(root)]),0)
                 self.assertEqual(download.call_count,1)
+            self.assertEqual(output.getvalue().splitlines(),['최신 버전 확인 중...','최신 버전입니다.'])
             self.assertTrue(u.already_current(root,'e'*40))
             (root/'brands/demo.py').write_bytes(b'changed locally')
             self.assertFalse(u.already_current(root,'e'*40))
@@ -166,12 +170,22 @@ class Tests(unittest.TestCase):
                 else:
                     self.assertTrue(url.endswith('/'+'d'*40))
                     destination.write_bytes(archive.read_bytes())
-            with patch.object(u,'download',side_effect=download),patch.object(u,'ensure_closed'),patch.dict(u.os.environ,CRAWLER_HUB_HOME=str(home)):
+            output=io.StringIO()
+            with patch.object(u,'download',side_effect=download),patch.object(u,'ensure_closed'),patch.dict(u.os.environ,CRAWLER_HUB_HOME=str(home)),redirect_stdout(output):
                 self.assertEqual(u.main(['--root',str(root)]),0)
+            self.assertEqual(output.getvalue().splitlines(),['최신 버전 확인 중...','다운로드 중...',
+                '파일 검사 완료','업데이트 완료','앱을 다시 실행해주세요.'])
             self.assertEqual((home/'settings.json').read_bytes(),b'company settings')
             self.assertEqual((home/'jobs/result.xlsx').read_bytes(),b'company results')
             self.assertFalse((root/'jobs').exists());self.assertFalse((root/'settings.json').exists())
             self.assertIn('new',(root/'app/server.py').read_text())
+
+    def test_failure_log_is_one_clear_message(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=source(Path(temp));output=io.StringIO()
+            with patch.object(u,'latest_commit',side_effect=ValueError('연결 실패')),redirect_stdout(io.StringIO()),redirect_stderr(output):
+                self.assertEqual(u.main(['--root',str(root)]),1)
+            self.assertEqual(output.getvalue().strip(),'업데이트 실패: 연결 실패')
 
 
 if __name__=='__main__':unittest.main()

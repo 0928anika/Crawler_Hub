@@ -274,26 +274,25 @@ def main(argv=None):
                 raise ValueError('업데이트 프로그램은 교체 대상인 app/brands 밖의 폴더에 두세요.')
         with update_lock(root), tempfile.TemporaryDirectory(prefix='.crawler-update-', dir=root) as temp:
             work = Path(temp)
-            print('업데이트 도구 ' + UPDATER_VERSION, flush=True)
-            print('공개 develop 버전 확인 중...', flush=True)
+            print('최신 버전 확인 중...', flush=True)
             sha = latest_commit(work)
             if not args.check_only and already_current(root, sha):
-                print('이미 최신 develop입니다: ' + sha[:12] + ' / ZIP 다운로드·폴더 교체 생략')
+                print('최신 버전입니다.', flush=True)
                 return 0
-            print('다운로드: ' + sha, flush=True)
+            print('다운로드 중...', flush=True)
             archive = work / 'source.zip'
             download('https://codeload.github.com/' + REPO + '/zip/' + sha, archive)
             staging = work / 'source'
             staging.mkdir()
             unpack(archive, staging)
-            count = validate(staging)
-            print('앱 문법 및 브랜드 ' + str(count) + '개 등록/해시 검증 완료.', flush=True)
+            validate(staging)
             if args.check_only:
-                print('검사 완료. 설치 파일은 변경하지 않았습니다.')
+                print('파일 검사 완료. 업데이트하지 않았습니다.', flush=True)
                 return 0
-            backup = install(root, staging, sha)
-            print('업데이트 완료: ' + sha[:12] + '\n백업: ' + str(backup))
-            print('기존 작업·설정은 유지했습니다. 앱을 다시 실행하고 새 수집 작업을 만드세요.')
+            print('파일 검사 완료', flush=True)
+            install(root, staging, sha)
+            print('업데이트 완료', flush=True)
+            print('앱을 다시 실행해주세요.', flush=True)
         return 0
     except Exception as exc:
         print('업데이트 실패: ' + str(exc), file=sys.stderr)

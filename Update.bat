@@ -33,15 +33,14 @@ goto finish
 "%hubUpdatePython%" -B "%hubUpdateScript%" --root "%hubInstallRoot%." %*
 goto finish
 :noroot
-echo App folder not found. Place this BAT inside Crawler_Hub or one of its subfolders.
+echo 업데이트 실패: 앱 설치 폴더를 찾지 못했습니다.
 cmd /c exit 1
 goto finish
 :noscript
-echo update_develop.py not found. Place it alongside this BAT.
+echo 업데이트 실패: update_develop.py를 같은 폴더에 넣어주세요.
 cmd /c exit 1
 :finish
 set "hubUpdateResult=%errorlevel%"
 echo.
-if not "%hubUpdateResult%"=="0" echo Update failed. Existing jobs and settings were not modified.
-pause
+pause >nul
 endlocal & exit /b %hubUpdateResult%
