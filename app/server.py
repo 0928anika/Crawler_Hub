@@ -1,4 +1,4 @@
-"""Local-only HTTP interface; source distribution and user state are separate."""
+"""Local HTTP interface (PC only by default; optional PIN-protected phone access with --remote)."""
 import json
 import os
 import re
@@ -21,8 +21,12 @@ import local_images
 import zipfile
 import uuid
 from local_paths import open_local_path
+from urllib.parse import parse_qsl
+import remote_access
 
 TOKEN=secrets.token_urlsafe(32)
+REMOTE=None  # remote_access.RemoteAccess when started with --remote
+PUBLIC_FILES={'/icon-192.png':'image/png','/icon-512.png':'image/png'}
 JOBS={}
 LOCK=threading.RLock()
 
@@ -105,8 +109,31 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         try:self.wfile.write(body)
         except (BrokenPipeError,ConnectionResetError):pass
+    def is_local(self):
+        return remote_access.is_local_request(self.client_address[0],self.headers.get('Host',''),self.server.server_port)
     def authorized(self):
-        return self.headers.get('Host','') in (f'127.0.0.1:{self.server.server_port}',f'localhost:{self.server.server_port}')
+        if self.is_local():return True
+        return REMOTE is not None and REMOTE.session_ok(self.headers.get('Cookie'))
+    def redirect(self,location,cookie=None):
+        self.send_response(303);self.send_header('Location',location);self.send_header('Cache-Control','no-store');self.send_header('Content-Length','0')
+        if cookie:self.send_header('Set-Cookie',cookie)
+        self.end_headers()
+    def public_get(self,path):
+        """로그인 전에도 보여줄 것: 로그인 화면, 홈 화면 추가용 manifest·아이콘. 처리했으면 True."""
+        if REMOTE is None or self.is_local():
+            if path=='/manifest.webmanifest':self.send(remote_access.MANIFEST,'application/manifest+json');return True
+            if path in PUBLIC_FILES:self.send((ROOT/'static'/path[1:]).read_bytes(),PUBLIC_FILES[path]);return True
+            return False
+        if path=='/login':self.send(remote_access.login_page(),'text/html; charset=utf-8');return True
+        if path=='/manifest.webmanifest':self.send(remote_access.MANIFEST,'application/manifest+json');return True
+        if path in PUBLIC_FILES:self.send((ROOT/'static'/path[1:]).read_bytes(),PUBLIC_FILES[path]);return True
+        return False
+    def remote_blocked(self,path):
+        """원격(휴대폰) 세션에서는 브랜드 코드 관리와 PC 폴더 열기를 막는다."""
+        if self.is_local():return False
+        if path.startswith('/api/admin'):return True
+        parts=path.strip('/').split('/')
+        return len(parts)==4 and parts[:2]==['api','jobs'] and parts[3].startswith('open-')
     def send_file(self,file,mime,attachment):
         self.send_response(200);self.send_header('Content-Type',mime);self.send_header('Content-Length',str(file.stat().st_size));self.send_header('Cache-Control','no-store');self.send_header('Content-Disposition','attachment; filename="'+attachment+'"');self.end_headers()
         try:
@@ -114,7 +141,12 @@ class Handler(BaseHTTPRequestHandler):
                 while chunk:=source.read(65536):self.wfile.write(chunk)
         except (BrokenPipeError,ConnectionResetError):pass
     def do_GET(self):
-        if not self.authorized():return self.send({'error':'접근 불가'},status=403)
+        path=urlparse(self.path).path
+        if self.public_get(path):return
+        if not self.authorized():
+            if REMOTE is not None and path=='/':return self.redirect('/login')
+            return self.send({'error':'접근 불가'},status=403)
+        if self.remote_blocked(path):return self.send({'error':'휴대폰 접속에서는 사용할 수 없는 기능입니다. PC에서 진행하세요.'},status=403)
         try:self.get()
         except (ValueError,KeyError,IndexError) as e:self.send({'error':str(e)},status=400)
         except Exception as e:self.send({'error':'요청 처리 실패: '+str(e)},status=500)
@@ -132,7 +164,7 @@ class Handler(BaseHTTPRequestHandler):
         if path.startswith('/api/admin/brands/'):return self.send(admin.read_brand(path.rsplit('/',1)[-1]))
         if path.startswith('/api/brands/'):
             parts=path.split('/');b=get_brand(parts[3]);return self.send(b['guide'] if parts[-1]=='input-guide' else b)
-        if path=='/api/settings':return self.send(dict(settings(),directory=str(HOME/'jobs'),runtime=str(Path(sys.executable).resolve()),version=VERSION,local_only=True,level=1))
+        if path=='/api/settings':return self.send(dict(settings(),directory=str(HOME/'jobs'),runtime=str(Path(sys.executable).resolve()),version=VERSION,local_only=REMOTE is None,remote=REMOTE is not None,level=1))
         if path=='/api/history':
             rows=history();seen={x['id'] for x in rows}
             rows=[JOBS[x['id']].summary() if x['id'] in JOBS else x for x in rows]
@@ -207,8 +239,18 @@ class Handler(BaseHTTPRequestHandler):
         if path in ('/app.js','/am-mapping.js','/mapping-filters.js','/style.css','/image-groups.css'):
             return self.send((ROOT/'static'/path[1:]).read_bytes(),'text/javascript; charset=utf-8' if path.endswith('js') else 'text/css; charset=utf-8')
         return self.send({'error':'찾을 수 없습니다'},status=404)
+    def remote_login(self):
+        length=int(self.headers.get('Content-Length','0') or 0)
+        if not 0<length<=1024:return self.send(remote_access.login_page('PIN을 입력하세요.'),'text/html; charset=utf-8',status=400)
+        pin=dict(parse_qsl(self.rfile.read(length).decode('utf-8','replace'))).get('pin','')
+        try:token=REMOTE.login(self.client_address[0],pin)
+        except ValueError as e:return self.send(remote_access.login_page(str(e)),'text/html; charset=utf-8',status=429)
+        if not token:return self.send(remote_access.login_page('PIN이 맞지 않습니다.'),'text/html; charset=utf-8',status=401)
+        return self.redirect('/',remote_access.RemoteAccess.cookie(token))
     def do_POST(self):
+        if REMOTE is not None and not self.is_local() and self.path=='/login':return self.remote_login()
         if not self.authorized() or self.headers.get('X-Portal-Token')!=TOKEN:return self.send({'error':'접근 불가'},status=403)
+        if self.remote_blocked(urlparse(self.path).path):return self.send({'error':'휴대폰 접속에서는 사용할 수 없는 기능입니다. PC에서 진행하세요.'},status=403)
         try:
             length=int(self.headers.get('Content-Length','0'))
             if not 0<length<=16*1024*1024:raise ValueError('올바른 크기의 입력을 보내주세요.')
@@ -275,9 +317,20 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     import argparse
-    parser=argparse.ArgumentParser();parser.add_argument('--port',type=int,default=8765);parser.add_argument('--no-browser',action='store_true');args=parser.parse_args()
-    server=ThreadingHTTPServer(('127.0.0.1',args.port),Handler)
+    global REMOTE
+    parser=argparse.ArgumentParser();parser.add_argument('--port',type=int,default=8765);parser.add_argument('--no-browser',action='store_true')
+    parser.add_argument('--remote',action='store_true',help='같은 와이파이·Tailscale의 휴대폰에서 PIN으로 접속 허용')
+    parser.add_argument('--reset-pin',action='store_true',help='휴대폰 PIN을 새로 만들고 기존 휴대폰 로그인을 모두 해제');args=parser.parse_args()
+    if args.remote:REMOTE=remote_access.RemoteAccess(HOME,reset=args.reset_pin)
+    server=ThreadingHTTPServer(('0.0.0.0' if REMOTE else '127.0.0.1',args.port),Handler)
     url=f'http://127.0.0.1:{server.server_port}';print('Crawler Hub '+VERSION+': '+url,flush=True)
+    if REMOTE:
+        print('',flush=True)
+        print('[휴대폰 접속 켜짐] 휴대폰 크롬에서 아래 주소 중 하나를 여세요 (PC와 같은 와이파이 또는 Tailscale).',flush=True)
+        for ip in remote_access.lan_addresses() or ['(PC의 IP 주소)']:print(f'  http://{ip}:{server.server_port}',flush=True)
+        print('  PIN: '+REMOTE.pin+'   (바꾸려면 Crawler_Hub_Remote_Windows.bat --reset-pin)',flush=True)
+        print('  이 창을 닫으면 휴대폰 접속도 끊깁니다.',flush=True)
+        print('',flush=True)
     if not args.no_browser:webbrowser.open(url)
     try:server.serve_forever()
     except KeyboardInterrupt:pass
