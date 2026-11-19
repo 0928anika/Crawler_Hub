@@ -1,0 +1,168 @@
+{
+  "id": "fahrenheit_naver_official",
+  "name": "파렌하이트",
+  "category": "남성복",
+  "crawl_source": "네이버 공식",
+  "script": "fahrenheit_naver_official.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_color_mapping": "manual",
+  "official_color_codes": true,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 options/optionCombinations의 품절 포함 색상별 전체 사이즈를 매핑 메타데이터에 보존. 전 색상 동일하면 공통 사이즈도 출력."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 benefitsView.discountedSalePrice 현재 공개 판매가. 모든 옵션 추가금 0이 확인된 경우만 공통 값 출력, 다른 경우 빈칸."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 product.category.wholeCategoryName."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 productImages 전체의 REPRESENTATIVE/OPTIONAL 개별 컷. 공개 바이트·형식·픽셀·용량·비율 및 분할 띠 검사 후 색상 추측 없이 수동 후보 전달."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "대표와 같은 전체 후보를 수동 매핑으로 전달. 매핑 전에 후보 수를 제한하지 않음."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "실제 contents.renderContent의 공식 품번 폴더 본문 이미지 보존. 고시는 본문 이미지에 포함되므로 별도 표 생성 없음. event/공통 안내/배송/관리/리뷰/추천 제외."
+    },
+    "regular_price": {
+      "supported": false,
+      "status": "unsupported",
+      "reason": "독립 정상가/소비자가 필드 미확인. salePrice는 할인 전 기본 판매가 필드이므로 정상가 대체값으로 재사용하지 않음."
+    }
+  },
+  "guide": {
+    "example": "FPFAH4203",
+    "examples": [
+      "FPFAH4203"
+    ],
+    "format": "공식 모델 품번 전체",
+    "notes": "Microsoft Edge와 Playwright 필요. 사진은 수동 색상 매핑, 색상별 품절 포함 사이즈 보존.",
+    "method": "신원이 연결한 fahrenheit 공식 네이버 스토어. 원래 영문 검색어 유지(ignoreExp=1), 공식 모델명/채널 ID/상품번호 검증.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      ""
+    ],
+    "validation_note": "빈 입력 외 형식 사전 거절 없음. 실제 존재는 공식 조회로 확인."
+  },
+  "notes": "신원 공식 홈페이지가 연결한 brand.naver.com/fahrenheit. 기존 베스띠벨리의 일반 Edge 공개 응답 수집 방식. 네이버의 영문→한글 검색어 자동변환을 사이트 원래 검색어 링크(ignoreExp=1)로 방지. 공식 채널/상품번호/모델명 검증. 모든 유효 갤러리 사진을 수동 색상 매핑 후보로 전달. 품절 포함 색상별 사이즈 유지. frht 해당 품번 폴더의 원본 상세만 보존하고 event/styleid_public/info 공통·배송·관리 배너 제외. 고시/사이즈표 별도 생성 없음. 추가이미지 최대9장. HTTP 접근 제한은 명확한 실패로 표시. 2026-11-19 FPFAH4203 실제 검색부터 SDK 엑셀 저장 두 번 성공. 8개 갤러리, GYD/다크그레이, 78/82, 판매가119400 확인.",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": false,
+      "status": "unsupported",
+      "reason": "독립 결과 컬럼 없음"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 options/optionCombinations의 품절 포함 색상별 전체 사이즈를 매핑 메타데이터에 보존. 전 색상 동일하면 공통 사이즈도 출력."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 benefitsView.discountedSalePrice 현재 공개 판매가. 모든 옵션 추가금 0이 확인된 경우만 공통 값 출력, 다른 경우 빈칸."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 product.category.wholeCategoryName."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 productImages 전체의 REPRESENTATIVE/OPTIONAL 개별 컷. 공개 바이트·형식·픽셀·용량·비율 및 분할 띠 검사 후 색상 추측 없이 수동 후보 전달."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "대표와 같은 전체 후보를 수동 매핑으로 전달. 매핑 전에 후보 수를 제한하지 않음."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "실제 contents.renderContent의 공식 품번 폴더 본문 이미지 보존. 고시는 본문 이미지에 포함되므로 별도 표 생성 없음. event/공통 안내/배송/관리/리뷰/추천 제외."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": false,
+      "status": "unsupported",
+      "reason": "독립 정상가/소비자가 필드 미확인. salePrice는 할인 전 기본 판매가 필드이므로 정상가 대체값으로 재사용하지 않음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "정상가": "regular_price",
+    "상품 링크": "product_url"
+  },
+  "code_hash": "f7b7dc7e6c947b9fded75a09bb41f920d18cea59779e353ddfaf6376d6ace9c1",
+  "image_mode": "url",
+  "additional_image_count": 9
+}

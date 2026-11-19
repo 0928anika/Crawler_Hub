@@ -1,0 +1,954 @@
+{
+  "id": "13751254548",
+  "channelServiceType": "STOREFARM",
+  "channelProductType": "SINGLE",
+  "channelProductSupplyType": "OWNER",
+  "channelProductStatusType": "NORMAL",
+  "channelProductDisplayStatusType": "ON",
+  "category": {
+    "categoryId": "50000836",
+    "categoryName": "바지",
+    "category1Id": "50000000",
+    "category2Id": "50000169",
+    "category3Id": "50000836",
+    "category1Name": "패션의류",
+    "category2Name": "남성의류",
+    "category3Name": "바지",
+    "wholeCategoryId": "50000000>50000169>50000836",
+    "wholeCategoryName": "패션의류>남성의류>바지",
+    "categoryLevel": 3,
+    "lastLevel": true,
+    "sortOrder": 7,
+    "validCategory": true,
+    "receiptIssue": true,
+    "exceptionalCategoryTypes": [
+      "MANUFACTURE_DEFINE_NO",
+      "FREE_RETURN_INSURANCE",
+      "SAFE_CRITERION",
+      "GROUP_PRODUCT_MAX"
+    ],
+    "pointAccumulationYn": false
+  },
+  "name": "[26F/W] 스탠다드핏 카치온 다잉 스트레치 팬츠 (FPFAH4203)",
+  "productUrl": "https://smartstore.naver.com/main/products/13751254548",
+  "mobileProductUrl": "https://m.smartstore.naver.com/main/products/13751254548",
+  "channel": {
+    "accountNo": 100022663,
+    "channelNo": "100026286",
+    "channelUid": "2sWDwOAqnOfsVqMqaeQ0A",
+    "channelName": "파렌하이트",
+    "representName": "(주) 신원",
+    "channelSiteUrl": "fahrenheit",
+    "channelSiteFullUrl": "https://smartstore.naver.com/fahrenheit",
+    "channelSiteMobileUrl": "https://m.smartstore.naver.com/fahrenheit",
+    "accountId": "ncp_1njtzb_01",
+    "naverPaySellerNo": "510032623",
+    "sellerExternalStatusType": "NORMAL",
+    "logoWidth": 900,
+    "logoHeight": 900,
+    "logoUrl": "http://shop1.phinf.naver.net/20260901_66/1788241070612Bdf4B_JPEG/35485649665025586_967992068.jpg",
+    "channelTypeCode": "STOREFARM"
+  },
+  "storeKeepExclusiveProduct": false,
+  "epInfo": {
+    "matchingModelId": 61796920158,
+    "naverShoppingRegistration": true,
+    "naverShoppingExposure": true,
+    "enuriRegistration": false,
+    "danawaRegistration": false,
+    "syncNvMid": 91295765912,
+    "matchingNsin": "N000047673263"
+  },
+  "best": false,
+  "orderRequestUsable": false,
+  "channelProductAttributes": [],
+  "productNo": "13690533985",
+  "salePrice": 199000,
+  "dispSalePrice": 199000,
+  "stockQuantity": 44,
+  "saleType": "NEW",
+  "excludeAdminDiscount": false,
+  "payExposure": true,
+  "productStatusType": "SALE",
+  "statusType": "SALE",
+  "authenticationType": "NORMAL",
+  "productImages": [
+    {
+      "order": 1,
+      "url": "https://shop-phinf.pstatic.net/20260908_298/1788839761727eve2L_JPEG/12104647881217156_956344077.jpg",
+      "width": 900,
+      "height": 900,
+      "imageType": "REPRESENTATIVE"
+    },
+    {
+      "order": 1,
+      "url": "https://shop-phinf.pstatic.net/20260908_247/1788839762294mMuCU_JPEG/43010583126156502_122506084.jpg",
+      "width": 900,
+      "height": 900,
+      "imageType": "OPTIONAL"
+    },
+    {
+      "order": 2,
+      "url": "https://shop-phinf.pstatic.net/20260908_207/1788839762798AmoXb_JPEG/12104648954494328_1995728150.jpg",
+      "width": 900,
+      "height": 900,
+      "imageType": "OPTIONAL"
+    },
+    {
+      "order": 3,
+      "url": "https://shop-phinf.pstatic.net/20260908_175/1788839763361bSDRf_JPEG/43357755714838666_117526184.jpg",
+      "width": 900,
+      "height": 900,
+      "imageType": "OPTIONAL"
+    },
+    {
+      "order": 4,
+      "url": "https://shop-phinf.pstatic.net/20260908_253/17888397639346oE9v_JPEG/7997040721987718_989308767.jpg",
+      "width": 900,
+      "height": 900,
+      "imageType": "OPTIONAL"
+    },
+    {
+      "order": 5,
+      "url": "https://shop-phinf.pstatic.net/20260908_69/1788839764588Rqn9V_JPEG/122972627711718646_117033034.jpg",
+      "width": 900,
+      "height": 900,
+      "imageType": "OPTIONAL"
+    },
+    {
+      "order": 6,
+      "url": "https://shop-phinf.pstatic.net/20260908_184/1788839765218AGQio_JPEG/122972628351242160_1582732467.jpg",
+      "width": 900,
+      "height": 900,
+      "imageType": "OPTIONAL"
+    },
+    {
+      "order": 7,
+      "url": "https://shop-phinf.pstatic.net/20260908_213/1788839766213FVSeg_JPEG/12104652369223239_233260116.jpg",
+      "width": 900,
+      "height": 900,
+      "imageType": "OPTIONAL"
+    }
+  ],
+  "naverShoppingSearchInfo": {
+    "manufacturerName": "㈜신원",
+    "brandName": "파렌하이트",
+    "brandId": 133036,
+    "modelName": "FPFAH4203"
+  },
+  "itselfProductionProductYn": false,
+  "afterServiceInfo": {
+    "afterServiceTelephoneNumber": "********",
+    "afterServiceGuideContent": "********"
+  },
+  "purchaseQuantityInfo": {
+    "maxPurchaseQuantityPerId": 99,
+    "maxPurchaseQuantityPerOrder": 99
+  },
+  "originAreaInfo": {
+    "originAreaType": "IMPORT",
+    "content": "베트남산((주)신원)",
+    "originAreaCode": "0200014",
+    "wholeOriginAreaName": "수입산:아시아>베트남",
+    "importer": "(주)신원",
+    "plural": false
+  },
+  "sellerCodeInfo": {
+    "sellerManagementCode": "FPFAH4203",
+    "sellerCustomCode1": "FPFAH4203",
+    "sellerCustomCode2": "스탠다드핏 카치온 다잉 스트레치 팬츠 (FPFAH4203)"
+  },
+  "seoInfo": {
+    "sellerTags": [
+      {
+        "text": "캐주얼바지"
+      }
+    ]
+  },
+  "optionUsable": true,
+  "options": [
+    {
+      "id": 11888349059,
+      "optionType": "COMBINATION",
+      "groupName": "색상"
+    },
+    {
+      "id": 11888349060,
+      "optionType": "COMBINATION",
+      "groupName": "사이즈"
+    }
+  ],
+  "optionCombinations": [
+    {
+      "id": 59969608903,
+      "optionName1": "GYD(다크그레이)",
+      "optionName2": "78",
+      "stockQuantity": 20,
+      "price": 0,
+      "regOrder": 0,
+      "registerDate": "2026-09-08T03:56:09.592+00:00"
+    },
+    {
+      "id": 59969608904,
+      "optionName1": "GYD(다크그레이)",
+      "optionName2": "82",
+      "stockQuantity": 24,
+      "price": 0,
+      "regOrder": 1,
+      "registerDate": "2026-09-08T03:56:09.593+00:00"
+    }
+  ],
+  "optionStandards": [],
+  "supplementProductUsable": false,
+  "supplementProducts": [],
+  "purchaseReviewInfo": {
+    "purchaseReviewExposure": true
+  },
+  "customMadeInfo": {
+    "customMade": false
+  },
+  "manufactureDate": "2026-08-24T15:00:00.000+00:00",
+  "taxType": "TAX",
+  "certification": false,
+  "certificationTargetExcludeContent": {
+    "childCertifiedProductExclusionYn": true,
+    "kcCertifiedProductExclusionYn": true,
+    "kcCertifiedProductExclusionType": "TRUE",
+    "greenCertifiedProductExclusionYn": true
+  },
+  "minorPurchasable": true,
+  "productInfoProvidedNoticeView": {
+    "basic": {
+      "제품소재": "겉감:폴리우레탄2%,면98%",
+      "색상": "GYD(다크그레이)",
+      "치수": "78/82/86/90",
+      "제조자(사)": "㈜신원",
+      "제조국": "베트남산((주)신원)",
+      "세탁방법 및 취급시 주의사항": "본 제품은 반드시 드라이크리닝 하십시오.(세탁라벨참고)",
+      "제조연월": "202608",
+      "품질보증기준": "제품 이상 시 공정거래위원회 고시 소비자분쟁해결기준에 의거 보상합니다.",
+      "A/S 책임자와 전화번호": "********"
+    },
+    "additional": {
+      "재화등의 배송방법에 관한 정보": "택배",
+      "주문 이후 예상되는 배송기간": "대금 지급일로부터 3일 이내에 발송",
+      "제품하자·오배송 등에 따른 청약철회 등의 경우 청약철회 등의 기한 및 통신판매업자가 부담하는 반품비용 등에 관한 정보": "전자상거래등에서의소비자보호에관한법률 등에 의한 제품의 하자 또는 오배송 등으로 인한 청약철회의 경우에는 상품 수령 후 3개월 이내, 그 사실을 안 날 또는 알 수 있었던 날로부터 30일 이내에 청약철회를 할 수 있으며, 반품 비용은 통신판매업자가 부담합니다.",
+      "제품하자가 아닌 소비자의 단순변심에 따른 청약철회 시 소비자가 부담하는 반품비용 등에 관한 정보": "편도 3000원 (최초 배송비 무료인 경우 6000원 부과)",
+      "제품하자가 아닌 소비자의 단순변심에 따른 청약철회가 불가능한 경우 그 구체적 사유와 근거": "전자상거래 등에서의 소비자보호에 관한 법률 등에 의한 청약철회 제한 사유에 해당하는 경우 및 기타 객관적으로 이에 준하는 것으로 인정되는 경우 청약철회가 제한될 수 있습니다.",
+      "재화등의 교환·반품·보증 조건 및 품질보증기준": "소비자분쟁해결기준(공정거래위원회 고시) 및 관계법령에 따릅니다.",
+      "재화등의 A/S 관련 전화번호": "********",
+      "대금을 환불받기 위한 방법과 환불이 지연될 경우 지연배상금을 지급받을 수 있다는 지연배상금 지급의 구체적인 조건·절차": "주문취소 및 대금의 환불은 네이버페이 마이페이지에서 신청할 수 있으며, 전자상거래 등에서의 소비자보호에 관한 법률에 따라 소비자의 청약철회 후 판매자가 재화 등을 반환 받은 날로부터 3영업일 이내에 지급받은 대금의 환급을 정당한 사유 없이 지연하는 때에는 소비자는 지연기간에 대해서 연 15%의 지연배상금을 판매자에게 청구할 수 있습니다.",
+      "소비자피해보상의 처리, 재화등에 대한 불만 처리 및 소비자와 사업자 사이의 분쟁처리에 관한 사항": "소비자분쟁해결기준(공정거래위원회 고시) 및 관계법령에 따릅니다.",
+      "거래에 관한 약관의 내용 또는 확인할 수 있는 방법": "상품상세 페이지 및 페이지 하단의 이용약관 링크를 통해 확인할 수 있습니다."
+    }
+  },
+  "productAttributes": [
+    {
+      "attributeValueSeq": 11331161,
+      "attributeSeq": 10034658,
+      "attributeName": "종류",
+      "attributeClassificationType": "MULTI_SELECT",
+      "minAttributeValue": "슬랙스",
+      "minAttributeValueUnitText": "",
+      "maxAttributeValueUnitText": "",
+      "attributeRealValue": "슬랙스",
+      "attributeRealValueUnitText": ""
+    },
+    {
+      "attributeValueSeq": 10029065,
+      "attributeSeq": 10005212,
+      "attributeName": "사용대상",
+      "attributeClassificationType": "SINGLE_SELECT",
+      "minAttributeValue": "남성용",
+      "minAttributeValueUnitText": "",
+      "maxAttributeValueUnitText": "",
+      "attributeRealValue": "남성용",
+      "attributeRealValueUnitText": ""
+    },
+    {
+      "attributeValueSeq": 10258087,
+      "attributeSeq": 10013413,
+      "attributeName": "하의기장",
+      "attributeClassificationType": "SINGLE_SELECT",
+      "minAttributeValue": "긴바지",
+      "minAttributeValueUnitText": "",
+      "maxAttributeValueUnitText": "",
+      "attributeRealValue": "긴바지",
+      "attributeRealValueUnitText": ""
+    },
+    {
+      "attributeValueSeq": 10711758,
+      "attributeSeq": 10011007,
+      "attributeName": "하의핏",
+      "attributeClassificationType": "MULTI_SELECT",
+      "minAttributeValue": "레귤러핏",
+      "minAttributeValueUnitText": "",
+      "maxAttributeValueUnitText": "",
+      "attributeRealValue": "레귤러핏",
+      "attributeRealValueUnitText": ""
+    },
+    {
+      "attributeValueSeq": 10732772,
+      "attributeSeq": 10013416,
+      "attributeName": "신축성",
+      "attributeClassificationType": "SINGLE_SELECT",
+      "minAttributeValue": "신축성없음",
+      "minAttributeValueUnitText": "",
+      "maxAttributeValueUnitText": "",
+      "attributeRealValue": "신축성없음",
+      "attributeRealValueUnitText": ""
+    },
+    {
+      "attributeValueSeq": 10040025,
+      "attributeSeq": 10011010,
+      "attributeName": "밑위",
+      "attributeClassificationType": "SINGLE_SELECT",
+      "minAttributeValue": "기본허리선",
+      "minAttributeValueUnitText": "",
+      "maxAttributeValueUnitText": "",
+      "attributeRealValue": "기본허리선",
+      "attributeRealValueUnitText": ""
+    },
+    {
+      "attributeValueSeq": 10030656,
+      "attributeSeq": 10013386,
+      "attributeName": "패턴",
+      "attributeClassificationType": "MULTI_SELECT",
+      "minAttributeValue": "기타",
+      "minAttributeValueUnitText": "",
+      "maxAttributeValueUnitText": "",
+      "attributeRealValue": "기타",
+      "attributeRealValueUnitText": ""
+    },
+    {
+      "attributeValueSeq": 10030656,
+      "attributeSeq": 10013422,
+      "attributeName": "디테일",
+      "attributeClassificationType": "MULTI_SELECT",
+      "minAttributeValue": "기타",
+      "minAttributeValueUnitText": "",
+      "maxAttributeValueUnitText": "",
+      "attributeRealValue": "기타",
+      "attributeRealValueUnitText": ""
+    },
+    {
+      "attributeValueSeq": 10030656,
+      "attributeSeq": 10012483,
+      "attributeName": "주요소재",
+      "attributeClassificationType": "MULTI_SELECT",
+      "minAttributeValue": "기타",
+      "minAttributeValueUnitText": "",
+      "maxAttributeValueUnitText": "",
+      "attributeRealValue": "기타",
+      "attributeRealValueUnitText": ""
+    }
+  ],
+  "productDeliveryInfo": {
+    "deliveryFeeType": "CONDITIONAL_FREE",
+    "deliveryMethodTypes": [
+      "DELIVERY"
+    ],
+    "baseFee": 3000,
+    "deliveryFeePayType": "PREPAID",
+    "freeConditionalAmount": 10000,
+    "installationFee": false,
+    "deliveryBundleGroup": {
+      "id": 5586628,
+      "deliveryFeeChargeMethodType": "MIN",
+      "deliveryAreaType": "AREA_2",
+      "area2ExtraFee": 3000
+    },
+    "deliveryFeePolicyText": "10,000원 이상 구매 시 무료 / 제주,도서지역 추가 3,000원",
+    "deliveryAttributeType": "NORMAL",
+    "isCustomProductAfterOrder": false,
+    "todayDelivery": false,
+    "deliveryCompany": {
+      "id": "HANJIN",
+      "name": "한진택배"
+    }
+  },
+  "claimDeliveryInfo": {
+    "returnDeliveryCompanyPriority": "PRIMARY",
+    "deliveryCompanyName": "한진택배",
+    "deliveryCompanyCode": "HANJIN",
+    "naverPayAppointment": false,
+    "returnDeliveryFee": 3000,
+    "exchangeDeliveryFee": 6000,
+    "shippingAddressId": 101113392,
+    "returnAddressId": 101113393,
+    "shippingAddress": "경기도 광주시 포은대로 635 (우 : 12779) ",
+    "returnAddress": "경기도 용인시 기흥구 기흥단지로 2 (한진1급정비공장) (우 : 17086) ",
+    "overseasShipping": false,
+    "freeReturnInsurance": false
+  },
+  "isCultureCostIncomeDeduction": false,
+  "isRestrictCart": false,
+  "isCustomProduct": false,
+  "naverGuaranteed": false,
+  "newShoppingExposureYn": true,
+  "benefitsView": {
+    "discountedSalePrice": 119400,
+    "dispDiscountedSalePrice": 119400,
+    "sellerImmediateDiscountAmount": 79600,
+    "managerImmediateDiscountAmount": 0,
+    "specialDiscountAmount": {},
+    "discountedRatio": 40,
+    "dispDiscountedRatio": 40,
+    "sellerPurchasePoint": 0,
+    "sellerCustomerManagementPoint": 0,
+    "managerPurchasePoint": 1194,
+    "managerPurchaseExtraPoint": 0,
+    "managerPaymoneyAccumulatePoint": 1791,
+    "managerBankbookAccumulatePoint": 597,
+    "managerArrivalGuaranteePoint": 0,
+    "managerMembershipArrivalGuaranteePoint": 0,
+    "generalPurchaseReviewPoint": 0,
+    "premiumPurchaseReviewPoint": 0,
+    "managerGeneralPurchaseReviewPoint": 50,
+    "managerPremiumPurchaseReviewPoint": 150,
+    "textReviewPoint": 0,
+    "photoVideoReviewPoint": 0,
+    "afterUseTextReviewPoint": 0,
+    "afterUsePhotoVideoReviewPoint": 0,
+    "storeMemberReviewPoint": 0,
+    "managerTextReviewPoint": 50,
+    "managerPhotoVideoReviewPoint": 150,
+    "managerAfterUseTextReviewPoint": 0,
+    "managerAfterUsePhotoVideoReviewPoint": 0,
+    "givePresent": true
+  },
+  "benefitsPolicy": {
+    "sellerImmediateDiscountPolicyNo": "SE_13690533985",
+    "sellerImmediateDiscountValueUnit": "WON",
+    "sellerImmediateDiscountValue": 79600,
+    "managerPurchasePointPolicyNo": 10511031105304,
+    "managerPurchasePointValueUnit": "PERCENT",
+    "managerPurchasePointValue": 1,
+    "managerMaxPurchasePointAmount": 100000,
+    "managerPaymoneyAccumulatePolicyNo": 439583905,
+    "managerPaymoneyAccumulateValueUnit": "PERCENT",
+    "managerPaymoneyAccumulateValue": 1.5,
+    "managerMaxPaymoneyAccumulateAmount": 30000,
+    "managerBankbookAccumulatePolicyNo": 13927943816488,
+    "managerBankbookAccumulateValueUnit": "PERCENT",
+    "managerBankbookAccumulateValue": 0.5,
+    "managerMaxBankbookAccumulateAmount": 10000,
+    "givePresent": true
+  },
+  "reviewAmount": {
+    "totalReviewCount": 0,
+    "score1ReviewCount": 0,
+    "score2ReviewCount": 0,
+    "score3ReviewCount": 0,
+    "score4ReviewCount": 0,
+    "score5ReviewCount": 0,
+    "averageReviewScore": 0,
+    "productSatisfactionPercent": 0,
+    "premiumReviewHighlyRecommendationCount": 0,
+    "premiumReviewRecommendationCount": 0,
+    "premiumReviewNormalCount": 0,
+    "premiumReviewNotRecommendationCount": 0,
+    "generalReviewSatisfactionCount": 0,
+    "generalReviewNormalCount": 0,
+    "generalReviewDisSatisfactionCount": 0,
+    "premiumReviewCount": 0
+  },
+  "sellerDeliveryLeadTimes": [
+    {
+      "rangeNumberText": "1",
+      "rangeText": "일 이내",
+      "leadTimeCount": 17,
+      "leadTimePercent": 20
+    },
+    {
+      "rangeNumberText": "2",
+      "rangeText": "일 이내",
+      "leadTimeCount": 49,
+      "leadTimePercent": 58
+    },
+    {
+      "rangeNumberText": "3",
+      "rangeText": "일 이내",
+      "leadTimeCount": 16,
+      "leadTimePercent": 19
+    },
+    {
+      "rangeNumberText": "4",
+      "rangeText": "일 이상",
+      "leadTimeCount": 2,
+      "leadTimePercent": 2
+    }
+  ],
+  "averageDeliveryLeadTime": {
+    "productAverageDeliveryLeadTime": 0,
+    "sellerAverageDeliveryLeadTime": 2.0119047
+  },
+  "sellerDailyDeliveryLeadTimes": {
+    "leadTimeCount": [
+      2,
+      15,
+      49,
+      16,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "leadTimeViewType": "NORMAL_DELIVERY"
+  },
+  "detailContents": {
+    "excessDetailContentText": false,
+    "editorType": "NONE"
+  },
+  "useExternalStock": false,
+  "dispName": "[26F/W] 스탠다드핏 카치온 다잉 스트레치 팬츠 (FPFAH4203)",
+  "adultAuthorizationType": "NOT_LOGIN",
+  "authorizationDisplay": "NORMAL",
+  "representImage": {
+    "order": 1,
+    "url": "https://shop-phinf.pstatic.net/20260908_298/1788839761727eve2L_JPEG/12104647881217156_956344077.jpg",
+    "width": 900,
+    "height": 900,
+    "imageType": "REPRESENTATIVE"
+  },
+  "view360Image": [],
+  "galleryImages": [
+    {
+      "order": 1,
+      "url": "https://shop-phinf.pstatic.net/20260908_298/1788839761727eve2L_JPEG/12104647881217156_956344077.jpg",
+      "width": 900,
+      "height": 900,
+      "imageType": "REPRESENTATIVE"
+    },
+    {
+      "order": 1,
+      "url": "https://shop-phinf.pstatic.net/20260908_247/1788839762294mMuCU_JPEG/43010583126156502_122506084.jpg",
+      "width": 900,
+      "height": 900,
+      "imageType": "OPTIONAL"
+    },
+    {
+      "order": 2,
+      "url": "https://shop-phinf.pstatic.net/20260908_207/1788839762798AmoXb_JPEG/12104648954494328_1995728150.jpg",
+      "width": 900,
+      "height": 900,
+      "imageType": "OPTIONAL"
+    },
+    {
+      "order": 3,
+      "url": "https://shop-phinf.pstatic.net/20260908_175/1788839763361bSDRf_JPEG/43357755714838666_117526184.jpg",
+      "width": 900,
+      "height": 900,
+      "imageType": "OPTIONAL"
+    },
+    {
+      "order": 4,
+      "url": "https://shop-phinf.pstatic.net/20260908_253/17888397639346oE9v_JPEG/7997040721987718_989308767.jpg",
+      "width": 900,
+      "height": 900,
+      "imageType": "OPTIONAL"
+    },
+    {
+      "order": 5,
+      "url": "https://shop-phinf.pstatic.net/20260908_69/1788839764588Rqn9V_JPEG/122972627711718646_117033034.jpg",
+      "width": 900,
+      "height": 900,
+      "imageType": "OPTIONAL"
+    },
+    {
+      "order": 6,
+      "url": "https://shop-phinf.pstatic.net/20260908_184/1788839765218AGQio_JPEG/122972628351242160_1582732467.jpg",
+      "width": 900,
+      "height": 900,
+      "imageType": "OPTIONAL"
+    },
+    {
+      "order": 7,
+      "url": "https://shop-phinf.pstatic.net/20260908_213/1788839766213FVSeg_JPEG/12104652369223239_233260116.jpg",
+      "width": 900,
+      "height": 900,
+      "imageType": "OPTIONAL"
+    }
+  ],
+  "soldout": false,
+  "viewAttributes": {
+    "상품상태": "신상품",
+    "상품번호": "13751254548",
+    "제조사": "㈜신원",
+    "브랜드": "파렌하이트",
+    "모델명": "FPFAH4203",
+    "원산지": "베트남산((주)신원)",
+    "제조일자": "2026.08.25."
+  },
+  "additionalAttributes": {
+    "영수증발급": "신용카드전표, 현금영수증발급",
+    "A/S 안내": [
+      "********",
+      "********"
+    ]
+  },
+  "detailAttributes": {
+    "종류": "슬랙스",
+    "사용대상": "남성용",
+    "하의기장": "긴바지",
+    "하의핏": "레귤러핏",
+    "신축성": "신축성없음",
+    "밑위": "기본허리선",
+    "패턴": "기타",
+    "디테일": "기타",
+    "주요소재": "기타"
+  },
+  "sellerTags": [
+    {
+      "text": "캐주얼바지"
+    }
+  ],
+  "eCouponCategory": false,
+  "cultureCategory": false,
+  "textOptions": [],
+  "simpleOptions": [],
+  "combinationOptions": [
+    {
+      "groupName": "색상",
+      "options": [
+        {
+          "id": 59969608903,
+          "optionName1": "GYD(다크그레이)",
+          "optionName2": "78",
+          "stockQuantity": 20,
+          "price": 0,
+          "regOrder": 0,
+          "registerDate": "2026-09-08T03:56:09.592+00:00"
+        }
+      ],
+      "checkedName": null,
+      "checkedIds": null,
+      "price": 0,
+      "isLastDepth": false
+    },
+    {
+      "groupName": "사이즈",
+      "options": null,
+      "checkedName": null,
+      "checkedIds": null,
+      "price": 0,
+      "isLastDepth": true
+    }
+  ],
+  "standardOptions": [],
+  "standardCombinations": [
+    {
+      "id": 59969608903,
+      "optionName1": "GYD(다크그레이)",
+      "optionName2": "78",
+      "stockQuantity": 20,
+      "price": 0,
+      "regOrder": 0,
+      "registerDate": "2026-09-08T03:56:09.592+00:00",
+      "title": "_GYD(다크그레이)_78___"
+    },
+    {
+      "id": 59969608904,
+      "optionName1": "GYD(다크그레이)",
+      "optionName2": "82",
+      "stockQuantity": 24,
+      "price": 0,
+      "regOrder": 1,
+      "registerDate": "2026-09-08T03:56:09.593+00:00",
+      "title": "_GYD(다크그레이)_82___"
+    }
+  ],
+  "supplements": [],
+  "deliveryText": "10,000원 이상 구매 시 무료 / 제주,도서지역 추가 3,000원",
+  "deliveryMethodType": {
+    "code": 1,
+    "name": "택배",
+    "description": "택배",
+    "etc": null,
+    "naverPayCode": "DELIVERY"
+  },
+  "deliveryPayType": "PREPAID",
+  "discountedSalePrice": 119400,
+  "mobileDiscountRatio": 40,
+  "derived": {
+    "productType": "DEFAULT"
+  },
+  "hopeDelivery": null,
+  "commentCount": 0,
+  "interestFreePlans": {
+    "hasInterestFreePlans": true,
+    "sellerBurden": {},
+    "adminBurden": {
+      "NH": [
+        {
+          "cardCorpName": "NH",
+          "cardCorpImageUrl": "https://ssl.pstatic.net/static.pay/u/card/logocard_NH_n.png",
+          "managerFreeInterestBurdenType": "PG",
+          "freeInterestMonth": "2,3,4,5,6",
+          "minPayAmount": 50000
+        },
+        {
+          "cardCorpName": "NH",
+          "cardCorpImageUrl": "https://ssl.pstatic.net/static.pay/u/card/logocard_NH_n.png",
+          "managerFreeInterestBurdenType": "PG",
+          "freeInterestMonth": "7,8,9,10",
+          "minPayAmount": 50000,
+          "customerBurdenMonth": "1,2,3"
+        }
+      ],
+      "BC": [
+        {
+          "cardCorpName": "BC",
+          "cardCorpImageUrl": "https://ssl.pstatic.net/static.pay/u/card/logocard_BCcard.gif",
+          "managerFreeInterestBurdenType": "PG",
+          "freeInterestMonth": "2,3,4,5",
+          "minPayAmount": 50000
+        }
+      ],
+      "국민": [
+        {
+          "cardCorpName": "국민",
+          "cardCorpImageUrl": "https://ssl.pstatic.net/static.pay/u/card/logocard_KBbank.gif",
+          "managerFreeInterestBurdenType": "PG",
+          "freeInterestMonth": "2,3,4,5",
+          "minPayAmount": 50000
+        },
+        {
+          "cardCorpName": "국민",
+          "cardCorpImageUrl": "https://ssl.pstatic.net/static.pay/u/card/logocard_KBbank.gif",
+          "managerFreeInterestBurdenType": "PG",
+          "freeInterestMonth": "6",
+          "minPayAmount": 50000,
+          "customerBurdenMonth": "1,2,3"
+        },
+        {
+          "cardCorpName": "국민",
+          "cardCorpImageUrl": "https://ssl.pstatic.net/static.pay/u/card/logocard_KBbank.gif",
+          "managerFreeInterestBurdenType": "PG",
+          "freeInterestMonth": "10",
+          "minPayAmount": 50000,
+          "customerBurdenMonth": "1,2,3,4,5"
+        }
+      ],
+      "우리": [
+        {
+          "cardCorpName": "우리",
+          "cardCorpImageUrl": "https://ssl.pstatic.net/static.pay/u/card/logocard_wooricard.gif",
+          "managerFreeInterestBurdenType": "PG",
+          "freeInterestMonth": "2,3,4,5",
+          "minPayAmount": 50000
+        },
+        {
+          "cardCorpName": "우리",
+          "cardCorpImageUrl": "https://ssl.pstatic.net/static.pay/u/card/logocard_wooricard.gif",
+          "managerFreeInterestBurdenType": "PG",
+          "freeInterestMonth": "10",
+          "minPayAmount": 50000,
+          "customerBurdenMonth": "1,2,3,4,5"
+        }
+      ],
+      "하나": [
+        {
+          "cardCorpName": "하나",
+          "cardCorpImageUrl": "https://ssl.pstatic.net/static.pay/u/card/logocard_hanacard.gif",
+          "managerFreeInterestBurdenType": "PG",
+          "freeInterestMonth": "2,3,4,5",
+          "minPayAmount": 50000
+        },
+        {
+          "cardCorpName": "하나",
+          "cardCorpImageUrl": "https://ssl.pstatic.net/static.pay/u/card/logocard_hanacard.gif",
+          "managerFreeInterestBurdenType": "PG",
+          "freeInterestMonth": "6",
+          "minPayAmount": 50000,
+          "customerBurdenMonth": "1,2,3"
+        },
+        {
+          "cardCorpName": "하나",
+          "cardCorpImageUrl": "https://ssl.pstatic.net/static.pay/u/card/logocard_hanacard.gif",
+          "managerFreeInterestBurdenType": "PG",
+          "freeInterestMonth": "10",
+          "minPayAmount": 50000,
+          "customerBurdenMonth": "1,2,3,4"
+        }
+      ],
+      "신한": [
+        {
+          "cardCorpName": "신한",
+          "cardCorpImageUrl": "https://ssl.pstatic.net/static.pay/u/card/logocard_shinhanbank.gif",
+          "managerFreeInterestBurdenType": "PG",
+          "freeInterestMonth": "2,3",
+          "minPayAmount": 50000
+        },
+        {
+          "cardCorpName": "신한",
+          "cardCorpImageUrl": "https://ssl.pstatic.net/static.pay/u/card/logocard_shinhanbank.gif",
+          "managerFreeInterestBurdenType": "PG",
+          "freeInterestMonth": "7",
+          "minPayAmount": 50000,
+          "customerBurdenMonth": "1,2,3"
+        },
+        {
+          "cardCorpName": "신한",
+          "cardCorpImageUrl": "https://ssl.pstatic.net/static.pay/u/card/logocard_shinhanbank.gif",
+          "managerFreeInterestBurdenType": "PG",
+          "freeInterestMonth": "9",
+          "minPayAmount": 50000,
+          "customerBurdenMonth": "1,2,3,4"
+        },
+        {
+          "cardCorpName": "신한",
+          "cardCorpImageUrl": "https://ssl.pstatic.net/static.pay/u/card/logocard_shinhanbank.gif",
+          "managerFreeInterestBurdenType": "PG",
+          "freeInterestMonth": "11",
+          "minPayAmount": 50000,
+          "customerBurdenMonth": "1,2,3,4,5"
+        }
+      ],
+      "롯데": [
+        {
+          "cardCorpName": "롯데",
+          "cardCorpImageUrl": "https://ssl.pstatic.net/static.pay/u/card/logocard_lottecard_n.png",
+          "managerFreeInterestBurdenType": "PG",
+          "freeInterestMonth": "2,3",
+          "minPayAmount": 50000
+        }
+      ],
+      "삼성": [
+        {
+          "cardCorpName": "삼성",
+          "cardCorpImageUrl": "https://ssl.pstatic.net/static.pay/u/card/logocard_samsung_n.png",
+          "managerFreeInterestBurdenType": "PG",
+          "freeInterestMonth": "2,3",
+          "minPayAmount": 50000
+        },
+        {
+          "cardCorpName": "삼성",
+          "cardCorpImageUrl": "https://ssl.pstatic.net/static.pay/u/card/logocard_samsung_n.png",
+          "managerFreeInterestBurdenType": "PG",
+          "freeInterestMonth": "7",
+          "minPayAmount": 50000,
+          "customerBurdenMonth": "1,2,3"
+        },
+        {
+          "cardCorpName": "삼성",
+          "cardCorpImageUrl": "https://ssl.pstatic.net/static.pay/u/card/logocard_samsung_n.png",
+          "managerFreeInterestBurdenType": "PG",
+          "freeInterestMonth": "11",
+          "minPayAmount": 50000,
+          "customerBurdenMonth": "1,2,3,4,5"
+        }
+      ],
+      "현대": [
+        {
+          "cardCorpName": "현대",
+          "cardCorpImageUrl": "https://ssl.pstatic.net/static.pay/u/card/logocard_hyundaicard.gif",
+          "managerFreeInterestBurdenType": "PG",
+          "freeInterestMonth": "2,3",
+          "minPayAmount": 10000
+        },
+        {
+          "cardCorpName": "현대",
+          "cardCorpImageUrl": "https://ssl.pstatic.net/static.pay/u/card/logocard_hyundaicard.gif",
+          "managerFreeInterestBurdenType": "PG",
+          "freeInterestMonth": "8",
+          "minPayAmount": 10000,
+          "customerBurdenMonth": "1,2,3,4"
+        },
+        {
+          "cardCorpName": "현대",
+          "cardCorpImageUrl": "https://ssl.pstatic.net/static.pay/u/card/logocard_hyundaicard.gif",
+          "managerFreeInterestBurdenType": "PG",
+          "freeInterestMonth": "10",
+          "minPayAmount": 10000,
+          "customerBurdenMonth": "1,2,3,4,5"
+        }
+      ]
+    },
+    "maxInterestFreePlanMonths": 6,
+    "specialPlans": {
+      "CCKM": [
+        {
+          "interestCardCompanyId": "CCKM",
+          "interestCardProductCode": "none",
+          "interestInstallmentType": "total",
+          "interestInstallmentMonths": "24,36",
+          "interestMinAmount": 1000000,
+          "interestCustomerBurdenCommissionRate": 7,
+          "interestShowCommissionRateYn": "y",
+          "interestCiImageUrl": "https://ssl.pstatic.net/static.pay/u/card/logocard_KBbank.gif",
+          "cardCorpName": "국민"
+        },
+        {
+          "interestCardCompanyId": "CCKM",
+          "interestCardProductCode": "none",
+          "interestInstallmentType": "total",
+          "interestInstallmentMonths": "48,60",
+          "interestMinAmount": 1000000,
+          "interestCustomerBurdenCommissionRate": 8,
+          "interestShowCommissionRateYn": "y",
+          "interestCiImageUrl": "https://ssl.pstatic.net/static.pay/u/card/logocard_KBbank.gif",
+          "cardCorpName": "국민"
+        }
+      ],
+      "CCLG": [
+        {
+          "interestCardCompanyId": "CCLG",
+          "interestCardProductCode": "none",
+          "interestInstallmentType": "total",
+          "interestInstallmentMonths": "24,36",
+          "interestMinAmount": 1000000,
+          "interestCustomerBurdenCommissionRate": 7,
+          "interestShowCommissionRateYn": "y",
+          "interestCiImageUrl": "https://ssl.pstatic.net/static.pay/u/card/logocard_shinhanbank.gif",
+          "cardCorpName": "신한"
+        },
+        {
+          "interestCardCompanyId": "CCLG",
+          "interestCardProductCode": "none",
+          "interestInstallmentType": "total",
+          "interestInstallmentMonths": "48,60",
+          "interestMinAmount": 1000000,
+          "interestCustomerBurdenCommissionRate": 8,
+          "interestShowCommissionRateYn": "y",
+          "interestCiImageUrl": "https://ssl.pstatic.net/static.pay/u/card/logocard_shinhanbank.gif",
+          "cardCorpName": "신한"
+        }
+      ],
+      "CCSS": [
+        {
+          "interestCardCompanyId": "CCSS",
+          "interestCardProductCode": "none",
+          "interestInstallmentType": "total",
+          "interestInstallmentMonths": "24,36",
+          "interestMinAmount": 1000000,
+          "interestCustomerBurdenCommissionRate": 7,
+          "interestShowCommissionRateYn": "y",
+          "interestCiImageUrl": "https://ssl.pstatic.net/static.pay/u/card/logocard_samsung_n.png",
+          "cardCorpName": "삼성"
+        },
+        {
+          "interestCardCompanyId": "CCSS",
+          "interestCardProductCode": "none",
+          "interestInstallmentType": "total",
+          "interestInstallmentMonths": "48,60",
+          "interestMinAmount": 1000000,
+          "interestCustomerBurdenCommissionRate": 8,
+          "interestShowCommissionRateYn": "y",
+          "interestCiImageUrl": "https://ssl.pstatic.net/static.pay/u/card/logocard_samsung_n.png",
+          "cardCorpName": "삼성"
+        }
+      ]
+    }
+  },
+  "isPayMember": false,
+  "arrivalGuarantee": false,
+  "rmids": [],
+  "groupId": null,
+  "groupEpId": null,
+  "simpleProductAffiliateYn": false,
+  "disableAdditionalApi": false
+}
