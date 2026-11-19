@@ -1,0 +1,169 @@
+{
+  "id": "underarmour_official",
+  "name": "언더아머",
+  "category": "스포츠",
+  "crawl_source": "공식 홈페이지",
+  "script": "underarmour_official.py",
+  "execution_level": 1,
+  "mapping_mode": "automatic",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "verified",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 색상별 사이즈 옵션. 기장이 여러 개면 기장/사이즈로 구분하며 품절 표시 옵션도 포함."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 price.sales.value. 쿠폰·회원 혜택 가격은 적용하지 않음."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "독립적으로 제공되는 price.list.value. 없으면 빈칸."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 breadcrumb."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 색상 응답 pdpMainDesktop 사진의 실제 접근·규격 확인."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "같은 색상 공식 상품 사진을 순서대로 추가 슬롯에 배치."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상별 상품 사진과 공식 제품 설명, 상품에 연결된 사이즈 가이드 표. 없는 고시는 생략."
+    }
+  },
+  "guide": {
+    "pattern": "^[0-9]{7}(?:[-_][0-9]{3})?$",
+    "format": "7자리 품번 또는 품번-3자리 색상코드",
+    "notes": "기본 품번은 전체 색상, 색상코드를 붙이면 해당 색상만. Chrome 설치 필요.",
+    "method": "공식 상품 페이지와 색상별 JSON 대조",
+    "example": "1373882",
+    "examples": [
+      "1373882",
+      "1373882-001"
+    ],
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "137388"
+    ],
+    "validation_note": "입력 형식 검사이며 실제 상품 존재는 수집 시 확인"
+  },
+  "notes": "언더아머 코리아 공식몰을 격리된 headless Chrome으로 조회. 공식 Product-Variation 응답의 색상·사이즈·사진·판매가/별도 정상가 사용. 상품 사진과 제품 설명, 해당 상품에 연결된 사이즈 가이드 표로 상세 HTML 구성. 없는 고시는 임의 생성하지 않음.",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 색상별 사이즈 옵션. 기장이 여러 개면 기장/사이즈로 구분하며 품절 표시 옵션도 포함."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 price.sales.value. 쿠폰·회원 혜택 가격은 적용하지 않음."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "독립적으로 제공되는 price.list.value. 없으면 빈칸."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 breadcrumb."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 색상 응답 pdpMainDesktop 사진의 실제 접근·규격 확인."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "같은 색상 공식 상품 사진을 순서대로 추가 슬롯에 배치."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상별 상품 사진과 공식 제품 설명, 상품에 연결된 사이즈 가이드 표. 없는 고시는 생략."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page"
+  },
+  "code_hash": "85a07b57ed0e014cf6c14290486c18676aa7cb283aae70820b9ba8815a84abbc"
+}
