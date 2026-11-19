@@ -1,7 +1,7 @@
 @echo off
 setlocal
 chcp 65001 >nul
-title Crawler Hub - Update develop
+title Crawler Hub - Update
 cd /d "%~dp0"
 set "PYTHONIOENCODING=utf-8"
 set "CRAWLER_HUB_UPDATER_DIR=%~dp0"

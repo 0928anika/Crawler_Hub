@@ -15,7 +15,7 @@ Crawler_Hub/
   Crawler_Hub_Windows.bat
   Crawler_Hub_Mac.command
   개발자전용/
-    Crawler_Hub_Update_Windows.bat
+    Update.bat
     update_develop.py
 ```
 

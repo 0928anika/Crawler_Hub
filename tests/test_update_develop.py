@@ -112,7 +112,7 @@ class Tests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root=source(Path(temp));before=u.source_fingerprint(root)
             (root/'tools').mkdir();(root/'tools/update_develop.py').write_bytes(b'manual')
-            (root/'Crawler_Hub_Update_Windows.bat').write_bytes(b'manual bat')
+            (root/'Update.bat').write_bytes(b'manual bat')
             (root/'app/__pycache__').mkdir();(root/'app/__pycache__/x.pyc').write_bytes(b'cache')
             self.assertEqual(u.source_fingerprint(root),before)
             self.assertTrue((root/'brands/demo.json').exists())
