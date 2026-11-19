@@ -16,6 +16,7 @@ from bs4 import BeautifulSoup
 from PIL import Image,UnidentifiedImageError
 from crawler_rules import validate_gallery_image,gallery_slots
 
+REVISION='2026-11-19-happyland-official-image-source-v2'
 SITE='https://www.happylandmall.com'
 HOSTS=('happylandmall.com','www.happylandmall.com')
 DETAIL_CDN='pub-020c219c6a054e3ab4d8a4c1f8bd4a5c.r2.dev'
@@ -272,7 +273,7 @@ def detail(ctx,doc,link,cache):
         src=node.get('data-src') or node.get('src')
         if not src:continue
         parsed=urlsplit(urljoin(link,src))
-        if parsed.hostname==DETAIL_CDN and parsed.path=='/notice/notice.jpg':
+        if parsed.hostname in (DETAIL_CDN,'img.efe.co.kr') and parsed.path=='/notice/notice.jpg':
             ctx.log('공통 빈 공지 자리표시자 제외: '+src,'INFO');continue
         url=source_url(src,link)
         if re.search(r'delivery|shipping|coupon|배송|교환|반품',url,re.I):continue
@@ -292,6 +293,7 @@ def detail(ctx,doc,link,cache):
     return result
 
 def crawl(ctx):
+    ctx.log('해피랜드/압소바 크롤러 '+REVISION,'INFO')
     code=str(ctx.product_code).strip().upper()
     if not code:raise CrawlError('품번이 비어 있습니다')
     rows=0;errors=[]

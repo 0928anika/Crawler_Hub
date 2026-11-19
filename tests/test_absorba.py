@@ -23,6 +23,16 @@ class Context:
     def emit_unmapped(self,record,colors,url,shared_detail_html=''):self.unmapped.append((record,colors,url))
 
 class AbsorbaTests(unittest.TestCase):
+    def test_ab2671bu01_godomall_gallery_and_efe_detail_source(self):
+        doc=c.parse((FIX/'AB2671BU01.html').read_bytes());c.identity(doc,'AB2671BU01')
+        urls=c.gallery_urls(doc,c.SITE)
+        self.assertTrue(urls);self.assertTrue(all('godomall-storage.cdn-nhncommerce.com' in u for u in urls))
+        for url in urls:self.assertEqual(c.source_url(url),url)
+        with patch.object(c,'image',return_value=dict(width=800,height=3000)) as loader:markup=c.detail(Context(),doc,c.SITE,{})
+        self.assertIn('/a/2026/AB2671BU01_DC.jpg',markup);self.assertIn('/a/2026/notice_size.jpg',markup)
+        self.assertNotIn('/notice/notice.jpg',markup)
+        self.assertTrue(all('/notice/notice.jpg' not in call.args[1] for call in loader.call_args_list))
+
     def test_happyland_identity_and_original_h_body_for_both_models(self):
         for code in ['H1110306','HL2651AN06']:
             doc=c.parse((FIX/(code+'.html')).read_bytes())
