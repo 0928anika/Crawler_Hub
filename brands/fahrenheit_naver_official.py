@@ -14,7 +14,7 @@ from crawler_rules import check_public_image
 
 SITE = 'https://brand.naver.com'
 STORE = 'fahrenheit'
-REVISION = '2026-11-20-fahrenheit-model-fallback-v2'
+REVISION = '2026-11-20-fahrenheit-419-retry-v3'
 POLICY = dict(checked_on='2026-11-12', source='https://marketplace.coupang.com/mba/listing',
               min_side=500, max_bytes=10000000, max_aspect=1.8, formats=['JPEG','PNG','WEBP'],
               note='정지 WebP는 사용자 등록 환경 정책. 비율은 프로젝트 보조 기준.')
@@ -114,11 +114,32 @@ def resolve_product(ctx,page,code):
         return links,channel,model
 
 
+class Retryable419(ValueError):
+    pass
+
+
+def load_product(ctx,page,url,captured):
+    for attempt in range(3):
+        ctx.checkpoint();captured.clear()
+        try:
+            navigate(ctx,page,url)
+            product=wait_data(ctx,page,captured,'product')
+            contents=wait_data(ctx,page,captured,'contents') if ctx.enabled('detail_page') else None
+            return product,contents
+        except Retryable419 as exc:
+            if attempt==2:raise Retryable419(str(exc)+' / 419 재시도 2회 후에도 실패') from exc
+            ctx.log(str(exc)+' / 상품 페이지 재시도 '+str(attempt+1)+'/2','WARNING')
+            # 일반 페이지 재방문만 수행하며 인증/보안 제한은 우회하지 않는다.
+            page.goto('about:blank');page.wait_for_timeout((attempt+1)*2000)
+
+
 def wait_data(ctx,page,captured,key):
     deadline = time.monotonic()+25
     while key not in captured:
         ctx.checkpoint()
-        if captured.get('error'):raise ValueError(captured['error'])
+        if captured.get('error'):
+            error=captured['error']
+            raise error if isinstance(error,Exception) else ValueError(error)
         if time.monotonic()>deadline:raise ValueError('공식 '+key+' 응답 로딩 시간 초과')
         page.wait_for_timeout(100)
     return captured[key]
@@ -281,13 +302,14 @@ def crawl(ctx):
                         try:
                             data=response.body()
                             if len(data)>6000000:raise ValueError('공식 응답 크기 한도 초과')
+                            if response.status==419:raise Retryable419('공식 '+key+' HTTP 419')
                             if response.status!=200:raise ValueError('공식 '+key+' HTTP '+str(response.status))
                             captured[key]=json.loads(data)
-                        except Exception as exc:captured['error']=str(exc)
+                        except Exception as exc:captured['error']=exc
                     page.on('response',receive)
                     try:
-                        ctx.stage('공식 상품 조회: '+number);navigate(ctx,page,url)
-                        product=wait_data(ctx,page,captured,'product')
+                        ctx.stage('공식 상품 조회: '+number)
+                        product,contents=load_product(ctx,page,url,captured)
                         if str(product.get('id'))!=number or (product.get('channel') or {}).get('channelUid')!=channel_uid or str((product.get('naverShoppingSearchInfo') or {}).get('modelName') or '').strip().upper()!=model_code:
                             raise ValueError('상품번호/공식 모델명/스토어 불일치')
                         colors,color_position,labels=color_rows(product)
@@ -304,7 +326,7 @@ def crawl(ctx):
                             record['regular_price']=None;ctx.log('독립 정상가 필드 미확인: salePrice를 정상가로 대체하지 않습니다.','WARNING')
                         if ctx.enabled('category'):record['category']=str((product.get('category') or {}).get('wholeCategoryName') or '')
                         if ctx.enabled('detail_page'):
-                            markup=detail(ctx,product,wait_data(ctx,page,captured,'contents'),model_code,cache)
+                            markup=detail(ctx,product,contents,model_code,cache)
                             if markup and markup not in fragments:fragments.append(markup)
                         for image in gallery(ctx,product,cache):
                             if image not in images:images.append(image)

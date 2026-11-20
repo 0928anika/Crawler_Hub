@@ -51,6 +51,20 @@ class Tests(unittest.TestCase):
   with patch.object(c,'discover',side_effect=c.ProductNotFound('0건')) as discover:
    with self.assertRaisesRegex(c.ProductNotFound,'모두 공식 모델 일치 없음'):c.resolve_product(Ctx(),None,'FPEAH43310')
   self.assertEqual(discover.call_count,2)
+ def test_419_retries_product_and_contents_without_partial_output(self):
+  ctx=MagicMock();ctx.enabled.return_value=True;page=MagicMock();captured={'old':True}
+  with patch.object(c,'navigate'),patch.object(c,'wait_data',side_effect=[{'id':1},c.Retryable419('공식 contents HTTP 419'),{'id':1},{'body':'ok'}]) as wait:
+   self.assertEqual(c.load_product(ctx,page,'url',captured),({'id':1},{'body':'ok'}))
+  self.assertEqual(wait.call_count,4);page.wait_for_timeout.assert_called_once_with(2000);self.assertEqual(captured,{})
+ def test_419_retry_limit_and_other_errors(self):
+  ctx=MagicMock();page=MagicMock()
+  with patch.object(c,'navigate') as nav,patch.object(c,'wait_data',side_effect=c.Retryable419('HTTP 419')):
+   with self.assertRaisesRegex(c.Retryable419,'2회'):c.load_product(ctx,page,'url',{})
+  self.assertEqual(nav.call_count,3);self.assertEqual([x.args[0] for x in page.wait_for_timeout.call_args_list],[2000,4000])
+  for error in [ValueError('HTTP 403'),ValueError('HTTP 429'),ValueError('잘못된 응답')]:
+   with patch.object(c,'navigate') as nav,patch.object(c,'wait_data',side_effect=error):
+    with self.assertRaises(ValueError):c.load_product(ctx,page,'url',{})
+   self.assertEqual(nav.call_count,1)
  def test_sdk_end_to_end_with_real_public_response_fixtures(self):
   meta=json.loads((ROOT/'brands/fahrenheit_naver_official.json').read_text(encoding='utf8'));events=[]
   with tempfile.TemporaryDirectory() as folder:
