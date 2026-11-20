@@ -3,7 +3,7 @@ import html,http.client,io,json,re,socket,time,hashlib,urllib.error,urllib.parse
 from bs4 import BeautifulSoup,NavigableString,Comment
 from PIL import Image,UnidentifiedImageError
 BASE='https://www.fashionplus.co.kr'
-REVISION='2026-11-20-fashionplus-item-6-child-parent-all-options'
+REVISION='2026-11-20-fashionplus-item-7-retired-child'
 MAX_BYTES=10_000_000
 class CollectionError(RuntimeError):pass
 class MissingResource(CollectionError):pass
@@ -405,7 +405,7 @@ def crawl(ctx):
         palette,sizes,raw_options=read_options(ctx,link)
         if child:
             matching=[row for row in raw_options if str(row.get('option_id'))==child]
-            if not matching:raise CollectionError('하위 품목이 상위 상품의 공식 옵션에 없습니다: '+child)
+            if not matching:ctx.log('입력 하위품목은 현재 옵션 목록에 없습니다: '+child+' / 공식 상위 연결·SKU 일치가 확인되어 상위 상품의 현재 전체 옵션을 수집합니다.','WARNING')
         preserve_text(record,'원본 옵션',json.dumps(raw_options,ensure_ascii=False))
         if ctx.enabled('size'):record['size']=','.join(sizes) or None
         if ctx.enabled('price'):
