@@ -22,6 +22,32 @@ class Context:
 
 
 class GiordanoTests(unittest.TestCase):
+    def test_large_detail_original_uses_separate_bounded_limit_and_cache(self):
+        url = c.SITE + '/_gio_on/2026/05326930.jpg'
+        ctx, cache = Context(), {}
+        result = dict(status='accessible', data=b'validated', reasons=[])
+        with patch.object(c, 'check_public_image', return_value=result) as check:
+            self.assertIn(url, c.detail(ctx, [url], cache))
+            self.assertIn(url, c.detail(ctx, [url], cache))
+        check.assert_called_once_with(url, timeout=30, max_bytes=64_000_000,
+                                      retries=1, checkpoint=ctx.checkpoint)
+        self.assertGreater(c.DETAIL_MAX_BYTES, 52_382_085)
+        for other in (c.SITE + '/_data/attach/photo.jpg',
+                      'https://outside.example/_gio_on/body.jpg'):
+            self.assertEqual(c.image_check_options(other)['max_bytes'], 10_000_000)
+
+    def test_prefetch_applies_same_detail_limit_as_direct_checks(self):
+        detail = c.SITE + '/_gio_on/2026/05326930.jpg'
+        photo = c.SITE + '/_data/attach/photo.jpg'
+        cache = {}
+        with patch.object(sys.modules['__main__'], 'EMIT_LOCK', object(), create=True), \
+             patch.object(c, 'check_public_image', return_value={'status': 'accessible'}) as check:
+            c.prefetch(Context(), [detail, photo], cache)
+        calls = {call.args[0]: call.kwargs for call in check.call_args_list}
+        self.assertEqual(calls[detail]['max_bytes'], 64_000_000)
+        self.assertEqual(calls[photo]['max_bytes'], 10_000_000)
+        self.assertEqual(set(cache), {detail, photo})
+
     def setUp(self):
         self.doc = c.parse((ROOT / 'tests/fixtures/giordano/05586901.html').read_text(encoding='utf-8'))
 

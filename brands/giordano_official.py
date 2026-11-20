@@ -17,7 +17,9 @@ from crawler_rules import check_public_image, validate_gallery_image, gallery_sl
 
 SITE = 'https://www.giordano.co.kr'
 HOSTS = ('www.giordano.co.kr', 'giordano.co.kr')
-REVISION = '2026-11-14-giordano-6'
+REVISION = '2026-11-20-giordano-7'
+# Official long-form detail originals can exceed the 10 MB gallery limit.
+DETAIL_MAX_BYTES = 64_000_000
 # 인명 표기 상품의 갤러리 전용 보수적 휴리스틱. 사람 신원/AI 여부 판별 아님.
 # 양쪽 상단 12.5% 영역의 채널별 표준편차 <= 8, 평균색 차이 <= 32 (스튜디오 조명 그라데이션 허용).
 BACKGROUND_MAX_NOISE = 8.0
@@ -225,9 +227,15 @@ def detail_urls(doc, final, exclude_first=False):
     return list(dict.fromkeys(urls))
 
 
+def image_check_options(url):
+    if official(url) and urlsplit(url).path.startswith('/_gio_on/'):
+        return dict(timeout=30, max_bytes=DETAIL_MAX_BYTES, retries=1)
+    return dict(timeout=10, max_bytes=10_000_000, retries=1)
+
+
 def public_image(ctx, url, cache):
     if url not in cache:
-        cache[url] = check_public_image(url, timeout=10, retries=1, checkpoint=ctx.checkpoint)
+        cache[url] = check_public_image(url, **image_check_options(url), checkpoint=ctx.checkpoint)
     result = cache[url]
     if result['status'] != 'accessible':
         ctx.log('이미지 확인 불가: ' + url + ' / ' + ', '.join(result['reasons']), 'WARNING')
@@ -240,7 +248,7 @@ def prefetch(ctx, urls, cache):
     if len(missing) < 2 or getattr(sys.modules.get('__main__'), 'EMIT_LOCK', None) is None:
         return
     with ThreadPoolExecutor(max_workers=4) as pool:
-        futures = {u: pool.submit(check_public_image, u, timeout=10, retries=1) for u in missing}
+        futures = {u: pool.submit(check_public_image, u, **image_check_options(u)) for u in missing}
         for url, future in futures.items():
             while not future.done():
                 ctx.checkpoint()
