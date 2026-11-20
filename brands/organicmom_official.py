@@ -15,7 +15,7 @@ from crawler_rules import check_public_image
 
 SITE='https://organicmommall.co.kr'
 HOSTS=('organicmommall.co.kr','www.organicmommall.co.kr')
-REVISION='2026-11-19-organicmom-v1'
+REVISION='2026-11-20-organicmom-v2'
 IMAGE_HOSTS=('organicmommall.co.kr','www.organicmommall.co.kr','cafe24.poxo.com','cafe24img.poxo.com')
 
 class CrawlError(ValueError):pass
@@ -273,7 +273,7 @@ def colour_from_text(text):
 
 
 def official_image_color(ctx,doc,link,code,cache):
-    from PIL import Image
+    from PIL import Image, ImageEnhance
     import io
     urls=[u for u in detail_urls(doc,link,code) if re.search(re.escape(code),unquote(urlsplit(u).path),re.I)]
     if not urls:raise CrawlError('공식 품번 상품정보 이미지 없음')
@@ -283,8 +283,19 @@ def official_image_color(ctx,doc,link,code,cache):
             # Product information is usually at the bottom. OCR all tiles so an
             # alternative placement is still read; no colour guess from pixels.
             values=ocr_many(ctx,[picture.copy()])
-        if isinstance(values[0],Exception):raise values[0]
-        try:return colour_from_text(values[0])
+            if isinstance(values[0],Exception):raise values[0]
+            try:return colour_from_text(values[0])
+            except CrawlError:pass
+            # Fine gray PRODUCT INFO text can disappear in a full-width pass.
+            # Magnify the lower information region; still require an explicit
+            # color label/value, never infer color from the garment pixels.
+            ctx.log('상세 상품정보 글씨 확대 후 색상 재확인: '+code,'INFO')
+            crop=picture.crop((round(picture.width*.25),round(picture.height*.60),
+                               round(picture.width*.98),picture.height))
+            crop=ImageEnhance.Contrast(crop.convert('RGB')).enhance(2)
+            focused=ocr_many(ctx,[crop])[0]
+        if isinstance(focused,Exception):raise focused
+        try:return colour_from_text(focused)
         except CrawlError:continue
     raise CrawlError('공식 상세 이미지에서 색상명 확인 실패: '+code)
 

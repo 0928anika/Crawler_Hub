@@ -31,4 +31,20 @@ class Tests(unittest.TestCase):
    ctx=CrawlContext('unused',Path(folder)/'out.xlsx',0,['size','price','regular_price','main_image','additional_images','detail_page'],meta['output_headers'],lambda:None,lambda k,**d:events.append((k,d)),input_item={'품번':'MLZLVE07'},mapping_mode='manual')
    with patch.object(c,'search',return_value=[c.SITE+'/product/detail.html?product_no=21883']),patch.object(c,'fetch',return_value=self.source),patch.object(c,'official_image_color',return_value='크림'),patch.object(c,'checked'),patch.object(c,'gallery',return_value=['https://organicmommall.co.kr/photo.jpg']):c.crawl(ctx);ctx.finish()
    row=next(d['row'] for k,d in events if k=='row' and not d.get('header'));r=dict(zip(meta['output_headers'],row));self.assertEqual(r['사이즈'],'90,100,110');self.assertEqual(r['색상명'],'크림');self.assertEqual(r['판매가'],31200);self.assertEqual(r['정상가'],39000);self.assertEqual(len(r['추가이미지'].split(',')),5)
+ def test_small_product_info_text_is_retried_without_guessing_color(self):
+  from PIL import Image
+  import io
+  photo=io.BytesIO();Image.new('RGB',(1000,3000),'white').save(photo,'JPEG')
+  with patch.object(c,'detail_urls',return_value=['https://kkm2524.diskn.com/MKFP9B24.jpg']),patch.object(c,'checked',return_value={'data':photo.getvalue()}):
+   ctx=type('Context',(),{'log':lambda *a:None})()
+   with patch.object(c,'ocr_many',side_effect=[['PRODUCT INFO 모델명 MKFP9B24 소재 면'],['PRODUCT INFO 모델명 MKFP9B24 색상 핑크 소재 면']]) as ocr:
+    self.assertEqual(c.official_image_color(ctx,None,c.SITE,'MKFP9B24',{}),'핑크');self.assertEqual(ocr.call_count,2)
+   with patch.object(c,'ocr_many',return_value=['PRODUCT INFO 모델명 MKFP9B24 소재 면']):
+    with self.assertRaisesRegex(c.CrawlError,'색상명 확인 실패'):c.official_image_color(ctx,None,c.SITE,'MKFP9B24',{})
+ def test_clear_color_does_not_run_extra_ocr(self):
+  from PIL import Image
+  import io
+  photo=io.BytesIO();Image.new('RGB',(1000,3000),'white').save(photo,'JPEG')
+  with patch.object(c,'detail_urls',return_value=['https://kkm2524.diskn.com/MKFP9B24.jpg']),patch.object(c,'checked',return_value={'data':photo.getvalue()}),patch.object(c,'ocr_many',return_value=['PRODUCT INFO 색상 핑크 소재 면']) as ocr:
+   self.assertEqual(c.official_image_color(None,None,c.SITE,'MKFP9B24',{}),'핑크');ocr.assert_called_once()
 if __name__=='__main__':unittest.main()
