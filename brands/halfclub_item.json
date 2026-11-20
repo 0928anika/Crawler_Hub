@@ -1,0 +1,175 @@
+{
+  "id": "halfclub_item",
+  "name": "하프클럽 품번",
+  "category": "브랜드 공통",
+  "crawl_source": "하프클럽",
+  "script": "halfclub_item.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_color_mapping": "manual",
+  "official_color_codes": false,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명",
+    "하프클럽 상품번호",
+    "브랜드",
+    "원본 옵션"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "optionItem 색상·사이즈 stockNo 연결(품절 포함). 판매 상품 간 다르면 빈칸."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 가격정보 price(화면 표시가), 없으면 selPrc. 판매 상품 간 다르면 빈칸."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "독립 정상가 normPrc만. 없거나 0이면 빈칸(판매가로 대체 안 함)."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "dispCtgr 1~3단계 전시 분류."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "productImage basicExtNm·addNExtNm 원본(cdn2.halfclub.com) 중 공개 접근·500px 이상·비율 1.8 이하만 수동 색상 매핑 후보. 색상별 사진 연결이 없어 사람이 매핑."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "대표와 같은 갤러리 후보에서 사람이 색상별로 선택."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 본문(prdDescContClob) 이미지(행사·공지·배너 경로 제외, 공개 접근 확인) + notiItemMap 상품정보고시 2열 표. 전 색상 공통."
+    }
+  },
+  "guide": {
+    "example": "RHHAX2675",
+    "examples": [
+      "RHHAX2675",
+      "https://www.halfclub.com/product/442037474"
+    ],
+    "pattern": "^.+$",
+    "format": "품번 또는 하프클럽 상품번호·상품 링크",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [],
+    "notes": "브랜드 제한 없이 하프클럽에서 같은 품번 상품을 찾아 수집. 색상 사진은 수동 매핑. 같은 품번 판매자가 여럿이면 사진은 모두 후보, 가격은 같을 때만.",
+    "method": "공개 검색 API(hapix → cf-hapi)에서 상품코드/상품명 품번 정확 일치. 상품번호·링크 직접 입력 지원.",
+    "validation_note": "상품코드(prdCd) 또는 상품명 속 품번 토큰이 정확히 같아야 함."
+  },
+  "notes": "사용자 단독 하프클럽 크롤러(2026-11-20) 구조를 허브 수동 매핑(02)으로 변환. 기존 베네통(하프클럽 스튜디오컷, 0928anika)과 별도 브랜드. 상세 데이터는 script#pdp-data 또는 __NUXT_DATA__ 모두 지원. 실사이트 재확인 전(작업 시 PC·브라우저 미연결): fixture 검사만 통과.",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "optionItem 색상·사이즈 stockNo 연결(품절 포함). 판매 상품 간 다르면 빈칸."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 가격정보 price(화면 표시가), 없으면 selPrc. 판매 상품 간 다르면 빈칸."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "독립 정상가 normPrc만. 없거나 0이면 빈칸(판매가로 대체 안 함)."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "dispCtgr 1~3단계 전시 분류."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "productImage basicExtNm·addNExtNm 원본(cdn2.halfclub.com) 중 공개 접근·500px 이상·비율 1.8 이하만 수동 색상 매핑 후보. 색상별 사진 연결이 없어 사람이 매핑."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "대표와 같은 갤러리 후보에서 사람이 색상별로 선택."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 본문(prdDescContClob) 이미지(행사·공지·배너 경로 제외, 공개 접근 확인) + notiItemMap 상품정보고시 2열 표. 전 색상 공통."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null,
+    "하프클럽 상품번호": null,
+    "브랜드": null,
+    "원본 옵션": null
+  },
+  "code_hash": "3f0167d8d4a02dd3948aa5d9de14c3b78b56d03da84bdd30e2dcd17fc1b29938"
+}

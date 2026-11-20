@@ -1,0 +1,170 @@
+{
+  "id": "zensai_official",
+  "name": "젠사이",
+  "category": "골프 의류",
+  "crawl_source": "공식 홈페이지",
+  "script": "zensai_official.py",
+  "execution_level": 1,
+  "mapping_mode": "automatic",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "verified",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 load_option.cm 옵션 전체(품절 표시 포함). 사이즈 선택 시에만 요청."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .real_price(없으면 ld+json offers.price)."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .sale_price(취소선 정가). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 주소 첫 경로와 같은 공식 메뉴 링크 이름."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상별 상품의 공식 #prod_image_list 원본 사진. 공개 접근·규격 검사."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "같은 갤러리 검사 통과 컷 5슬롯."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상세 템플릿(#prodDetailPC) 이미지. HTML 고시 없음(이미지 안 고시는 원본 유지)."
+    }
+  },
+  "guide": {
+    "pattern": "^[A-Za-z0-9]{6,20}$",
+    "format": "기본 품번(예: ZAD4JP403) 또는 품번+영문 색상코드",
+    "notes": "기본 품번은 모든 색상, 색상코드까지 넣으면 그 색상만.",
+    "method": "공식 검색 결과 상품명 끝 (SKU)와 상세 ld+json sku를 정확히 대조.",
+    "example": "ZAD4JP403",
+    "examples": [
+      "ZAD4JP403"
+    ],
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "공백"
+    ],
+    "validation_note": "입력 형식 검사이며 실제 상품 존재 확인은 실행 시 수행"
+  },
+  "notes": "젠사이 공식몰(아임웹). 색상마다 상품(SKU=품번+영문 색상코드)이 따로 있고 상품명 [색상] 표기를 색상명으로 사용해 자동 매핑. 사이즈는 공식 load_option.cm(POST, 로그인 없음) 응답. 사진은 cdn-optimized 주소를 같은 파일의 원본 CDN(cdn.imweb.me)으로 사용(원본 크롤러에서 운영 확인). 상품 설명 문단은 상세에서 제외. 검증 범위: 사용자 단독 크롤러(젠사이 크롤러)에서 운영 확인된 URL·선택자·응답 키를 Crawler Hub SDK 규약으로 이식. 이 코드를 작성한 환경은 해당 사이트 접속이 차단되어 실사이트 실행은 미검증이며, SDK 계약·선택 항목 생략·표 재구성은 오프라인 fixture 테스트(tests/test_oberon_brands.py)로만 확인함.",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 load_option.cm 옵션 전체(품절 표시 포함). 사이즈 선택 시에만 요청."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .real_price(없으면 ld+json offers.price)."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 .sale_price(취소선 정가). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 주소 첫 경로와 같은 공식 메뉴 링크 이름."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "색상별 상품의 공식 #prod_image_list 원본 사진. 공개 접근·규격 검사."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "같은 갤러리 검사 통과 컷 5슬롯."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상세 템플릿(#prodDetailPC) 이미지. HTML 고시 없음(이미지 안 고시는 원본 유지)."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null
+  },
+  "code_hash": "6ef224634377b11a8a10110b604b9359cd35dc94d3305d7f92c6f6b2c015e0f5"
+}
