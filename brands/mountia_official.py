@@ -13,10 +13,19 @@ from crawler_rules import check_public_image, validate_gallery_image, gallery_sl
 
 SITE = 'https://www.byn.kr'
 BRAND_PATH = 'mountia'
-REVISION = '2026-11-18-mountia-1'
+REVISION = '2026-11-20-mountia-2'
 POLICY = dict(checked_on='2026-11-10',source='https://marketplace.coupang.com/mba/listing',min_side=500,max_bytes=10000000,formats=['JPEG','PNG','WEBP'],max_aspect=1.8)
 # 블랙야크 공식 어댑터(byn.kr 공통 구조)를 마운티아 브랜드관(hta_brand=mountia)에 적용. 사용자 단독 마운티아 크롤러와 같은 선택자.
 # 원본 상품 고시는 텍스트, 숨겨진 사이즈 가이드는 HTML 표로 이미 제공된다.
+# 2026-11-20 사용자 단독 크롤러 반영: 마운티아 상품명에는 품번이 없어 사이트 검색이 0건인 경우가 많다
+# → 검색 0건이면 마운티아 카테고리 목록(신상·남성·여성·신발·용품·이월)의 썸네일 파일명
+#   (…/1MQTSWV010_DV_WMain_list_275_FRONT.jpg)으로 '품번+색상 → 상품번호(pno)' 색인을 만들어 찾는다(작업 프로세스 안 12시간 재사용).
+INDEX_CATEGORIES = {'신상': '2011', '남성': '1584', '여성': '1697', '신발': '1715', '용품': '1457', '이월': '1724'}
+INDEX_MAX_PAGES = 200
+INDEX_TTL = 12 * 3600
+INDEX_WAIT = .6
+THUMB_CODE = re.compile(r'/([0-9A-Z]{6,})_([0-9A-Z]{2,3})_(?:WMain|WDetail|fMall\d*)_', re.I)
+_INDEX = dict(ts=0.0, items={})
 
 
 def parse(source):
@@ -71,6 +80,89 @@ def search(ctx,base):
     return links
 
 
+def thumb_code(anchor):
+    """상품 링크 안 → 위로 3단계까지 picweb 썸네일을 찾아 (품번, 색상코드)."""
+    box = anchor
+    for _ in range(4):
+        img = box.select_one('img[src*="picweb"], img[data-src*="picweb"], img[data-original*="picweb"]')
+        if img is not None:
+            src = img.get('data-src') or img.get('data-original') or img.get('src') or ''
+            m = THUMB_CODE.search(src)
+            return (m[1].upper(), m[2].upper()) if m else ('', '')
+        if box.parent is None:
+            break
+        box = box.parent
+    return ('', '')
+
+
+def list_items(doc):
+    """카테고리 목록 페이지 → [(pno, 품번, 색상코드)]. 추천·최근 본 상품·머리말 영역 제외."""
+    for selector in ('.prd-recommend', '#main_recent_list', 'header', 'footer', '.CommonQuickMenu'):
+        for node in doc.select(selector):
+            node.decompose()
+    out = []
+    for anchor in doc.select('a[href*="detail.php"]'):
+        pno = parse_qs(urlsplit(anchor.get('href', '')).query).get('pno', [''])[0]
+        if pno and pno not in [o[0] for o in out]:
+            style, color = thumb_code(anchor)
+            if style:
+                out.append((pno, style, color))
+    return out
+
+
+def build_index(ctx):
+    if _INDEX['items'] and time.time() - _INDEX['ts'] < INDEX_TTL:
+        return _INDEX['items']
+    items = {}
+    ctx.stage('마운티아 품번 색인 만드는 중(카테고리 목록, 처음 한 번)')
+    for label, number in INDEX_CATEGORIES.items():
+        before = sum(len(v) for v in items.values())
+        for page in range(1, INDEX_MAX_PAGES + 1):
+            ctx.checkpoint()
+            url = SITE + '/shop/big_section.php?' + urlencode(dict(page=page, hta_brand=BRAND_PATH, cno1=number, sort=1))
+            try:
+                source, _ = fetch(ctx, url)
+            except Exception as exc:
+                ctx.log('색인 ' + label + ' ' + str(page) + '쪽 조회 실패: ' + str(exc), 'WARNING')
+                break
+            new = 0
+            for pno, style, color in list_items(parse(source)):
+                bucket = items.setdefault(style + color, [])
+                if pno not in bucket:
+                    bucket.append(pno)
+                    new += 1
+            if not new:
+                break
+            for _ in range(int(INDEX_WAIT * 10)):
+                ctx.checkpoint()
+                time.sleep(.1)
+        ctx.log('색인 ' + label + ': 상품 +' + str(sum(len(v) for v in items.values()) - before), 'INFO')
+    if not items:
+        raise ValueError('마운티아 카테고리 목록에서 품번 색인을 만들지 못함')
+    _INDEX.update(ts=time.time(), items=items)
+    return items
+
+
+def from_index(ctx, code):
+    """품번(10자리)만 → 모든 색상, 품번+색상 → 그 색상. 상세 링크 목록."""
+    links = []
+    for full, pnos in build_index(ctx).items():
+        if full == code or (len(code) == 10 and len(full) == 12 and full.startswith(code)):  # 10자리 품번 + 2자리 색상만
+            for pno in pnos:
+                link = SITE + '/' + BRAND_PATH + '/shop/detail.php?' + urlencode(dict(pno=pno))
+                if link not in links:
+                    links.append(link)
+    return links
+
+
+def find_products(ctx, code):
+    links = search(ctx, code)
+    if links:
+        return links
+    ctx.log('사이트 검색 0건(상품명에 품번 없음) → 카테고리 색인으로 찾기: ' + code, 'INFO')
+    return from_index(ctx, code)
+
+
 def sizes(doc):
     result=[]
     for n in doc.select('.prd-info__size-chip'):
@@ -83,6 +175,11 @@ def sizes(doc):
 def price(ctx,doc,regular=False):
     selector='.prd-info__price-original .prd-info__price-num' if regular else '.prd-info__price-current .prd-info__price-num'
     label='정상가' if regular else '판매가';n=doc.select_one(selector);text=n.get_text(strip=True) if n else ''
+    if not regular:
+        sell=doc.select_one('[data-sell-price]')  # 공식 판매가 속성(사용자 크롤러 기준) 우선
+        if sell and re.fullmatch(r'\d+',str(sell.get('data-sell-price','')).replace(',','')):text=format(int(sell['data-sell-price'].replace(',','')),',')
+    elif not n:
+        n=doc.select_one('.prd-info__price-origin');text=n.get_text(strip=True) if n else ''
     currency=re.search(r'\bvar\s+currency\s*=\s*[\'"]([^\'"]*)[\'"]',str(doc))
     match=re.fullmatch(r'(\d{1,3}(?:,\d{3})+|\d+)',text)
     if not currency or currency[1]!='원' or not match:
@@ -108,6 +205,18 @@ def gallery_urls(doc,final):
         if re.search(r'banner|coupon|review|ugc|size.?guide|size.?chart|measurement|collage|배너|쿠폰|배송|반품|사이즈|고시|콜라주',p.path+' '+n.get('alt',''),re.I):continue
         if url not in urls:urls.append(url)
     return urls
+
+
+def detail_shots(source,final,sku,urls):
+    """페이지 원문의 그 색상 상세컷(…/{품번}_{색상}_WDetail_view_860_D1.jpg)을 갤러리 뒤에 추가."""
+    style,color=sku[:-2],sku[-2:]
+    pattern=re.compile(r'(?:https?:)?//picweb\.[a-z0-9.]+/[^"\'\s)<>]*?/'+re.escape(style)+'_'+re.escape(color)+r'_WDetail_view_\d+_[A-Za-z0-9]+\.(?:jpe?g|png)',re.I)
+    out=list(urls)
+    for m in pattern.finditer(source):
+        url=urljoin(final,m.group(0))
+        if url.startswith('http://'):url='https://'+url[7:]
+        if url not in out:out.append(url)
+    return out
 
 
 def gallery(ctx,urls,code,cache):
@@ -249,7 +358,7 @@ def crawl(ctx):
     base,requested=match[1],match[2];emitted=set();seen=set();cache={};failures=[]
     ctx.log('마운티아 코드 버전: '+REVISION,'INFO')
     try:
-        ctx.stage('마운티아 공식 검색: '+base);queue=search(ctx,base+(requested or ''))
+        ctx.stage('마운티아 공식 검색: '+base);queue=find_products(ctx,base+(requested or ''))
         while queue:
             ctx.checkpoint();url=queue.pop(0);params=parse_qs(urlsplit(url).query);key=params.get('pno',[''])[0]
             if key in seen:continue
@@ -266,7 +375,7 @@ def crawl(ctx):
                 if ctx.enabled('price'):record['price']=price(ctx,doc)
                 if ctx.enabled('regular_price'):record['regular_price']=price(ctx,doc,True)
                 if ctx.enabled('category'):record['category']=category(doc)
-                urls=gallery_urls(doc,final) if ctx.enabled('main_image') or ctx.enabled('additional_images') or ctx.enabled('detail_page') else []
+                urls=detail_shots(source,final,record['공식 전체 품번'],gallery_urls(doc,final)) if ctx.enabled('main_image') or ctx.enabled('additional_images') or ctx.enabled('detail_page') else []
                 prefetch(ctx,urls,cache)
                 if ctx.enabled('main_image') or ctx.enabled('additional_images'):
                     main,extras,warning=gallery(ctx,urls,code,cache)

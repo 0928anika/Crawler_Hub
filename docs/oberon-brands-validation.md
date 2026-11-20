@@ -85,6 +85,18 @@ URL·선택자·응답 키는 원본 단독 크롤러에서 운영 확인된 값
 - COLOR 영역 색상명(OCR, 공식 옵션명 정답지) 아래 스와치(저장 안 함)의 상품 색과 같은 화소 비율로 컷별 추천. 20% 이상 + 2위의 2배 이상일 때만 선택, 글자 없는 스와치가 1위면 미매핑.
 - 560 실측: 갤러리 블랙컷 블랙 0.92 / 카키컷 카키 0.88 / 아이보리 단독·모델컷 아이보리 0.68~0.93, 통이미지 큰 컷 7장 모두 아이보리 0.85~0.99(2위 0.07 이하).
 
+## 7차 — 사용자 단독 크롤러 5종 반영 (2026-11-20)
+
+| ID | 브랜드 | 유형 | 변경 |
+|---|---|---|---|
+| mountia_official | 마운티아 | 1번 자동 | 사이트 검색 0건 시 카테고리 목록 썸네일 파일명 색인으로 품번→pno 검색(작업 중 12시간 재사용), 판매가 data-sell-price 우선, 그 색상 WDetail 상세컷 추가 |
+| zensai_official | 젠사이 | 1번 자동 | 기존 구현이 사용자 크롤러 구조(아임웹 검색·JSON-LD·load_option.cm·#prod_image_list·prodDetailPC)와 일치 → 변경 없음 |
+| riverclassy_favlook | 리버클래시 | 1번 자동 | 기존 구현이 메이크샵 구조(모델명 정확 일치·optionJsonData·thumbnail 갤러리·PRODUCT INFO)와 일치 → 변경 없음 |
+| sfit_official | 에스핏 | 혼합(2번) | 기존 구현이 Cafe24 구조(이미지 경로 품번·색상/사이즈 옵션·image_zoom2·link_image)와 일치 → 변경 없음 |
+| halfclub_item | 하프클럽 품번 | 2번 수동(URL) | 신규. 검색 hapix(siteCd=1)→cf-hapi(siteCd=2), pdp-data/__NUXT_DATA__, 정상가 normPrc만, 고시 2열 표. 베네통(하프클럽 스튜디오컷)과 별도 |
+
+- 작업 시 PC·브라우저가 연결되지 않아 실사이트 재조회 없이 fixture 검사만(tests/test_mountia_halfclub.py).
+
 ## 공통 규약 적용
 
 - 결과 키: product_code / product_name / color / product_url 필수, color_name·color_code 분리, `원본 상품명` 추가 열.
