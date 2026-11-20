@@ -17,7 +17,7 @@ from crawler_rules import check_public_image, validate_gallery_image, gallery_sl
 
 SITE = 'https://www.giordano.co.kr'
 HOSTS = ('www.giordano.co.kr', 'giordano.co.kr')
-REVISION = '2026-11-20-giordano-7'
+REVISION = '2026-11-20-giordano-8'
 # Official long-form detail originals can exceed the 10 MB gallery limit.
 DETAIL_MAX_BYTES = 64_000_000
 # 인명 표기 상품의 갤러리 전용 보수적 휴리스틱. 사람 신원/AI 여부 판별 아님.
@@ -206,7 +206,7 @@ def skip_first_campaign_image(urls, has_person):
     return urls[1:] if has_person and len(urls)>1 else urls
 
 
-def detail_urls(doc, final, exclude_first=False):
+def detail_urls(doc, final, exclude_first=False, include_extras=True):
     def gather(nodes):
         result=[]
         for node in nodes:
@@ -220,7 +220,7 @@ def detail_urls(doc, final, exclude_first=False):
     body=skip_first_campaign_image(body,exclude_first)
     extra=list(doc.select('#det_size_info .size_img img'))
     extra.extend(n for n in doc.select('.prd_detail_content_gio img') if '상품정보고시' in n.get('data-layer_title',''))
-    urls=list(dict.fromkeys(body+gather(extra)))
+    urls=list(dict.fromkeys(body+(gather(extra) if include_extras else [])))
     years=list(dict.fromkeys(re.findall(r'/_gio_on/(\d{4})/', ' '.join(urls))))
     if len(years)==1:
         urls=[u.replace('/_gio_on//','/_gio_on/'+years[0]+'/') for u in urls]
@@ -353,6 +353,21 @@ def detail(ctx, urls, cache):
     return result
 
 
+def detail_with_gallery(ctx, original, body_urls, main, extras):
+    present = {n.get('src') for n in parse(original).select('img[src]')}
+    if present.intersection(body_urls):
+        return original
+    photos = [u for u in dict.fromkeys([main] + extras) if u and u not in present]
+    if not photos:
+        return original
+    prefix = ''.join('<p><img src="' + html.escape(u, quote=True) + '" alt="상품 이미지"></p>' for u in photos)
+    result = '<div>' + prefix + original + '</div>'
+    if len(result.encode('utf-16-le')) // 2 > 32767:
+        raise ValueError('상세 HTML Excel 셀 한도 초과')
+    ctx.log('상세 본문 없음: 해당 색상의 대표·추가 이미지를 사이즈표/고시 위에 삽입', 'INFO')
+    return result
+
+
 def collect(ctx, doc, final, base, requested, emitted, cache):
     common = identity(doc, base)
     if common is None:
@@ -361,6 +376,7 @@ def collect(ctx, doc, final, base, requested, emitted, cache):
     # 선택된 데이터만 파싱/요청. 공통 상세는 품번당 한 번 확인한다.
     has_person=named_campaign(common['원본 상품명'])
     details = detail_urls(doc, final, exclude_first=has_person) if ctx.enabled('detail_page') else []
+    body_urls = detail_urls(doc, final, exclude_first=has_person, include_extras=False) if ctx.enabled('detail_page') else []
     if ctx.enabled('detail_page'):
         if not doc.select('#det_size_info .size_img img'):
             ctx.log('공식 실측 사이즈 이미지 없음: 별도 표 생성 없이 진행', 'WARNING')
@@ -382,10 +398,15 @@ def collect(ctx, doc, final, base, requested, emitted, cache):
                 record['regular_price'] = price(ctx, doc, regular=True)
             if ctx.enabled('category'):
                 record['category'] = ' > '.join(n.get_text(' ', strip=True) for n in doc.select('.navi a[class^="prdpath"]') if '/shop/big_section.php' in n.get('href', ''))
-            photos = gallery_urls(ctx, doc, option['option_id']) if ctx.enabled('main_image') or ctx.enabled('additional_images') else []
+            if ctx.enabled('detail_page') and detail_html is None:
+                prefetch(ctx, details, cache)
+                detail_html = detail(ctx, details, cache)
+            needs_body = ctx.enabled('detail_page') and not {n.get('src') for n in parse(detail_html).select('img[src]')}.intersection(body_urls)
+            photos = gallery_urls(ctx, doc, option['option_id']) if ctx.enabled('main_image') or ctx.enabled('additional_images') or needs_body else []
             photos=skip_first_campaign_image(photos,has_person)
             prefetch(ctx, photos + details, cache)
-            if ctx.enabled('main_image') or ctx.enabled('additional_images'):
+            main, extras = '', []
+            if ctx.enabled('main_image') or ctx.enabled('additional_images') or needs_body:
                 main, extras, warning = gallery(ctx, photos, code, cache, filter_background=False)
                 if warning:
                     ctx.log(warning, 'WARNING')
@@ -394,8 +415,7 @@ def collect(ctx, doc, final, base, requested, emitted, cache):
                 if ctx.enabled('additional_images'):
                     record['additional_images'] = ','.join(extras)
             if ctx.enabled('detail_page'):
-                if detail_html is None:detail_html=detail(ctx, details, cache)
-                record['detail_page'] = detail_html
+                record['detail_page'] = detail_with_gallery(ctx, detail_html, body_urls, main, extras)
             ctx.emit_result(record)
             emitted.add(code)
         except Exception as exc:

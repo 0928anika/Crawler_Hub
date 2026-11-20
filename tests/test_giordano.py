@@ -22,6 +22,37 @@ class Context:
 
 
 class GiordanoTests(unittest.TestCase):
+    def test_missing_body_inserts_unique_color_photos_before_size(self):
+        doc = c.parse(str(self.doc))
+        for node in doc.select('#detail .detail_info .wing-detail-more-contents img'):
+            node.decompose()
+        size = c.SITE + '/_gio_on/2026/size.jpg'
+        ctx = Context(('detail_page',))
+        original = '<div><p><img src="' + size + '"></p></div>'
+        with patch.object(c, 'detail', return_value=original), \
+             patch.object(c, 'prefetch'), \
+             patch.object(c, 'gallery_urls', return_value=['source']), \
+             patch.object(c, 'gallery', side_effect=[('main1', ['extra1', 'main1'] * 2, ''),
+                                                     ('main2', ['extra2'] * 5, '')]):
+            options = c.colors(doc, '05586901')[:2]
+            with patch.object(c, 'colors', return_value=options):
+                self.assertFalse(c.collect(ctx, doc, c.SITE, '05586901', None, set(), {}))
+        for index, row in enumerate(ctx.rows, 1):
+            urls = [n['src'] for n in c.parse(row['detail_page']).select('img')]
+            self.assertEqual(urls, ['main' + str(index), 'extra' + str(index), size])
+            self.assertNotIn('main_image', row)
+
+    def test_existing_body_never_gets_gallery_appended(self):
+        body = c.SITE + '/_gio_on/2026/05326930.jpg'
+        original = '<div><img src="' + body + '"><img src="size"></div>'
+        self.assertEqual(c.detail_with_gallery(Context(), original, [body], 'main', ['extra']), original)
+
+    def test_missing_body_and_no_valid_gallery_preserves_size(self):
+        original = '<div><img src="size"></div>'
+        self.assertEqual(c.detail_with_gallery(Context(), original, [], '', []), original)
+        with self.assertRaises(ValueError):
+            c.detail_with_gallery(Context(), original, [], 'x' * 32767, [])
+
     def test_large_detail_original_uses_separate_bounded_limit_and_cache(self):
         url = c.SITE + '/_gio_on/2026/05326930.jpg'
         ctx, cache = Context(), {}
