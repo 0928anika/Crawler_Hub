@@ -3,7 +3,7 @@ import html,http.client,io,json,re,socket,time,hashlib,urllib.error,urllib.parse
 from bs4 import BeautifulSoup,NavigableString,Comment
 from PIL import Image,UnidentifiedImageError
 BASE='https://www.fashionplus.co.kr'
-REVISION='2026-11-20-fashionplus-item-5-child-id'
+REVISION='2026-11-20-fashionplus-item-6-child-parent-all-options'
 MAX_BYTES=10_000_000
 class CollectionError(RuntimeError):pass
 class MissingResource(CollectionError):pass
@@ -403,11 +403,9 @@ def crawl(ctx):
         doc,link,record,child=resolve_product(ctx,number)
         record.setdefault('입력품목ID',number)
         palette,sizes,raw_options=read_options(ctx,link)
-        parent_colors=len(palette)
         if child:
             matching=[row for row in raw_options if str(row.get('option_id'))==child]
             if not matching:raise CollectionError('하위 품목이 상위 상품의 공식 옵션에 없습니다: '+child)
-            palette,sizes,raw_options=palette_for_leaves(matching)
         preserve_text(record,'원본 옵션',json.dumps(raw_options,ensure_ascii=False))
         if ctx.enabled('size'):record['size']=','.join(sizes) or None
         if ctx.enabled('price'):
@@ -422,7 +420,7 @@ def crawl(ctx):
         if wants:record['전체 상품사진']='\n'.join(photos)
         if not wants:
             for color in palette:ctx.emit_result(dict(record,color=color['color_name'] or color['color_code'],**color))
-        elif len(palette)>1 or (child and parent_colors>1):
+        elif len(palette)>1:
             for url in photos:ctx.emit_unmapped(dict(record),palette,url,shared_detail_html=record.get('detail_page',''))
         else:
             color=palette[0];row=dict(record,color=color['color_name'] or color['color_code'],**color)
