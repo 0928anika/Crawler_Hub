@@ -3,7 +3,7 @@ import html,http.client,io,json,re,socket,time,hashlib,urllib.error,urllib.parse
 from bs4 import BeautifulSoup,NavigableString,Comment
 from PIL import Image,UnidentifiedImageError
 BASE='https://www.fashionplus.co.kr'
-REVISION='2026-11-18-fashionplus-item-4-parent-sku'
+REVISION='2026-11-20-fashionplus-item-5-child-id'
 MAX_BYTES=10_000_000
 class CollectionError(RuntimeError):pass
 class MissingResource(CollectionError):pass
@@ -153,7 +153,7 @@ def item_number(raw):
     return raw
 
 
-def product_info(doc,number):
+def product_info(doc,number,sku_reference=None):
     title=doc.select_one('.m__product-info .text_product')
     if not title or not title.get_text(strip=True):raise CollectionError('상품이 없거나 상세 응답이 올바르지 않습니다: '+number)
     canonical=doc.select_one('meta[property="og:url"]')
@@ -185,7 +185,7 @@ def product_info(doc,number):
         try:data=json.loads(script.string or script.get_text())
         except (ValueError,TypeError):continue
         for product in product_nodes(data):
-            if product.get('mpn') is not None and str(product['mpn'])!=number:continue
+            if product.get('mpn') is not None and str(product['mpn'])!=str(sku_reference or number):continue
             sku=product.get('sku')
             if isinstance(sku,(str,int)) and str(sku).strip():structured_skus.append(str(sku).strip())
     structured_skus=list(dict.fromkeys(structured_skus))
@@ -195,6 +195,28 @@ def product_info(doc,number):
     record.update(product_code=sku,**{'상위품목ID':number})
     record.update({'판매자':seller,'판매자 상품번호':seller_number,'상품정보 원문':'\n'.join(k+': '+v for k,v in provided.items())})
     return record
+
+
+def resolve_product(ctx,number):
+    """Resolve child pages through their own declared option endpoint and SKU."""
+    link=BASE+'/goods/detail/'+number
+    doc=soup_get(ctx,link)
+    declared=set()
+    for node in doc.select('.m__product-option[data-product]'):
+        declared.update(re.findall(r'/goods/detail/([0-9]+)/fetch-option-data',node.get('data-product','')))
+    if len(declared)>1:raise CollectionError('상위 상품 연결 정보가 여러 개입니다: '+number)
+    parent=next(iter(declared),number)
+    if parent==number:
+        return doc,link,product_info(doc,number),None
+    child=product_info(doc,number,sku_reference=parent)
+    parent_link=BASE+'/goods/detail/'+parent
+    parent_doc=soup_get(ctx,parent_link);record=product_info(parent_doc,parent)
+    if child['product_code']!=record['product_code']:
+        raise CollectionError('하위 품목과 상위 상품의 SKU 불일치: '+number)
+    record['하위품목ID']=number
+    record['입력품목ID']=number
+    ctx.log('하위품목 '+number+' → 상위품목 '+parent+' / 공식 SKU 일치 확인','SUCCESS')
+    return parent_doc,parent_link,record,number
 
 
 SIZE_TOKEN=r'(?:FREE|FR|F|ONE\s*SIZE|XS|S|M|L|XL|XXL|XXXL|[2-6]XL|\d{2,3}[A-H]|\d{2,3}(?:MM|CM)?|[CJM]\d+(?:W\d+)?)'
@@ -215,6 +237,10 @@ def read_options(ctx,link):
         if not isinstance(group,dict):raise CollectionError('상품 옵션 그룹 구조 변경')
         if 'options' not in group:raise CollectionError('공식 옵션 목록 필드 누락')
         for option in group.get('options') or []:visit(option,[])
+    return palette_for_leaves(leaves)
+
+
+def palette_for_leaves(leaves):
     palette=[];sizes=[]
     for row in leaves:
         label=row['label'];match=re.fullmatch(r'(.+?)[\s/]+('+SIZE_TOKEN+r')',label,re.I)
@@ -374,11 +400,18 @@ def crawl(ctx):
     try:
         number=item_number(ctx.product_code);link=BASE+'/goods/detail/'+number;cache={};ctx.allow_automatic_results=True
         ctx.stage('패션플러스 품목번호 직접 조회: '+number)
-        doc=soup_get(ctx,link);record=product_info(doc,number)
+        doc,link,record,child=resolve_product(ctx,number)
+        record.setdefault('입력품목ID',number)
         palette,sizes,raw_options=read_options(ctx,link)
+        parent_colors=len(palette)
+        if child:
+            matching=[row for row in raw_options if str(row.get('option_id'))==child]
+            if not matching:raise CollectionError('하위 품목이 상위 상품의 공식 옵션에 없습니다: '+child)
+            palette,sizes,raw_options=palette_for_leaves(matching)
         preserve_text(record,'원본 옵션',json.dumps(raw_options,ensure_ascii=False))
         if ctx.enabled('size'):record['size']=','.join(sizes) or None
-        if ctx.enabled('price'):record['price']=read_price(doc)
+        if ctx.enabled('price'):
+            record['price']=read_price(doc)
         if ctx.enabled('regular_price'):record['regular_price']=read_price(doc,True)
         if ctx.enabled('category'):
             record['category']=' > '.join(n.get_text(' ',strip=True) for n in doc.select('.mm_breadcrumb a[href*="/goods/category/"]')) or None
@@ -389,7 +422,7 @@ def crawl(ctx):
         if wants:record['전체 상품사진']='\n'.join(photos)
         if not wants:
             for color in palette:ctx.emit_result(dict(record,color=color['color_name'] or color['color_code'],**color))
-        elif len(palette)>1:
+        elif len(palette)>1 or (child and parent_colors>1):
             for url in photos:ctx.emit_unmapped(dict(record),palette,url,shared_detail_html=record.get('detail_page',''))
         else:
             color=palette[0];row=dict(record,color=color['color_name'] or color['color_code'],**color)
