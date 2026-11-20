@@ -7,6 +7,7 @@ from crawler_sdk import CrawlContext
 class Ctx:
  def checkpoint(self):pass
  def log(self,*a):pass
+ def stage(self,*a):pass
 class Tests(unittest.TestCase):
  def setUp(self):
   self.product=json.loads((ROOT/'tests/fixtures/fahrenheit/product.json').read_text(encoding='utf8'));self.contents=json.loads((ROOT/'tests/fixtures/fahrenheit/contents.json').read_text(encoding='utf8'))
@@ -32,6 +33,24 @@ class Tests(unittest.TestCase):
  def test_access_limit_remains_explicit(self):
   page=MagicMock();page.goto.return_value.status=429
   with self.assertRaisesRegex(ValueError,'429'):c.navigate(Ctx(),page,c.SITE+'/fahrenheit/search?q=CODE')
+ def test_full_input_is_always_queried_first(self):
+  with patch.object(c,'discover',return_value=({'1':'url'},'official')) as discover:
+   self.assertEqual(c.resolve_product(Ctx(),None,'FPEAH43310'),({'1':'url'},'official','FPEAH43310'))
+  self.assertEqual([call.args[2] for call in discover.call_args_list],['FPEAH43310'])
+ def test_missing_exact_input_retries_only_one_character_shorter(self):
+  for code in ['FPEAH43310','FPEAX4105A']:
+   with patch.object(c,'discover',side_effect=[c.ProductNotFound('0건'),({'1':'url'},'official')]) as discover:
+    self.assertEqual(c.resolve_product(Ctx(),None,code)[2],code[:-1])
+   self.assertEqual([call.args[2] for call in discover.call_args_list],[code,code[:-1]])
+ def test_access_or_parse_errors_never_trigger_model_fallback(self):
+  for message in ['네이버 접근 제한 HTTP 429','공식 품번 검색 응답/검색어 확인 실패','공식 스토어 채널 식별자 누락']:
+   with patch.object(c,'discover',side_effect=ValueError(message)) as discover:
+    with self.assertRaisesRegex(ValueError,message):c.resolve_product(Ctx(),None,'FPEAH43310')
+   self.assertEqual(discover.call_count,1)
+ def test_both_absent_inputs_are_reported_without_further_trimming(self):
+  with patch.object(c,'discover',side_effect=c.ProductNotFound('0건')) as discover:
+   with self.assertRaisesRegex(c.ProductNotFound,'모두 공식 모델 일치 없음'):c.resolve_product(Ctx(),None,'FPEAH43310')
+  self.assertEqual(discover.call_count,2)
  def test_sdk_end_to_end_with_real_public_response_fixtures(self):
   meta=json.loads((ROOT/'brands/fahrenheit_naver_official.json').read_text(encoding='utf8'));events=[]
   with tempfile.TemporaryDirectory() as folder:
@@ -40,4 +59,13 @@ class Tests(unittest.TestCase):
    with patch('playwright.sync_api.sync_playwright',return_value=engine),patch.object(c,'discover',return_value=({'13751254548':page.url},self.product['channel']['channelUid'])),patch.object(c,'navigate'),patch.object(c,'wait_data',side_effect=lambda *a:self.product if a[-1]=='product' else self.contents),patch.object(c,'gallery',return_value=['https://shop-phinf.pstatic.net/one.jpg','https://shop-phinf.pstatic.net/two.jpg']),patch.object(c,'public_image',return_value={'data':b'valid'}):c.crawl(ctx);ctx.finish()
    self.assertEqual(ctx._unmapped_count,2)
    raw=next(d for k,d in events if k=='row' and not d.get('header'));self.assertEqual(raw['unmapped']['colors'][0]['size'],'78,82');self.assertEqual(raw['unmapped']['colors'][0]['color_code'],'GYD')
+ def test_sdk_fallback_preserves_input_and_uses_official_model(self):
+  meta=json.loads((ROOT/'brands/fahrenheit_naver_official.json').read_text(encoding='utf8'));events=[]
+  with tempfile.TemporaryDirectory() as folder:
+   ctx=CrawlContext('unused',Path(folder)/'out.xlsx',0,['size','price','main_image','additional_images','detail_page'],meta['output_headers'],lambda:None,lambda kind,**data:events.append((kind,data)),input_item={'품번':'FPFAH42030'},mapping_mode='manual')
+   engine=MagicMock();browser=engine.__enter__.return_value.chromium.launch.return_value;page=browser.new_page.return_value;page.url=c.SITE+'/fahrenheit/products/13751254548'
+   with patch('playwright.sync_api.sync_playwright',return_value=engine),patch.object(c,'discover',side_effect=[c.ProductNotFound('0건'),({'13751254548':page.url},self.product['channel']['channelUid'])]),patch.object(c,'navigate'),patch.object(c,'wait_data',side_effect=lambda *a:self.product if a[-1]=='product' else self.contents),patch.object(c,'gallery',return_value=['https://shop-phinf.pstatic.net/one.jpg','https://shop-phinf.pstatic.net/two.jpg']),patch.object(c,'public_image',return_value={'data':b'valid'}):c.crawl(ctx);ctx.finish()
+   self.assertEqual(ctx._unmapped_count,2)
+   raw=next(d for k,d in events if k=='row' and not d.get('header'));self.assertEqual(raw['unmapped']['colors'][0]['size'],'78,82');self.assertEqual(raw['unmapped']['colors'][0]['color_code'],'GYD')
+   self.assertEqual(raw['row'][0],'FPFAH42030');self.assertEqual(raw['row'][meta['output_headers'].index('공식 모델명')],'FPFAH4203');self.assertIn('/FPFAH4203/',raw['unmapped']['shared_detail_html'])
 if __name__=='__main__':unittest.main()

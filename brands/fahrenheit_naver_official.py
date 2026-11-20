@@ -14,13 +14,17 @@ from crawler_rules import check_public_image
 
 SITE = 'https://brand.naver.com'
 STORE = 'fahrenheit'
-REVISION = '2026-11-19-fahrenheit-naver-v1'
+REVISION = '2026-11-20-fahrenheit-model-fallback-v2'
 POLICY = dict(checked_on='2026-11-12', source='https://marketplace.coupang.com/mba/listing',
               min_side=500, max_bytes=10000000, max_aspect=1.8, formats=['JPEG','PNG','WEBP'],
               note='정지 WebP는 사용자 등록 환경 정책. 비율은 프로젝트 보조 기준.')
 # 실제 공식 검색 q=FPFAH4203 -> 13763163321, 모델명과 channelUid 대조.
 # 일반 Edge 브라우저가 받은 공개 product 응답을 사용한다. 인증정보/쿠키 주입 없음.
 # 색상은 optionCombinations/options, 사진은 productImages. 색감으로 배정하지 않는다.
+
+
+class ProductNotFound(ValueError):
+    """A valid official search completed without an exact model match."""
 
 
 def state_from(source):
@@ -63,6 +67,7 @@ def discover(ctx,page,code):
         visited.add(url);navigate(ctx,page,url)
         state = state_from(page.content());search = state.get('keywordSearch') or {}
         channel_uid = (state.get('channel') or {}).get('channelUid')
+        if not channel_uid:raise ValueError('공식 스토어 채널 식별자 누락')
         rows = search.get('simpleProducts')
         if search.get('keyword','').upper()!=code or not isinstance(rows,list) or not isinstance(search.get('totalCount'),int):
             raise ValueError('공식 품번 검색 응답/검색어 확인 실패')
@@ -85,11 +90,28 @@ def discover(ctx,page,code):
         if not pending:raise ValueError('검색 결과는 더 있으나 다음 페이지 링크를 확인할 수 없습니다. 일부만 완료하지 않습니다.')
     if not found:
         if total==0:
-            raise ValueError('[검색 결과 0건] '+code+' / 네이버 공식 스토어 검색에 정상 접근했으나 응답 상품 수가 0건입니다.')
-        raise ValueError('[품번 일치 실패] '+code+' / 검색 '+str(total)+'건은 조회됐으나 공식 모델명이 일치하지 않습니다. 조회 모델명: '+', '.join(sorted(models)))
+            raise ProductNotFound('[검색 결과 0건] '+code+' / 정상 공식 검색 응답 0건')
+        raise ProductNotFound('[품번 일치 실패] '+code+' / 검색 '+str(total)+'건은 조회됐으나 공식 모델명이 일치하지 않습니다. 조회 모델명: '+', '.join(sorted(models)))
     ctx.log('공식 검색 확인: '+code+' / 검색 '+str(total)+'건, 정확한 모델명 일치 '+str(len(found))+'건','INFO')
     if not channel_uid:raise ValueError('공식 스토어 채널 식별자 누락')
     return found,channel_uid
+
+
+def resolve_product(ctx,page,code):
+    try:
+        links,channel=discover(ctx,page,code)
+        return links,channel,code
+    except ProductNotFound as original:
+        if len(code)<2:raise
+        model=code[:-1]
+        ctx.log(str(original)+' / 끝자리 한 글자 제외 후 공식 모델 재조회: '+model,'INFO')
+        ctx.stage('공식 모델 재조회: '+model)
+        try:
+            links,channel=discover(ctx,page,model)
+        except ProductNotFound as fallback:
+            raise ProductNotFound('입력 품번과 끝자리 제외 품번 모두 공식 모델 일치 없음 / '+str(original)+' / '+str(fallback)) from fallback
+        ctx.log('공식 모델 확인: '+code+' → '+model,'SUCCESS')
+        return links,channel,model
 
 
 def wait_data(ctx,page,captured,key):
@@ -248,7 +270,7 @@ def crawl(ctx):
                     return request.continue_()
                 page.route('**/*',route)
                 ctx.stage('파렌하이트 네이버 공식 품번 검색: '+code)
-                links,channel_uid=discover(ctx,page,code)
+                links,channel_uid,model_code=resolve_product(ctx,page,code)
                 for number,url in links.items():
                     captured={}
                     def receive(response):
@@ -266,7 +288,7 @@ def crawl(ctx):
                     try:
                         ctx.stage('공식 상품 조회: '+number);navigate(ctx,page,url)
                         product=wait_data(ctx,page,captured,'product')
-                        if str(product.get('id'))!=number or (product.get('channel') or {}).get('channelUid')!=channel_uid or str((product.get('naverShoppingSearchInfo') or {}).get('modelName') or '').strip().upper()!=code:
+                        if str(product.get('id'))!=number or (product.get('channel') or {}).get('channelUid')!=channel_uid or str((product.get('naverShoppingSearchInfo') or {}).get('modelName') or '').strip().upper()!=model_code:
                             raise ValueError('상품번호/공식 모델명/스토어 불일치')
                         colors,color_position,labels=color_rows(product)
                         for color,label in zip(colors,labels):
@@ -274,7 +296,7 @@ def crawl(ctx):
                                 position=next((i+1 for i,v in enumerate(product.get('options') or []) if str(v.get('groupName','')).strip().upper() in ('사이즈','SIZE')),None)
                                 color['size']=','.join(dict.fromkeys(str(row.get('optionName'+str(position)) or '').strip() for row in product.get('optionCombinations',[]) if row.get('optionName'+str(color_position))==label and row.get('optionName'+str(position)))) if position else ''
                             if color not in palette:palette.append(color)
-                        record=dict(product_code=code,product_name=product_name(str(product.get('name') or ''),code),product_url=page.url)
+                        record=dict(product_code=code,product_name=product_name(str(product.get('name') or ''),model_code),product_url=page.url,**{'공식 모델명':model_code})
                         if not record['product_name']:raise ValueError('공식 상품명 누락')
                         if ctx.enabled('size'):record['size']=common_sizes(ctx,product,color_position,labels)
                         if ctx.enabled('price'):record['price']=common_price(ctx,product)
@@ -282,7 +304,7 @@ def crawl(ctx):
                             record['regular_price']=None;ctx.log('독립 정상가 필드 미확인: salePrice를 정상가로 대체하지 않습니다.','WARNING')
                         if ctx.enabled('category'):record['category']=str((product.get('category') or {}).get('wholeCategoryName') or '')
                         if ctx.enabled('detail_page'):
-                            markup=detail(ctx,product,wait_data(ctx,page,captured,'contents'),code,cache)
+                            markup=detail(ctx,product,wait_data(ctx,page,captured,'contents'),model_code,cache)
                             if markup and markup not in fragments:fragments.append(markup)
                         for image in gallery(ctx,product,cache):
                             if image not in images:images.append(image)
