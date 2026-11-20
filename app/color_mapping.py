@@ -4,7 +4,7 @@ import html
 import json
 from copy import deepcopy
 from schema import field_for, preview, output_headers, sanitized_html
-from detail_store import excel_detail, registration_layout
+from detail_store import excel_detail, registration_layout, verified_original_image_url
 from storage import atomic_json
 from color_palette import normalize_palette
 import local_images
@@ -262,7 +262,7 @@ def edit_options(job,data):
 def selected_detail(job,group):
     selected=(group.get('detail') or {}).get('selected',[])
     images={i['id']:i for i in group['images']}
-    return registration_layout(''.join('<img src="'+html.escape(images[i]['url'],quote=True)+'" alt="상품 상세">' for i in selected if i in images))
+    return registration_layout(''.join('<img src="'+html.escape(verified_original_image_url(images[i]['url']) if job.brand.get('id')=='fashionplus_integrated' else images[i]['url'],quote=True)+'" alt="상품 상세">' for i in selected if i in images))
 
 
 def shared_detail(job,group):

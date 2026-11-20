@@ -2,10 +2,11 @@ PORTAL_API_VERSION = 1
 import html,http.client,io,json,re,socket,time,hashlib,urllib.error,urllib.parse,urllib.request
 import base64,subprocess,tempfile
 from pathlib import Path
+from detail_store import original_image_url
 from bs4 import BeautifulSoup,NavigableString,Comment
 from PIL import Image,UnidentifiedImageError
 BASE='https://www.fashionplus.co.kr'
-REVISION='2026-11-19-fashionplus-integrated-v1'
+REVISION='2026-11-20-fashionplus-integrated-original-ratio-v2'
 MAX_BYTES=10_000_000
 class CollectionError(RuntimeError):pass
 class MissingResource(CollectionError):pass
@@ -533,7 +534,7 @@ def all_candidates(ctx,doc,link,cache):
     nodes+=list(area.select('img'))
     photos=[];assets=set();digests=set();batches=[]
     for node in nodes:
-        url=source_url(node)
+        url=original_image_url(source_url(node))
         if not url or common_banner(url,node) or photo_asset(url) in assets:continue
         assets.add(photo_asset(url))
         try:info=image_info(ctx,url,cache,True)

@@ -47,4 +47,16 @@ class DetailLayoutTests(unittest.TestCase):
    self.assertIn('margin:0 auto',doc.img['style']);self.assertEqual(doc.img['width'],'860')
    self.assertIn('margin:16px auto',doc.table['style'])
   self.assertEqual(excel_detail(output)[0],output)
+ def test_fashionplus_thumbnail_parameters_do_not_distort_original_detail(self):
+  from detail_store import original_image_url,verified_original_image_url
+  from unittest.mock import patch
+  url='https://img.fashionplus.co.kr/mall/assets/product_img/detail.jpg?RS=800x1072&AR=0&token=keep'
+  self.assertEqual(original_image_url(url),'https://img.fashionplus.co.kr/mall/assets/product_img/detail.jpg?token=keep')
+  self.assertEqual(original_image_url('https://other.example/image.jpg?RS=800x1072'),'https://other.example/image.jpg?RS=800x1072')
+  verified_original_image_url.cache_clear()
+  with patch('crawler_rules.check_public_image',return_value=dict(status='accessible',format='JPEG')) as check:
+   self.assertEqual(verified_original_image_url(url),original_image_url(url));verified_original_image_url(url);check.assert_called_once()
+  verified_original_image_url.cache_clear()
+  with patch('crawler_rules.check_public_image',return_value=dict(status='inaccessible',reasons=['HTTP 404'])):
+   with self.assertRaisesRegex(ValueError,'원본 상세 이미지 확인 실패'):verified_original_image_url(url)
 if __name__=='__main__':unittest.main()

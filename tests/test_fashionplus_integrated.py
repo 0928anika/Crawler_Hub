@@ -39,4 +39,14 @@ class Tests(unittest.TestCase):
   from storage import validate_input
   result,_,_=validate_input(dict(codes='MODEL123',selected=[]),get_brand('fashionplus_integrated'))
   self.assertTrue(result['valid']);self.assertTrue(set(['main_image','additional_images','detail_page']).issubset(result['selected']))
+ def test_forced_thumbnail_ratio_is_removed_before_validation_and_ocr(self):
+  url='https://img.fashionplus.co.kr/mall/assets/product_img/body.jpg?RS=800x1072&AR=0'
+  original=url.split('?')[0];doc=c.BeautifulSoup('<div class="m_prodetail-head-thumbnail"><button class="btn_thumbnail"><img src="'+url+'"></button></div>','html.parser')
+  area=c.BeautifulSoup('<div><img src="'+original+'"></div>','html.parser')
+  buf=io.BytesIO();Image.new('RGB',(800,5132),'white').save(buf,'JPEG')
+  def info(ctx,requested,cache,detail=False):
+   self.assertEqual(requested,original);return dict(data=buf.getvalue(),width=800,height=5132,format='JPEG')
+  with patch.object(c,'detail_document',return_value=area),patch.object(c,'image_info',side_effect=info) as check,patch.object(c,'ocr_many',return_value=['상품 정보']):
+   urls,_=c.all_candidates(C(),doc,'link',{})
+  self.assertEqual(urls,[original]);check.assert_called_once()
 if __name__=='__main__':unittest.main()

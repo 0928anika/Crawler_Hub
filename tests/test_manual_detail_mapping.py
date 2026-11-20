@@ -62,4 +62,14 @@ class Tests(unittest.TestCase):
    for ids in [[],['other-product-image']]:
     with self.assertRaises(ValueError):self.detail(job,ids)
    self.assertFalse((job.dir/'color_mapping.json').exists())
+ def test_existing_fashionplus_detail_choice_uses_verified_original_url(self):
+  from detail_store import verified_original_image_url
+  with tempfile.TemporaryDirectory() as folder:
+   job=self.job(folder);job.brand['id']='fashionplus_integrated'
+   url='https://img.fashionplus.co.kr/mall/assets/product_img/body.jpg?RS=800x1072&AR=0'
+   group=dict(images=[dict(id='existing-choice',url=url)],detail=dict(selected=['existing-choice']))
+   verified_original_image_url.cache_clear()
+   with patch('crawler_rules.check_public_image',return_value=dict(status='accessible',format='JPEG')):
+    markup=m.selected_detail(job,group)
+   self.assertIn('body.jpg"',markup);self.assertNotIn('RS=',markup);self.assertEqual(group['detail']['selected'],['existing-choice'])
 if __name__=='__main__':unittest.main()

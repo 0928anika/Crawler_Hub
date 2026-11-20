@@ -12,6 +12,29 @@ OVERFLOW_NOTICE = ''  # Oversized content is a registration error, never a downl
 DETAIL_WIDTH = 860
 
 
+def original_image_url(url):
+    """Fashionplus RS/AR force a thumbnail ratio, including on long detail files."""
+    from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
+    parsed=urlsplit(str(url))
+    if parsed.scheme not in ('http','https') or parsed.hostname!='img.fashionplus.co.kr':return url
+    query=parse_qsl(parsed.query,keep_blank_values=True)
+    kept=[(k,v) for k,v in query if k.upper() not in ('RS','AR')]
+    if kept==query:return url
+    return urlunsplit(parsed._replace(query=urlencode(kept)))
+
+
+@lru_cache(maxsize=128)
+def verified_original_image_url(url):
+    """Repair older mapping choices only after the unresized file is verified."""
+    original=original_image_url(url)
+    if original==url:return url
+    from crawler_rules import check_public_image
+    result=check_public_image(original,timeout=12,retries=1,max_bytes=64*1024*1024)
+    if result['status']!='accessible' or result.get('format') not in ('JPEG','PNG','WEBP'):
+        raise ValueError('원본 상세 이미지 확인 실패: '+original+' / '+', '.join(result.get('reasons',[])))
+    return original
+
+
 def registration_layout(markup):
     """Apply our own responsive layout after removing untrusted source styles."""
     soup = BeautifulSoup(str(markup or ''), 'html.parser')
