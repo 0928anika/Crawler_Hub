@@ -56,7 +56,7 @@
     "category": {
       "supported": true,
       "status": "conditional",
-      "reason": "공식 상세 breadcrumb의 /goods/category/ 링크."
+      "reason": "상품 페이지 스크립트의 공식 분류 fullCategory('아웃도어/레저>등산잡화>장갑'), 없으면 1~3차 category_name·분류 링크. 표시가 없는 상품은 빈칸(브랜드로 대체 안 함)."
     },
     "main_image": {
       "supported": true,
@@ -92,7 +92,7 @@
     ],
     "validation_note": "상품명과 og:url로 요청 품목번호 검증"
   },
-  "notes": "패션플러스 중 상세가 통짜 이미지인 상품용(크롭필요건). 조회·옵션·상세는 fashionplus_item 로직 재사용, 이미지 분할·OCR은 레드페이스 크롭 엔진 재사용. 2026-11-19 실조회 416083574(레드페이스 브리즈 마스크): 옵션 그레이·네이비·베이지(free), 상세 통짜 747x7955에서 배너·포인트·색상별 단독컷 3장(약 347px → 실제 흰 배경으로 500px 확장)·디테일 2장 분할 확인. 색상명(베이지(BE) 그레이(GR) 네이비(NA))은 여러 색이 겹친 단체컷 '아래'에 있어 개별 컷에 연결되지 않으므로 이 상품은 수동 매핑. LABEL_POSITION='below'.",
+  "notes": "패션플러스 중 상세가 통짜 이미지인 상품용(크롭필요건). 조회·옵션·상세는 fashionplus_item 로직 재사용, 이미지 분할·OCR은 레드페이스 크롭 엔진 재사용. 2026-11-19 실조회 416083574(레드페이스 브리즈 마스크): 옵션 그레이·네이비·베이지(free), 상세 통짜 747x7955에서 배너·포인트·색상별 단독컷 3장(약 347px → 실제 흰 배경으로 500px 확장)·디테일 2장 분할 확인. 색상명(베이지(BE) 그레이(GR) 네이비(NA))은 여러 색이 겹친 단체컷 '아래'에 있어 개별 컷에 연결되지 않으므로 이 상품은 수동 매핑. LABEL_POSITION='below'. 2026-11-20 실조회: 416083574 fullCategory '아웃도어/레저>등산잡화>장갑' 확인, 화면 분류 링크(.mm_breadcrumb)는 브랜드샵만 있어 기존 방식으로는 0건 → 스크립트 공식 분류로 카테고리 지원. 일부 상품(421013393 등)은 분류가 비어 있어 빈칸.",
   "interface": "portal_v1",
   "fields": {
     "product_code": {
@@ -141,7 +141,7 @@
       "label": "카테고리",
       "supported": true,
       "status": "conditional",
-      "reason": "공식 상세 breadcrumb의 /goods/category/ 링크."
+      "reason": "상품 페이지 스크립트의 공식 분류 fullCategory('아웃도어/레저>등산잡화>장갑'), 없으면 1~3차 category_name·분류 링크. 표시가 없는 상품은 빈칸(브랜드로 대체 안 함)."
     },
     "main_image": {
       "label": "대표이미지",
@@ -188,5 +188,5 @@
     "크롭 원본 이미지": null,
     "크롭 좌표": null
   },
-  "code_hash": "89e94c1c05b20287fd4284f7849eb546f995b68fd1d5937317ed1aff8d397649"
+  "code_hash": "668dcada30ad68ae3cc03ff9098c41e6367b469ae9195d8b7b3da7a46bd3e29c"
 }

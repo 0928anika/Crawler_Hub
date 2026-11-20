@@ -31,7 +31,7 @@ from PIL import Image, ImageChops, ImageOps, UnidentifiedImageError
 
 from detail_store import excel_detail
 
-REVISION = '2026-11-19-fashionplus-crop-1'
+REVISION = '2026-11-20-fashionplus-crop-2'
 BASE = 'https://www.fashionplus.co.kr'
 MAX_BYTES = 10_000_000
 MAX_IMAGE = 30_000_000
@@ -827,6 +827,26 @@ def fit_min(mask, box, size):
 
 
 
+FULL_CATEGORY=re.compile(r"fullCategory\s*:\s*'([^'\n]*)'")
+LEVEL_CATEGORY=re.compile(r"'([123])(?:st|nd|rd)_category_name'\s*:\s*'([^'\n]*)'")
+
+
+def read_category(doc):
+    """상품 분류: 페이지 스크립트의 공식 fullCategory('아웃도어/레저>등산잡화>장갑') → 1~3차 category_name → 분류 링크.
+    값이 없으면 None(브랜드를 분류로 대체하지 않음)."""
+    source=str(doc)
+    found=FULL_CATEGORY.search(source)
+    parts=[p.strip() for p in html.unescape(found[1]).split('>') if p.strip()] if found else []
+    if not parts:
+        levels={}
+        for level,name in LEVEL_CATEGORY.findall(source):
+            if name.strip() and level not in levels:levels[level]=html.unescape(name.strip())
+        parts=[levels[k] for k in ('1','2','3') if k in levels]
+    if not parts:
+        parts=[n.get_text(' ',strip=True) for n in doc.select('.mm_breadcrumb a[href*="/goods/category/"]')]
+    return ' > '.join(parts) or None
+
+
 def crawl(ctx):
     try:
         if not (ctx.enabled('main_image') or ctx.enabled('additional_images')):
@@ -860,7 +880,9 @@ def crawl(ctx):
             if record['regular_price'] is None:
                 ctx.log('희망소비자가(독립 정상가) 없음: 빈칸, 나머지 수집 계속', 'WARNING')
         if ctx.enabled('category'):
-            record['category'] = ' > '.join(n.get_text(' ', strip=True) for n in doc.select('.mm_breadcrumb a[href*="/goods/category/"]')) or None
+            record['category'] = read_category(doc)
+            if not record['category']:
+                ctx.log('공식 상품 분류(fullCategory) 없음: 카테고리 빈칸, 나머지 수집 계속', 'WARNING')
         gallery_urls = []
         for node in doc.select('.m_prodetail-head-thumbnail .btn_thumbnail [data-preload],.m_prodetail-head-thumbnail .btn_thumbnail img'):
             url = source_url(node)

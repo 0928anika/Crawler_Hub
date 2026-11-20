@@ -49,9 +49,9 @@
       "reason": "할인내역 독립 희망소비자가 행. 없으면 빈칸."
     },
     "category": {
-      "supported": false,
-      "status": "unsupported",
-      "reason": "실제 상품 분류 경로가 표시될 때만 수집. 브랜드를 카테고리로 대체하지 않음."
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 페이지 스크립트의 공식 분류 fullCategory('아웃도어/레저>등산잡화>장갑'), 없으면 1~3차 category_name·분류 링크. 표시가 없는 상품은 빈칸(브랜드로 대체 안 함)."
     },
     "main_image": {
       "supported": true,
@@ -86,10 +86,16 @@
     "invalid_examples": [],
     "validation_note": "상품명과 og:url로 요청 품목번호 검증."
   },
-  "notes": "브랜드 공통 품목번호 전용. 모든 등록 상품 사진 수집(스튜디오컷 필터 없음), 전체 사진 URL 추가 컬럼 보존. 단일 옵션 색상은 자동, 복수 색상은 수동 사진 매핑. 옵션명·재고·옵션ID·원문가격 보존. 판매가는 판매가 행, 정상가는 희망소비자가 행만 사용. 본문 원본 이미지·텍스트·표 보존, 알려진 공통 배송/행사 배너 제외. 매핑 후보는 등록 갤러리 우선, 상세 개별 사진 추가. 긴 통짜(가로세로 비율 2 초과), 명시된 사이즈표·고시·안내 이미지는 본문 후보에서 제외. 상세 본문에서는 원본 유지. 같은 사진의 리사이즈 URL 중복 제거. 상위품목ID는 입력한 상위 ID, 품번은 공식 상품번호/SKU 원문. 상품명에서 품번을 추정하지 않음. 상세 개별 상품컷을 갤러리와 함께 전체 매핑 후보로 보존.",
+  "notes": "브랜드 공통 품목번호 전용. 모든 등록 상품 사진 수집(스튜디오컷 필터 없음), 전체 사진 URL 추가 컬럼 보존. 단일 옵션 색상은 자동, 복수 색상은 수동 사진 매핑. 옵션명·재고·옵션ID·원문가격 보존. 판매가는 판매가 행, 정상가는 희망소비자가 행만 사용. 본문 원본 이미지·텍스트·표 보존, 알려진 공통 배송/행사 배너 제외. 매핑 후보는 등록 갤러리 우선, 상세 개별 사진 추가. 긴 통짜(가로세로 비율 2 초과), 명시된 사이즈표·고시·안내 이미지는 본문 후보에서 제외. 상세 본문에서는 원본 유지. 같은 사진의 리사이즈 URL 중복 제거. 상위품목ID는 입력한 상위 ID, 품번은 공식 상품번호/SKU 원문. 상품명에서 품번을 추정하지 않음. 상세 개별 상품컷을 갤러리와 함께 전체 매핑 후보로 보존. 2026-11-20 실조회: 416083574 fullCategory '아웃도어/레저>등산잡화>장갑' 확인, 화면 분류 링크(.mm_breadcrumb)는 브랜드샵만 있어 기존 방식으로는 0건 → 스크립트 공식 분류로 카테고리 지원. 일부 상품(421013393 등)은 분류가 비어 있어 빈칸.",
   "image_mode": "url",
   "interface": "portal_v1",
   "group_manual_pending": true,
+  "hybrid_mapping": true,
+  "mapping_image_order": "source",
+  "export_prefix_headers": [
+    "상위품목ID"
+  ],
+  "export_all_additional_images": true,
   "fields": {
     "product_code": {
       "label": "품번",
@@ -135,9 +141,9 @@
     },
     "category": {
       "label": "카테고리",
-      "supported": false,
-      "status": "unsupported",
-      "reason": "실제 상품 분류 경로가 표시될 때만 수집. 브랜드를 카테고리로 대체하지 않음."
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 페이지 스크립트의 공식 분류 fullCategory('아웃도어/레저>등산잡화>장갑'), 없으면 1~3차 category_name·분류 링크. 표시가 없는 상품은 빈칸(브랜드로 대체 안 함)."
     },
     "main_image": {
       "label": "대표이미지",
@@ -159,6 +165,7 @@
     }
   },
   "column_fields": {
+    "상위품목ID": null,
     "품번": "product_code",
     "상품명": "product_name",
     "색상": "color",
@@ -178,14 +185,7 @@
     "판매자 상품번호": null,
     "원본 옵션": null,
     "상품정보 원문": null,
-    "전체 상품사진": null,
-    "상위품목ID": null
+    "전체 상품사진": null
   },
-  "code_hash": "0d43177a0aa80430394b61205ab7304dde2f54ddfc9deddad16832b92f97b09b",
-  "hybrid_mapping": true,
-  "mapping_image_order": "source",
-  "export_prefix_headers": [
-    "상위품목ID"
-  ],
-  "export_all_additional_images": true
+  "code_hash": "b538b7a57c6fc086e62d34920ebf1d5f3cb2cce4232659a9748a8509d0a6242f"
 }
