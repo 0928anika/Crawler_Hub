@@ -239,4 +239,20 @@ class MoimolnTests(unittest.TestCase):
   with Image.open(FIX/'iv_main.jpg') as im:assert not c.content_signal(im)
   print('IMAGE PASS: JPEG/PNG/static WebP, small/oversize/corrupt/GIF/tall/collage rejection, measurement-role not requested, zero/one/multiple candidates, printed ivory garment')
 
+ def test_single_color_generic_option_photo_and_old_color_suffix(self):
+  doc=BeautifulSoup((FIX/'M264PMB11P.html').read_bytes(),'html.parser');ctx=Context('M264PMB11P',[]);requests=[]
+  self.assertEqual(c.gallery_stem(ctx,doc,c.SITE,'M264PMB11P','PV'),'M264PMB11P_DV')
+  def info(ctx,url,cache,gallery=False):requests.append(url);return ('JPEG',1080,1404,False,c.photo_asset(url),'')
+  with patch.object(c,'image_info',side_effect=info):main,extra=c.gallery(ctx,doc,c.SITE,'M264PMB11P','PV',{})
+  self.assertIn('/22.jpg',main);self.assertEqual(len(extra.split(',')),5)
+  self.assertTrue(any('_DV_01' in url for url in requests));self.assertEqual(len(requests),8)
+  self.assertEqual(c.palette(doc,'M264PMB11P',c.SITE)[0]['code'],'PV')
+ def test_single_color_fallback_does_not_assign_ambiguous_multicolor_gallery(self):
+  doc=BeautifulSoup((FIX/'M264PMB11P.html').read_bytes(),'html.parser')
+  anchor=doc.select_one('.option_box .opt_color a[href]');other=BeautifulSoup(str(anchor),'html.parser').a
+  other['href']=other['href'].replace('colorCd=PV','colorCd=BK');anchor.parent.append(other)
+  self.assertEqual(c.gallery_stem(Context('',[]),doc,c.SITE,'M264PMB11P','PV'),'M264PMB11P_PV')
+  with patch.object(c,'image_info',side_effect=AssertionError('ambiguous photos must not be requested')):
+   self.assertEqual(c.gallery(Context('',[]),doc,c.SITE,'M264PMB11P','PV',{}),('',''))
+
 if __name__=='__main__':unittest.main()
