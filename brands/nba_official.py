@@ -7,6 +7,7 @@ import html
 import io
 import json
 import re
+from concurrent.futures import ThreadPoolExecutor
 from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlencode, urljoin, urlsplit, quote
 from urllib.request import Request, build_opener
@@ -15,7 +16,7 @@ from PIL import Image, UnidentifiedImageError
 
 SITE = 'https://www.style24.com'
 BRAND_GROUP = '2141'
-CRAWLER_REVISION = '2026-11-19-nba-v1'
+CRAWLER_REVISION = '2026-11-19-nba-v2-size-speed'
 POLICY = {'checked': '2026-11-08', 'source': 'https://marketplace.coupang.com/mba/listing',
           'route': 'WING 웹/엑셀', 'min_side': 500, 'max_bytes': 10000000,
           'formats': ('JPEG', 'PNG', 'WEBP'), 'max_aspect': 1.8,
@@ -103,9 +104,35 @@ def content_signal(im):
     return ''
 
 
+def image_asset(url):
+    parsed=urlsplit(url)
+    if parsed.hostname=='image.style24.com' and parsed.path.startswith('/Upload/ProductImage/'):
+        return (parsed.hostname,parsed.path.split('/gio/',1)[0],parsed.query)
+    return url
+
+
+def prefetch_images(ctx,urls,cache):
+    pending={}
+    for url in urls:
+        if url in cache or ('asset',image_asset(url)) in cache:continue
+        pending.setdefault(image_asset(url),url)
+    if not pending:return
+    # Independent public image requests only; all rows are still emitted sequentially.
+    with ThreadPoolExecutor(max_workers=min(4,len(pending))) as pool:
+        futures=[pool.submit(image_info,ctx,url,cache) for url in pending.values()]
+        for future in futures:ctx.checkpoint();future.result()
+
+
+def verified_image_url(url,cache):
+    return cache.get(('asset',image_asset(url)),(None,url))[1]
+
+
 def image_info(ctx, url, cache):
     if url in cache:
         return cache[url]
+    asset=('asset',image_asset(url))
+    if asset in cache:
+        cache[url]=cache[asset][0];return cache[url]
     try:
         data, final, content_type = fetch(ctx, url, POLICY['max_bytes'])
         with Image.open(io.BytesIO(data)) as im:
@@ -121,6 +148,7 @@ def image_info(ctx, url, cache):
         ctx.log(f'이미지 제외: {url}: {e}', 'WARNING')
         info = None
     cache[url] = info
+    if info:cache[asset]=(info,url)
     return info
 
 
@@ -215,7 +243,9 @@ def image_urls(doc, selector, final):
 
 def gallery(ctx, doc, final, cache):
     accepted, hashes = [], set()
-    for url in image_urls(doc, 'img[data-thumbnail="goodsDetailImageWeb"]', final):
+    urls=image_urls(doc, 'img[data-thumbnail="goodsDetailImageWeb"]', final)
+    prefetch_images(ctx,urls,cache)
+    for url in urls:
         ctx.checkpoint()
         info = image_info(ctx, url, cache)
         if not info:
@@ -226,7 +256,7 @@ def gallery(ctx, doc, final, cache):
             continue
         if digest not in hashes:
             hashes.add(digest)
-            accepted.append(url)
+            accepted.append(verified_image_url(url,cache))
     if not accepted:
         ctx.log('통과한 갤러리 이미지 없음', 'WARNING')
         return '', ''
@@ -271,10 +301,12 @@ def notice(doc):
 def size_family(category):
     if re.search(r'우주복|바디수트|롬퍼', category):
         return None, '의류/언더'
-    if re.search(r'팬츠|바지|스커트|쇼츠|레깅스', category):
+    if re.search(r'팬츠|바지|스커트|쇼츠|레깅스|하의', category):
         return '하의', '의류/언더'
     if re.search(r'티셔츠|맨투맨|상의|점퍼|자켓|재킷|코트|후드|니트|셔츠|베스트|원피스', category):
         return '상의', '의류/언더'
+    if re.search(r'데님|일자|스트레이트|부츠컷|테이퍼드|청바지', category):
+        return '하의', '의류/언더'
     if re.search(r'신발|운동화|샌들|슬리퍼|스니커즈', category):
         return '신발', '신발'
     if re.search(r'모자|비니|캡', category):
@@ -291,6 +323,8 @@ def size_info(ctx, doc, final, base, color, cache):
     breadcrumb = structured(doc, 'BreadcrumbList')
     categories = ' > '.join(str(item.get('name') or '') for item in breadcrumb.get('itemListElement', [])[:-1])
     drawing_label, table_label = size_family(categories)
+    if drawing_label is None and table_label is None:
+        drawing_label,table_label=size_family(str(structured(doc,'ProductGroup').get('name') or ''))
     table_labels={table_label}
     if drawing_label in ('상의','하의'):
         gender='여성' if '여성' in categories else '남성' if '남성' in categories else None
@@ -365,10 +399,16 @@ def size_info(ctx, doc, final, base, color, cache):
 def detail(ctx, doc, final, base, color, cache):
     parts = []
     selector = '.pd-core__product-view img, .pd-core__detail img'
-    for url in image_urls(doc, selector, final):
+    urls=image_urls(doc, selector, final)
+    prefetch_images(ctx,urls,cache)
+    seen=set()
+    for url in urls:
         ctx.checkpoint()
         if not image_info(ctx, url, cache):
             raise CrawlError('상품 상세 이미지 공개 접근 실패: ' + url)
+        url=verified_image_url(url,cache)
+        if image_asset(url) in seen:continue
+        seen.add(image_asset(url))
         parts.append('<img src="' + html.escape(url,quote=True) + '">')
     parts.append(size_info(ctx, doc, final, base, color, cache))
     information = notice(doc)

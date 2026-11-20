@@ -40,4 +40,31 @@ class Tests(unittest.TestCase):
   with patch.object(c,'page',side_effect=lambda ctx,url:(self.doc,url)),patch.object(c,'identity',side_effect=lambda doc,url:(c.structured(doc,'ProductGroup'),'N264TS272P','LA' if 'colorCd=LA' in url else 'PI')),patch.object(c,'gallery',return_value=('https://image.style24.com/main.jpg',','.join(['https://image.style24.com/main.jpg']*5))),patch.object(c,'detail',return_value='<p>product</p>'):
    c.crawl(ctx)
   self.assertFalse(ctx.failures);self.assertEqual(len(ctx.rows),2);self.assertEqual({r['color_code'] for r in ctx.rows},{'LA','PI'});self.assertTrue(all(r['size']==expected for r in ctx.rows))
+ def test_denim_straight_category_keeps_womens_bottom_size_table(self):
+  doc=c.BeautifulSoup((ROOT/'tests/fixtures/nba/N254DP395P.html').read_bytes(),'html.parser');popup=c.BeautifulSoup((ROOT/'tests/fixtures/nba/N254DP395P-size.html').read_bytes(),'html.parser')
+  with patch.object(c,'page',return_value=(popup,c.SITE)),patch.object(c,'image_info',return_value=True):markup=c.size_info(Ctx(),doc,c.SITE,'N254DP395P','ID',{})
+  self.assertIn('여성 하의',markup);self.assertIn('허리둘레',markup);self.assertIn('<table',markup);self.assertNotIn('남성 하의',markup);self.assertNotIn('여성 상의',markup)
+  self.assertEqual(c.size_family('여성 > 데님 > 일자/스트레이트')[0],'하의');self.assertEqual(c.size_family('데님 자켓')[0],'상의')
+ def test_resized_image_cache_reuses_verified_url_and_bytes_check(self):
+  import io
+  from PIL import Image
+  output=io.BytesIO();Image.new('RGB',(800,1000),'white').save(output,format='JPEG');url='https://image.style24.com/Upload/ProductImage/a/item_ID_01.jpg/gio/thumbnail/3150';other=url.rsplit('/',1)[0]+'/1080';cache={}
+  with patch.object(c,'fetch',return_value=(output.getvalue(),url,'image/jpeg')) as request,patch.object(c,'content_signal',return_value=''):
+   c.image_info(Ctx(),url,cache);self.assertEqual(c.image_info(Ctx(),other,cache),cache[url])
+  request.assert_called_once();self.assertEqual(c.verified_image_url(other,cache),url);self.assertNotEqual(c.image_asset(other),c.image_asset(other.replace('_ID_','_IV_')))
+ def test_prefetch_is_bounded_to_four_unique_assets(self):
+  import threading
+  barrier=threading.Barrier(4);lock=threading.Lock();state={'active':0,'max':0}
+  def load(ctx,url,cache):
+   with lock:state['active']+=1;state['max']=max(state['max'],state['active'])
+   try:barrier.wait(timeout=5);return True
+   finally:
+    with lock:state['active']-=1
+  urls=['https://image.style24.com/Upload/ProductImage/photo'+str(i)+'.jpg' for i in range(8)]
+  with patch.object(c,'image_info',side_effect=load) as images:c.prefetch_images(Ctx(),urls+[urls[0]+'/gio/thumbnail/1080'],{})
+  self.assertEqual(images.call_count,8);self.assertEqual(state['max'],4)
+ def test_unselected_image_work_never_prefetches(self):
+  ctx=Ctx();ctx.enabled=lambda key:key=='size'
+  with patch.object(c,'page',side_effect=lambda ctx,url:(self.doc,url)),patch.object(c,'identity',side_effect=lambda doc,url:(c.structured(doc,'ProductGroup'),'N264TS272P','LA' if 'colorCd=LA' in url else 'PI')),patch.object(c,'prefetch_images',side_effect=AssertionError('images disabled')):c.crawl(ctx)
+  self.assertTrue(ctx.rows);self.assertFalse(ctx.failures)
 if __name__=='__main__':unittest.main()
