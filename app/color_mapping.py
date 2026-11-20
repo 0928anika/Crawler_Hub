@@ -39,7 +39,7 @@ def automatic_items(job):
 
 def successful_items(job):
     completed={str(q['id']) for q in job.queue if q['status']=='SUCCESS'}
-    return [item for item in job.items if str(item.get('task_id')) in completed]
+    return kept_items(job,[item for item in job.items if str(item.get('task_id')) in completed])
 
 
 def source_groups(job):
@@ -117,6 +117,11 @@ def read_state(job):
     except (ValueError,OSError):raise ValueError('색상 매핑 저장 파일을 읽을 수 없습니다. 파일을 확인하세요.')
 
 
+def kept_items(job,items):
+    deleted=read_state(job).get('deleted_groups',{})
+    return [item for item in items if key(str(item.get('code','')).strip().upper()) not in deleted]
+
+
 def snapshot(job, *, groups=None, state=None):
     if not is_manual(job):raise ValueError('색상 자동 매핑 작업에는 수동 매핑이 필요하지 않습니다.')
     groups=source_groups(job) if groups is None else groups
@@ -158,11 +163,11 @@ def snapshot(job, *, groups=None, state=None):
             group['complete']=group['complete'] and ready
             total+=1;done+=int(ready)
         total+=len(valid_colors);done+=len(confirmed)
-    finalized=bool(state.get('finalized') and state.get('fingerprint')==fingerprint and groups and all(g['complete'] for g in groups))
+    finalized=bool(state.get('finalized') and state.get('fingerprint')==fingerprint and (groups or state.get('deleted_groups')) and all(g['complete'] for g in groups))
     if is_hybrid(job) and not groups and automatic_items(job):finalized=True
     excluded=[dict(code=q['code'],status=q['status'],error=q.get('error','')) for q in job.queue if q['status']!='SUCCESS']
     return dict(revision=state.get('revision',0),groups=groups,total_colors=total,saved_colors=done,excluded_tasks=excluded,image_mode=job.brand.get('image_mode','url'),
-                finalized=finalized,fingerprint=fingerprint,am_import=state.get('am_requests'),unassigned=sum(not i['assigned_to'] and i['id'] not in (g.get('detail') or {}).get('selected',[]) for g in groups for i in g['images']))
+                deleted_groups=list(state.get('deleted_groups',{}).values()),finalized=finalized,fingerprint=fingerprint,am_import=state.get('am_requests'),unassigned=sum(not i['assigned_to'] and i['id'] not in (g.get('detail') or {}).get('selected',[]) for g in groups for i in g['images']))
 
 
 def initial_saved(group):
@@ -221,7 +226,9 @@ def edit_options(job,data):
         saved=state.setdefault('groups',{}).setdefault(group['id'],initial_saved(group))
         action=data.get('action');active=None;transfers={}
         if manual_detail(job) and data.get('color_id')==DETAIL_OPTION_ID:raise ValueError('상세페이지 옵션은 삭제하거나 변경할 수 없습니다.')
-        if action=='add':
+        if action=='delete-product':
+            state.setdefault('deleted_groups',{})[group['id']]=dict(id=group['id'],code=group['code'],name=group['name'])
+        elif action=='add':
             name=data.get('color_name','');code=data.get('color_code','')
             if not isinstance(name,str) or not isinstance(code,str) or max(len(name),len(code))>80:raise ValueError('색상명·코드는 각각 80자 이하로 입력하세요.')
             color=normalize_palette([dict(color_name=name,color_code=code)])[0]
@@ -423,7 +430,7 @@ def finalize(job,data):
     with job.save_lock,job.data_lock:
         view=snapshot(job)
         if data.get('expected_revision')!=view['revision']:raise ValueError('매핑이 변경되었습니다. 다시 확인하세요.')
-        if not view['groups']:raise ValueError('매핑할 수집 성공 품번이 없습니다. 실패·미완료 품번은 결과에서 제외됩니다.')
+        if not view['groups'] and not view.get('deleted_groups'):raise ValueError('매핑할 수집 성공 품번이 없습니다. 실패·미완료 품번은 결과에서 제외됩니다.')
         if not all(g['complete'] for g in view['groups']):raise ValueError('상세페이지와 색상 선택을 모두 저장하세요. 사진을 최소 1장 선택하고 사용하지 않는 색상은 삭제하세요.' if manual_detail(job) else '수집에 성공한 품번의 색상 선택을 모두 저장하세요. 모든 색상에 사진을 최소 1장 선택하세요. 사용하지 않는 색상은 옵션을 삭제하세요.')
         final_items(job,view)  # Validate every row before changing final status.
         previous=read_state(job);state=dict(previous,finalized=True,fingerprint=view['fingerprint'],revision=view['revision']+1)
@@ -445,7 +452,7 @@ def visible_items(job):
             rows=automatic_items(job)+rows
             rows.sort(key=lambda row:int(row['id']))
         return rows
-    return job.items
+    return kept_items(job,job.items)
 
 
 def grouped_pending_items(job):
@@ -482,7 +489,7 @@ def export_sheet(job):
     headers=['품번','상품명','색상 후보','상품 링크','이미지파일' if local_images.enabled(job) else '이미지URL','매핑상태']
     optional=[h for h in result_headers(job) if field_for(h) in ('size','price','regular_price','category','detail_page') or field_for(h) is None]
     headers+=optional;rows=[headers]
-    for item in job.items:
+    for item in kept_items(job,job.items):
         info=item.get('unmapped')
         if info:rows.append([item['code'],item['name'],','.join(c['label'] for c in info['colors']),item.get('normalized',{}).get('product_url') or item.get('source_url',''),info['asset_path'].rsplit('/',1)[-1] if info.get('asset_path') else info['image_url'],'색상 매핑 대기']+[item['raw'].get(h) for h in optional])
     return rows
