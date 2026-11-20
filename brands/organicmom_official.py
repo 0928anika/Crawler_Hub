@@ -15,7 +15,7 @@ from crawler_rules import check_public_image
 
 SITE='https://organicmommall.co.kr'
 HOSTS=('organicmommall.co.kr','www.organicmommall.co.kr')
-REVISION='2026-11-20-organicmom-v2'
+REVISION='2026-11-20-organicmom-v3'
 IMAGE_HOSTS=('organicmommall.co.kr','www.organicmommall.co.kr','cafe24.poxo.com','cafe24img.poxo.com')
 
 class CrawlError(ValueError):pass
@@ -54,7 +54,13 @@ def search(ctx,code):
         if len(seen)>=30:raise CrawlError('검색 30페이지 한도 초과')
         seen.add(url);doc=soup(fetch(ctx,url))
         scope=doc.select_one('.xans-search-result')
-        if scope is None:raise CrawlError('공식 검색 결과 영역 없음')
+        if scope is None:
+            summary=doc.select_one('.searchResult')
+            empty=doc.select_one('.noData')
+            if (summary and empty and re.search(r'상품\s*검색\s*결과\s*0\b',summary.get_text(' ',strip=True))
+                    and '검색결과가 없습니다' in empty.get_text(' ',strip=True)):
+                continue
+            raise CrawlError('공식 검색 화면 확인 실패: 접근/페이지 구조 오류 (검색 0건 아님)')
         for node in scope.select('.prdList .name a[href], .name a[href]'):
             link=urljoin(SITE,node['href']);p=urlsplit(link)
             if p.hostname in HOSTS and p.path.startswith('/product/') and link not in links:links.append(link)
@@ -77,6 +83,13 @@ def identity(doc,code):
     name=re.sub(r'\s+',' ',name).strip(' -_/')
     if not name:raise CrawlError('정리한 상품명 없음')
     return name,raw
+
+
+def bundle_page(source,doc):
+    # Cafe24 coordinated SET pages have child-product options rather than the
+    # standalone item's stock. Do not read or merge those child options.
+    return bool(doc.select_one('.xans-product-setproduct') and
+                re.search(r'\bvar\s+set_product_data\s*=',source))
 
 
 def stock_rows(source):
@@ -303,11 +316,17 @@ def official_image_color(ctx,doc,link,code,cache):
 def _crawl(ctx):
     code=str(ctx.product_code).strip().upper()
     if not code:raise CrawlError('품번이 비어 있습니다')
-    ctx.allow_automatic_results=True;matched=0
+    ctx.allow_automatic_results=True;matched=0;bundles=0
     ctx.stage('오가닉맘 공식 품번 검색: '+code)
-    for link in search(ctx,code):
+    links=search(ctx,code)
+    if not links:raise CrawlError('공식몰 검색 0건: '+code+' / 정상 검색 화면에 결과 없음')
+    for link in links:
         ctx.checkpoint();source=fetch(ctx,link);doc=soup(source);info=identity(doc,code)
         if info is None:continue
+        if bundle_page(source,doc):
+            bundles+=1
+            ctx.log('코디 SET 상품 제외: 단품을 계속 확인합니다 / '+link,'INFO')
+            continue
         matched+=1;cache={}
         needs_color=any(not any(n in ('색상','컬러') for n in row.get('option_name_original',[])) for row in stock_rows(source))
         fallback=official_image_color(ctx,doc,link,code,cache) if needs_color else ''
@@ -334,7 +353,9 @@ def _crawl(ctx):
                 prices={p for c in colors for p in c['prices']};record['price']=next(iter(prices)) if len(prices)==1 else None
             for url in photos:ctx.emit_unmapped(dict(record),choices,url,shared_detail_html=record.get('detail_page',''))
         ctx.log(code+': '+str(len(colors))+'색상, '+str(len(photos))+'사진 수집 완료','SUCCESS')
-    if not matched:raise CrawlError('공홈 검색 후 정확한 상품코드 일치 없음: '+code)
+    if not matched:
+        if bundles:raise CrawlError('SET 상품만 검색됨: '+code+' / 정확한 품번의 단품은 확인되지 않음')
+        raise CrawlError('검색 결과는 있으나 정확한 상품코드 일치 없음: '+code)
 
 def crawl(ctx):
     ctx.log('오가닉맘 공식몰 '+REVISION,'INFO')

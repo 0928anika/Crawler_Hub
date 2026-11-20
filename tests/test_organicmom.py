@@ -47,4 +47,27 @@ class Tests(unittest.TestCase):
   photo=io.BytesIO();Image.new('RGB',(1000,3000),'white').save(photo,'JPEG')
   with patch.object(c,'detail_urls',return_value=['https://kkm2524.diskn.com/MKFP9B24.jpg']),patch.object(c,'checked',return_value={'data':photo.getvalue()}),patch.object(c,'ocr_many',return_value=['PRODUCT INFO 색상 핑크 소재 면']) as ocr:
    self.assertEqual(c.official_image_color(None,None,c.SITE,'MKFP9B24',{}),'핑크');ocr.assert_called_once()
+ def test_real_zero_result_is_separate_from_unrecognized_page(self):
+  empty=(ROOT/'tests/fixtures/organicmom/MJFP9K09-empty.html').read_text(encoding='utf-8')
+  ctx=type('Context',(),{'log':lambda *a:None})()
+  with patch.object(c,'fetch',return_value=empty):self.assertEqual(c.search(ctx,'MJFP9K09'),[])
+  with patch.object(c,'fetch',return_value='<html>접근 제한</html>'):
+   with self.assertRaisesRegex(c.CrawlError,'접근/페이지 구조'):c.search(ctx,'MJFP9K09')
+ def test_coordinated_set_does_not_hide_standalone_stock(self):
+  bundle=(ROOT/'tests/fixtures/organicmom/MKFTTS05-set.html').read_text(encoding='utf-8')
+  single=(ROOT/'tests/fixtures/organicmom/MKFTTS05-single.html').read_text(encoding='utf-8')
+  self.assertTrue(c.bundle_page(bundle,c.soup(bundle)));self.assertFalse(c.bundle_page(single,c.soup(single)))
+  self.assertEqual(len(c.stock_rows(single)),4)
+  meta=json.loads((ROOT/'brands/organicmom_official.json').read_text(encoding='utf-8'));events=[]
+  with tempfile.TemporaryDirectory() as folder:
+   ctx=CrawlContext('unused',Path(folder)/'out.xlsx',0,['size','price'],meta['output_headers'],lambda:None,lambda k,**d:events.append((k,d)),input_item={'품번':'MKFTTS05'},mapping_mode='manual')
+   with patch.object(c,'search',return_value=[c.SITE+'/product/detail.html?product_no=20658',c.SITE+'/product/detail.html?product_no=20458']),patch.object(c,'fetch',side_effect=[bundle,single]),patch.object(c,'official_image_color',return_value='민트') as ocr:c.crawl(ctx);ctx.finish()
+   ocr.assert_called_once()
+  self.assertFalse(any(k=='item_failure' for k,d in events))
+  row=next(d['row'] for k,d in events if k=='row' and not d.get('header'));r=dict(zip(meta['output_headers'],row))
+  self.assertEqual(r['상품명'],'로잔느긴소티');self.assertEqual(r['판매가'],27000)
+ def test_zero_results_fail_with_zero_result_reason(self):
+  ctx=type('Context',(),{'product_code':'MJFP9K09','stage':lambda *a:None})()
+  with patch.object(c,'search',return_value=[]):
+   with self.assertRaisesRegex(c.CrawlError,'공식몰 검색 0건'):c._crawl(ctx)
 if __name__=='__main__':unittest.main()
