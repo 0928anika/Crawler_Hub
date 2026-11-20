@@ -104,12 +104,13 @@ class FashionplusCrop(unittest.TestCase):
         rows, failures, error, calls = self.run_crop(['main_image', 'additional_images', 'size', 'price', 'regular_price', 'category', 'detail_page'])
         self.assertIsNone(error, failures)
         crops = [json.loads(r['크롭 좌표']) for r in rows if r['크롭 좌표']]
-        self.assertEqual(len(rows), 5)            # 갤러리 대표 1 + 단독컷 3 + 디테일 1 (단체컷·글자 제외)
-        self.assertEqual(len(crops), 4)
+        self.assertEqual(len(rows), 6)            # 갤러리 대표 1 + 단독컷 3 + 디테일 1 + 단체컷 1(실제 흰 배경으로 넓혀 후보, 글자 제외)
+        self.assertEqual(len(crops), 5)
+        self.assertTrue(all(not r.get('흰 여백 보충') for r in rows))
         for l, t, r, b in crops:
             self.assertGreaterEqual(min(r - l, b - t), 500)
             self.assertLessEqual(max(r - l, b - t) / min(r - l, b - t), 1.8)
-            self.assertFalse(t < 3800 < b)          # 색상명 줄·단체컷 영역 미포함
+            self.assertLessEqual(b, 3820) if t < 3820 else None   # 색상명 글자(3820~) 미포함
         r = rows[0]
         self.assertEqual((r['품번'], r['상품명'], r['사이즈'], r['판매가'], r['정상가'], r['카테고리']),
                          ('REEGMKXBE1016_IC', '브리즈 마스크', 'free', 21750, 29000, '여성 > 잡화'))
@@ -130,8 +131,50 @@ class FashionplusCrop(unittest.TestCase):
         photos, labels = module.segment(img)
         self.assertEqual(photos[0][1][0], 0)
         self.assertIsNone(photos[1][1])
+        self.assertIsNone(photos[0][2])
         palette = [{'color_name': '그레이', 'color_code': ''}, {'color_name': '네이비', 'color_code': ''}]
         self.assertEqual(module.match_color('네이비(NA)', palette)[0]['color_name'], '네이비')
+
+    def test_flat_shoes_get_white_padding_only_when_real_background_is_not_enough(self):
+        # 288624429(공용 인디고워킹화 RESGLCX241041_IC) 실측 배치: 796px 폭, 신발 442x294, 바로 아래 색상명, 위는 그림
+        module = load()
+        img = Image.new('RGB', (796, 2900), 'white')
+        d = ImageDraw.Draw(img)
+        d.rectangle((0, 376, 795, 883), fill=(225, 30, 40))                 # 위쪽 그림·띠
+        for top, color, label in ((1007, (235, 180, 190), (342, 1331, 450, 1365)),
+                                  (1521, (60, 70, 100), (317, 1854, 478, 1889)),
+                                  (2073, (215, 205, 185), (321, 2406, 473, 2442))):
+            d.rectangle((173, top, 615, top + 294), fill=color)              # 핑크·네이비·베이지 신발
+            d.rectangle(label, fill=(30, 30, 30))                            # 핑크(P)·네이비(NA)·베이지(BE)
+        photos, labels = module.segment(img)
+        shoes = [p for p in photos if p[0][1] > 885]
+        self.assertIsNone([p for p in photos if p[0][1] < 885][0][1])        # 위쪽 그림은 아래 '핑크' 글자를 받지 않음
+        self.assertEqual(len(shoes), 3)
+        for (l, t, r, b), key, pad in shoes:
+            extra = pad[1] if pad else (0, 0, 0, 0)
+            self.assertGreaterEqual(min(r - l + extra[0] + extra[2], b - t + extra[1] + extra[3]), 500)
+            self.assertIsNotNone(key)                                        # 아래 색상명 연결 유지
+        pink, navy, beige = shoes
+        self.assertIsNotNone(pink[2])                                        # 실제 흰 배경 448px뿐 → 흰 여백 보충
+        self.assertIsNotNone(navy[2])
+        self.assertIsNone(beige[2])                                          # 517px 실제 배경으로 충분 → 보충 없음
+        self.assertEqual(pink[2][0], (255, 255, 255))
+        self.assertLessEqual(max(pink[2][1]), 200)
+        self.assertGreater(pink[0][1], 883)                                  # 위쪽 그림은 포함하지 않음
+        self.assertLess(pink[0][3], 1331)                                    # 아래 색상명 글자도 포함하지 않음
+        self.assertLess(navy[0][3], 1854)
+        self.assertGreater(navy[0][1], 1365)
+
+    def test_padding_never_added_on_non_white_background(self):
+        module = load()
+        gray = Image.new('RGB', (796, 1600), (200, 200, 200))                # 회색 배경: 보충 불가
+        d = ImageDraw.Draw(gray)
+        d.rectangle((0, 300, 795, 500), fill=(20, 20, 20))
+        d.rectangle((173, 560, 615, 854), fill=(60, 70, 100))
+        d.rectangle((300, 880, 480, 910), fill=(20, 20, 20))
+        photos, _ = module.segment(gray)
+        self.assertFalse(any(p[2] for p in photos))
+        self.assertIsNone(module.solid_background(gray))
 
     def test_image_fields_required_and_no_requests(self):
         rows, failures, error, calls = self.run_crop(['price'])

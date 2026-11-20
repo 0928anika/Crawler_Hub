@@ -31,12 +31,18 @@ from PIL import Image, ImageChops, ImageOps, UnidentifiedImageError
 
 from detail_store import excel_detail
 
-REVISION = '2026-11-20-fashionplus-crop-2'
+REVISION = '2026-11-20-fashionplus-crop-3'
 BASE = 'https://www.fashionplus.co.kr'
 MAX_BYTES = 10_000_000
 MAX_IMAGE = 30_000_000
 MAX_OCR_TILES = 40
-LABEL_POSITION = 'below'
+# 색상명 위치: 사진 위·아래 중 가장 가까운 글자(2026-11-20, 레드페이스와 같은 규칙). 한 색상명은 가장 가까운 사진 하나에만.
+LABEL_POSITION = 'nearest'
+# 흰 여백 보충(2026-11-20 사용자 승인, 이 브랜드만): 배경이 순백색인 상세 통이미지에서 500px 미만 컷은
+# ① 주변 실제 흰 배경으로 먼저 넓히고 ② 그래도 모자란 만큼만 같은 흰색으로 채운다. 상품 화소는 그대로.
+# 채우는 쪽 가장자리가 실제 배경일 때만, 한 방향 보충은 최종 길이의 40% 이하.
+PAD_MIN_WHITE = 245
+PAD_MAX_SHARE = .4
 
 SIZE_TOKEN=r'(?:FREE|FR|F|ONE\s*SIZE|XS|S|M|L|XL|XXL|XXXL|[2-6]XL|\d{2,3}[A-H]|\d{2,3}(?:MM|CM)?|[CJM]\d+(?:W\d+)?)'
 
@@ -489,6 +495,100 @@ def split_seams(mask, box, s, depth=0):
     return [box]
 
 
+def solid_background(image):
+    """맨 위 줄이 한 가지 밝은 색이면 그 색, 아니면 None(흰 여백 보충 불가)."""
+    row = image.crop((0, 0, image.width, 1)).resize((32, 1))
+    raw = row.tobytes()
+    pixels = [tuple(raw[i:i + 3]) for i in range(0, len(raw), 3)]
+    if max(max(p[i] for p in pixels) - min(p[i] for p in pixels) for i in range(3)) > 8:
+        return None
+    color = tuple(sum(p[i] for p in pixels) // len(pixels) for i in range(3))
+    return color if min(color) >= PAD_MIN_WHITE else None
+
+
+def clean_reach(mask, box, side, limit, margin):
+    """box의 한 변 바깥으로 내용 없이(실제 배경) 넓힐 수 있는 길이(최대 limit). 글자·이웃 사진 앞 margin은 남긴다."""
+    l, t, r, b = box
+    width, height = mask.size
+    if limit <= 0:
+        return 0
+    if side == 'top':
+        strip = (l, max(0, t - limit - margin), r, t)
+    elif side == 'bottom':
+        strip = (l, b, r, min(height, b + limit + margin))
+    elif side == 'left':
+        strip = (max(0, l - limit - margin), t, l, b)
+    else:
+        strip = (r, t, min(width, r + limit + margin), b)
+    if strip[2] <= strip[0] or strip[3] <= strip[1]:
+        return 0
+    inner = mask.crop(strip).getbbox()
+    span = (strip[3] - strip[1]) if side in ('top', 'bottom') else (strip[2] - strip[0])
+    if inner is None:
+        return min(limit, span)
+    if side == 'top':
+        free = span - inner[3]
+    elif side == 'bottom':
+        free = inner[1]
+    elif side == 'left':
+        free = span - inner[2]
+    else:
+        free = inner[0]
+    return max(0, min(limit, free - margin))
+
+
+def pad_fit(mask, box, size, s):
+    """fit_min이 실패한 컷: 실제 배경으로 최대한 넓힌 뒤 모자란 만큼 흰 여백 보충 계획.
+    반환 (실제 잘라낼 box, (왼, 위, 오른, 아래) 보충 px) 또는 None."""
+    width, height = size
+    l, t, r, b = box
+    margin = max(4, int(6 * s))
+    pads = [0, 0, 0, 0]
+    for axis in ('h', 'v'):
+        span = (r - l) if axis == 'h' else (b - t)
+        need = 500 - span
+        if need <= 0:
+            continue
+        lo, hi = ('left', 'right') if axis == 'h' else ('top', 'bottom')
+        cur = (l, t, r, b)
+        reach_lo, reach_hi = clean_reach(mask, cur, lo, need, margin), clean_reach(mask, cur, hi, need, margin)
+        ext_lo = min(reach_lo, need // 2)
+        ext_hi = min(reach_hi, need - ext_lo)
+        ext_lo = min(reach_lo, need - ext_hi)
+        rest = need - ext_lo - ext_hi
+        if axis == 'h':
+            l, r = l - ext_lo, r + ext_hi
+        else:
+            t, b = t - ext_lo, b + ext_hi
+        if rest:
+            first, second = rest // 2, rest - rest // 2
+            if max(first, second) > 500 * PAD_MAX_SHARE:
+                return None
+            if axis == 'h':
+                pads[0], pads[2] = first, second
+            else:
+                pads[1], pads[3] = first, second
+    real = (l, t, r, b)
+    edges = []
+    if pads[0]:
+        edges.append((l, t, min(r, l + 3), b))
+    if pads[2]:
+        edges.append((max(l, r - 3), t, r, b))
+    if pads[1]:
+        edges.append((l, t, r, min(b, t + 3)))
+    if pads[3]:
+        edges.append((l, max(t, b - 3), r, b))
+    for edge in edges:  # 보충하는 쪽 가장자리가 사진·글자에 닿아 있으면(배경이 아니면) 이음매가 생기므로 불가
+        if mask.crop(edge).getbbox() is not None:
+            return None
+    if not white_extension(mask, tuple(box), real):
+        return None
+    final_w, final_h = r - l + pads[0] + pads[2], b - t + pads[1] + pads[3]
+    if min(final_w, final_h) < 500 or max(final_w, final_h) / min(final_w, final_h) > 1.8:
+        return None
+    return real, tuple(pads)
+
+
 def white_extension(mask, inner, outer):
     """outer로 넓힌 부분이 실제 배경(내용 2% 미만)인지. 이웃 사진을 끌어오지 않기 위한 검사."""
     total = sum(row_counts(mask, outer))
@@ -537,6 +637,7 @@ def segment(image):
     반환: (photos=[(box, (띠번호, 단어번호)|None)], labels=[(띠 box, [단어 box...])])"""
     width, height = image.size
     s = width / 1000
+    solid = solid_background(image)
     bg = Image.new('RGB', image.size, background(image))
     mask = ImageChops.difference(image, bg).convert('L').point(lambda p: 255 if p > 24 else 0)
     bg.close()
@@ -573,26 +674,40 @@ def segment(image):
                     found = True
             if not found:
                 events.append(('reset', None))  # 사진이 아닌 큰 영역(실측표 등)에서 색상명의 범위를 끊는다
-        # 색상명 → 사진 연결: 'above'는 글자 아래~다음 글자(또는 사진 아닌 큰 영역) 전까지, 'below'는 반대 방향
-        photos, current = [], None
-        order = events if LABEL_POSITION == 'above' else list(reversed(events))
-        for kind, value in order:
-            if kind == 'label':
-                current = value
-            elif kind == 'reset':
-                current = None
-            else:
-                photos.append((value, current))
-        if LABEL_POSITION != 'above':
-            photos.reverse()
+        # 색상명 → 사진 연결: 사진마다 위·아래로 가장 가까운 글자 띠(사진 아닌 큰 영역은 넘지 않음)
+        photos = []
+        for i, (kind, value) in enumerate(events):
+            if kind != 'photo':
+                continue
+            near = []
+            for step in (-1, 1):
+                j = i + step
+                while 0 <= j < len(events) and events[j][0] != 'reset':
+                    if events[j][0] == 'label':
+                        band = labels[events[j][1]][0]
+                        near.append((max(0, value[1] - band[3] if step < 0 else band[1] - value[3]), step, events[j][1]))
+                        break
+                    j += step
+            near.sort()
+            photos.append((value, near[0][2] if near else None, near[0][0] if near else None))
         out = []
-        for box, label in photos:
+        for box, label, gap in photos:
             fitted = fit_ratio(mask, box, image.size)
             if fitted is None:
                 continue
+            pads = None
             if min(fitted[2] - fitted[0], fitted[3] - fitted[1]) < 500:
-                fitted = fit_min(mask, fitted, image.size)  # 실제 배경으로만 넓힘(확대 없음)
-                if fitted is None or max(fitted[2] - fitted[0], fitted[3] - fitted[1]) / min(fitted[2] - fitted[0], fitted[3] - fitted[1]) > 1.8:
+                ratio_box = fitted
+                fitted = fit_min(mask, ratio_box, image.size)  # 실제 배경으로만 넓힘(확대 없음)
+                if fitted is not None and max(fitted[2] - fitted[0], fitted[3] - fitted[1]) / min(fitted[2] - fitted[0], fitted[3] - fitted[1]) > 1.8:
+                    fitted = None
+                if fitted is None and solid is not None:
+                    plan = pad_fit(mask, ratio_box, image.size, s)  # 실제 흰 배경 + 모자란 만큼 같은 흰색 보충
+                    if plan is not None:
+                        fitted, pads = plan
+                        if not any(pads):
+                            pads = None  # 실제 흰 배경만으로 충분(한쪽으로 치우쳐 넓힘)
+                if fitted is None:
                     continue
             key = None
             if label is not None:
@@ -604,8 +719,16 @@ def segment(image):
                     best = max(range(len(words)), key=lambda k: overlaps[k])
                     if overlaps[best] > 0 and sorted(overlaps)[-2:][0] < overlaps[best]:
                         key = (label, best)
-            out.append((tuple(int(v) for v in fitted), key))
-        return out, labels
+            out.append([tuple(int(v) for v in fitted), key, pads and (solid, pads), gap])
+        # 한 색상명(단어)은 가장 가까운 사진 하나에만: 위쪽 그림·배너가 아래 사진의 색상명을 같이 받지 않게
+        best = {}
+        for entry in out:
+            if entry[1] is not None and (entry[1] not in best or entry[3] < best[entry[1]][3]):
+                best[entry[1]] = entry
+        for entry in out:
+            if entry[1] is not None and best[entry[1]] is not entry:
+                entry[1] = None
+        return [(box, key, pad) for box, key, pad, _ in out], labels
     finally:
         mask.close()
 
@@ -710,9 +833,20 @@ def match_color(recognized, colors):
     return None, ('유사 색상 여러 개' if near else '')
 
 
-def save_cut(ctx, image, box, seen):
+def save_cut(ctx, image, box, seen, pad=None):
     try:
-        path = ctx.save_image(image, crop=box)
+        if pad:
+            color, (pl, pt, pr, pb) = pad
+            piece = image.crop(tuple(box))
+            canvas = Image.new('RGB', (piece.width + pl + pr, piece.height + pt + pb), color)
+            canvas.paste(piece, (pl, pt))
+            piece.close()
+            try:
+                path = ctx.save_image(canvas)
+            finally:
+                canvas.close()
+        else:
+            path = ctx.save_image(image, crop=box)
     except ValueError as exc:
         ctx.log('저장 규격 미달로 제외: ' + str(exc), 'INFO')
         return None
@@ -729,26 +863,27 @@ def cuts_from(ctx, url, image, seen, tiles=None, split=False):
     w, h = image.size
     whole_ok = min(w, h) >= 500 and max(w, h) / min(w, h) <= 1.8
     photos, labels = (segment(image) if split else ([], []))
+    photos = [(box, key, pad) for box, key, pad in photos]
     if len(photos) < 2:
         if whole_ok:
             path = save_cut(ctx, image, None, seen)
-            return [(path, None, None)] if path else []
+            return [(path, None, None, None)] if path else []
         if split and not photos:
             ctx.log('여백 경계로 안전하게 나눌 수 있는 개별 컷이 없어 제외: ' + url, 'INFO')
         if not photos:
             return []
     keys = {}
     if tiles is not None:
-        for key in sorted({key for _, key in photos if key is not None}):
+        for key in sorted({key for _, key, _ in photos if key is not None}):
             keys[key] = len(tiles)
             label, word = key
             tiles.append((image.crop(tuple(labels[label][1][word])), url, labels[label][1][word]))
     out = []
-    for box, key in photos:
+    for box, key, pad in photos:
         ctx.checkpoint()
-        path = save_cut(ctx, image, list(box), seen)
+        path = save_cut(ctx, image, list(box), seen, pad)
         if path:
-            out.append((path, list(box), keys.get(key)))
+            out.append((path, list(box), keys.get(key), pad[1] if pad else None))
     return out
 
 
@@ -901,8 +1036,8 @@ def crawl(ctx):
             if image is None:
                 continue
             split = url in detail_urls and url not in gallery_urls[:1]
-            for path, box, key in cuts_from(ctx, url, image, seen, tiles, split=split):
-                pending.append([path, None, '', url, box, key])
+            for path, box, key, pads in cuts_from(ctx, url, image, seen, tiles, split=split):
+                pending.append([path, None, '', url, box, key, pads])
             release(img_cache, image)
         if not pending:
             raise CollectionError('규격(양변 500px·비율 1.8 이하)을 통과한 개별 상품 컷이 없습니다.')
@@ -928,11 +1063,12 @@ def crawl(ctx):
             if overflow:
                 raise CollectionError('상세 HTML이 엑셀 한 셀 한도를 넘습니다(임의로 자르지 않음)')
             record['detail_page'] = compact
-        for path, mapped, evidence, source, box, _ in pending:
+        for path, mapped, evidence, source, box, _, pads in pending:
             ctx.checkpoint()
             row = dict(record)
             row['크롭 원본 이미지'] = source
             row['크롭 좌표'] = json.dumps(box) if box else ''
+            row['흰 여백 보충'] = ('왼 %d·위 %d·오른 %d·아래 %dpx (원본 배경 흰색, 상품 화소 그대로)' % pads) if pads else ''
             row['OCR 근거'] = evidence
             ctx.emit_local_image(row, palette, path, mapped_color=mapped, mapping_evidence=evidence,
                                  shared_detail_html=record.get('detail_page', ''))
