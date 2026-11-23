@@ -99,23 +99,27 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self,*_):pass
     def send(self,body,mime='application/json',status=200,attachment=None):
         if not isinstance(body,bytes):body=json.dumps(body,ensure_ascii=False,default=str).encode('utf-8')
-        self.send_response(status);self.send_header('Content-Type',mime);self.send_header('Content-Length',str(len(body)))
-        self.send_header('Cache-Control','no-store');self.send_header('X-Content-Type-Options','nosniff');self.send_header('Referrer-Policy','no-referrer')
-        if attachment:self.send_header('Content-Disposition','attachment; filename="'+attachment+'"')
-        self.end_headers()
-        try:self.wfile.write(body)
-        except (BrokenPipeError,ConnectionResetError):pass
+        try:
+            self.send_response(status);self.send_header('Content-Type',mime);self.send_header('Content-Length',str(len(body)))
+            self.send_header('Cache-Control','no-store');self.send_header('X-Content-Type-Options','nosniff');self.send_header('Referrer-Policy','no-referrer')
+            if attachment:self.send_header('Content-Disposition','attachment; filename="'+attachment+'"')
+            self.end_headers()
+            self.wfile.write(body)
+        except (BrokenPipeError,ConnectionResetError,ConnectionAbortedError):
+            self.close_connection=True
     def authorized(self):
         return self.headers.get('Host','') in (f'127.0.0.1:{self.server.server_port}',f'localhost:{self.server.server_port}')
     def send_file(self,file,mime,attachment):
-        self.send_response(200);self.send_header('Content-Type',mime);self.send_header('Content-Length',str(file.stat().st_size));self.send_header('Cache-Control','no-store');self.send_header('Content-Disposition','attachment; filename="'+attachment+'"');self.end_headers()
         try:
+            self.send_response(200);self.send_header('Content-Type',mime);self.send_header('Content-Length',str(file.stat().st_size));self.send_header('Cache-Control','no-store');self.send_header('Content-Disposition','attachment; filename="'+attachment+'"');self.end_headers()
             with file.open('rb') as source:
                 while chunk:=source.read(65536):self.wfile.write(chunk)
-        except (BrokenPipeError,ConnectionResetError):pass
+        except (BrokenPipeError,ConnectionResetError,ConnectionAbortedError):
+            self.close_connection=True
     def do_GET(self):
         if not self.authorized():return self.send({'error':'접근 불가'},status=403)
         try:self.get()
+        except (BrokenPipeError,ConnectionResetError,ConnectionAbortedError):self.close_connection=True
         except (ValueError,KeyError,IndexError) as e:self.send({'error':str(e)},status=400)
         except Exception as e:self.send({'error':'요청 처리 실패: '+str(e)},status=500)
     def get(self):
