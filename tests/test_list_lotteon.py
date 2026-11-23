@@ -11,6 +11,26 @@ class C:
  def checkpoint(self):return None
  def log(self,*a):return None
 class ListLotteTests(unittest.TestCase):
+ def test_compact_seller_banner_variants(self):
+  for text in ['패 세 라 공식 판매처', '롯데 백화점 상품 안내', '고객 센터 상담 문의', '배송 안내']:
+   self.assertTrue(c.banner_text(text))
+  self.assertFalse(c.banner_text('상품정보고시 소재 폴리에스터 제조국 한국 사이즈 55 66'))
+ def test_embedded_banner_rejects_entire_detail_candidate(self):
+  source='<div id="llis-root"><img src="https://example.com/body.jpg"></div>'
+  with tempfile.TemporaryDirectory() as folder,patch.object(c,'fetch',return_value=source.encode()),patch.object(c,'image',return_value={'digest':'a','image':Image.new('RGB',(800,4000))}),patch.object(c,'ocr',return_value='상품 설명 패세라 배송 안내'):
+   with self.assertRaisesRegex(c.CollectionError,'합쳐진 긴 이미지 제외'):
+    c.body_markup(C(),{'descInfo':{'epnJsn':[{'pdEpnTypCd':'DSCRP','dtlFileRteNm':'/LO/1/','dtlFileNm':'DSCRP_1'}]}},{},{},Path(folder))
+ def test_crawl_uses_first_clean_detail_without_merging(self):
+  from unittest.mock import Mock
+  ctx=Mock(product_code='CODE');ctx.enabled.side_effect=lambda f:f in ('main_image','detail_page')
+  rows=[dict(pdId=str(i),pdLink='/'+str(i),pdImage='thumb.jpg') for i in range(3)]
+  data={'basicInfo':{'pdNm':'리스트 자켓 CODE'},'optionInfo':{'optionList':[{'title':'색상','options':[{'label':'블랙'}]}]},'imgInfo':{'imageList':[{'epsrTypCd':'IMG'}]}}
+  info={'image':Image.new('RGB',(800,800)),'digest':'photo'}
+  with patch.object(c,'search',return_value=rows),patch.object(c,'image',return_value=info),patch.object(c,'studio',return_value=(True,'')),patch.object(c,'load_product',return_value=data),patch.object(c,'gallery_image',return_value=('https://example.com/photo.jpg',info)),patch.object(c,'body_markup',side_effect=[c.CollectionError('배너 포함'),'<div>깨끗한 상세</div>']) as body:
+   c.crawl(ctx)
+  self.assertEqual(body.call_count,2)
+  self.assertEqual(ctx.emit_unmapped.call_args.kwargs['shared_detail_html'],'<div>깨끗한 상세</div>')
+  ctx.fail_item.assert_not_called()
  def test_exact_requested_name(self):
   self.assertEqual(c.clean_name('[패세라]울 헤어리 투버튼 자켓_TWWJKP82030','TWWJKP82030'),'울 헤어리 투버튼 자켓')
   self.assertEqual(c.clean_name('[패세라] 리스트 울 헤어리 투버튼 자켓 TWWJKP82030','TWWJKP82030'),'울 헤어리 투버튼 자켓')
