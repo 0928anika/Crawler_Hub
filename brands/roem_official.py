@@ -55,8 +55,10 @@ def search(ctx,code):
         scope=doc.select_one('.xans-search-result')
         if scope is None:
             summary=doc.select_one('.searchResult')
+            count=doc.select_one('.prdCount .total_count')
             empty=doc.select_one('.noData')
-            if (summary and empty and re.search(r'상품\s*검색\s*결과\s*0\b',summary.get_text(' ',strip=True))
+            if (empty and ((summary and re.search(r'상품\s*검색\s*결과\s*0\b',summary.get_text(' ',strip=True)))
+                           or (count and count.get_text(strip=True)=='0' and doc.select_one('.xans-search-form')))
                     and '검색결과가 없습니다' in empty.get_text(' ',strip=True)):
                 continue
             raise CrawlError('공식 검색 화면 확인 실패: 접근/페이지 구조 오류 (검색 0건 아님)')

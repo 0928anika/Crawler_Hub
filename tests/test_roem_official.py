@@ -6,6 +6,12 @@ import roem_official as c
 from crawler_sdk import CrawlContext
 class Tests(unittest.TestCase):
  def setUp(self):self.source=(ROOT/'tests/fixtures/roem/RMJHG4VA11.html').read_text(encoding='utf-8');self.doc=c.soup(self.source)
+ def test_current_empty_search_is_not_access_error(self):
+  source='<div class="prdCount">검색결과 <span class="total_count">0</span></div><div class="xans-search-form"><div class="noData">검색결과가 없습니다.</div></div>'
+  with patch.object(c,'fetch',return_value=source):self.assertEqual(c.search(type('C',(),{})(),'RMKAG4VRTA'),[])
+ def test_missing_search_structure_still_reports_access_error(self):
+  with patch.object(c,'fetch',return_value='<html>접근 제한</html>'):
+   with self.assertRaisesRegex(c.CrawlError,'검색 0건 아님'):c.search(type('C',(),{})(),'RMKAG4VRTA')
  def test_registration_separate_from_eland_and_name_keeps_collection(self):
   from registry import get_brand
   self.assertTrue(get_brand('roem_official')['available']);self.assertTrue(get_brand('roem_eland_studio')['available'])
