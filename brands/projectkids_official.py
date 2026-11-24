@@ -21,7 +21,7 @@ SEARCH = 'https://display.goodwearmall.com/search'
 IMAGES = 'https://img.goodwearmall.com'
 AI_IMAGES = 'https://img.goodwearmall.com/ai_goods/'
 BRAND = 'EKBR'
-MAX_BYTES = 10_000_000
+MAX_BYTES = 64_000_000
 
 
 class CollectionError(RuntimeError):

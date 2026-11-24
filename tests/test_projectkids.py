@@ -27,6 +27,15 @@ class Tests(unittest.TestCase):
   self.assertEqual(len(doc.select('table')),1)
   self.assertEqual(markup.count('제품 주소재'),1)
   self.assertEqual(next(row.find('td').get_text() for row in doc.select('tr') if row.find('th').get_text()=='색상'),'LIN, MIN')
+ def test_large_original_is_read_without_bypassing_gallery_validation(self):
+  import io
+  from PIL import Image
+  stream=io.BytesIO();Image.new('RGB',(600,900),'white').save(stream,'JPEG')
+  raw=stream.getvalue()+b'\0'*11000000
+  with patch.object(c,'fetch',return_value=raw) as fetch,patch.object(c,'validate_gallery_image',return_value={'passed':False,'reasons':['파일 크기 초과']}) as validate:
+   info=c.picture(Context(),'https://img.goodwearmall.com/large.jpg',{},gallery=True)
+  self.assertEqual(fetch.call_args.args[2],64000000)
+  self.assertFalse(info['validation']['passed']);validate.assert_called_once()
  def test_product_name_excludes_brand_and_code(self):
   self.assertEqual(c.clean_name('프로젝트키즈 PROJECT KIDS 공용 데님 EKG4DP3100LIN','EKG4DP3100','EKG4DP3100LIN'),'공용 데님')
 if __name__=='__main__':unittest.main()
