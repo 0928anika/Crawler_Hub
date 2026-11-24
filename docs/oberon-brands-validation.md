@@ -97,6 +97,19 @@ URL·선택자·응답 키는 원본 단독 크롤러에서 운영 확인된 값
 
 - 작업 시 PC·브라우저가 연결되지 않아 실사이트 재조회 없이 fixture 검사만(tests/test_mountia_halfclub.py).
 
+## 8차 — 올포유(한성몰) 사용자 단독 크롤러 반영 (2026-11-24)
+
+| ID | 브랜드 | 유형 | 근거 |
+|---|---|---|---|
+| allforyou_hansungmall | 올포유 (한성몰) | 1번 자동 | 신규. 사용자 단독 한성몰 크롤러 구조 + fixture(tests/test_allforyou_hansungmall.py) |
+
+- 기존 allforyou_official(올포유 공식 홈페이지, search-brand.html·브랜드=올포유·단일색상 페이지 필수)은 그대로 유지하고 별도 카드로 등록.
+- 검색 /product/search.html(.xans-search-result, 추천 영역 제외), 품번코드 또는 상품명 끝 품번으로 기본 품번 정확 대조. 한성몰의 다른 한성 브랜드도 같은 방식.
+- 색상·사이즈: option_stock_data(실제 Cafe24 이스케이프 형식은 agabang fixture로 확인). 숨김·판매중지·자동품절 사이즈 포함, `사이즈별 재고` 추가 열(품절 0).
+- 사진: 한 페이지 = 한 색상일 때만 그 페이지 갤러리를 그 색상에 연결. 여러 색상 페이지는 색상칩 link_image 컷만, 없으면 빈칸+경고. 갤러리 1장이면 image_zoom2 확인.
+- 단독 크롤러와 다르게 한 것: 정상가를 판매가로 채우지 않음, 옵션으로 만든 '사이즈 정보'·세탁법 별도 구역 없음(고시 표에 원문 그대로), 다른 색상 공용 갤러리 재사용 없음, 차단 이미지 폴더 저장 없음(URL 방식, 공개 접근 불가 컷은 제외).
+- 작업 시 PC 미연결·사이트 프록시 차단으로 실사이트 실행은 미검증.
+
 ## 공통 규약 적용
 
 - 결과 키: product_code / product_name / color / product_url 필수, color_name·color_code 분리, `원본 상품명` 추가 열.

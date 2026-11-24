@@ -1,0 +1,178 @@
+{
+  "id": "allforyou_hansungmall",
+  "name": "올포유",
+  "category": "캐주얼",
+  "script": "allforyou_hansungmall.py",
+  "execution_level": 1,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "브랜드",
+    "원본 상품명",
+    "사이즈별 재고"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "verified",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "var option_stock_data 색상#사이즈 옵션의 해당 색상 사이즈 전체(표시 순서). 숨김·판매중지·자동품절 사이즈도 포함하고 '사이즈별 재고' 추가 열에 품절은 0으로 표시. 옵션 데이터가 없으면 화면 select 옵션."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "#span_product_price_sale(할인판매가) 우선, 없으면 #span_product_price_text. 쿠폰·회원가 제외."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 소비자가 #span_product_price_custom 또는 product_custom(regular_price cafe24 프로필). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 페이지 .xans-product-headcategory 경로(홈 제외)."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "한 페이지=한 색상(품번코드 기본품번-색상코드)일 때 그 페이지 /web/product/big·extra 갤러리. 여러 색상 페이지는 색상칩 link_image 컷만. 공개 GET·WING 규격·글자/콜라주 보조검사 통과 컷만."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "같은 색상 갤러리의 통과 컷(내용 해시 중복 제외)으로 5슬롯. 1장이면 확대보기(image_zoom2) 추가이미지 확인, 그래도 1장이면 재사용 경고."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "#prdDetail2 의 /<브랜드>/detail/ 상품 본문 이미지(해당 품번·색상 파일 우선) + #desctable 상품정보고시 2열 표. 공통 머리·꼬리(/img/)·행사(/web/upload/) 제외. 별도 사이즈표 없음."
+    }
+  },
+  "guide": {
+    "example": "AWJU67301",
+    "examples": [
+      "AWJU67301",
+      "AWJU67301-403",
+      "AWJU67301_403",
+      "AGDJOA311"
+    ],
+    "pattern": "^[A-Za-z0-9]+(?:[_-][A-Za-z0-9]{2,4})?$",
+    "format": "기본 품번은 전체 색상(한성몰은 색상마다 상품이 따로). 기본품번-색상코드 또는 기본품번_색상코드는 그 색상만",
+    "notes": "올포유 외 한성몰의 다른 한성 브랜드 품번도 같은 방식으로 수집됩니다. 색상코드는 상품정보 품번코드(기본품번-색상코드) 또는 상품명 끝 품번에서만 가져옵니다. 품절·숨김 사이즈 포함.",
+    "method": "한성몰 search.html 품번 검색 → 상품 페이지 품번코드/상품명 품번으로 기본 품번 정확 대조 → 한 페이지 한 색상이면 그 페이지 갤러리를 그 색상에 연결",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "AWJU67301_",
+      "AWJU67301/403"
+    ],
+    "validation_note": "입력 문법 검사이며 상품/색상 존재는 실행 시 확인."
+  },
+  "crawl_source": "한성몰",
+  "notes": "사용자 단독 한성몰 크롤러(2026-11-24)를 허브 규칙으로 옮긴 버전. 기존 '올포유 (공식 홈페이지)' allforyou_official은 그대로 유지. 정상가는 소비자가 필드에서만(판매가로 대체 안 함). 한 상품에 여러 색상이 있고 색상칩 사진이 없으면 사진은 빈칸(검수). 오프라인 fixture 검증만 완료, 실사이트 실행 확인 전.",
+  "mapping_mode": "automatic",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "var option_stock_data 색상#사이즈 옵션의 해당 색상 사이즈 전체(표시 순서). 숨김·판매중지·자동품절 사이즈도 포함하고 '사이즈별 재고' 추가 열에 품절은 0으로 표시. 옵션 데이터가 없으면 화면 select 옵션."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "#span_product_price_sale(할인판매가) 우선, 없으면 #span_product_price_text. 쿠폰·회원가 제외."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 소비자가 #span_product_price_custom 또는 product_custom(regular_price cafe24 프로필). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 페이지 .xans-product-headcategory 경로(홈 제외)."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "한 페이지=한 색상(품번코드 기본품번-색상코드)일 때 그 페이지 /web/product/big·extra 갤러리. 여러 색상 페이지는 색상칩 link_image 컷만. 공개 GET·WING 규격·글자/콜라주 보조검사 통과 컷만."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "같은 색상 갤러리의 통과 컷(내용 해시 중복 제외)으로 5슬롯. 1장이면 확대보기(image_zoom2) 추가이미지 확인, 그래도 1장이면 재사용 경고."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "#prdDetail2 의 /<브랜드>/detail/ 상품 본문 이미지(해당 품번·색상 파일 우선) + #desctable 상품정보고시 2열 표. 공통 머리·꼬리(/img/)·행사(/web/upload/) 제외. 별도 사이즈표 없음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "브랜드": null,
+    "원본 상품명": null,
+    "사이즈별 재고": null
+  },
+  "code_hash": "64c5acb5800671a84b1751a00f0a3b83215dfbf6c537b9edb9f268cdfab8bf23"
+}
