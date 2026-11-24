@@ -74,6 +74,20 @@ def parse_input(data,brand):
         r=list(r)+[None]*max(0,len(headers)-len(r))
         code=str(r[idx] or '').strip()
         clean.append([code]+r[:idx]+r[idx+1:])
+    if brand.get('store_input'):
+        store=str(data.get('store_url') or '').strip()
+        if not store:raise ValueError('스토어 주소를 입력하세요.')
+        from urllib.parse import urlsplit
+        parsed=urlsplit(store)
+        if parsed.scheme!='https' or parsed.hostname!='smartstore.naver.com' or parsed.username or parsed.password or not re.fullmatch(r'/[A-Za-z0-9_-]{2,60}/?',parsed.path):
+            raise ValueError('스토어 주소는 https://smartstore.naver.com/스토어ID 형식으로 입력하세요.')
+        store='https://smartstore.naver.com/'+parsed.path.strip('/').lower()
+        if '스토어 주소' in headers:
+            index=headers.index('스토어 주소')
+            for row in clean:row[index]=store
+        else:
+            headers.append('스토어 주소')
+            for row in clean:row.append(store)
     return headers,clean
 
 def validate_input(data,brand):
