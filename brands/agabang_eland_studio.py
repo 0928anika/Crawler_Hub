@@ -456,6 +456,19 @@ def ocr_many(ctx, pictures):
 
 BANNER = re.compile(r'banner|_bn|_brand|_bottom|(?:ss|fw)_model|event|shipping|delivery|refund|coupon|copyright|notice|매장|배송|교환|반품|쿠폰|저작권|고객센터|문의사항|상담시간|구매전|구매안내|review|리뷰|후기요약',re.I)
 
+SELLER_NOTICE=re.compile(r'배송안내|배송기간|배송지연|배송비|출고안내|당일발송|주문마감|반품주소|교환주소|택배|고객센터|문의사항|상담시간|매장|판매자|구매전|리뷰|후기|쿠폰|coupon|shipping|delivery|banner',re.I)
+
+
+def detail_is_banner(text,image):
+    compact=re.sub(r'\s+','',text)
+    if not BANNER.search(compact):return False
+    # Full brand product sheets include their own care/return footnote. Those
+    # generic footnotes alone must not discard the product and size guide.
+    sections=sum(bool(re.search(term,compact,re.I)) for term in
+                 ('DETAILVIEW','DETAILPOINTS','FABRICVIEW','PRODUCTINFO','SIZEGUIDE','WASHINGTIP'))
+    product_sheet=image.height>=image.width*3 and sections>=3
+    return not (product_sheet and not SELLER_NOTICE.search(compact))
+
 
 def original_detail(url,code):
     p=urlsplit(url);name=unquote(p.path.rsplit('/',1)[-1])
@@ -513,10 +526,12 @@ def detail(ctx,d,code,cache):
         except (CrawlError,OSError,subprocess.SubprocessError) as exc:
             ctx.log('상세 OCR 검사 실패: 미검사 이미지 제외 / '+str(exc),'WARNING');continue
         for (url,image),text in zip(batch,texts):
-            if isinstance(text,Exception) or BANNER.search(re.sub(r'\s+','',text)):
+            if isinstance(text,Exception) or detail_is_banner(text,image):
                 ctx.log('셀러 안내/검사 실패 상세 이미지 제외: '+url,'INFO');continue
             if trusted and str(d['itemMain']['lowerVendNo']) != VENDOR and not (re.search(r'(?<![A-Z0-9])'+re.escape(code)+r'(?![A-Z0-9])',text,re.I) and studio_background(image)[0]):
                 ctx.log('본사 원본 외 추가 이미지의 품번/스튜디오 근거 미확인: '+url,'INFO');continue
+            if BANNER.search(re.sub(r'\s+','',text)):
+                ctx.log('상품 설명·사이즈가 포함된 통짜 본문 유지: 제조사 공통 주의/반품 문구는 원본 이미지에 포함 / '+url,'INFO')
             parts.append(('photo','<img src="'+html.escape(url,quote=True)+'">'))
     parts.sort(key=lambda pair:order[html.unescape(BeautifulSoup(pair[1],'html.parser').img['src'])])
     return parts

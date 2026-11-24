@@ -17,6 +17,16 @@ class Tests(unittest.TestCase):
   self.data=json.loads((ROOT/'tests/fixtures/agabang_eland/2301719026.json').read_text(encoding='utf8'))
   self.opts=json.loads((ROOT/'tests/fixtures/agabang_eland/2301719026-options.json').read_text(encoding='utf8'))
   self.url=c.SITE+'/i/item?itemNo=2301719026&lowerVendNo='+c.VENDOR
+ def test_full_product_sheet_keeps_generic_manufacturer_return_footnote(self):
+  from PIL import Image
+  image=Image.new('RGB',(120,2000))
+  words='DETAIL VIEW FABRIC VIEW PRODUCT INFO SIZE GUIDE WASHING TIP NOTICE 교환 및 반품 안내 구매한 쇼핑몰에서 신청'
+  self.assertFalse(c.detail_is_banner(words,image))
+  self.assertTrue(c.detail_is_banner(words+' 배송 안내 고객센터 02-123-4567',image))
+  self.assertTrue(c.detail_is_banner('배송 안내 교환 반품 배송비 3000원',image))
+ def test_standalone_notice_is_still_excluded(self):
+  from PIL import Image
+  self.assertTrue(c.detail_is_banner('NOTICE 교환 및 반품 안내',Image.new('RGB',(100,100))))
  def test_registration(self):
   from registry import get_brand
   m=get_brand('agabang_eland_studio');self.assertTrue(m['available']);self.assertEqual(c.VENDOR,'LV22035111');self.assertEqual(c.BRAND_NO,'1690000462');self.assertEqual(m['additional_image_count'],9)
