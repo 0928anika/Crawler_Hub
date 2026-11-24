@@ -18,6 +18,7 @@ REVISION='2026-11-24-tmak-janecourt-v1'
 IMAGE_HOSTS=HOSTS+('janecourt.imghost.cafe24.com','cafe24.poxo.com','cafe24img.poxo.com')
 
 class CrawlError(ValueError):pass
+class MissingImage(CrawlError):pass
 
 def fetch(ctx,url):
     url=quote(url,safe=":/?=&%+;,@!~*'()-._")
@@ -94,7 +95,7 @@ def bundle_page(source,doc):
     # Cafe24 coordinated SET pages have child-product options rather than the
     # standalone item's stock. Do not read or merge those child options.
     heading=doc.select_one('.infoArea h1, .infoArea h2, .headingArea h1, .headingArea h2')
-    if heading and re.search(r'1\s*[+＋&]\s*1|원\s*플러스\s*원',heading.get_text(' ',strip=True),re.I):return True
+    if heading and re.search(r'1\s*[+＋&]\s*1|원\s*플러스\s*원|셋업|세트|\bSET(?:[ -]?UP)?\b',heading.get_text(' ',strip=True),re.I):return True
     return bool(doc.select_one('.xans-product-setproduct') and
                 re.search(r'\bvar\s+set_product_data\s*=',source))
 
@@ -167,7 +168,10 @@ def checked(ctx,url,cache,detail=False):
     key=(url,detail)
     if key not in cache:cache[key]=check_public_image(url,timeout=25,retries=2,max_bytes=64*1024*1024 if detail else 10_000_000,checkpoint=ctx.checkpoint)
     result=cache[key]
-    if result['status']!='accessible':raise CrawlError('이미지 조회 미완료: '+url+' / '+', '.join(result.get('reasons',[])))
+    if result['status']!='accessible':
+        reason=', '.join(result.get('reasons',[]))
+        if re.search(r'HTTP\s*404\b',reason):raise MissingImage('원문에서 삭제된 이미지 HTTP 404: '+url)
+        raise CrawlError('이미지 조회 미완료: '+url+' / '+reason)
     if result.get('format') not in ('JPEG','PNG','WEBP'):raise CrawlError('지원하지 않는 이미지 형식: '+url)
     if not detail and (min(result['width'],result['height'])<500 or max(result['width'],result['height'])/min(result['width'],result['height'])>1.8):raise CrawlError('갤러리 이미지 크기/비율 기준 미달: '+url)
     return result
@@ -185,7 +189,9 @@ def gallery(ctx,doc,final,cache):
 def detail(ctx,doc,final,code,cache,photos=()):
     parts=[]
     for url in detail_urls(doc,final,code):
-        checked(ctx,url,cache,True)
+        try:checked(ctx,url,cache,True)
+        except MissingImage as exc:
+            ctx.log(str(exc)+' / 해당 사진만 제외하고 본문 수집 계속','WARNING');continue
         parts.append('<p><img src="'+html.escape(url,quote=True)+'" alt="상품 상세정보"></p>')
     table=doc.select_one('#prdDetail #desctable')
     if table:
@@ -220,7 +226,9 @@ def crawl(ctx):
         cache={};emitted=0;errors=[]
         for link in links:
             ctx.checkpoint();source=fetch(ctx,link);doc=soup(source);info=identity(doc,code)
-            if info is None or bundle_page(source,doc):continue
+            if info is None:continue
+            if bundle_page(source,doc):
+                ctx.log('세트/셋업 상품 제외하고 단품 확인: '+link,'INFO');continue
             colors=palette(source)
             for color in colors:
                 label=color['color_name']

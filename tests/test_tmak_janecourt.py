@@ -23,6 +23,22 @@ class Tests(unittest.TestCase):
   with patch.object(c,'fetch',return_value=source):self.assertEqual(c.search(Mock(),'GNA2102'),[])
   with patch.object(c,'fetch',return_value='<html>접근 제한</html>'):
    with self.assertRaisesRegex(c.CrawlError,'검색 0건 아님'):c.search(Mock(),'GNA2102')
+ def test_setup_top_bottom_options_are_excluded_before_palette_parsing(self):
+  doc=c.soup('<div class="infoArea"><h2>릴렉싱 소로나 카고조거 셋업 GNA3802+GNA2904</h2></div>')
+  self.assertTrue(c.bundle_page('',doc))
+ def test_deleted_body_image_does_not_remove_remaining_detail(self):
+  doc=c.soup('<div id="prdDetail"><img ec-data-src="https://janecourt.imghost.cafe24.com/deleted.jpg"><img ec-data-src="https://janecourt.imghost.cafe24.com/body.jpg"></div>')
+  def check(ctx,url,cache,detail=False):
+   if 'deleted' in url:raise c.MissingImage('HTTP 404')
+   return {'data':b'ok'}
+  with patch.object(c,'checked',side_effect=check):body=c.detail(Mock(),doc,c.SITE,'GNA2401',{})
+  self.assertIn('body.jpg',body);self.assertNotIn('deleted.jpg',body)
+ def test_only_real_404_is_optional_not_transient_network_failure(self):
+  with patch.object(c,'check_public_image',return_value={'status':'inaccessible','reasons':['공개 GET 거부: HTTP 404']}):
+   with self.assertRaises(c.MissingImage):c.checked(Mock(),'https://www.janecourt.com/deleted.jpg',{},True)
+  with patch.object(c,'check_public_image',return_value={'status':'unknown','reasons':['timeout']}):
+   with self.assertRaises(c.CrawlError) as error:c.checked(Mock(),'https://www.janecourt.com/body.jpg',{},True)
+   self.assertNotIsInstance(error.exception,c.MissingImage)
  def test_multicolor_without_official_image_links_uses_manual_mapping(self):
   ctx=Mock(product_code='GNA2402');ctx.enabled.side_effect=lambda k:k in ('size','price','regular_price','main_image','detail_page')
   with patch.object(c,'search',return_value=[c.SITE+'/product/detail.html?product_no=1875']),patch.object(c,'fetch',return_value=self.source),patch.object(c,'gallery',return_value=['https://www.janecourt.com/photo.jpg']),patch.object(c,'detail',return_value='<p>본문</p>'):
