@@ -1,0 +1,173 @@
+{
+  "id": "tmak_official",
+  "name": "티막",
+  "category": "수영복",
+  "crawl_source": "공식 홈페이지",
+  "script": "tmak_official.py",
+  "execution_level": 1,
+  "interface": "portal_v1",
+  "mapping_mode": "manual",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "manual",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 Color/Size 조합에서 색상별 품절 포함 사이즈 보존."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data의 일반 옵션 판매가. 최적할인가·쿠폰가 제외."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 소비자가 필드. 없으면 빈칸."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 경로."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 모델명과 단일 색상 원본 옵션이 연결된 페이지의 개별 상품컷은 자동 매핑. 다중 색상 미연결 사진만 수동 매핑."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 모델명과 단일 색상 원본 옵션이 연결된 페이지의 개별 상품컷은 자동 매핑. 다중 색상 미연결 사진만 수동 매핑."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 본문의 제품 설명·모델컷·제품컷·사이즈·고시 이미지를 유지하고 공통 상단 배너·배송 안내를 제외합니다."
+    }
+  },
+  "guide": {
+    "pattern": "^[A-Za-z0-9]+(?:_[A-Za-z0-9]+)?$",
+    "example": "PKF0112",
+    "examples": [
+      "PKF0112",
+      "PKF0112_BL"
+    ],
+    "format": "기본 품번 또는 기본품번_색상코드",
+    "notes": "모델명의 기본 품번으로 검색합니다. 단일 색상 상품은 자동 연결, 여러 색상의 미연결 사진만 수동 매핑합니다.",
+    "method": "공식 모델명·원본 옵션 재고를 확인하고 공식 상품 페이지의 갤러리와 본문·사이즈 이미지를 보존합니다.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "다른 판매처 상품번호"
+    ],
+    "validation_note": "실제 상품 존재는 공식몰 조회 시 확인"
+  },
+  "notes": "공식 모델명과 색상별 원본 옵션을 검증합니다. BL·CR 등 공개 색상코드를 보존하고, 색상명은 임의로 번역하지 않습니다. 공통 상단 배너와 배송/쇼핑 안내를 제외하며 상세의 사이즈·고시 이미지는 유지합니다. 단일 색상 페이지 사진은 자동 연결하고 다중 색상 미연결 사진은 수동 매핑합니다.",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "오가닉맘 공식 상품명/옵션/상품정보 이미지 원문 확인"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "오가닉맘 공식 상품명/옵션/상품정보 이미지 원문 확인"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "오가닉맘 공식 상품명/옵션/상품정보 이미지 원문 확인"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "오가닉맘 공식 상품명/옵션/상품정보 이미지 원문 확인"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 Color/Size 조합에서 색상별 품절 포함 사이즈 보존."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data의 일반 옵션 판매가. 최적할인가·쿠폰가 제외."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 소비자가 필드. 없으면 빈칸."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 경로."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 모델명과 단일 색상 원본 옵션이 연결된 페이지의 개별 상품컷은 자동 매핑. 다중 색상 미연결 사진만 수동 매핑."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 모델명과 단일 색상 원본 옵션이 연결된 페이지의 개별 상품컷은 자동 매핑. 다중 색상 미연결 사진만 수동 매핑."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 본문의 제품 설명·모델컷·제품컷·사이즈·고시 이미지를 유지하고 공통 상단 배너·배송 안내를 제외합니다."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null
+  },
+  "code_hash": "1275cbe909ea6d53ecab4f708c76c0d2776ca9377150d2592c434d1f6d9b9afc",
+  "hybrid_mapping": false,
+  "additional_image_count": 9
+}
