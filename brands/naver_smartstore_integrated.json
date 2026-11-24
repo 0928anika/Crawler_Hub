@@ -67,9 +67,9 @@
       "reason": "공개 상세 본문의 이미지·텍스트·표와 상품정보 고시. 본문 사이즈 이미지 유지, 별도 사이즈표 임의 생성 없음. 저장 원문 사용 여부 및 시각 명시."
     },
     "regular_price": {
-      "supported": false,
-      "status": "unsupported",
-      "reason": "스토어별 독립 정상가 출처 미검증. 빈칸으로 보존."
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 상단 취소선 할인 전 가격에 해당하는 salePrice. 실제 할인판매가가 별도로 있고 더 낮을 때 수집하며, 취소선 정상가 없는 상품은 빈칸."
     }
   },
   "guide": {
@@ -155,9 +155,9 @@
     },
     "regular_price": {
       "label": "정상가",
-      "supported": false,
-      "status": "unsupported",
-      "reason": "스토어별 독립 정상가 출처 미검증. 빈칸으로 보존."
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 상단 취소선 할인 전 가격에 해당하는 salePrice. 실제 할인판매가가 별도로 있고 더 낮을 때 수집하며, 취소선 정상가 없는 상품은 빈칸."
     }
   },
   "column_fields": {
@@ -179,7 +179,7 @@
     "사이즈 확인 범위": null
   },
   "image_mode": "url",
-  "code_hash": "70ea2c36f62acbc6dcaeeac628a40e39fd9b1a4a44c8dd7208cb57ca9fb9dc6b",
+  "code_hash": "043dd63c1886c59d599828b2a5d848db3b988e41a0a1ef6134bccc9060dc6944",
   "hybrid_mapping": true,
   "store_input": true,
   "default_store_url": "https://smartstore.naver.com/ncsongpa269"

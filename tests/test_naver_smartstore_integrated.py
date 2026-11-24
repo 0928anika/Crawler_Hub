@@ -106,6 +106,13 @@ class Tests(unittest.TestCase):
   with patch.object(c,'existing_product_tab',return_value=page),patch.object(c,'state_from',return_value={'simpleProductForDetailPage':product}),patch.object(c,'read_basic_information',return_value={}),patch.object(c,'wait_access',side_effect=AssertionError('must not wait')):
    result,body,url=c.read_product_page(Mock(),Mock(),'13628486064')
   self.assertEqual(result['_sourceUnavailable'],'판매중지: 공홈에서 상세 본문 미제공');self.assertEqual(body,'')
+ def test_struck_original_price_is_distinct_from_red_selling_price(self):
+  product={'salePrice':79000,'benefitsView':{'discountedSalePrice':16900}}
+  self.assertEqual(c.selected_regular_price(product),79000)
+  self.assertEqual(c.selected_price(Mock(),product,[]),16900)
+ def test_regular_price_is_not_invented_without_distinct_discount(self):
+  for product in [{'salePrice':79000},{'salePrice':16900,'discountedSalePrice':16900},{'salePrice':None,'discountedSalePrice':16900}]:
+   self.assertIsNone(c.selected_regular_price(product))
  def test_model_matching_is_exact(self):
   self.assertTrue(c.exact_model({'naverShoppingSearchInfo':{'modelName':'MODEL123'}},'model123'))
   self.assertTrue(c.exact_model({'name':'블라우스 MODEL123 블랙'},'MODEL123'))

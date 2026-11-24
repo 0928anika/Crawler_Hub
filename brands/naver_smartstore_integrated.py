@@ -417,6 +417,15 @@ def selected_price(ctx,product,deltas):
     return base
 
 
+def selected_regular_price(product):
+    # Verified against the product header's <del> labelled '할인 전 가격'.
+    # salePrice is the independently supplied before-discount amount; do not
+    # reverse-calculate it from the percentage or copy a non-discounted price.
+    original=money(product.get('salePrice'))
+    selling=money(product.get('discountedSalePrice')) or money((product.get('benefitsView') or {}).get('discountedSalePrice'))
+    return original if original and selling and original>selling else None
+
+
 def detail_markup(ctx,source,product,cache):
     doc=BeautifulSoup(source,'html.parser');area=doc.select_one('.se-main-container') or doc;parts=[];seen=set()
     candidates=[]
@@ -786,7 +795,7 @@ def collect_one(ctx,number,loaded):
         if ctx.enabled('size') and size_scope:record['사이즈 확인 범위']=size_scope
         if ctx.enabled('size'):record['size']=','.join(dict.fromkeys(s for c in palette for s in c['size'].split(',') if s))
         if ctx.enabled('price'):record['price']=selected_price(ctx,product,deltas)
-        if ctx.enabled('regular_price'):record['regular_price']=None;ctx.log('독립 정상가 출처 미검증: 빈칸','WARNING')
+        if ctx.enabled('regular_price'):record['regular_price']=selected_regular_price(product)
         if ctx.enabled('category'):record['category']=str((product.get('category') or {}).get('wholeCategoryName') or '')
         cache={};photos=[];body=''
         prefetch_images(ctx,product,source,cache)
