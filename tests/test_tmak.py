@@ -15,6 +15,11 @@ class Tests(unittest.TestCase):
   urls=c.detail_urls(self.doc,c.SITE,'PKF0112')
   self.assertTrue(any('PKF-0112_BL_m.jpg' in u for u in urls));self.assertTrue(any('tms_sizeWOMEN.jpg' in u for u in urls))
   self.assertFalse(any('/main/00' in u or 's_guide' in u for u in urls))
+ def test_empty_official_search_is_distinct_from_broken_response(self):
+  source='<div class="searchResult">총 0 개 의 상품이 검색되었습니다.</div><div class="noData">검색결과가 없습니다.</div>'
+  with patch.object(c,'fetch',return_value=source):self.assertEqual(c.search(Mock(),'GNA2401'),[])
+  with patch.object(c,'fetch',return_value='<html>접근 제한</html>'):
+   with self.assertRaisesRegex(c.CrawlError,'검색 0건 아님'):c.search(Mock(),'GNA2401')
  def test_single_color_page_is_automatic(self):
   ctx=Mock(product_code='PKF0112');ctx.enabled.side_effect=lambda k:k in ('size','price','regular_price','main_image','additional_images','detail_page')
   with patch.object(c,'search',return_value=[c.SITE+'/product/detail.html?product_no=1798']),patch.object(c,'fetch',return_value=self.source),patch.object(c,'gallery',return_value=['https://www.tmakstore.com/photo.jpg']),patch.object(c,'detail',return_value='<p>본문</p>'):

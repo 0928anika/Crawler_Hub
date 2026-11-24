@@ -57,7 +57,7 @@ def search(ctx,code):
             summary=doc.select_one('.searchResult')
             count=doc.select_one('.prdCount .total_count')
             empty=doc.select_one('.noData')
-            if (empty and ((summary and re.search(r'상품\s*검색\s*결과\s*0\b',summary.get_text(' ',strip=True)))
+            if (empty and ((summary and re.search(r'(?:상품\s*검색\s*결과\s*0\b|총\s*0\s*개\s*의?\s*상품)',summary.get_text(' ',strip=True)))
                            or (count and count.get_text(strip=True)=='0' and doc.select_one('.xans-search-form')))
                     and '검색결과가 없습니다' in empty.get_text(' ',strip=True)):
                 continue
