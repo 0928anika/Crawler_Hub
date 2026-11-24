@@ -179,8 +179,8 @@
     "사이즈 확인 범위": null
   },
   "image_mode": "url",
-  "code_hash": "2f6f1f5a07fd8a10abf850099a79a58de7e513e12d1ba44b932b85da77836987",
-  "hybrid_mapping": false,
+  "code_hash": "70ea2c36f62acbc6dcaeeac628a40e39fd9b1a4a44c8dd7208cb57ca9fb9dc6b",
+  "hybrid_mapping": true,
   "store_input": true,
   "default_store_url": "https://smartstore.naver.com/ncsongpa269"
 }

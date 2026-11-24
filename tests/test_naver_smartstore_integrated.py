@@ -65,6 +65,47 @@ class Tests(unittest.TestCase):
   markup=c.notice_table(Mock(),{'productBasicInfo':{'상품번호':'13885830324','모델명':'JP4SHU131'}})
   self.assertNotIn('상품번호',markup);self.assertNotIn('13885830324',markup)
   self.assertIn('JP4SHU131',markup)
+ def test_no_options_keeps_real_blank_color_and_size(self):
+  colors,deltas=c.option_palette({'id':'13626441762','name':'옵션 없는 상품','optionUsable':False})
+  self.assertEqual(colors[0]['color_name'],'');self.assertEqual(colors[0]['color_code'],'');self.assertEqual(colors[0]['size'],'')
+ def test_declared_but_unread_color_options_are_not_silently_discarded(self):
+  with self.assertRaises(ValueError):c.option_palette({'options':[{'groupName':'색상'}],'optionUsable':True})
+ def test_legacy_detail_content_formats(self):
+  for data in [{'renderContent':'<img src="a.jpg">'},{'detailContent':'<div>본문</div>'},{'content':{'renderContent':'<p>본문</p>'}}]:self.assertTrue(c.content_html(data))
+  self.assertEqual(c.content_html({'content':'상품 없음'}),'')
+ def test_no_options_real_sdk_accepts_blank_result_without_mapping(self):
+  import tempfile
+  from crawler_sdk import CrawlContext
+  with tempfile.TemporaryDirectory() as folder:
+   events=[];ctx=CrawlContext('unused',Path(folder)/'out.xlsx',0,['main_image'],['품번','상품명','색상','상품 링크','대표이미지'],lambda:None,lambda kind,**data:events.append((kind,data)),input_item={'품번':'13626441762'},mapping_mode='manual')
+   product={'id':'13626441762','name':'옵션없는상품','optionUsable':False}
+   with patch.object(c,'photo_candidates',return_value=['https://shop-phinf.pstatic.net/photo.jpg']),patch.object(c,'prefetch_images'):
+    c.collect_one(ctx,'13626441762',(product,'','https://smartstore.naver.com/ncsongpa269/products/13626441762'))
+   ctx.finish()
+   row=next(data for kind,data in events if kind=='row' and not data.get('header'))
+   self.assertEqual(row['row'][2],'');self.assertNotIn('unmapped',row)
+ def test_information_expand_timeout_does_not_fail_product(self):
+  page=Mock();page.content.return_value='<div><strong>상품정보</strong><ul><li><div>모델명</div><div>MODEL123</div></li></ul></div>'
+  page.get_by_role.return_value.count.return_value=1;page.get_by_role.return_value.first.click.side_effect=TimeoutError('click timeout')
+  result=c.read_basic_information(page,{},Mock())
+  self.assertEqual(result['모델명'],'MODEL123')
+ def test_existing_chrome_keeps_native_download_settings(self):
+  runtime=Mock();browser=Mock();browser.contexts=[Mock()];calls=[]
+  def connect(endpoint,*,timeout,no_defaults=False):calls.append(no_defaults);return browser
+  runtime.chromium.connect_over_cdp=connect
+  manager=Mock();manager.__enter__=Mock(return_value=runtime);manager.__exit__=Mock(return_value=False)
+  with patch('playwright.sync_api.sync_playwright',return_value=manager),patch.object(c,'chrome_endpoint',return_value='ws://127.0.0.1:9222/devtools/browser/test'):
+   with c.naver_browser_session(Mock()) as context:self.assertIs(context,browser.contexts[0])
+  self.assertEqual(calls,[True])
+  browser.new_browser_cdp_session.return_value.send.assert_called_once_with('Browser.setDownloadBehavior',{'behavior':'default'})
+  browser.close.assert_not_called()
+ def test_suspended_product_returns_public_info_without_waiting_for_detail(self):
+  from contextlib import nullcontext
+  page=Mock();page.url='https://smartstore.naver.com/ncsongpa269/products/13628486064';page.content.return_value='<body>이 상품은 현재 판매중지된 상품입니다.</body>'
+  product={'id':13628486064,'name':'백팩','optionUsable':False}
+  with patch.object(c,'existing_product_tab',return_value=page),patch.object(c,'state_from',return_value={'simpleProductForDetailPage':product}),patch.object(c,'read_basic_information',return_value={}),patch.object(c,'wait_access',side_effect=AssertionError('must not wait')):
+   result,body,url=c.read_product_page(Mock(),Mock(),'13628486064')
+  self.assertEqual(result['_sourceUnavailable'],'판매중지: 공홈에서 상세 본문 미제공');self.assertEqual(body,'')
  def test_model_matching_is_exact(self):
   self.assertTrue(c.exact_model({'naverShoppingSearchInfo':{'modelName':'MODEL123'}},'model123'))
   self.assertTrue(c.exact_model({'name':'블라우스 MODEL123 블랙'},'MODEL123'))

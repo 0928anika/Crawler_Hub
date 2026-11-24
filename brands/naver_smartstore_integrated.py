@@ -264,11 +264,14 @@ def parse_basic_information(markup):
     return result
 
 
-def read_basic_information(page,product):
+def read_basic_information(page,product,ctx=None):
     heading=page.get_by_text('상품정보',exact=True)
-    if heading.count():heading.first.scroll_into_view_if_needed(timeout=5000)
-    expand=page.get_by_role('button',name='상품정보 펼쳐보기',exact=True)
-    if expand.count() and expand.first.get_attribute('aria-expanded')!='true':expand.first.click(timeout=5000)
+    try:
+        if heading.count():heading.first.scroll_into_view_if_needed(timeout=3000)
+        expand=page.get_by_role('button',name='상품정보 펼쳐보기',exact=True)
+        if expand.count() and expand.first.get_attribute('aria-expanded')!='true':expand.first.click(timeout=3000,no_wait_after=True)
+    except Exception as exc:
+        if ctx:ctx.log('상품정보 펼치기 지연: 현재 보이는 정보와 고시로 계속 수집 / '+str(exc).splitlines()[0],'WARNING')
     result=parse_basic_information(page.content())
     shopping=product.get('naverShoppingSearchInfo') or {}
     for key,value in [('브랜드',shopping.get('brandName')),('모델명',shopping.get('modelName'))]:
@@ -393,7 +396,10 @@ def option_palette(product):
         scope='색상별 옵션'
         if not labels:
             fixed=notice_value(product,'색상')
-            if not fixed:raise ValueError('공식 색상 옵션/고시 색상 미확인: 실제 색상 원문이 필요합니다.')
+            if not fixed:
+                if not groups and not standards:
+                    return [dict(color_name='',color_code='',size='',size_scope='선택 옵션·고시 색상 없음: 색상과 사이즈 공백 보존')],[]
+                raise ValueError('공식 색상 옵션/고시 색상 미확인: 실제 색상 원문이 필요합니다.')
             labels=[fixed];scope='상품고시 색상·치수 (선택 옵션 없음)'
             if not sizes:
                 declared=notice_value(product,'치수')
@@ -436,7 +442,7 @@ def detail_markup(ctx,source,product,cache):
             cells=['<'+n.name+'>'+html.escape(n.get_text(' ',strip=True))+'</'+n.name+'>' for n in tr.find_all(['th','td'],recursive=False)]
             if cells:rows.append('<tr>'+''.join(cells)+'</tr>')
         if rows:parts.append('<table border="1">'+''.join(rows)+'</table>')
-    if not parts: raise ValueError('상품 상세 본문 미로딩: 고시만으로 성공 처리하지 않음')
+    if not parts:ctx.log('상품 상세 본문 없음/미로딩: 상품 정보와 고시는 보존하고 본문 이미지는 공백으로 수집합니다.','WARNING')
     parts.append(notice_table(ctx,product))
     return '<div>'+''.join(parts)+'</div>'
 
@@ -472,7 +478,13 @@ def naver_browser_session(ctx):
         raise RuntimeError('[기존 Chrome 연결 설정 필요] 새 창은 열지 않습니다. 로그인한 Chrome에서 chrome://inspect/#remote-debugging 연결 허용을 켠 뒤 실행하세요.')
     ctx.stage('로그인한 기존 Chrome 연결 · Chrome에 연결 허용 창이 뜨면 직접 허용하세요')
     with sync_playwright() as runtime:
-        browser=runtime.chromium.connect_over_cdp(endpoint,timeout=getattr(ctx,'connection_timeout',300000))
+        import inspect
+        kwargs={'timeout':getattr(ctx,'connection_timeout',300000)}
+        if 'no_defaults' in inspect.signature(runtime.chromium.connect_over_cdp).parameters:kwargs['no_defaults']=True
+        browser=runtime.chromium.connect_over_cdp(endpoint,**kwargs)
+        session=browser.new_browser_cdp_session()
+        try:session.send('Browser.setDownloadBehavior',{'behavior':'default'})
+        finally:session.detach()
         if not browser.contexts:raise RuntimeError('기존 Chrome 기본 세션을 찾지 못했습니다.')
         ctx.log('기존 Chrome 로그인 세션에 연결했습니다. 새 브라우저/프로필을 만들지 않습니다.','SUCCESS')
         try:yield browser.contexts[0]
@@ -537,7 +549,7 @@ def enrich_notice(ctx,page,product):
     has_color=any(str(o.get('optionGroupName','')).strip().casefold() in ('색상','컬러','color','colour') and str(o.get('optionName') or '').strip() for o in product.get('optionStandards') or [])
     if not ctx.enabled('detail_page') and has_color:return
     ctx.checkpoint()
-    product['productBasicInfo']=read_basic_information(page,product)
+    product['productBasicInfo']=read_basic_information(page,product,ctx)
     button=page.get_by_role('button',name='상품정보제공고시 보기',exact=True)
     if not button.count():return
     dialog=None
@@ -567,6 +579,15 @@ def existing_product_tab(browser):
     raise ValueError('[상품 탭 필요] 기존 Chrome의 현재 탭에서 지정 스토어 상품 페이지를 열어두세요. 다른 사이트의 탭은 바꾸거나 새 창/탭을 만들지 않습니다.')
 
 
+def content_html(value):
+    if isinstance(value,str):return value if re.search(r'<(?:div|p|img|table|section|html)\b',value,re.I) else ''
+    if not isinstance(value,dict):return ''
+    for key in ('renderContent','detailContent','productDetailContent','content'):
+        result=content_html(value.get(key))
+        if result:return result
+    return ''
+
+
 def read_product_page(ctx,browser,number):
     url=SITE+'/'+STORE+'/products/'+number
     needs_body=any(ctx.enabled(k) for k in ('detail_page','main_image','additional_images'))
@@ -575,7 +596,7 @@ def read_product_page(ctx,browser,number):
     def receive(response):
         parsed=urlsplit(response.url)
         if parsed.hostname!='smartstore.naver.com':return
-        match=re.fullmatch(r'/n/v2/channels/([^/]+)/products/([0-9]+)(/contents/.*)?',parsed.path)
+        match=re.fullmatch(r'/n/v2/channels/([^/]+)/products/([0-9]+)(/contents(?:/.*)?)?',parsed.path)
         if not match or match[2]!=number:return
         key='contents' if match[3] else 'product'
         if key=='contents' and not needs_body:return
@@ -593,6 +614,15 @@ def read_product_page(ctx,browser,number):
         ctx.checkpoint();response=None
         if page.url.split('?')[0].rstrip('/')!=url:response=page.goto(url,wait_until='domcontentloaded',timeout=30000)
         ctx.checkpoint();status=response.status if response else 200
+        current_source=page.content()
+        if '현재 판매중지된 상품' in BeautifulSoup(current_source,'html.parser').get_text(' ',strip=True):
+            initial=state_from(current_source)
+            stopped=initial.get('simpleProductForDetailPage') or {}
+            verify_product(stopped,number)
+            stopped['_sourceUnavailable']='판매중지: 공홈에서 상세 본문 미제공'
+            stopped['productBasicInfo']=read_basic_information(page,stopped,ctx)
+            ctx.log('판매중지 상품: 공개된 기본 정보만 수집하며 상세 미제공을 표시합니다.','WARNING')
+            return stopped,'',url
         state=wait_access(ctx,page,number,status,captured)
         deadline=time.monotonic()+3
         while time.monotonic()<deadline:
@@ -610,12 +640,16 @@ def read_product_page(ctx,browser,number):
             for _ in range(25):
                 ctx.checkpoint()
                 if captured.get('error'):raise ValueError(captured['error'])
-                source=str((captured.get('contents') or {}).get('renderContent') or '')
+                source=content_html(captured.get('contents')) or content_html(product)
                 if source:break
                 area=page.locator('.se-main-container').first
                 if area.count():source=area.evaluate('(el)=>el.outerHTML');break
+                expand=page.get_by_role('button',name=re.compile(r'^상세(?:정보|설명).*펼쳐보기$'))
+                if expand.count():
+                    try:expand.first.click(timeout=1500)
+                    except Exception:pass
                 page.mouse.wheel(0,800);page.wait_for_timeout(250)
-            if not source:raise ValueError('상세 본문 로딩 미완료')
+            if not source:ctx.log('상세 본문 로딩 미완료: 상품 정보·사진·고시는 계속 수집합니다.','WARNING')
         enrich_notice(ctx,page,product)
         return product,source,url
     finally:page.remove_listener('response',receive)
@@ -625,7 +659,7 @@ def broker_folder():
     return home/'browser-profiles/naver_smartstore_integrated/existing-connection'
 
 
-def broker_version():return 'smartstore-integrated-v3'
+def broker_version():return 'smartstore-integrated-v6'
 
 def compatible_broker_versions():return {broker_version()}
 
@@ -672,7 +706,9 @@ def ensure_broker(ctx):
             health=broker_request(info,'/health')
             if health.get('ok') and health.get('version') in compatible_broker_versions():return info
             broker_request(info,'/stop',{},timeout=5)
-        except Exception:pass
+        except Exception:
+            if info.get('version') in compatible_broker_versions() and broker_alive(info):
+                raise ValueError('기존 Chrome 수집 연결이 응답 대기 중입니다. 잠시 후 재시도하세요. 중복 연결은 만들지 않습니다.')
     pending=bool(info and not info.get('ready') and not info.get('error') and info.get('version') in compatible_broker_versions() and broker_alive(info))
     if not pending:
         lock=folder/'starting.lock'
@@ -739,10 +775,13 @@ def collect_one(ctx,number,loaded):
     try:
         product,source,url=loaded;verify_product(product,number)
         palette,deltas=option_palette(product);name=str(product['name']).strip()
+        blank_options=all(not color['color_name'] and not color['color_code'] for color in palette)
+        ctx.allow_empty_color=blank_options
         size_scope=next((c.get('size_scope') for c in palette if c.get('size_scope') and c['size_scope']!='색상별 옵션'),'')
         if size_scope:ctx.log(size_scope+' / 실제 상품 옵션·고시 원문을 보존합니다.','WARNING')
         model=str((product.get('naverShoppingSearchInfo') or {}).get('modelName') or '').strip()
         record=dict(product_code=model or number,product_name=name,product_url=url,**{'입력값':ctx.product_code,'상품번호':number,'스토어 주소':SITE+'/'+STORE},**{'원본 품번':str((product.get('naverShoppingSearchInfo') or {}).get('modelName') or '')})
+        if product.get('_sourceUnavailable'):record['공식 페이지 상태']=product['_sourceUnavailable']
         if getattr(ctx,'snapshot_collected_at',None):record['원문 수집시각']=ctx.snapshot_collected_at
         if ctx.enabled('size') and size_scope:record['사이즈 확인 범위']=size_scope
         if ctx.enabled('size'):record['size']=','.join(dict.fromkeys(s for c in palette for s in c['size'].split(',') if s))
@@ -756,8 +795,10 @@ def collect_one(ctx,number,loaded):
             gallery_product=dict(product)
             if not gallery_product.get('productImages'):
                 gallery_product['productImages']=[dict(url=u,imageType='REPRESENTATIVE' if i==0 else 'OPTIONAL') for i,u in enumerate([product.get('representativeImageUrl')]+list(product.get('optionalImageUrls') or [])) if u]
-            photos=photo_candidates(ctx,gallery_product,source,cache)
-        if not photos:
+            if product.get('_sourceUnavailable'):
+                photos=gallery(ctx,gallery_product,cache,require=False)
+            else:photos=photo_candidates(ctx,gallery_product,source,cache)
+        if not photos or blank_options:
             for color in palette:
                 row=dict(record,color=color['color_name'],color_name=color['color_name'],color_code=color['color_code'])
                 if ctx.enabled('size'):row['size']=color['size']
@@ -769,8 +810,8 @@ def collect_one(ctx,number,loaded):
         else:
             choices=palette if ctx.enabled('size') else [{k:v for k,v in c.items() if k!='size'} for c in palette]
             for url in photos:ctx.emit_unmapped(dict(record),choices,url,shared_detail_html=body)
-    except Exception as exc:
-        ctx.fail_item(str(exc));raise
+    except Exception:
+        raise
 
 
 def crawl(ctx):
@@ -832,7 +873,7 @@ def run_existing_chrome_broker():
                 for number in numbers:
                     product,source,url=read_product_page(control,Handler.browser,number)
                     if not identifier.isdigit() and not exact_model(product,identifier):continue
-                    keys=('id','name','channel','category','naverShoppingSearchInfo','optionStandards','options','optionCombinations','productImages','representativeImageUrl','optionalImageUrls','salePrice','discountedSalePrice','benefitsView','productInfoProvidedNoticeView','productBasicInfo','optionUsable')
+                    keys=('id','name','channel','category','naverShoppingSearchInfo','optionStandards','options','optionCombinations','productImages','representativeImageUrl','optionalImageUrls','salePrice','discountedSalePrice','benefitsView','productInfoProvidedNoticeView','productBasicInfo','optionUsable','_sourceUnavailable')
                     product={k:product[k] for k in keys if k in product}
                     items.append({'product':product,'source':source})
                 if not items:raise ValueError('스토어 검색 결과에서 정확한 품번 미확인: '+identifier)
