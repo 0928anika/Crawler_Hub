@@ -335,7 +335,7 @@ class Job:
         inp,out=self.dir/'input.xlsx',output_dir/f'raw-{i}.xlsx'
         engine=self.engine_root or ROOT
         script=engine/self.engine_script if self.engine_script else brand_root()/self.brand['script']
-        options=dict(index=i,selected=self.selected,headers=self.brand.get('output_headers',[]),level=self.brand.get('execution_level',1),interface=self.brand.get('interface','legacy_cli'),input_headers=self.headers,input_row=row,mapping_revision=mapping['revision'] if mapping else 0,mapping_mode=self.brand.get('mapping_mode','automatic'),image_mode=self.brand.get('image_mode','url'),asset_dir=str(self.dir/'images'/'original'))
+        options=dict(index=i,selected=self.selected,headers=self.brand.get('output_headers',[]),level=self.brand.get('execution_level',1),interface=self.brand.get('interface','legacy_cli'),input_headers=self.headers,input_row=row,mapping_mode=self.brand.get('mapping_mode','automatic'),image_mode=self.brand.get('image_mode','url'),asset_dir=str(self.dir/'images'/'original'))
         env=dict(os.environ,PYTHONIOENCODING='utf-8',PYTHONUNBUFFERED='1',PYTHONDONTWRITEBYTECODE='1')
         flags=subprocess.CREATE_NO_WINDOW if os.name=='nt' else 0
         p=subprocess.Popen([sys.executable,'-B',str(engine/'worker.py'),str(script),str(inp),str(out),str(self.control),json.dumps(options,ensure_ascii=False,default=str)],

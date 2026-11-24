@@ -69,5 +69,20 @@ class MappingViewCacheTests(unittest.TestCase):
     m.visible_items(job);self.assertEqual(build.call_count,2)
     job.items[0]['name']='updated';job.revision+=1
     self.assertEqual(m.visible_items(job)[0]['name'],'updated');self.assertEqual(build.call_count,3)
+class RealWorkerLaunchTests(unittest.TestCase):
+ def test_run_real_launches_worker_without_mapping_summary_variable(self):
+  import shutil,threading
+  from tasks import Job
+  with tempfile.TemporaryDirectory() as folder:
+   folder=Path(folder);engine=folder/'engine';engine.mkdir()
+   app=Path(__file__).resolve().parents[1]/'app'
+   for name in ('worker.py','crawler_sdk.py','schema.py','detail_store.py'):
+    shutil.copy2(app/name,engine/name)
+   (engine/'fixture.py').write_text("PORTAL_API_VERSION=1\ndef crawl(ctx):\n ctx.emit_result(dict(product_code=ctx.product_code,product_name='Test product',color='BLUE',product_url='https://example.com/product'))\n",encoding='utf-8')
+   job=Job.__new__(Job);job.dir=folder;job.engine_root=engine;job.engine_script='fixture.py';job.control=folder/'control.txt';job.control.write_text('run')
+   job.brand=dict(output_headers=['품번','상품명','색상','상품 링크'],execution_level=1,interface='portal_v1',mapping_mode='automatic');job.headers=['품번'];job.selected=[];job.stop=threading.Event();job.state='running';events=[]
+   job.accept=lambda event,local:events.append(event);job.log=lambda *args:None
+   self.assertEqual(job.run_real(0,['13233873870']),0)
+   self.assertTrue(any(event.get('kind')=='row' and not event.get('header') for event in events))
 if __name__=='__main__': unittest.main()
 
