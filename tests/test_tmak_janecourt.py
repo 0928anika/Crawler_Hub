@@ -39,6 +39,21 @@ class Tests(unittest.TestCase):
   with patch.object(c,'check_public_image',return_value={'status':'unknown','reasons':['timeout']}):
    with self.assertRaises(c.CrawlError) as error:c.checked(Mock(),'https://www.janecourt.com/body.jpg',{},True)
    self.assertNotIsInstance(error.exception,c.MissingImage)
+ def test_six_reported_models_skip_setup_and_collect_single_options(self):
+  import json,html
+  cases=json.loads((Path(__file__).resolve().parent/'fixtures/tmak_janecourt/setup_and_single_cases.json').read_text(encoding='utf-8'))
+  for code,pages in cases.items():
+   with self.subTest(code=code):
+    sources=[]
+    for page in pages:
+     stock=json.dumps({str(i):row for i,row in enumerate(page['options'])},ensure_ascii=False)
+     sources.append('<div class="infoArea"><h2>'+html.escape(page['title'])+'</h2></div><script>var option_stock_data = '+repr(stock)+';</script>')
+    ctx=Mock(product_code=code);ctx.enabled.side_effect=lambda k:k in ('size','main_image')
+    with patch.object(c,'search',return_value=[c.SITE+'/product/detail.html?product_no='+str(i) for i in range(len(sources))]),patch.object(c,'fetch',side_effect=sources),patch.object(c,'gallery',return_value=['https://www.janecourt.com/photo.jpg']):
+     c.crawl(ctx)
+    self.assertEqual(ctx.emit_unmapped.call_count,1)
+    args=ctx.emit_unmapped.call_args.args
+    self.assertNotIn('셋업',args[0]['product_name']);self.assertTrue(args[1]);ctx.fail_item.assert_not_called()
  def test_multicolor_without_official_image_links_uses_manual_mapping(self):
   ctx=Mock(product_code='GNA2402');ctx.enabled.side_effect=lambda k:k in ('size','price','regular_price','main_image','detail_page')
   with patch.object(c,'search',return_value=[c.SITE+'/product/detail.html?product_no=1875']),patch.object(c,'fetch',return_value=self.source),patch.object(c,'gallery',return_value=['https://www.janecourt.com/photo.jpg']),patch.object(c,'detail',return_value='<p>본문</p>'):

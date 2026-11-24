@@ -14,7 +14,7 @@ from crawler_rules import check_public_image
 
 SITE='https://www.janecourt.com'
 HOSTS=('janecourt.com','www.janecourt.com','m.janecourt.com')
-REVISION='2026-11-24-tmak-janecourt-v1'
+REVISION='2026-11-24-tmak-janecourt-v2'
 IMAGE_HOSTS=HOSTS+('janecourt.imghost.cafe24.com','cafe24.poxo.com','cafe24img.poxo.com')
 
 class CrawlError(ValueError):pass
@@ -217,6 +217,7 @@ def amount(value):
 
 def crawl(ctx):
     try:
+        ctx.log('티막 제인코트 코드 버전: '+REVISION,'INFO')
         value=str(ctx.product_code).strip().upper()
         match=re.fullmatch(r'([A-Z0-9]+)(?:_([A-Z0-9]+))?',value)
         if not match:raise CrawlError('기본 품번 또는 기본품번_색상코드를 입력하세요.')
