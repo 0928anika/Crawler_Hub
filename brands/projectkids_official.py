@@ -378,6 +378,34 @@ def size_material(ctx,goods,cache):
     return diagram,tables
 
 
+def combined_notice(products):
+    fields={};colors=[]
+    for goods in products:
+        color=str(goods['god'].get('colorCd') or '').strip()
+        raw=next((row.get('godDetailCont') or '' for row in goods.get('godDetailList',[]) if row.get('godDetailTpCd')=='AFF_NTFC_DETAIL_HTML'),'')
+        doc=BeautifulSoup(raw,'html.parser')
+        for row in doc.select('tr'):
+            cells=row.find_all(['th','td'],recursive=False)
+            if len(cells)!=2:continue
+            key,value=(cell.get_text(' ',strip=True) for cell in cells)
+            if not key or not value:continue
+            if re.sub(r'\s+','',key)=='색상':
+                if value not in colors:colors.append(value)
+                fields.setdefault('색상',[])
+            else:
+                entries=fields.setdefault(key,[])
+                if (color,value) not in entries:entries.append((color,value))
+    if not fields:return ''
+    rows=[]
+    for key,entries in fields.items():
+        if key=='색상':value=html.escape(', '.join(colors))
+        else:
+            unique=list(dict.fromkeys(value for _,value in entries))
+            value=html.escape(unique[0]) if len(unique)==1 else '<br>'.join(html.escape(color+': '+text) for color,text in entries)
+        rows.append('<tr><th>'+html.escape(key)+'</th><td>'+value+'</td></tr>')
+    return '<table style="width:100%;border-collapse:collapse"><tbody>'+''.join(rows)+'</tbody></table>'
+
+
 def detail_markup(ctx, products, assets, cache):
     parts=[];digests=set();urls=set()
     # Preserve only original detail-body sources, independent of gallery slots.
@@ -430,17 +458,8 @@ def detail_markup(ctx, products, assets, cache):
             if len(tables)>1:parts.append('<h4>'+html.escape(color)+' 실측사이즈</h4>')
             parts.append(table)
         parts.append('<p>소재 특성 및 측정 방법에 따라 약 1~3cm의 오차가 발생할 수 있으며, 이는 불량 사유에 해당하지 않는 점 참고 부탁드립니다.</p>')
-    notices=[]
-    for goods in products:
-        raw=next((row.get('godDetailCont') or '' for row in goods.get('godDetailList',[]) if row.get('godDetailTpCd')=='AFF_NTFC_DETAIL_HTML'),'')
-        tables=clean_table(raw) if raw else []
-        for table in tables:
-            if table not in [value for _,value in notices]:notices.append((goods['god']['colorCd'],table))
-    if notices:
-        parts.append('<h3>상품정보제공고시</h3>')
-        for color,table in notices:
-            if len(notices)>1:parts.append('<h4>'+html.escape(color)+'</h4>')
-            parts.append(table)
+    notice=combined_notice(products)
+    if notice:parts.append('<h3>상품정보제공고시</h3>'+notice)
     markup=''.join(parts)
     if not markup:raise CollectionError('공식 상품 본문/사이즈 자료 모두 없음')
     if len(markup)>32767:raise CollectionError('정리한 공통 상세 HTML Excel 셀 한도 초과')
