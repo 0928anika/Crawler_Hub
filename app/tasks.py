@@ -56,14 +56,14 @@ class Job:
             success=sum(x['status']=='SUCCESS' for x in self.queue)
             waiting=sum(x['status']=='WAITING' for x in self.queue)
             mapping=color_mapping.snapshot(self) if color_mapping.is_manual(self) else None
-            mapped_count=len(color_mapping.final_items(self,mapping)) if mapping and mapping['finalized'] else len(self.items)
+            mapped_count=len(color_mapping.visible_items(self)) if mapping and mapping['finalized'] else len(self.items)
             return dict(id=self.id,name=self.name,brand=brand_label(self.brand),brand_name=self.brand['name'],crawl_source=self.brand.get('crawl_source',''),brand_id=self.brand['id'],state=self.state,
                 total=len(self.rows),done=self.done,failed=self.failed,success=success,waiting=waiting,
                 current=self.current,stage=self.stage,directory=str(self.dir),demo=self.demo,selected=self.selected,
                 created_at=self.created_at,elapsed=round(elapsed,1),average=round(elapsed/self.done,1) if self.done else None,
                 eta=round(elapsed/self.done*waiting) if self.done>=3 and self.state in ACTIVE else None,
                 pending=sum(q['status'] in ('WAITING','RUNNING','CANCELLED') for q in self.queue),can_retry=any(q['status']=='FAILED' for q in self.queue),can_continue=any(q['status'] in ('WAITING','RUNNING','CANCELLED') for q in self.queue) and bool(self.headers),count=mapped_count,raw_count=len(self.items),saved_at=self.saved_at,save_error=self.save_error,version=VERSION,
-                mapping_mode=self.brand.get('mapping_mode','automatic'),image_mode=self.brand.get('image_mode','url'),mapping_finalized=bool(mapping and mapping['finalized']),
+                mapping_revision=mapping['revision'] if mapping else 0,mapping_mode=self.brand.get('mapping_mode','automatic'),image_mode=self.brand.get('image_mode','url'),mapping_finalized=bool(mapping and mapping['finalized']),
                 detail_image_ready=bool(mapping and mapping['finalized'] and any(f.startswith('상세이미지/') for f in color_mapping.read_state(self).get('file_export',{}).get('files',[]))),
                 crawler_hash=self.crawler_hash,revision=self.revision,queue_revision=self.revision+sum(x['status']!='WAITING' for x in self.queue)+self.done)
     def snapshot(self):
@@ -335,7 +335,7 @@ class Job:
         inp,out=self.dir/'input.xlsx',output_dir/f'raw-{i}.xlsx'
         engine=self.engine_root or ROOT
         script=engine/self.engine_script if self.engine_script else brand_root()/self.brand['script']
-        options=dict(index=i,selected=self.selected,headers=self.brand.get('output_headers',[]),level=self.brand.get('execution_level',1),interface=self.brand.get('interface','legacy_cli'),input_headers=self.headers,input_row=row,mapping_mode=self.brand.get('mapping_mode','automatic'),image_mode=self.brand.get('image_mode','url'),asset_dir=str(self.dir/'images'/'original'))
+        options=dict(index=i,selected=self.selected,headers=self.brand.get('output_headers',[]),level=self.brand.get('execution_level',1),interface=self.brand.get('interface','legacy_cli'),input_headers=self.headers,input_row=row,mapping_revision=mapping['revision'] if mapping else 0,mapping_mode=self.brand.get('mapping_mode','automatic'),image_mode=self.brand.get('image_mode','url'),asset_dir=str(self.dir/'images'/'original'))
         env=dict(os.environ,PYTHONIOENCODING='utf-8',PYTHONUNBUFFERED='1',PYTHONDONTWRITEBYTECODE='1')
         flags=subprocess.CREATE_NO_WINDOW if os.name=='nt' else 0
         p=subprocess.Popen([sys.executable,'-B',str(engine/'worker.py'),str(script),str(inp),str(out),str(self.control),json.dumps(options,ensure_ascii=False,default=str)],

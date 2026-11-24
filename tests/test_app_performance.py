@@ -42,5 +42,32 @@ class PerformanceRegressionTests(unittest.TestCase):
     (folder/'new_brand.py').unlink()
     self.assertFalse(registry.get_brand('new_brand')['available'])
    registry._CATALOG_CACHE.clear()
+class MappingViewCacheTests(unittest.TestCase):
+ def job(self,folder):
+  from test_hybrid_mapping import HybridMappingTests,item
+  job=HybridMappingTests().job(folder,[item(0,'MODEL','60','https://img/one.jpg',True)])
+  job.revision=0
+  return job
+ def test_repeated_snapshot_reuses_work_without_exposing_cached_mutations(self):
+  import color_mapping as m
+  with tempfile.TemporaryDirectory() as folder:
+   job=self.job(folder)
+   with patch.object(m,'_snapshot',wraps=m._snapshot) as build:
+    first=m.snapshot(job);first['groups'][0]['name']='mutated'
+    self.assertNotEqual(m.snapshot(job)['groups'][0]['name'],'mutated')
+    self.assertEqual(build.call_count,1)
+    job.queue[0]['status']='FAILED';self.assertEqual(m.snapshot(job)['groups'],[])
+    self.assertEqual(build.call_count,2)
+ def test_mapping_save_invalidates_snapshot_and_results_immediately(self):
+  import color_mapping as m
+  with tempfile.TemporaryDirectory() as folder:
+   job=self.job(folder);view=m.snapshot(job);group=view['groups'][0]
+   with patch.object(m,'_visible_items',wraps=m._visible_items) as build:
+    m.visible_items(job);m.visible_items(job);self.assertEqual(build.call_count,1)
+    m.save_color(job,dict(group_id=group['id'],color_id=group['colors'][0]['id'],image_ids=[group['images'][0]['id']],expected_revision=view['revision']))
+    self.assertEqual(m.snapshot(job)['saved_colors'],1)
+    m.visible_items(job);self.assertEqual(build.call_count,2)
+    job.items[0]['name']='updated';job.revision+=1
+    self.assertEqual(m.visible_items(job)[0]['name'],'updated');self.assertEqual(build.call_count,3)
 if __name__=='__main__': unittest.main()
 
