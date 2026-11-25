@@ -59,6 +59,37 @@ class Tests(unittest.TestCase):
     self.assertIn(code+' notice',markup)
     self.assertNotIn(('AC' if code=='60' else '60')+' notice',markup)
    self.assertIn('shared.jpg',mapping.detail_preview(job,g['id'])['html'])
+ def test_transient_cdn_reset_recovers_with_public_get(self):
+  from unittest.mock import patch
+  from test_oberon_brands import image
+  module=load('phantom_official_no_model');url='https://cdn.bucketstore.com/test.jpg'
+  class C:
+   def checkpoint(self):pass
+   def log(self,*args):pass
+  unknown=dict(status='unknown',reasons=['WinError 10054'],data=None)
+  with patch.object(module,'check_public_image',return_value=unknown),patch.object(module,'fetch',return_value=(image(url)[0],url,'image/png')) as fetch:
+   result=module.inspect(C(),url,{})
+  self.assertEqual(result['status'],'accessible');self.assertEqual(result['width'],800)
+  self.assertNotIn('Referer',fetch.call_args.kwargs['headers'])
+ def test_hard_404_is_not_retried_as_transient(self):
+  from unittest.mock import patch
+  module=load('phantom_official_no_model')
+  class C:
+   def checkpoint(self):pass
+   def log(self,*args):pass
+  with patch.object(module,'check_public_image',return_value=dict(status='inaccessible',reasons=['HTTP 404'],data=None)),patch.object(module,'fetch') as fetch:
+   module.inspect(C(),'https://cdn.bucketstore.com/404.jpg',{})
+  fetch.assert_not_called()
+ def test_network_failure_is_not_reported_as_dimensions_failure(self):
+  from unittest.mock import patch
+  module=load('phantom_official_no_model')
+  def unavailable(ctx,url,cache,max_bytes=None):
+   result=dict(status='unknown',reasons=['WinError 10054'],data=None)
+   cache[(url,max_bytes or module.POLICY['max_bytes'])]=result
+   return result
+  with patch.object(module,'inspect',side_effect=unavailable):
+   rows,fail,error,_=run(module,'phantom_official_no_model','211F3CB201',ALL,OfficialTests().routes())
+  self.assertFalse(rows);self.assertIn('일시 연결 오류, 규격 탈락 아님',str(error))
  def test_no_gallery_fails_instead_of_unreviewable_detail(self):
   goods=fixture('product');goods['imageList']=[]
   rows,fail,error,_=run(load('phantom_official_no_model'),'phantom_official_no_model','211F3CB201',ALL,OfficialTests().routes(goods=goods))

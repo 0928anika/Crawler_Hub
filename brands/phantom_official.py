@@ -184,6 +184,21 @@ def inspect(ctx, url, cache, max_bytes=None):
     if key not in cache:
         ctx.checkpoint()
         result = check_public_image(url, timeout=12, max_bytes=max_bytes or POLICY['max_bytes'], retries=1, checkpoint=ctx.checkpoint)
+        if result['status'] == 'unknown' and urlsplit(url).hostname == 'cdn.bucketstore.com':
+            ctx.log('공식 CDN 일시 연결 오류: 일반 공개 이미지 GET으로 재확인 / ' + url, 'WARNING')
+            try:
+                data, final, mime = fetch(ctx, url, ('cdn.bucketstore.com',), headers={'Accept': 'image/*'},
+                                          limit=max_bytes or POLICY['max_bytes'], timeout=12)
+                if 'text/html' in mime.lower():
+                    raise CrawlError('이미지가 아닌 HTML 응답')
+                with Image.open(io.BytesIO(data)) as image:
+                    width, height, fmt = image.width, image.height, image.format
+                    image.verify()
+                result = dict(status='accessible', url=url, final_url=final, data=data,
+                              width=width, height=height, format=fmt, reasons=[], warnings=['일시 연결 오류 후 공개 GET 복구'])
+                ctx.log('공식 CDN 이미지 재확인 성공 / ' + url, 'INFO')
+            except (CrawlError, UnidentifiedImageError, OSError, ValueError) as exc:
+                result = dict(result, reasons=list(result.get('reasons') or []) + ['공개 GET 재확인 실패: ' + str(exc)])
         if result['status'] == 'accessible':
             try:
                 with Image.open(io.BytesIO(result['data'])) as im:

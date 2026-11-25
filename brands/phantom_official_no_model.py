@@ -1,6 +1,6 @@
 PORTAL_API_VERSION = 1
 """팬텀 공식 홈페이지(버킷스토어). 공식 색상 연결을 미리 선택하고 사람이 모델컷을 제외하는 별도 버전."""
-REVISION = '2026-11-25-phantom-review-1'
+REVISION = '2026-11-25-phantom-review-2'
 
 # ───────────────────────── 공통 도우미 (브랜드 파일마다 동일하게 포함) ─────────────────────────
 import hashlib
@@ -184,6 +184,21 @@ def inspect(ctx, url, cache, max_bytes=None):
     if key not in cache:
         ctx.checkpoint()
         result = check_public_image(url, timeout=12, max_bytes=max_bytes or POLICY['max_bytes'], retries=1, checkpoint=ctx.checkpoint)
+        if result['status'] == 'unknown' and urlsplit(url).hostname == 'cdn.bucketstore.com':
+            ctx.log('공식 CDN 일시 연결 오류: 일반 공개 이미지 GET으로 재확인 / ' + url, 'WARNING')
+            try:
+                data, final, mime = fetch(ctx, url, ('cdn.bucketstore.com',), headers={'Accept': 'image/*'},
+                                          limit=max_bytes or POLICY['max_bytes'], timeout=12)
+                if 'text/html' in mime.lower():
+                    raise CrawlError('이미지가 아닌 HTML 응답')
+                with Image.open(io.BytesIO(data)) as image:
+                    width, height, fmt = image.width, image.height, image.format
+                    image.verify()
+                result = dict(status='accessible', url=url, final_url=final, data=data,
+                              width=width, height=height, format=fmt, reasons=[], warnings=['일시 연결 오류 후 공개 GET 복구'])
+                ctx.log('공식 CDN 이미지 재확인 성공 / ' + url, 'INFO')
+            except (CrawlError, UnidentifiedImageError, OSError, ValueError) as exc:
+                result = dict(result, reasons=list(result.get('reasons') or []) + ['공개 GET 재확인 실패: ' + str(exc)])
         if result['status'] == 'accessible':
             try:
                 with Image.open(io.BytesIO(result['data'])) as im:
@@ -520,7 +535,14 @@ def crawl(ctx):
                 photos = [u for u in photos if u and not SKIP.search(u)]
                 accepted = screen_shots(ctx, photos, cache)
                 if not accepted:
-                    raise CrawlError('규격을 통과한 공식 갤러리 사진 없음: ' + code)
+                    results = [cache.get((u, POLICY['max_bytes']), {}) for u in photos]
+                    unknown = [r for r in results if r.get('status') == 'unknown']
+                    rejected = [r for r in results if r.get('status') == 'inaccessible']
+                    if unknown:
+                        raise CrawlError('공식 갤러리 이미지 접근 확인 미완료(일시 연결 오류, 규격 탈락 아님): ' + code + ' / ' + '; '.join(dict.fromkeys(reason for r in unknown for reason in r.get('reasons', []))))
+                    if rejected and len(rejected) == len(results):
+                        raise CrawlError('공식 갤러리 이미지 공개 접근/해독 실패: ' + code + ' / ' + '; '.join(dict.fromkeys(reason for r in rejected for reason in r.get('reasons', []))))
+                    raise CrawlError('공식 갤러리 사진 규격/콘텐츠 검사 미통과: ' + code + ' / 각 사진의 제외 사유 로그를 확인하세요.')
                 tail = ''
                 if ctx.enabled('detail_page'):
                     detail = api(ctx, '/goods/' + code + '/detail?isAdmin=false', url) or {}
