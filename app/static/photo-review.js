@@ -55,7 +55,7 @@ const PhotoReview=(()=>{
   let loaded=data.photos.filter(p=>previews.has(p.thumbnail_url)).length;progress(loaded,data.photos.length);
   async function worker(){while(index<queue.length&&seq===request&&S.page==='photos'&&!controller.signal.aborted){const url=queue[index++];try{if(!/^\/api\/jobs\/[a-f0-9]{32}\/photo-thumbnail\?image=/.test(url))throw Error('미리보기 주소 오류');const response=await fetch(url,{signal:controller.signal,cache:onlyFailed?'reload':'force-cache'});if(!response.ok||!response.headers.get('Content-Type')?.startsWith('image/'))throw Error('미리보기 조회 실패');const blob=await response.blob();if(seq!==request||S.page!=='photos'||controller.signal.aborted)return;previews.set(url,URL.createObjectURL(blob));previewFailures.delete(url)}catch(error){if(controller.signal.aborted)return;previewFailures.add(url)}done++;loaded+=weights.get(url)||0;progress(loaded,data.photos.length)}}
   await Promise.all(Array.from({length:6},worker));
-  if(seq!==request||S.page!=='photos')return;preparing=false;progress(data.photos.length,data.photos.length,previewFailures.size);render();
+  if(seq!==request||S.page!=='photos')return;if(previewFailures.size&&!onlyFailed){await preparePreviews(seq,true);return}preparing=false;progress(data.photos.length,data.photos.length,previewFailures.size);render();
  }
  async function load(){
   const seq=++request;preloadAbort?.abort();for(const url of previews.values())URL.revokeObjectURL(url);previews.clear();previewFailures.clear();preparing=false;reviewJobId=S.jobId;data=null;dirty=false;selected={keep:new Set(),trash:new Set()};excluded=new Set();$('photoReviewName').textContent=S.job?.name||'';$('photoReviewSearch').value='';
