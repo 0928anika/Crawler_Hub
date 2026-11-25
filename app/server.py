@@ -201,6 +201,7 @@ class Handler(BaseHTTPRequestHandler):
                         if search not in (item['code']+' '+item['name']).lower() or status and rs!=status:continue
                         rows.append({k:item.get(k) for k in ('id','task_id','code','name','color','missing')}|dict(status=rs,image_count=len(item['images']),**({k:item.get('normalized',{}).get(k,'') for k in ('size','barcode')} if 'barcode' in job.selected else {})))
                 return self.send(page_rows(rows,query))
+            if action=='targets':return self.send(dict(rows=job.target_rows(),job=job.summary(),headers=job.headers))
             if action=='logs':
                 with job.data_lock:rows=list(job.logs)
                 term=query.get('search',[''])[0].lower();level=query.get('level',[''])[0]
@@ -254,6 +255,9 @@ class Handler(BaseHTTPRequestHandler):
                 raise ValueError('지원하지 않는 매핑 작업입니다.')
             if len(parts)!=4 or parts[:2]!=['api','jobs']:raise ValueError('지원하지 않는 요청입니다.')
             job=job_for(parts[2]);action=parts[3]
+            if action=='targets':
+                result=job.edit_targets(data)
+                return self.send(dict(result,job=job.summary(),rows=job.target_rows()))
             if action=='photo-review':return self.send(photo_exclusion.save(job,data))
             if action in ('continue','retry-failed'):
                 with LOCK:

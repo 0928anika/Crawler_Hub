@@ -75,3 +75,4 @@
 .detail-mapping-required-badge{display:inline-flex;align-items:center;width:fit-content;padding:4px 8px;border-radius:6px;margin-bottom:8px}
 
 .barcode-supported-badge{display:inline-flex;align-items:center;width:fit-content;padding:4px 8px;border-radius:6px;background:#e5efff;color:#285eaa;font-size:10px;font-weight:700;margin:0 5px 8px 0}
+.mapping-order{position:absolute;top:34px;left:8px;z-index:2;min-width:22px;padding:2px 7px;border-radius:11px;background:#346aff;color:#fff;font-size:11px;font-weight:700;line-height:16px;box-shadow:0 1px 4px #17243b33;white-space:nowrap}.mapping-order.main{background:#e8590c}.mapping-order-hint{font-size:11px;color:#6b81a5;margin-left:4px}
