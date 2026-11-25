@@ -1,0 +1,175 @@
+{
+  "id": "olivialauren_official",
+  "name": "올리비아로렌",
+  "category": "여성복",
+  "script": "olivialauren_official.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_color_mapping": "manual",
+  "official_color_codes": true,
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명",
+    "색상별 사이즈 재고"
+  ],
+  "extensions": [],
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "option_stock_data '색상(코드)-사이즈'에서 색상별 사이즈(품절·숨김 포함, 표시 순서). 색상 후보의 size로 전달되어 매핑 후 각 색상 행에 반영. 색상별 재고는 '색상별 사이즈 재고' 추가 열."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "#span_product_price_sale(할인판매가) 우선, 없으면 #span_product_price_text. 상품 링크가 여러 개이고 값이 다르면 빈칸."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 소비자가 #span_product_price_custom 또는 product_custom(regular_price cafe24 프로필). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 페이지 .xans-product-headcategory 경로(홈·브랜드·기획전 제외)."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "갤러리 /web/product/big·extra(모든 색상 공통) + 상세 모델컷(ovlr.speedgabia.com/product/품번/) 전체를 매핑 후보로. 공개 GET·정지 JPEG/PNG/WebP·짧은 변 500px·10MB·비율 1.8·글자/콜라주 검사 통과 컷만. 색상은 사용자가 매핑."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "대표와 같은 후보 묶음. 매핑 전 자르지 않음. 최종 대표 1·추가 슬롯은 허브가 선택 사진으로 구성."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "#prdDetail 상품 본문 이미지(공통 인트로 00_intro·프로모션·배너 제외, 여러 색상 혼재) + #desctable 상품정보고시 2열 표. 모든 색상 공통. 별도 HTML 사이즈표 없음."
+    }
+  },
+  "guide": {
+    "example": "OLBAL26W9181",
+    "examples": [
+      "OLBAL26W9181",
+      "750",
+      "https://ovlr.kr/product/detail.html?product_no=750"
+    ],
+    "pattern": "^(?:[A-Za-z]{2,}[0-9][A-Za-z0-9]{3,}|[0-9]{1,7}|https?://(?:www\\.)?ovlr\\.kr/.+)$",
+    "format": "색상코드를 뺀 기본 품번(상품명 끝 _품번). 상품번호나 올리비아로렌 상품 URL도 가능",
+    "notes": "사이트 검색이 화면 JS로만 그려져 SHOP·OUTLET·SALE 목록으로 품번 색인을 만듭니다(작업당 처음 1~2분, 12시간 재사용). 수집 후 색상 매핑하기에서 사진을 분류합니다. 상세 모델컷 파일명 색상코드는 작업 로그에 참고로 표시됩니다.",
+    "method": "카테고리 목록 색인에서 상품명 끝 품번 정확 일치 → 상세 var product_name 품번 재확인 → option_stock_data 색상(코드)·사이즈",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "OLBAL26W9181/05",
+      "올리비아로렌 티셔츠"
+    ],
+    "validation_note": "입력 형식 검사이며 실제 상품 존재 확인은 실행 시 수행"
+  },
+  "crawl_source": "공식 홈페이지",
+  "notes": "사용자 단독 올리비아로렌 크롤러(2026-11-25)를 수동 매핑 규칙으로 옮긴 버전. 갤러리는 모든 색상 공통이라 자동 연결하지 않음. 정상가는 소비자가 필드에서만(판매가로 대체 안 함). 오프라인 fixture 검증만 완료, 실사이트 실행 확인 전.",
+  "image_mode": "url",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "option_stock_data '색상(코드)-사이즈'에서 색상별 사이즈(품절·숨김 포함, 표시 순서). 색상 후보의 size로 전달되어 매핑 후 각 색상 행에 반영. 색상별 재고는 '색상별 사이즈 재고' 추가 열."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "#span_product_price_sale(할인판매가) 우선, 없으면 #span_product_price_text. 상품 링크가 여러 개이고 값이 다르면 빈칸."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 소비자가 #span_product_price_custom 또는 product_custom(regular_price cafe24 프로필). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 페이지 .xans-product-headcategory 경로(홈·브랜드·기획전 제외)."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "갤러리 /web/product/big·extra(모든 색상 공통) + 상세 모델컷(ovlr.speedgabia.com/product/품번/) 전체를 매핑 후보로. 공개 GET·정지 JPEG/PNG/WebP·짧은 변 500px·10MB·비율 1.8·글자/콜라주 검사 통과 컷만. 색상은 사용자가 매핑."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "대표와 같은 후보 묶음. 매핑 전 자르지 않음. 최종 대표 1·추가 슬롯은 허브가 선택 사진으로 구성."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "#prdDetail 상품 본문 이미지(공통 인트로 00_intro·프로모션·배너 제외, 여러 색상 혼재) + #desctable 상품정보고시 2열 표. 모든 색상 공통. 별도 HTML 사이즈표 없음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null,
+    "색상별 사이즈 재고": null
+  },
+  "code_hash": "67e1704e78414dccc9021f8f8db0b8253a2db668da3bb3f18df999613c83d2b3"
+}
