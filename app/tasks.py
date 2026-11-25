@@ -63,7 +63,7 @@ class Job:
                 created_at=self.created_at,elapsed=round(elapsed,1),average=round(elapsed/self.done,1) if self.done else None,
                 eta=round(elapsed/self.done*waiting) if self.done>=3 and self.state in ACTIVE else None,
                 pending=sum(q['status'] in ('WAITING','RUNNING','CANCELLED') for q in self.queue),can_retry=any(q['status']=='FAILED' for q in self.queue),can_continue=any(q['status'] in ('WAITING','RUNNING','CANCELLED') for q in self.queue) and bool(self.headers),count=mapped_count,raw_count=len(self.items),saved_at=self.saved_at,save_error=self.save_error,version=VERSION,
-                mapping_revision=mapping['revision'] if mapping else 0,mapping_mode=self.brand.get('mapping_mode','automatic'),image_mode=self.brand.get('image_mode','url'),mapping_finalized=bool(mapping and mapping['finalized']),
+                photo_exclusion=color_mapping.photo_exclusion.enabled(self),mapping_revision=mapping['revision'] if mapping else 0,mapping_mode=self.brand.get('mapping_mode','automatic'),image_mode=self.brand.get('image_mode','url'),mapping_finalized=bool(mapping and mapping['finalized']),
                 detail_image_ready=bool(mapping and mapping['finalized'] and any(f.startswith('상세이미지/') for f in color_mapping.read_state(self).get('file_export',{}).get('files',[]))),
                 crawler_hash=self.crawler_hash,revision=self.revision,queue_revision=self.revision+sum(x['status']!='WAITING' for x in self.queue)+self.done)
     def snapshot(self):

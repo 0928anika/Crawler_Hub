@@ -9,6 +9,7 @@ from storage import atomic_json
 from color_palette import normalize_palette
 import local_images
 import am_requests
+import photo_exclusion
 
 
 DETAIL_OPTION_ID='__detail__'
@@ -183,10 +184,12 @@ def _snapshot(job, *, groups=None, state=None):
                 ids=[cid for cid in image.get('preassigned_color_ids',[image.get('preassigned_color_id')]) if cid in valid_colors]
                 if ids and image['id'] not in assignments:assignments[image['id']]=ids
             if initial:confirmed=[] if group.get('review_required') else sorted({cid for ids in assignments.values() for cid in ids})
+        assignments=photo_exclusion.apply(job,group,assignments,state)
         for image in group['images']:
             image['assigned_colors']=assignments.get(image['id'],[])
             image['assigned_to']=next(iter(image['assigned_colors']),None)
         confirmed=[cid for cid in confirmed if any(cid in ids for ids in assignments.values())]
+        if photo_exclusion.enabled(job) and state.get('photo_review_confirmed'):confirmed=sorted(valid_colors)
         group['confirmed']=confirmed
         group['complete']=len(confirmed)==len(valid_colors)
         if manual_detail(job):
