@@ -18,6 +18,7 @@ from execution_limits import MAX_JOBS,resource_profile,blocked_reason
 import admin
 import color_mapping
 import photo_exclusion
+import photo_thumbnails
 import local_images
 import zipfile
 import uuid
@@ -98,11 +99,11 @@ def find_result_item(job, items, item_id, grouped_pending=False):
 
 class Handler(BaseHTTPRequestHandler):
     def log_message(self,*_):pass
-    def send(self,body,mime='application/json',status=200,attachment=None):
+    def send(self,body,mime='application/json',status=200,attachment=None,cache_control='no-store'):
         if not isinstance(body,bytes):body=json.dumps(body,ensure_ascii=False,default=str).encode('utf-8')
         try:
             self.send_response(status);self.send_header('Content-Type',mime);self.send_header('Content-Length',str(len(body)))
-            self.send_header('Cache-Control','no-store');self.send_header('X-Content-Type-Options','nosniff');self.send_header('Referrer-Policy','no-referrer')
+            self.send_header('Cache-Control',cache_control);self.send_header('X-Content-Type-Options','nosniff');self.send_header('Referrer-Policy','no-referrer')
             if attachment:self.send_header('Content-Disposition','attachment; filename="'+attachment+'"')
             self.end_headers()
             self.wfile.write(body)
@@ -144,6 +145,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.send([j.summary() for k,j in JOBS.items() if k not in seen]+rows)
         if path.startswith('/api/jobs/'):
             parts=path.strip('/').split('/');job=job_for(parts[2]);action=parts[3] if len(parts)>3 else ''
+            if action=='photo-thumbnail':return self.send(photo_thumbnails.thumbnail(job,query.get('image',[''])[0]),'image/jpeg',cache_control='private, max-age=31536000, immutable')
             if action=='image':
                 file=local_images.fs_path(local_images.asset_path(job,query.get('path',[''])[0]))
                 if not file.is_file():return self.send({'error':'이미지 파일이 없습니다'},status=404)

@@ -5,6 +5,7 @@ from pathlib import Path
 import shutil
 import color_mapping as mapping
 from storage import atomic_json
+from photo_thumbnails import preview_url
 
 
 def enabled(job):
@@ -26,7 +27,7 @@ def gallery(job):
     if not enabled(job):raise ValueError('사진 제외를 지원하지 않는 작업입니다.')
     state=mapping.read_state(job);view=base_view(job,state)
     draft=state.get('photo_review_draft')
-    explicit=set(draft.get('excluded_ids',[]) if isinstance(draft,dict) else state.get('photo_excluded',[]));photos=[]
+    explicit=set(draft.get('excluded_ids',[]) if isinstance(draft,dict) else state.get('photo_excluded',[]));photos=[];previews={}
     for group in view['groups']:
         colors={c['id']:c for c in group['colors']}
         for image in group['images']:
@@ -35,7 +36,8 @@ def gallery(job):
             ids=assigned or original
             pid=photo_key(group,image)
             excluded=pid in explicit or (not assigned and bool(original) and not state.get('photo_review_confirmed') and not isinstance(draft,dict)) or not ids
-            photos.append(dict(id=pid,url=image['url'],code=group['code'],name=group['name'],colors=' · '.join(colors[c]['label'] for c in ids),excluded=excluded,mapped=bool(ids)))
+            thumbnail=previews.setdefault(image['url'],preview_url(job,pid))
+            photos.append(dict(id=pid,url=image['url'],thumbnail_url=thumbnail,code=group['code'],name=group['name'],colors=' · '.join(colors[c]['label'] for c in ids),excluded=excluded,mapped=bool(ids)))
     return dict(revision=state.get('revision',0),photos=photos,products=len(view['groups']),finalized=bool(mapping.snapshot(job)['finalized'] and not isinstance(draft,dict)),draft=isinstance(draft,dict),excluded_tasks=len(view['excluded_tasks']))
 
 
