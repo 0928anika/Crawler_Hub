@@ -97,6 +97,14 @@ def additional_count(job):
     return value
 
 
+def ordered_images(group,color_id):
+    """Images chosen for a color in the order the user clicked them (1st = main image).
+    Selections saved before click order was stored keep gallery order."""
+    chosen=[i for i in group['images'] if color_id in i.get('assigned_colors',[i.get('assigned_to')])]
+    rank={iid:n for n,iid in enumerate((group.get('orders') or {}).get(color_id) or [])}
+    return sorted(chosen,key=lambda image:rank.get(image['id'],len(rank)))
+
+
 def plan(view,selected=None,additional_count=9):
     result={};used={}
     selected=['main_image','additional_images'] if selected is None else selected
@@ -104,8 +112,7 @@ def plan(view,selected=None,additional_count=9):
     for group in view['groups']:
         for color in group['colors']:
             images=[];seen=set()
-            for image in group['images']:
-                if color['id'] not in image.get('assigned_colors',[image.get('assigned_to')]):continue
+            for image in ordered_images(group,color['id']):
                 digest=Path(image['asset_path']).stem
                 if digest in seen:continue
                 seen.add(digest);images.append(image)

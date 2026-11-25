@@ -126,7 +126,7 @@ function bindV03(){
 
 S.mapping=null;S.mappingDrafts={};S.mappingDirty=new Set();S.mappingActive={};S.mappingFocused=null;S.mappingDrag=null;S.mappingSuppressClick=false;S.mappingBusy=false;S.mappingAddOpen={};
 const mappingKey=(gid,cid)=>gid+':'+cid;
-function mappingDraft(group,cid){const key=mappingKey(group.id,cid);return S.mappingDrafts[key]??(S.mappingDrafts[key]=new Set(group.images.filter(i=>(i.assigned_colors||[i.assigned_to]).includes(cid)).map(i=>i.id)))}
+function mappingDraft(group,cid){const key=mappingKey(group.id,cid);if(S.mappingDrafts[key])return S.mappingDrafts[key];const chosen=group.images.filter(i=>(i.assigned_colors||[i.assigned_to]).includes(cid)).map(i=>i.id);/* 저장된 클릭 순서(1번=대표) 먼저, 순서 정보가 없던 선택은 갤러리 순서 */return S.mappingDrafts[key]=new Set([...(group.orders?.[cid]||[]).filter(id=>chosen.includes(id)),...chosen])}
 function mappingDisplayColors(group){return group.am_mode?[...group.colors,...(group.original_colors||[]).filter(c=>!group.colors.some(v=>v.id===c.id))]:group.colors}
 function mappingOwners(group,iid){return mappingDisplayColors(group).filter(c=>mappingDraft(group,c.id).has(iid))}
 function mappingOwner(group,iid){return mappingOwners(group,iid)[0]?.id||null}
@@ -162,10 +162,11 @@ function mappingProduct(group){
  const actions=el('div',undefined,'inline');
  const remaining=group.colors.filter(c=>!group.confirmed.includes(c.id)||S.mappingDirty.has(mappingKey(group.id,c.id)));
  if(group.colors.length===1||(remaining.length===1&&remaining[0].id===cid))actions.append(button('남은 사진 모두 선택',()=>{selectRemainingMappingPhotos(mappingGroup(group.id),cid);refreshMappingProduct(group.id)},'secondary'));
- const save=button('선택 저장 ('+draft.size+'장)',()=>saveMappingOption(group.id,cid),'primary');save.classList.add('mapping-save');save.dataset.emptySelection=String(!draft.size);save.disabled=S.mappingBusy||!draft.size;actions.append(save);tools.append(actions);head.append(tools);
+ const save=button('선택 저장 ('+draft.size+'장)',()=>saveMappingOption(group.id,cid),'primary');save.classList.add('mapping-save');save.dataset.emptySelection=String(!draft.size);save.disabled=S.mappingBusy||!draft.size;actions.append(save,el('small',(S.mapping?.image_order==='source'?'이 브랜드는 공식 사진 순서대로(앞쪽 사진이 1번) · ':'클릭한 순서대로 · ')+((S.job?.selected||[]).includes('main_image')?'1번 = 대표이미지, 2번부터 = 추가이미지':'추가이미지 1번부터'),'mapping-order-hint'));tools.append(actions);head.append(tools);
  }
  if(chosen&&!draft.size)box.append(el('p','사진을 최소 1장 선택해야 저장할 수 있습니다. 사용하지 않는 색상은 옵션을 삭제하세요.','description'));
  const grid=el('div',undefined,'mapping-photo-grid');
+ const order=S.mapping?.image_order==='source'?group.images.map(i=>i.id).filter(id=>draft.has(id)):[...draft],mainPicked=(S.job?.selected||[]).includes('main_image');
  for(const [index,image] of group.images.entries()){
   const owner=mappingOwner(group,image.id),color=mappingDisplayColors(group).find(c=>c.id===owner),selected=draft.has(image.id),tile=button('',()=>{if(!chosen){toast('색상 옵션을 먼저 추가해주세요.',true);return;}
    toggleMappingPhoto(group,cid,image.id);
@@ -173,6 +174,7 @@ function mappingProduct(group){
   },'mapping-photo'+(selected?' selected':'')+(owner&&owner!==cid&&!selected?' assigned-other':''));
   tile.dataset.mappingImage=image.id;tile.oncontextmenu=e=>{e.preventDefault();S.mappingFocused=group.id;zoom(image.url,group.code+' 사진 '+(index+1),image.asset_path?.split('/').at(-1)||'')};tile.setAttribute('aria-pressed',String(selected));tile.setAttribute('aria-label',group.code+' 사진 '+(index+1)+' 선택');
   if(image.mapping_evidence){tile.title='사전 매핑 근거: '+image.mapping_evidence;}const img=el('img');img.draggable=false;img.alt=group.code+' 사진 '+(index+1);img.loading='lazy';img.referrerPolicy='no-referrer';const size=el('small','로딩 중','mapping-photo-size');img.onload=()=>size.textContent=img.naturalWidth+' × '+img.naturalHeight;img.onerror=()=>size.textContent='이미지 로딩 실패';if(safeUrl(image.url))img.src=image.url;
+  if(selected){const n=order.indexOf(image.id)+1,badge=el('span',n+(mainPicked?(n===1?' 대표':' 추가'):' 추가'),'mapping-order'+(mainPicked&&n===1?' main':''));badge.setAttribute('aria-label',n+'번째 선택 '+(mainPicked&&n===1?'대표이미지':'추가이미지'));tile.append(badge)}
   tile.append(img,el('span',selected?'✓ '+mappingOwners(group,image.id).map(c=>c.label).join(' · '):color?mappingOwners(group,image.id).map(c=>c.label).join(' · '):'미선택 · 완료 시 제외','mapping-photo-badge'),size);grid.append(tile);
  }
  box.append(grid);return box;

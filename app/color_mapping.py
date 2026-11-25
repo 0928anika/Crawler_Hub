@@ -142,12 +142,15 @@ def snapshot(job, *, groups=None, state=None):
             image['assigned_to']=next(iter(image['assigned_colors']),None)
         confirmed=[cid for cid in confirmed if any(cid in ids for ids in assignments.values())]
         group['confirmed']=confirmed
+        # Brands marked mapping_image_order=source keep the official cover first (gallery order).
+        group['orders']={} if job.brand.get('mapping_image_order')=='source' else {cid:[iid for iid in ids if iid in valid_images and cid in assignments.get(iid,[])]
+                         for cid,ids in saved.get('orders',{}).items() if cid in valid_colors}
         group['complete']=len(confirmed)==len(valid_colors)
         total+=len(valid_colors);done+=len(confirmed)
     finalized=bool(state.get('finalized') and state.get('fingerprint')==fingerprint and groups and all(g['complete'] for g in groups))
     if is_hybrid(job) and not groups and automatic_items(job):finalized=True
     excluded=[dict(code=q['code'],status=q['status'],error=q.get('error','')) for q in job.queue if q['status']!='SUCCESS']
-    return dict(revision=state.get('revision',0),groups=groups,total_colors=total,saved_colors=done,excluded_tasks=excluded,image_mode=job.brand.get('image_mode','url'),
+    return dict(revision=state.get('revision',0),image_order='source' if job.brand.get('mapping_image_order')=='source' else 'click',groups=groups,total_colors=total,saved_colors=done,excluded_tasks=excluded,image_mode=job.brand.get('image_mode','url'),
                 finalized=finalized,fingerprint=fingerprint,am_import=state.get('am_requests'),unassigned=sum(not i['assigned_to'] for g in groups for i in g['images']))
 
 
@@ -181,6 +184,8 @@ def save_color(job,data):
         assignments={iid:[cid for cid in (value if isinstance(value,list) else [value]) if cid!=color] for iid,value in assignments.items()}
         for iid in selected:assignments.setdefault(iid,[]).append(color)
         saved['assignments']={iid:ids for iid,ids in assignments.items() if ids}
+        # Click order decides the final rows: 1st = main image, then additional images.
+        saved.setdefault('orders',{})[color]=list(dict.fromkeys(selected))
         confirmed.add(color);saved['confirmed']=sorted(confirmed);saved['image_signature']=group['signature']
         state.update(revision=view['revision']+1,finalized=False,fingerprint=view['fingerprint'])
         atomic_json(job.dir/'color_mapping.json',state)
@@ -296,7 +301,7 @@ def final_items(job,view):
         compact,overflow=(detail['filename'],False) if detail else excel_detail(shared_detail(job,group)) if 'detail_page' in job.selected else ('',False)
         if overflow:raise ValueError(group['code']+': 공통 상세 HTML이 셀 한도를 초과합니다.')
         for color in group['colors']:
-            images=[i for i in group['images'] if color['id'] in i.get('assigned_colors',[i.get('assigned_to')])]
+            images=local_images.ordered_images(group,color['id'])
             if not images:continue  # Explicitly saved empty colors are omitted.
             if job.brand.get('mapping_detail_mode')=='selected_images_with_tail' and 'detail_page' in job.selected:
                 selected_urls=list(dict.fromkeys(i['url'] for i in images))
