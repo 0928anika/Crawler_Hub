@@ -15,6 +15,7 @@
     "색상명",
     "색상코드",
     "사이즈",
+    "바코드",
     "판매가",
     "정상가",
     "카테고리",
@@ -61,12 +62,17 @@
       "supported": true,
       "status": "conditional",
       "reason": "공식 상품 사진 + product_certificates(소재·제조국·제조년월·제조자·수입자) 고시 표 + 공식 사이즈표 API가 읽히면 표. 설명·특징 문단은 제외."
+    },
+    "barcode": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 variation_list의 size와 gtin을 같은 행에서 연결. 선택하면 사이즈별 행으로 전개하며 GTIN은 문자열로 보존. 없는 값은 공백."
     }
   },
   "guide": {
     "pattern": "^[A-Za-z]{1,3}\\d{3,5}$",
     "format": "아디다스 상품코드(예: JZ3160). 색상마다 코드가 다릅니다.",
-    "notes": "코드 1개가 색상 1개입니다.",
+    "notes": "코드 1개가 색상 1개입니다. 바코드 선택 시 사이즈도 자동 선택되며 사이즈별로 한 행씩 출력합니다. 미선택 시 기존 사이즈 취합 유지.",
     "method": "공식 상품 API의 id와 입력 코드를 정확히 대조.",
     "example": "JZ3160",
     "examples": [
@@ -148,6 +154,12 @@
       "supported": true,
       "status": "conditional",
       "reason": "공식 상품 사진 + product_certificates(소재·제조국·제조년월·제조자·수입자) 고시 표 + 공식 사이즈표 API가 읽히면 표. 설명·특징 문단은 제외."
+    },
+    "barcode": {
+      "label": "바코드",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 variation_list의 size와 gtin을 같은 행에서 연결. 선택하면 사이즈별 행으로 전개하며 GTIN은 문자열로 보존. 없는 값은 공백."
     }
   },
   "column_fields": {
@@ -164,7 +176,13 @@
     "대표이미지": "main_image",
     "추가이미지": "additional_images",
     "상세페이지 HTML": "detail_page",
-    "원본 상품명": null
+    "원본 상품명": null,
+    "바코드": "barcode"
   },
-  "code_hash": "b32aa87eacaec1356069a756276a3aec4f02eaa15bd1e47af86e9b0b2dc9a264"
+  "code_hash": "d3dd4e52667f3f372edc30aca342c7e52a602c14ff7731865ebdd14700deec66",
+  "field_dependencies": {
+    "barcode": [
+      "size"
+    ]
+  }
 }

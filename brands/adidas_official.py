@@ -506,6 +506,7 @@ def crawl(ctx):
     if not re.fullmatch(r'[A-Z]{1,3}\d{3,5}', raw):
         ctx.fail_item('아디다스 상품코드 형식 오류(예: JZ3160)')
         raise CrawlError('품번 형식 오류')
+    if ctx.enabled('barcode') and not ctx.enabled('size'):ctx.selected=ctx.selected|{'size'}
     ctx.log('아디다스 코드 버전: ' + REVISION, 'INFO')
     cache = {}
     try:
@@ -546,7 +547,25 @@ def crawl(ctx):
             certificate = product.get('product_certificates') or {}
             notice = notice_table([(label, certificate.get(key)) for label, key in NOTICE_FIELDS])
             record['detail_page'] = build_detail(ctx, detail_images(ctx, photos, cache), notice, size_chart(ctx, product))
-        ctx.emit_result(record)
+        if ctx.enabled('barcode'):
+            variations=product.get('variation_list') or []
+            if not variations:
+                ctx.log('공식 사이즈별 GTIN 목록 없음: 바코드는 공백으로 수집합니다.','WARNING')
+                ctx.emit_result(dict(record,barcode=''))
+            seen=set()
+            for variant in variations:
+                size=str(variant.get('size') or '').strip()
+                value=variant.get('gtin')
+                barcode='' if value is None or isinstance(value,bool) else str(value).strip()
+                if barcode and not re.fullmatch(r'[0-9]{8}|[0-9]{12,14}',barcode):
+                    ctx.log('공식 GTIN 형식 확인 불가: '+size+' / '+barcode+' → 공백','WARNING');barcode=''
+                key=(size,barcode)
+                if key in seen:continue
+                seen.add(key)
+                if not barcode:ctx.log('공식 GTIN 없음: '+raw+' / '+(size or '사이즈 미표시')+' → 해당 행 바코드 공백','WARNING')
+                ctx.emit_result(dict(record,size=size,barcode=barcode))
+            ctx.log('바코드 선택: 공식 사이즈별 '+str(len(seen) or 1)+'행 전개','INFO')
+        else:ctx.emit_result(record)
     except Exception as exc:
         ctx.fail_item(str(exc))
         raise
