@@ -560,6 +560,8 @@ def crawl(ctx):
                         names = list(dict.fromkeys(str(o.get('itemOptionName') or '').strip() for o in child))
                         if not names or not all(names):
                             raise CrawlError('사이즈 옵션명 누락')
+                        # Representative placeholders are not garment sizes.
+                        names = [n for n in names if not re.fullmatch(r'(?:[A-Z0-9]+\s+)?대표\s*(?:사이즈|싸이즈)', n, re.I)]
                         sizes.append(names)
                     if ctx.enabled('price'):
                         values = [o.get('sellPrice') for o in child]
@@ -598,10 +600,12 @@ def crawl(ctx):
             regular_records.append(value)
         merge_regular_prices(ctx, record, regular_records)
         if ctx.enabled('size'):
-            same = bool(sizes) and all(v == sizes[0] for v in sizes)
-            record['size'] = ','.join(sizes[0]) if same else ''
-            if not same:
-                ctx.log('색상/상품 링크별 사이즈가 달라 공통 사이즈는 빈 값', 'WARNING')
+            merged_sizes = list(dict.fromkeys(name for group in sizes for name in group))
+            record['size'] = ','.join(merged_sizes)
+            if any(group != sizes[0] for group in sizes[1:]):
+                ctx.log('색상/상품 링크별 사이즈 합집합 저장(품절 포함): ' + record['size'], 'INFO')
+            if not merged_sizes:
+                ctx.log('대표싸이즈를 제외한 실제 사이즈 옵션 없음', 'WARNING')
         if ctx.enabled('price'):
             record['price'] = prices[0] if prices else None
             if len(set(prices)) > 1:

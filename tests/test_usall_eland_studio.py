@@ -15,6 +15,26 @@ class Context:
  def fail_item(self,m):self.errors.append(m)
  def emit_unmapped(self,r,colors,url,shared_detail_html=''):self.rows.append((r,colors,url))
 class Tests(unittest.TestCase):
+ def run_sizes(self,top,children,code='ULTM26N02',main=None):
+  ctx=Context();ctx.product_code=code;ctx.enabled=lambda k:k in ('main_image','size')
+  data=copy.deepcopy(self.data)
+  if main is not None:data['itemMain']=main
+  def options(ctx,main,selected=None):return top if selected is None else children[str(selected)]
+  with patch.object(c,'search',return_value=[URL]),patch.object(c,'product',return_value=(data,URL)),patch.object(c,'options',side_effect=options),patch.object(c,'gallery',return_value=[('https://item.elandrs.com/photo.jpg','x')]):c.crawl(ctx)
+  self.assertFalse(ctx.errors)
+  return ctx.rows[0][0]['size']
+ def test_differing_color_sizes_are_unioned_without_duplicates(self):
+  top=[dict(itemOptionTcode='10',itemOptionName='09 BLACK',itemOptionNo='1'),dict(itemOptionTcode='10',itemOptionName='00 WHITE',itemOptionNo='2')]
+  def rows(names):return [dict(itemOptionTcode='20',itemOptionName=n,soldoutYn='Y') for n in names]
+  self.assertEqual(self.run_sizes(top,{'1':rows(['120','130']),'2':rows(['130','140'])}),'120,130,140')
+  self.assertEqual(self.run_sizes(top,{'1':rows(['130','120']),'2':rows(['120','130'])}),'130,120')
+ def test_live_ULMS25N55_options_keep_soldout_sizes_without_placeholder(self):
+  data=json.loads((ROOT/'tests/fixtures/usall/ULMS25N55-options.json').read_text(encoding='utf-8'))
+  self.assertEqual(self.run_sizes(data['options'],data['children'],'ULMS25N55',data['main']),'130호,140호,150호,160호,170호')
+ def test_blank_size_name_is_still_an_error(self):
+  top=[dict(itemOptionTcode='10',itemOptionName='09 BLACK',itemOptionNo='1')]
+  with self.assertRaisesRegex(c.CrawlError,'사이즈 옵션명 누락'):
+   self.run_sizes(top,{'1':[dict(itemOptionTcode='20',itemOptionName='')]})
  def setUp(self):
   primary=patch.object(c,'studio_product',return_value=True);primary.start();self.addCleanup(primary.stop)
   self.data=json.loads((ROOT/'tests/fixtures/usall/ULTM26N02.json').read_text(encoding='utf-8'))

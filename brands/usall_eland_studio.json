@@ -28,7 +28,7 @@
     "size": {
       "supported": true,
       "status": "conditional",
-      "reason": "공식 옵션 API의 품절 포함 사이즈. 모든 색상·상품 링크의 옵션이 같을 때만 공통 사이즈 출력, 다르면 빈 값과 경고."
+      "reason": "공식 옵션 API의 색상·상품 링크별 사이즈를 중복 없는 합집합으로 출력. 품절 사이즈 포함, 대표싸이즈 같은 임시 옵션 제외."
     },
     "price": {
       "supported": true,
@@ -112,7 +112,7 @@
       "label": "사이즈",
       "supported": true,
       "status": "conditional",
-      "reason": "공식 옵션 API의 품절 포함 사이즈. 모든 색상·상품 링크의 옵션이 같을 때만 공통 사이즈 출력, 다르면 빈 값과 경고."
+      "reason": "공식 옵션 API의 색상·상품 링크별 사이즈를 중복 없는 합집합으로 출력. 품절 사이즈 포함, 대표싸이즈 같은 임시 옵션 제외."
     },
     "price": {
       "label": "판매가",
@@ -166,5 +166,5 @@
     "상세페이지 HTML": "detail_page",
     "정상가": "regular_price"
   },
-  "code_hash": "107a2722de60a77bda923c39b0263e980df788ba6acf6acb9aeefd501f01d9cf"
+  "code_hash": "587d42bd7623e87b03b40d6fdef0e45d028ed3015325b32fcac2856afc63f04c"
 }
