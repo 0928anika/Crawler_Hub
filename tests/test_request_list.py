@@ -142,9 +142,9 @@ class RequestListTests(unittest.TestCase):
         today = datetime.now().strftime('%Y%m%d')
         self.assertEqual(rl.result_filename('올리비아로렌'), f'올리비아로렌_RAW RESULT_{today}.xlsx')
         self.assertEqual(rl.result_filename(''), f'RAW RESULT_{today}.xlsx')
-        self.assertEqual(rl.filename(['올리비아로렌']), f'올리비아로렌_요청목록 변환_{today}.xlsx')
-        self.assertEqual(rl.filename(['젠사이', '올포유', '젠사이']), f'젠사이 외 1_요청목록 변환_{today}.xlsx')
-        self.assertEqual(rl.filename([]), f'요청목록 변환_{today}.xlsx')
+        self.assertEqual(rl.filename(['올리비아로렌']), f'3P_Listing_표준양식_올리비아로렌_{today}.xlsx')
+        self.assertEqual(rl.filename(['젠사이', '올포유', '젠사이']), f'3P_Listing_표준양식_젠사이 외 1_{today}.xlsx')
+        self.assertEqual(rl.filename([]), f'3P_Listing_표준양식_{today}.xlsx')
         self.assertEqual(rl.result_filename('a/b:c*'), f'a b c_RAW RESULT_{today}.xlsx')
         _, summary = rl.convert([dict(name='hub.xlsx', data=hub_file(), sheet='결과', header_row=1,
                                       mapping=rl.inspect(hub_file(), 'hub.xlsx')['mapping'], brand='젠사이')])

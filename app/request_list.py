@@ -284,9 +284,9 @@ def brand_title(brands):
 
 
 def filename(brands=()):
-    """브랜드_요청목록 변환_YYYYMMDD.xlsx (브랜드 여러 개면 '첫 브랜드 외 N')."""
+    """3P_Listing_표준양식_브랜드_YYYYMMDD.xlsx (브랜드 여러 개면 '첫 브랜드 외 N')."""
     title = brand_title(brands)
-    return (title + '_' if title else '') + '요청목록 변환_' + datetime.now().strftime('%Y%m%d') + '.xlsx'
+    return '3P_Listing_표준양식_' + (title + '_' if title else '') + datetime.now().strftime('%Y%m%d') + '.xlsx'
 
 
 def result_filename(brand):
