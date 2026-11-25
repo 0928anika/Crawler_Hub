@@ -73,3 +73,5 @@
 .mapping-product .mapping-detail-grid .mapping-photo.selected::before{content:attr(data-selection-order);background:#7042a3;border-color:#7042a3;color:white}
 
 .detail-mapping-required-badge{display:inline-flex;align-items:center;width:fit-content;padding:4px 8px;border-radius:6px;margin-bottom:8px}
+
+.barcode-supported-badge{display:inline-flex;align-items:center;width:fit-content;padding:4px 8px;border-radius:6px;background:#e5efff;color:#285eaa;font-size:10px;font-weight:700;margin:0 5px 8px 0}
