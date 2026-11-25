@@ -13,7 +13,13 @@ PORTAL_API_VERSION = 1
   품절·숨김 사이즈도 그 색상의 사이즈로 유지(색상별 사이즈는 팔레트 size로 전달).
 - 사진: 갤러리 big·extra(모든 색상 공통) + 상세 모델컷(ovlr.speedgabia.com/product/품번/…)을
   전부 매핑 후보로 보냄. 사진 색감으로 색상을 배정하지 않음(사람이 색상 매핑 화면에서 선택).
-- 상세: #prdDetail 상품 이미지(공통 인트로 00_intro·프로모션 배너 제외) + #desctable 고시 2열 표.
+- 상세: #prdDetail 상품 이미지(공통 인트로 00_intro·프로모션 배너 제외)
+  + 상품정보·실측 이미지 ovlr.speedgabia.com/details/품번_details.jpg(본문에 없어도 있으면 붙임.
+    없는 파일은 speedgabia가 err_img/err_404.gif로 보내므로 그 응답은 '없음'으로 처리)
+  + '상품 상세정보' 표(상품명·품번·색상·사이즈·상품요약정보·#desctable 고시가 있으면 고시 항목)
+  + '사이즈 정보' 표(옵션 사이즈, 색상마다 다르면 색상별 행).
+  2026-11-26 실사이트 확인: 26W 상품 본문은 모델컷뿐, #desctable 없음, details 이미지도 없는 상품이 많음
+  → 실측 수치가 없는 상품은 옵션 사이즈만 표로 넣고 '실측 미제공' 안내.
 검증: 오프라인 fixture 테스트만(tests/test_olivialauren_official.py). 실사이트 실행 확인은 아직 없음.
 """
 
@@ -36,11 +42,12 @@ from crawler_rules import check_public_image, clean_product_name
 from detail_store import excel_detail
 from regular_price import collect_regular_price
 
-REVISION = '2026-11-25-olivialauren-manual-1'
+REVISION = '2026-11-26-olivialauren-manual-2'
 SITE = 'https://ovlr.kr'
 SITE_HOSTS = ('ovlr.kr', 'www.ovlr.kr')
 GALLERY_HOSTS = ('ovlr.kr', 'www.ovlr.kr', 'ecimg.cafe24img.com')
 DETAIL_HOST = 'ovlr.speedgabia.com'
+SPEC_URL = 'https://ovlr.speedgabia.com/details/{}_details.jpg'
 BRAND_ALIASES = ['올리비아로렌', '올리비아 로렌', 'OLIVIA LAUREN', 'OLIVIALAUREN']
 INDEX_CATEGORIES = OrderedDict([('SHOP', '104'), ('OUTLET', '114'), ('SALE', '530')])
 INDEX_FILE = 'olivialauren_code_index.json'
@@ -246,6 +253,21 @@ def notice_rows(doc):
     return rows
 
 
+def summary_text(doc):
+    for selector in ('tr[rel="상품요약정보"] td', '.infoArea p.summary', '.headingArea p.summary'):
+        node = doc.select_one(selector)
+        text = re.sub(r'\s+', ' ', node.get_text(' ', strip=True)) if node else ''
+        if text:
+            return text
+    return ''
+
+
+def missing_file(check):
+    """speedgabia는 없는 파일을 err_img/err_404.gif(200)로 돌려보냄 → 없음."""
+    final = urlsplit(check.get('final_url') or '')
+    return '/err_img/' in final.path or 'err_404' in final.path
+
+
 def product_soldout(doc):
     for node in doc.select('.xans-product-action [class*=soldout], .xans-product-action .sub_sold, .btnArea [class*=soldout], #btnSoldout'):
         label = re.sub(r'\s+', '', node.get_text()).upper()
@@ -449,7 +471,8 @@ def parse_product(ctx, number, code, direct):
         raise CrawlError('색상 옵션·고시 색상 모두 없음: 색상 후보를 만들 수 없음')
     stripped = re.sub(r'[\s_-]*(?<![A-Za-z0-9])' + re.escape(style) + r'(?![A-Za-z0-9])', ' ', full, flags=re.I)
     cleaned = clean_product_name(stripped, BRAND_ALIASES, [style]).strip(' _-/') or full
-    product = dict(number=number, url=final, style=style, full=full, name=cleaned, palette=palette, notice=notice)
+    product = dict(number=number, url=final, style=style, full=full, name=cleaned, palette=palette, notice=notice,
+                   summary=summary_text(doc))
     if ctx.enabled('price'):
         product['price'] = price(ctx, doc)
     if ctx.enabled('category'):
@@ -589,33 +612,111 @@ def collect_photos(ctx, products):
 
 
 # ───────────────────────── 공통 상세 HTML ─────────────────────────
+TH = 'padding:6px 10px;border:1px solid #ddd;background:#f6f6f6;text-align:left;white-space:nowrap;'
+TD = 'padding:6px 10px;border:1px solid #ddd;'
+
+
+def info_table(title, rows):
+    if not rows:
+        return ''
+    body = ''.join('<tr><th style="' + TH + '">' + html.escape(k) + '</th><td style="' + TD + '">' + html.escape(v) + '</td></tr>'
+                   for k, v in rows)
+    return ('<h3>' + html.escape(title) + '</h3><table style="width:100%;border-collapse:collapse;font-size:13px;"><tbody>'
+            + body + '</tbody></table>')
+
+
+def merged_palette(products):
+    colors = OrderedDict()
+    for product in products:
+        for color in product['palette']:
+            sizes = colors.setdefault(color['raw'], [])
+            sizes.extend(s for s in color['sizes'] if s not in sizes)
+    return colors
+
+
+def info_rows(products):
+    """상품 상세정보: 상품명·품번·색상·사이즈·상품요약정보 + 고시(#desctable)가 있으면 그 항목."""
+    first = products[0]
+    colors = merged_palette(products)
+    sizes = []
+    for values in colors.values():
+        sizes.extend(s for s in values if s not in sizes)
+    rows = OrderedDict([('상품명', first['name']), ('품번', first['style'])])
+    if colors:
+        rows['색상'] = ' / '.join(colors)
+    if sizes:
+        rows['사이즈'] = ' / '.join(sizes)
+    summary = next((p.get('summary') for p in products if p.get('summary')), '')
+    if summary:
+        rows['상품 설명'] = summary
+    for product in products:
+        for key, value in product['notice'].items():
+            if key not in rows and not (key == '색상' and '색상' in rows):
+                rows[key] = value
+    return list(rows.items()), colors, sizes
+
+
+def size_rows(colors, sizes):
+    if not sizes:
+        return []
+    if len({tuple(v) for v in colors.values() if v}) <= 1:
+        return [('사이즈', ' / '.join(sizes))]
+    return [(name, ' / '.join(values)) for name, values in colors.items() if values]
+
+
+def spec_image(ctx, style, cache):
+    """본문에 없을 때 details/품번_details.jpg(상품정보·실측 표 이미지)를 확인. 없으면 ''."""
+    url = SPEC_URL.format(style)
+    ctx.checkpoint()
+    check = check_public_image(url, timeout=10, max_bytes=20_000_000, retries=1, checkpoint=ctx.checkpoint)
+    cache[url] = check
+    if check['status'] == 'accessible' and not missing_file(check):
+        ctx.log('상품정보·실측 이미지 추가: ' + url, 'INFO')
+        return url
+    if check['status'] == 'unknown':
+        ctx.log('상품정보·실측 이미지 확인 일시 오류(생략): ' + url + ': ' + '; '.join(check['reasons']), 'WARNING')
+    return ''
+
+
 def shared_detail(ctx, products):
-    urls, notice, cache = [], OrderedDict(), {}
+    urls, cache = [], {}
     for product in products:
         urls.extend(u for u in product['details'] if u not in urls)
-        for key, value in product['notice'].items():
-            notice.setdefault(key, value)
+    style = products[0]['style']
+    has_spec = any('/details/' in urlsplit(u).path for u in urls)
+    if not has_spec:
+        found = spec_image(ctx, style, cache)
+        if found:
+            urls.append(found)
+            has_spec = True
     parts = []
     for url in urls:
         ctx.checkpoint()
         if url not in cache:
             cache[url] = check_public_image(url, timeout=10, max_bytes=20_000_000, retries=1, checkpoint=ctx.checkpoint)
         check = cache[url]
-        if check['status'] == 'accessible':
+        if check['status'] == 'accessible' and missing_file(check):
+            ctx.log('상세 이미지 제외(원본 없음 → err_404): ' + url, 'WARNING')
+            has_spec = has_spec and '/details/' not in urlsplit(url).path
+        elif check['status'] == 'accessible':
             parts.append('<img src="' + html.escape(url, quote=True) + '" alt="상품 상세" style="max-width:100%;height:auto;">')
         elif check['status'] == 'unknown':
             raise CrawlError('상세 이미지 확인 중 일시 오류: ' + url + ': ' + '; '.join(check['reasons']))
         else:
             ctx.log(f"상세 이미지 제외(inaccessible): {url}: " + '; '.join(check['reasons']), 'WARNING')
     if not parts:
-        ctx.log('상품 본문 상세 이미지가 없거나 공개 접근 불가: 상세는 고시 표만', 'WARNING')
-    if notice:
-        rows = ''.join('<tr><th style="padding:6px 10px;border:1px solid #ddd;background:#f6f6f6;text-align:left;white-space:nowrap;">'
-                       + html.escape(k) + '</th><td style="padding:6px 10px;border:1px solid #ddd;">' + html.escape(v) + '</td></tr>'
-                       for k, v in notice.items())
-        parts.append('<h3>상품정보고시</h3><table style="width:100%;border-collapse:collapse;font-size:13px;"><tbody>' + rows + '</tbody></table>')
-    else:
-        ctx.log('상품정보고시(#desctable) 없음: 고시 표 생략', 'WARNING')
+        ctx.log('상품 본문 상세 이미지가 없거나 공개 접근 불가: 상세는 정보 표만', 'WARNING')
+    rows, colors, sizes = info_rows(products)
+    parts.append(info_table('상품 상세정보', rows))
+    table = info_table('사이즈 정보', size_rows(colors, sizes))
+    if table:
+        note = ('위 상품정보 이미지의 실측 사이즈를 확인하세요.' if has_spec
+                else '공식몰에 실측 사이즈가 제공되지 않아 옵션 사이즈만 표기합니다.')
+        parts.append(table + '<p style="font-size:12px;color:#666;">' + html.escape(note) + '</p>')
+    if not has_spec:
+        ctx.log('실측 사이즈 이미지(details/' + style + '_details.jpg) 없음: 사이즈 정보는 옵션 사이즈만', 'WARNING')
+    if not any(p['notice'] for p in products):
+        ctx.log('상품정보고시(#desctable) 없음: 상품 상세정보는 상품명·색상·사이즈·상품요약정보로 작성', 'INFO')
     compact, overflow = excel_detail(''.join(parts))
     if overflow:
         raise CrawlError('공통 상세 HTML Excel 셀 한도(32,767자) 초과. 원본을 임의 절단하지 않습니다.')

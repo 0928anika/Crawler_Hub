@@ -11,6 +11,7 @@ import tempfile
 import time
 import unittest
 import zlib
+from collections import OrderedDict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -62,7 +63,8 @@ def detail(title, entries, gallery, details, sale='39,000원', custom='<span id=
 {stock_js(entries)}</script></head><body>
 <div class="xans-product-headcategory"><ol><li><a>홈</a></li><li><a>기획전</a></li><li><a>TOP</a></li><li><a>티셔츠</a></li></ol></div>
 <div class="xans-product-image">{imgs}</div><div class="xans-product-relation"><div class="listitem"><img src="{EC}big/relation.jpg"></div></div>
-<div class="infoArea"><span id="span_product_price_text">{sale}</span>{custom}</div>
+<div class="infoArea"><table><tr rel="상품요약정보"><th>상품요약정보</th><td><span>드랄론 소재 원포인트 티셔츠</span></td></tr></table>
+<span id="span_product_price_text">{sale}</span>{custom}</div>
 <select option_title="색상" product_type="product_option"></select><select option_title="사이즈" product_type="product_option"></select>
 <div id="prdDetail">{det}</div>{rows}
 <div class="xans-product-action"><a class="btnSoldout displaynone">SOLD OUT</a></div></body></html>"""
@@ -92,6 +94,7 @@ def site():
 class Net:
     def __init__(self, module, pages):
         self.pages, self.requested, self.checked, self.error = pages, [], [], module.CrawlError
+        self.specs = set()                                                         # 있는 details/품번_details.jpg
         module.fetch_text = self.fetch
         module.check_public_image = self.check
 
@@ -110,6 +113,10 @@ class Net:
 
     def check(self, url, **kw):
         self.checked.append(url)
+        if '/details/' in url and url not in self.specs:                           # speedgabia: 없는 파일 → err_404.gif
+            gif = 'https://11475speedgabia.speedgabia.com/err_img/err_404.gif'
+            return dict(status='accessible', url=url, final_url=gif, data=png((600, 600), gif), reasons=[], warnings=[],
+                        width=600, height=600, format='GIF')
         size = (300, 300) if 'small' in url else (700, 3000) if 'long' in url else (900, 1100)
         return dict(status='accessible', url=url, final_url=url, data=png(size, url), reasons=[], warnings=[],
                     width=size[0], height=size[1], format='PNG')
@@ -169,8 +176,15 @@ class OliviaLaurenTest(unittest.TestCase):
         html = first['상세페이지 HTML']
         self.assertIn('01_OLBAL26W918105_1.jpg', html)
         self.assertIn('02_OLBAL26W918115_1.jpg', html)                            # 모든 색상 공통 상세
-        self.assertIn('상품정보고시</h3>', html)
+        self.assertIn('상품 상세정보</h3>', html)
         self.assertIn('단독 손세탁', html)                                            # 고시 항목은 그대로
+        self.assertIn('드랄론 소재 원포인트 티셔츠', html)                              # 상품요약정보
+        self.assertIn('챠콜 그레이(05) / 아이보리(15)', html)
+        self.assertIn('사이즈 정보</h3>', html)
+        self.assertIn('090 / 095 / 100', html)
+        self.assertIn('실측 사이즈가 제공되지 않아', html)
+        self.assertNotIn('err_404', html)
+        self.assertIn(SG + 'details/OLBAL26W9181_details.jpg', net.checked)
         self.assertNotIn('00_intro', html)
         self.assertFalse(any('00_intro' in u or 'promotion' in u or '/web/upload/' in u or 'size_guide' in u or 'relation' in u
                              for u in net.checked))
@@ -268,15 +282,40 @@ class OliviaLaurenTest(unittest.TestCase):
         self.assertIsNotNone(error)
         self.assertTrue(any('760' in f and 'HTTP 404' in f for f in failures), failures)
 
-    def test_no_notice_keeps_detail_without_table(self):
+    def test_no_notice_still_writes_info_and_size_tables(self):
         module = load()
         pages = site()
         pages['750'] = pages['750'].replace('id="desctable"', 'id="other"')
         Net(module, pages)
         rows, failures, error, logs = execute(module, 'OLBAL26W9181')
         self.assertIsNone(error, failures)
-        self.assertNotIn('상품정보고시', rows[0][0]['상세페이지 HTML'])
+        html = rows[0][0]['상세페이지 HTML']
+        self.assertIn('상품 상세정보</h3>', html)
+        self.assertIn('플라워 원포인트 티셔츠', html)
+        self.assertIn('사이즈 정보</h3>', html)
+        self.assertNotIn('단독 손세탁', html)
         self.assertTrue(any('#desctable' in m for m in logs))
+
+    def test_spec_image_is_appended_when_it_exists(self):
+        module = load()
+        net = Net(module, site())
+        spec = SG + 'details/OLBAL26W9181_details.jpg'
+        net.specs.add(spec)
+        rows, failures, error, logs = execute(module, 'OLBAL26W9181')
+        self.assertIsNone(error, failures)
+        html = rows[0][0]['상세페이지 HTML']
+        self.assertIn(spec, html)
+        self.assertLess(html.index('02_OLBAL26W918115_1.jpg'), html.index(spec))     # 모델컷 뒤 → 정보 표 앞
+        self.assertLess(html.index(spec), html.index('상품 상세정보'))
+        self.assertIn('실측 사이즈를 확인', html)
+        self.assertNotIn(spec, [r['대표이미지'] for r, _ in rows])                   # 매핑 후보 아님
+
+    def test_size_rows_by_color_when_sizes_differ(self):
+        module = load()
+        colors = OrderedDict([('블랙(06)', ['S', 'M']), ('그레이(04)', ['S'])])
+        self.assertEqual(module.size_rows(colors, ['S', 'M']), [('블랙(06)', 'S / M'), ('그레이(04)', 'S')])
+        same = OrderedDict([('블랙(06)', ['S', 'M']), ('그레이(04)', ['S', 'M'])])
+        self.assertEqual(module.size_rows(same, ['S', 'M']), [('사이즈', 'S / M')])
 
     def test_helpers(self):
         module = load()
