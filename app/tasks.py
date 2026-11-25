@@ -2,6 +2,7 @@ import copy
 import hashlib
 import json
 import os
+import re
 import subprocess
 import shutil
 import sys
@@ -19,6 +20,9 @@ import color_mapping
 import local_images
 
 ACTIVE=('running','pausing','paused','stopping','saving')
+# Target codes that may still be changed while a job runs, is paused or has ended.
+EDITABLE=('WAITING','FAILED','CANCELLED','SKIPPED')
+MAX_ROWS=3000
 def safe_cell(value):
     return "'"+value if isinstance(value,str) and value.startswith(('=','+','-','@')) else value
 
@@ -55,10 +59,11 @@ class Job:
             elapsed=(self.ended or time.time())-self.started
             success=sum(x['status']=='SUCCESS' for x in self.queue)
             waiting=sum(x['status']=='WAITING' for x in self.queue)
+            skipped=sum(x['status']=='SKIPPED' for x in self.queue)
             mapping=color_mapping.snapshot(self) if color_mapping.is_manual(self) else None
             mapped_count=len(color_mapping.final_items(self,mapping)) if mapping and mapping['finalized'] else len(self.items)
             return dict(id=self.id,name=self.name,brand=brand_label(self.brand),brand_name=self.brand['name'],crawl_source=self.brand.get('crawl_source',''),brand_id=self.brand['id'],state=self.state,
-                total=len(self.rows),done=self.done,failed=self.failed,success=success,waiting=waiting,
+                total=len(self.rows)-skipped,skipped=skipped,done=self.done,failed=self.failed,success=success,waiting=waiting,editable_targets=bool(self.headers) and self.state not in ('stopping','saving'),
                 current=self.current,stage=self.stage,directory=str(self.dir),demo=self.demo,selected=self.selected,
                 created_at=self.created_at,elapsed=round(elapsed,1),average=round(elapsed/self.done,1) if self.done else None,
                 eta=round(elapsed/self.done*waiting) if self.done>=3 and self.state in ACTIVE else None,
@@ -73,7 +78,12 @@ class Job:
     def write_input(self):
         book=Workbook();book.active.title='입력';book.active.append(self.headers)
         for row in self.rows:book.active.append([safe_cell(v) for v in row])
-        book.save(self.dir/'input.xlsx')
+        temp=self.dir/('input-'+uuid.uuid4().hex+'.xlsx')
+        book.save(temp)
+        try:os.replace(temp,self.dir/'input.xlsx')
+        except OSError:
+            temp.unlink(missing_ok=True)
+            if not (self.dir/'input.xlsx').exists():raise
     def freeze_engine(self):
         source=(brand_root()/self.brand['script']).resolve()
         if not source.is_file():raise ValueError('기존 작업의 크롤러 파일이 없습니다.')
@@ -127,6 +137,79 @@ class Job:
         self.state='running';self.started=time.time();self.ended=None;self.save_error=''
         self.recount();self.checkpoint()
         self.log(('실패 품번 재실행' if mode=='retry-failed' else '남은 품번 이어하기')+f' · {len(targets)}개 · 완료 품번은 제외')
+    def target_rows(self):
+        with self.data_lock:
+            return [dict(id=q['id'],code=q['code'],source_row=q.get('source_row'),status=q['status'],error=q.get('error',''),
+                results=len(q.get('result_ids',[])),added=bool(q.get('added')),editable=q['status'] in EDITABLE) for q in self.queue]
+    def edit_targets(self,data):
+        """Change the codes still to be crawled: edit, exclude, restore and add rows.
+        The running row and finished rows are never touched; their results stay as they are."""
+        if not self.headers:raise ValueError('이전 버전 작업이라 대상 품번을 수정할 수 없습니다. 새 작업을 만드세요.')
+        if self.state in ('stopping','saving'):raise ValueError('중지·저장 중에는 수정할 수 없습니다. 잠시 후 다시 시도하세요.')
+        guide=self.brand.get('guide') or {}
+        pattern=guide.get('pattern')
+        width=len(self.headers)
+        with self.data_lock:
+            by_id={q['id']:q for q in self.queue}
+            def target(tid,allowed=EDITABLE):
+                q=by_id.get(str(tid))
+                if q is None:raise ValueError('입력 행을 찾을 수 없습니다. 목록을 새로고침하세요.')
+                if q['status'] not in allowed:
+                    reason='지금 수집 중인' if q['status']=='RUNNING' else '이미 완료된' if q['status']=='SUCCESS' else '현재 상태의'
+                    raise ValueError(f"{q['code']}: {reason} 품번은 수정할 수 없습니다.")
+                return q
+            edits=[]
+            for change in data.get('edit') or []:
+                q=target(change.get('id'));code=re.sub(r'\s+','',str(change.get('code') or ''))
+                if not code:raise ValueError(f"{q['code']}: 수정할 품번이 비어 있습니다.")
+                if code!=q['code']:edits.append((q,code))
+            skips=[target(t) for t in data.get('skip') or []]
+            restores=[target(t,('SKIPPED',)) for t in data.get('restore') or []]
+            live={q['code'].upper() for q in self.queue if q['status']!='SKIPPED'}
+            for q,code in edits:
+                if code.upper() in live and code.upper()!=q['code'].upper():raise ValueError(f'{code}: 이미 대상 목록에 있는 품번입니다.')
+            added,duplicates=[],[]
+            for line in str(data.get('add') or '').splitlines():
+                if not line.strip():continue
+                values=[v.strip() for v in line.split('\t')] if width>1 and '\t' in line else [line.strip()]
+                values=[v or None for v in (values+[None]*width)[:width]]
+                code=re.sub(r'\s+','',str(values[0] or ''))
+                if not code:continue
+                if code.upper() in live:duplicates.append(code);continue
+                for col in guide.get('required_columns',[]):
+                    match=next((h for h in guide.get('aliases',{}).get(col,[col]) if h in self.headers),None)
+                    if match and values[self.headers.index(match)] in ('',None):
+                        raise ValueError(f'{code}: {col} 값이 비어 있습니다. 입력 엑셀의 열 순서({", ".join(self.headers)})대로 탭으로 구분해 붙여 넣으세요.')
+                values[0]=code;live.add(code.upper());added.append(values)
+            if len(self.rows)+len(added)>MAX_ROWS:raise ValueError(f'한 작업의 품번은 최대 {MAX_ROWS:,}개입니다.')
+            if not (edits or skips or restores or added):
+                raise ValueError('바뀐 내용이 없습니다.'+(f' 이미 목록에 있는 품번 {len(duplicates)}개는 건너뛰었습니다.' if duplicates else ''))
+            warnings=[]
+            def check(code):
+                if pattern and not re.fullmatch(pattern,code.upper()):warnings.append(code+': 크롤러 안내의 입력 형식과 다를 수 있습니다.')
+            changes=[]
+            for q,code in edits:
+                i=int(q['id']);row=list(self.rows[i]);old=q['code'];row[0]=code;self.rows[i]=row
+                if any(e.get('task_id')==q['id'] for e in self.row_events):self.reset_task(q['id'])
+                q.update(code=code,status='WAITING',error='',duration=0,warnings=[]);check(code);changes.append(f'{old}→{code}')
+            for q in skips:
+                if any(e.get('task_id')==q['id'] for e in self.row_events):self.reset_task(q['id'])
+                q.update(status='SKIPPED',error='사용자가 대상에서 제외했습니다.',duration=0,warnings=[])
+            for q in restores:q.update(status='WAITING',error='')
+            for values in added:
+                i=len(self.rows);self.rows.append(values);check(values[0])
+                self.queue.append(dict(id=str(i),code=values[0],source_row=i+2,status='WAITING',duration=0,error='',result_ids=[],added=True))
+            self.recount();self.revision+=1
+            self.log('대상 품번 수정 · '+' / '.join(filter(None,[
+                f'추가 {len(added)}개' if added else '',f'수정 {len(edits)}개('+', '.join(changes[:10])+(' …' if len(changes)>10 else '')+')' if edits else '',
+                f'제외 {len(skips)}개' if skips else '',f'복원 {len(restores)}개' if restores else '',
+                f'중복 건너뜀 {len(duplicates)}개' if duplicates else ''])))
+            for warning in warnings[:20]:self.log(warning,'WARNING')
+            self.checkpoint()
+        try:self.write_input()
+        except OSError as e:self.log('입력 엑셀 사본 갱신 실패(수집에는 영향 없음): '+str(e),'WARNING')
+        return dict(added=len(added),edited=len(edits),skipped=len(skips),restored=len(restores),duplicates=duplicates[:50],warnings=warnings[:50],state=self.state,
+                    waiting=sum(q['status']=='WAITING' for q in self.queue))
     def checkpoint(self):
         with self.data_lock:
             data=dict(self.summary(),headers=self.headers,rows=self.rows,queue=self.queue,brand_metadata=self.brand,
@@ -261,12 +344,17 @@ class Job:
     def run(self):
         terminal_state='error'
         try:
-            for i,row in enumerate(self.rows):
-                if self.queue[i]['status']!='WAITING':continue
+            while True:
+                # Pick the first waiting row each time so codes edited, restored or added
+                # while paused (or running) are crawled in input order.
                 if not self.gate():break
+                with self.data_lock:
+                    i=next((int(x['id']) for x in self.queue if x['status']=='WAITING'),None)
+                    if i is None:break
+                    q=self.queue[i];row=list(self.rows[i])
+                    q['status']='RUNNING';self.current_task=str(i);self.current=str(row[0] or '')
                 self.reset_task(str(i))
-                q=self.queue[i];self.current_task=str(i);self.current=str(row[0] or '')
-                q['status']='RUNNING';start=time.time();self.item_error=False;self.item_failures=[];self.task_warnings=[];q['warnings']=[]
+                start=time.time();self.item_error=False;self.item_failures=[];self.task_warnings=[];q['warnings']=[]
                 self.stage='품번 검색 및 상품 확인';self.checkpoint()
                 self.log(f'[{i+1}/{len(self.rows)}] {self.current}')
                 before=len(self.items)
@@ -386,6 +474,7 @@ class Job:
         self.engine_root=(path/'engine') if (path/'engine').is_dir() else (Path(data['engine_root']) if data.get('engine_root') else None)
         self.engine_script=data.get('engine_script');self.engine_manifest=data.get('engine_manifest',{})
         self.queue=data.get('queue',[dict(id=str(i),code=str(r[0] or ''),status='CANCELLED',duration=0,error='이전 버전 작업',result_ids=[]) for i,r in enumerate(self.rows)])
+        skipped={q['id'] for q in self.queue if q.get('status')=='SKIPPED'}
         journal=path/'results.jsonl'
         if journal.is_file():
             commits={}
@@ -406,6 +495,8 @@ class Job:
                 if tid is not None and int(tid)<len(self.queue):
                     self.queue[int(tid)].update({k:event[k] for k in ('status','error','duration')})
                     self.queue[int(tid)]['warnings']=event.get('warnings',[])
+            for q in self.queue:
+                if q['id'] in skipped:q['status']='SKIPPED'
             self.recount()
         else:
             file=path/'original.xlsx' if (path/'original.xlsx').is_file() else path/'result.xlsx'
