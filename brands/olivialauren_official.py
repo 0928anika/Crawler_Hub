@@ -13,7 +13,18 @@ PORTAL_API_VERSION = 1
   품절·숨김 사이즈도 그 색상의 사이즈로 유지(색상별 사이즈는 팔레트 size로 전달).
 - 사진: 갤러리 big·extra(모든 색상 공통) + 상세 모델컷(ovlr.speedgabia.com/product/품번/…)을
   전부 매핑 후보로 보냄. 사진 색감으로 색상을 배정하지 않음(사람이 색상 매핑 화면에서 선택).
-- 상세: #prdDetail 상품 이미지(공통 인트로 00_intro·프로모션 배너 제외) + #desctable 고시 2열 표.
+- 상세: #prdDetail 상품 이미지(공통 인트로 00_intro·프로모션 배너 제외)
+  + 상품정보·실측 이미지 ovlr.speedgabia.com/details/품번_details.jpg(본문에 없어도 있으면 붙임.
+    없는 파일은 speedgabia가 err_img/err_404.gif로 보내므로 그 응답은 '없음'으로 처리)
+  + '상품 상세정보' 표(상품명·품번·색상·사이즈·상품요약정보·#desctable 고시가 있으면 고시 항목)
+  + '사이즈 정보' 표(옵션 사이즈, 색상마다 다르면 색상별 행).
+  2026-11-26 실사이트 확인: 상세 하단 '상품 상세정보·사이즈 정보'는 세정 iframe
+  fapi.sejung.co.kr/size_spec.html?style_cd=품번 이 JSON API로 그림:
+    /searchOnlineStyleInfo/getStyleInfo  (상품명·색상·사이즈·소재·성별·시즌·제조국·세탁·제조년월)
+    /searchOnlineStyleInfo/getSizeSpec1  (측정 항목 헤더, input_seq_num 순)
+    /searchOnlineStyleInfo/getSizeSpec2  (사이즈별 측정값)
+  → 이 API로 화면과 같은 두 표를 만듦(헤더에 있는 항목만, 화면과 같게). API에 실측이 있으면
+    details 이미지는 중복이라 생략. API가 비거나 실패하면 details 이미지 + 페이지 정보로 대체 표.
 검증: 오프라인 fixture 테스트만(tests/test_olivialauren_official.py). 실사이트 실행 확인은 아직 없음.
 """
 
@@ -36,11 +47,13 @@ from crawler_rules import check_public_image, clean_product_name
 from detail_store import excel_detail
 from regular_price import collect_regular_price
 
-REVISION = '2026-11-25-olivialauren-manual-1'
+REVISION = '2026-11-26-olivialauren-manual-3'
 SITE = 'https://ovlr.kr'
 SITE_HOSTS = ('ovlr.kr', 'www.ovlr.kr')
 GALLERY_HOSTS = ('ovlr.kr', 'www.ovlr.kr', 'ecimg.cafe24img.com')
 DETAIL_HOST = 'ovlr.speedgabia.com'
+SPEC_URL = 'https://ovlr.speedgabia.com/details/{}_details.jpg'
+SEJUNG_API = 'https://fapi.sejung.co.kr/searchOnlineStyleInfo/'
 BRAND_ALIASES = ['올리비아로렌', '올리비아 로렌', 'OLIVIA LAUREN', 'OLIVIALAUREN']
 INDEX_CATEGORIES = OrderedDict([('SHOP', '104'), ('OUTLET', '114'), ('SALE', '530')])
 INDEX_FILE = 'olivialauren_code_index.json'
@@ -246,6 +259,21 @@ def notice_rows(doc):
     return rows
 
 
+def summary_text(doc):
+    for selector in ('tr[rel="상품요약정보"] td', '.infoArea p.summary', '.headingArea p.summary'):
+        node = doc.select_one(selector)
+        text = re.sub(r'\s+', ' ', node.get_text(' ', strip=True)) if node else ''
+        if text:
+            return text
+    return ''
+
+
+def missing_file(check):
+    """speedgabia는 없는 파일을 err_img/err_404.gif(200)로 돌려보냄 → 없음."""
+    final = urlsplit(check.get('final_url') or '')
+    return '/err_img/' in final.path or 'err_404' in final.path
+
+
 def product_soldout(doc):
     for node in doc.select('.xans-product-action [class*=soldout], .xans-product-action .sub_sold, .btnArea [class*=soldout], #btnSoldout'):
         label = re.sub(r'\s+', '', node.get_text()).upper()
@@ -449,7 +477,8 @@ def parse_product(ctx, number, code, direct):
         raise CrawlError('색상 옵션·고시 색상 모두 없음: 색상 후보를 만들 수 없음')
     stripped = re.sub(r'[\s_-]*(?<![A-Za-z0-9])' + re.escape(style) + r'(?![A-Za-z0-9])', ' ', full, flags=re.I)
     cleaned = clean_product_name(stripped, BRAND_ALIASES, [style]).strip(' _-/') or full
-    product = dict(number=number, url=final, style=style, full=full, name=cleaned, palette=palette, notice=notice)
+    product = dict(number=number, url=final, style=style, full=full, name=cleaned, palette=palette, notice=notice,
+                   summary=summary_text(doc))
     if ctx.enabled('price'):
         product['price'] = price(ctx, doc)
     if ctx.enabled('category'):
@@ -589,33 +618,191 @@ def collect_photos(ctx, products):
 
 
 # ───────────────────────── 공통 상세 HTML ─────────────────────────
+TH = 'padding:6px 10px;border:1px solid #ddd;background:#f6f6f6;text-align:left;white-space:nowrap;'
+TD = 'padding:6px 10px;border:1px solid #ddd;'
+
+
+def info_table(title, rows):
+    if not rows:
+        return ''
+    body = ''.join('<tr><th style="' + TH + '">' + html.escape(k) + '</th><td style="' + TD + '">' + html.escape(v) + '</td></tr>'
+                   for k, v in rows)
+    return ('<h3>' + html.escape(title) + '</h3><table style="width:100%;border-collapse:collapse;font-size:13px;"><tbody>'
+            + body + '</tbody></table>')
+
+
+def merged_palette(products):
+    colors = OrderedDict()
+    for product in products:
+        for color in product['palette']:
+            sizes = colors.setdefault(color['raw'], [])
+            sizes.extend(s for s in color['sizes'] if s not in sizes)
+    return colors
+
+
+def info_rows(products):
+    """상품 상세정보: 상품명·품번·색상·사이즈·상품요약정보 + 고시(#desctable)가 있으면 그 항목."""
+    first = products[0]
+    colors = merged_palette(products)
+    sizes = []
+    for values in colors.values():
+        sizes.extend(s for s in values if s not in sizes)
+    rows = OrderedDict([('상품명', first['name']), ('품번', first['style'])])
+    if colors:
+        rows['색상'] = ' / '.join(colors)
+    if sizes:
+        rows['사이즈'] = ' / '.join(sizes)
+    summary = next((p.get('summary') for p in products if p.get('summary')), '')
+    if summary:
+        rows['상품 설명'] = summary
+    for product in products:
+        for key, value in product['notice'].items():
+            if key not in rows and not (key == '색상' and '색상' in rows):
+                rows[key] = value
+    return list(rows.items()), colors, sizes
+
+
+def size_rows(colors, sizes):
+    if not sizes:
+        return []
+    if len({tuple(v) for v in colors.values() if v}) <= 1:
+        return [('사이즈', ' / '.join(sizes))]
+    return [(name, ' / '.join(values)) for name, values in colors.items() if values]
+
+
+def spec_image(ctx, style, cache):
+    """본문에 없을 때 details/품번_details.jpg(상품정보·실측 표 이미지)를 확인. 없으면 ''."""
+    url = SPEC_URL.format(style)
+    ctx.checkpoint()
+    check = check_public_image(url, timeout=10, max_bytes=20_000_000, retries=1, checkpoint=ctx.checkpoint)
+    cache[url] = check
+    if check['status'] == 'accessible' and not missing_file(check):
+        ctx.log('상품정보·실측 이미지 추가: ' + url, 'INFO')
+        return url
+    if check['status'] == 'unknown':
+        ctx.log('상품정보·실측 이미지 확인 일시 오류(생략): ' + url + ': ' + '; '.join(check['reasons']), 'WARNING')
+    return ''
+
+
+def fetch_json(ctx, url):
+    """세정 사이즈 API(JSON). 실패하면 None(상세는 대체 표로 계속)."""
+    for wait in (0, 3):
+        if wait:
+            pause(ctx, wait)
+        ctx.checkpoint()
+        request = Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                                        '(KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+                                        'Accept': 'application/json', 'Referer': 'https://fapi.sejung.co.kr/size_spec.html'})
+        try:
+            with build_opener().open(request, timeout=20) as response:
+                if urlsplit(response.geturl()).hostname != 'fapi.sejung.co.kr':
+                    return None
+                data = json.loads(response.read(2_000_000).decode('utf-8-sig'))
+        except (HTTPError, URLError, TimeoutError, OSError, ValueError) as exc:
+            ctx.log('세정 사이즈 API 응답 실패(' + type(exc).__name__ + '): ' + url, 'WARNING')
+            continue
+        return data.get('resultData') if isinstance(data, dict) and data.get('resultCode') == 'OK' else None
+    return None
+
+
+STYLE_FIELDS = (('상품명', 'style_nm'), ('색상', 'color'), ('사이즈', 'size'), ('소재', 'material'), ('성별', 'sex'),
+                ('시즌', 'season'), ('제조국', 'made_in'), ('세탁', 'wash'), ('제조년월', 'prod_date'))
+
+
+def sejung_spec(ctx, style):
+    """(상품 상세정보 행, 사이즈 헤더, 사이즈 행). 데이터 없으면 빈 값."""
+    query = '?style_cd=' + quote(style)
+    info = fetch_json(ctx, SEJUNG_API + 'getStyleInfo' + query)
+    rows = []
+    if isinstance(info, dict):
+        rows = [(label, re.sub(r'\s+', ' ', str(info.get(key) or '')).strip()) for label, key in STYLE_FIELDS]
+        rows = [(k, v) for k, v in rows if v]
+    head = fetch_json(ctx, SEJUNG_API + 'getSizeSpec1' + query)
+    body = fetch_json(ctx, SEJUNG_API + 'getSizeSpec2' + query) if head else None
+    header, table = [], []
+    if isinstance(head, list) and isinstance(body, list):
+        def seq(item):
+            try:
+                return float(item.get('input_seq_num') or 0)
+            except (TypeError, ValueError):
+                return 0
+        head = sorted((h for h in head if isinstance(h, dict) and h.get('msmt_desc')), key=seq)
+        header = [str(h['msmt_desc']).strip() for h in head]
+        grouped = OrderedDict()
+        for row in body:
+            if isinstance(row, dict) and row.get('size_cd'):
+                grouped.setdefault(str(row['size_cd']).strip(), {})[str(row.get('input_seq_num'))] = row.get('msmt_val')
+        for size in sorted(grouped):
+            values = grouped[size]
+            table.append([size] + [str(values.get(str(h.get('input_seq_num'))) or '-') for h in head])
+        if not table:
+            header = []
+    return rows, header, table
+
+
+def spec_table(header, table):
+    cell = 'padding:6px 10px;border:1px solid #ddd;text-align:center;'
+    head = ''.join('<th style="' + cell + 'background:#f6f6f6;">' + html.escape(h) + '</th>' for h in ['사이즈'] + header)
+    body = ''.join('<tr>' + ''.join('<td style="' + cell + '">' + html.escape(v) + '</td>' for v in row) + '</tr>' for row in table)
+    return ('<h3>사이즈 정보</h3><p style="font-size:12px;color:#666;text-align:right;">[단위 : CM]</p>'
+            '<table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr>' + head + '</tr></thead><tbody>'
+            + body + '</tbody></table><p style="font-size:12px;color:#666;">- 모니터 해상도 또는 사양에 따라 색상 차이가 있을 수 있습니다.<br>'
+            '- 소재 및 측정 방법에 따라 1~3cm의 오차가 있을 수 있습니다.</p>')
+
+
 def shared_detail(ctx, products):
-    urls, notice, cache = [], OrderedDict(), {}
+    urls, cache = [], {}
     for product in products:
         urls.extend(u for u in product['details'] if u not in urls)
-        for key, value in product['notice'].items():
-            notice.setdefault(key, value)
+    style = products[0]['style']
+    spec_rows, header, table = sejung_spec(ctx, style)
+    if table:
+        ctx.log(f'세정 사이즈 API 실측표 사용: {len(table)}개 사이즈 × {len(header)}개 항목', 'INFO')
+        urls = [u for u in urls if '/details/' not in urlsplit(u).path]          # 같은 내용 이미지 중복 방지
+        has_spec = True
+    else:
+        ctx.log('세정 사이즈 API 실측 없음(' + style + '): details 이미지·옵션 사이즈로 대체', 'WARNING')
+        has_spec = any('/details/' in urlsplit(u).path for u in urls)
+        if not has_spec:
+            found = spec_image(ctx, style, cache)
+            if found:
+                urls.append(found)
+                has_spec = True
     parts = []
     for url in urls:
         ctx.checkpoint()
         if url not in cache:
             cache[url] = check_public_image(url, timeout=10, max_bytes=20_000_000, retries=1, checkpoint=ctx.checkpoint)
         check = cache[url]
-        if check['status'] == 'accessible':
+        if check['status'] == 'accessible' and missing_file(check):
+            ctx.log('상세 이미지 제외(원본 없음 → err_404): ' + url, 'WARNING')
+            if '/details/' in urlsplit(url).path and not table:
+                has_spec = False
+        elif check['status'] == 'accessible':
             parts.append('<img src="' + html.escape(url, quote=True) + '" alt="상품 상세" style="max-width:100%;height:auto;">')
         elif check['status'] == 'unknown':
             raise CrawlError('상세 이미지 확인 중 일시 오류: ' + url + ': ' + '; '.join(check['reasons']))
         else:
             ctx.log(f"상세 이미지 제외(inaccessible): {url}: " + '; '.join(check['reasons']), 'WARNING')
     if not parts:
-        ctx.log('상품 본문 상세 이미지가 없거나 공개 접근 불가: 상세는 고시 표만', 'WARNING')
-    if notice:
-        rows = ''.join('<tr><th style="padding:6px 10px;border:1px solid #ddd;background:#f6f6f6;text-align:left;white-space:nowrap;">'
-                       + html.escape(k) + '</th><td style="padding:6px 10px;border:1px solid #ddd;">' + html.escape(v) + '</td></tr>'
-                       for k, v in notice.items())
-        parts.append('<h3>상품정보고시</h3><table style="width:100%;border-collapse:collapse;font-size:13px;"><tbody>' + rows + '</tbody></table>')
+        ctx.log('상품 본문 상세 이미지가 없거나 공개 접근 불가: 상세는 정보 표만', 'WARNING')
+    rows, colors, sizes = info_rows(products)
+    if spec_rows:
+        known = {k for k, _ in spec_rows}
+        extra = [(k, v) for k, v in rows if k not in known]
+        parts.append(info_table('상품 상세정보', spec_rows + extra))
     else:
-        ctx.log('상품정보고시(#desctable) 없음: 고시 표 생략', 'WARNING')
+        parts.append(info_table('상품 상세정보', rows))
+    if table:
+        parts.append(spec_table(header, table))
+    else:
+        fallback = info_table('사이즈 정보', size_rows(colors, sizes))
+        if fallback:
+            note = ('위 상품정보 이미지의 실측 사이즈를 확인하세요.' if has_spec
+                    else '공식몰에 실측 사이즈가 제공되지 않아 옵션 사이즈만 표기합니다.')
+            parts.append(fallback + '<p style="font-size:12px;color:#666;">' + html.escape(note) + '</p>')
+    if not any(p['notice'] for p in products) and not spec_rows:
+        ctx.log('상품정보고시·세정 상품정보 없음: 상품 상세정보는 상품명·색상·사이즈·상품요약정보로 작성', 'INFO')
     compact, overflow = excel_detail(''.join(parts))
     if overflow:
         raise CrawlError('공통 상세 HTML Excel 셀 한도(32,767자) 초과. 원본을 임의 절단하지 않습니다.')
