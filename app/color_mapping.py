@@ -375,7 +375,7 @@ def final_items(job,view):
         group_items=grouped.get(group['code'],[])
         first_link=first_product_link(job,group['code'],group_items)
         detail=local_images.detail_entry(job,group['code']) if local_images.enabled(job) else None
-        compact,overflow=(detail['filename'],False) if detail else excel_detail(selected_detail(job,group) if manual_detail(job) else shared_detail(job,group,group_items)) if 'detail_page' in job.selected else ('',False)
+        compact,overflow=('',False) if job.brand.get('mapping_detail_mode')=='selected_images_with_tail' else (detail['filename'],False) if detail else excel_detail(selected_detail(job,group) if manual_detail(job) else shared_detail(job,group,group_items)) if 'detail_page' in job.selected else ('',False)
         if overflow:raise ValueError(group['code']+': 공통 상세 HTML이 셀 한도를 초과합니다.')
         for color in group['colors']:
             images=[i for i in group['images'] if color['id'] in i.get('assigned_colors',[i.get('assigned_to')])]
@@ -419,7 +419,7 @@ def final_items(job,view):
                 elif field=='detail_page':value=compact
                 elif field=='size' and 'size' in job.selected and 'size' in color:value=color['size']
                 values.append(value)
-            item=preview(headers,values,job.selected,allow_empty_product_name=bool(getattr(job,'brand',{}).get('allow_empty_product_name',False)))
+            item=preview(headers,values,job.selected,allow_empty_product_name=bool(getattr(job,'brand',{}).get('allow_empty_product_name',False)),prepared_detail=(compact,overflow))
             if entries is not None:
                 folder=state.get('file_export',{}).get('folder') if state.get('finalized') else None
                 role_layout=folder and state.get('file_export',{}).get('layout')=='roles-v1'
@@ -533,7 +533,7 @@ def grouped_pending_items(job):
 def export_sheet(job):
     view=snapshot(job)
     if view['finalized']:
-        rows=final_items(job,view);headers=result_headers(job)
+        rows=visible_items(job);headers=result_headers(job)
         return [headers]+[[item['raw'].get(h) for h in headers] for item in rows]
     if job.brand.get('group_manual_pending'):
         headers=result_headers(job)

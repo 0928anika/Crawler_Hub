@@ -76,6 +76,25 @@ class Tests(unittest.TestCase):
    self.assertFalse(any('front.jpg' not in row['raw']['상세페이지 HTML'] for row in mapping.visible_items(job)))
    photos.save(job,dict(expected_revision=result['revision'],excluded_ids=[target]))
    self.assertFalse(photos.gallery(job)['draft']);self.assertNotEqual((job.dir/'result.xlsx').read_bytes(),original)
+ def test_final_rows_built_once_for_export_and_review_and_invalidated_on_edit(self):
+  with tempfile.TemporaryDirectory() as folder:
+   job=self.job(folder,2);job.revision=1;job.brand['output_headers'].append('판매가');job.selected.append('price')
+   with patch.object(mapping,'final_items',wraps=mapping.final_items) as build:
+    result=photos.save(job,dict(expected_revision=0,excluded_ids=[]))
+    self.assertEqual(result['rows'],4)
+    mapping.export_sheet(job);mapping.visible_items(job)
+    self.assertEqual(build.call_count,1)
+    job.items[0]['raw']['판매가']=20000;job.revision+=1
+    rows=mapping.visible_items(job)
+    self.assertEqual(build.call_count,2);self.assertEqual(rows[0]['raw']['판매가'],20000)
+ def test_preformatted_output_does_not_format_html_again_in_preview(self):
+  import schema
+  with tempfile.TemporaryDirectory() as folder:
+   job=self.job(folder,1);view=mapping.snapshot(job)
+   with patch.object(schema,'excel_detail',side_effect=AssertionError('duplicate format')):
+    rows=mapping.final_items(job,view)
+   self.assertEqual(len(rows),2);self.assertIn('size notice',rows[0]['raw']['상세페이지 HTML'])
+   with self.assertRaises(ValueError):schema.preview(['품번','상세페이지 HTML'],['CODE','<p>one</p>'],['detail_page'],prepared_detail=('<p>other</p>',False))
  def test_stale_or_invalid_save_does_not_change_saved_state(self):
   with tempfile.TemporaryDirectory() as folder:
    job=self.job(folder,1);photos.save(job,dict(expected_revision=0,excluded_ids=[]))
@@ -85,13 +104,13 @@ class Tests(unittest.TestCase):
     self.assertEqual((job.dir/'color_mapping.json').read_bytes(),before)
  def test_failed_export_rolls_back_and_keeps_backup(self):
   with tempfile.TemporaryDirectory() as folder:
-   job=self.job(folder,1);photos.save(job,dict(expected_revision=0,excluded_ids=[]))
-   before=(job.dir/'color_mapping.json').read_bytes();book=(job.dir/'result.xlsx').read_bytes()
+   job=self.job(folder,1);job.revision=1;photos.save(job,dict(expected_revision=0,excluded_ids=[]))
+   before=(job.dir/'color_mapping.json').read_bytes();book=(job.dir/'result.xlsx').read_bytes();previous_rows=mapping.visible_items(job)
    def broken():
     (job.dir/'result.xlsx').write_bytes(b'partial');raise OSError('export failed')
    job.save=broken
    with self.assertRaises(OSError):photos.save(job,dict(expected_revision=1,excluded_ids=[photos.gallery(job)['photos'][0]['id']]))
-   self.assertEqual((job.dir/'color_mapping.json').read_bytes(),before);self.assertEqual((job.dir/'result.xlsx').read_bytes(),book)
+   self.assertEqual((job.dir/'color_mapping.json').read_bytes(),before);self.assertEqual((job.dir/'result.xlsx').read_bytes(),book);self.assertEqual(mapping.visible_items(job),previous_rows)
    self.assertTrue(list((job.dir/'photo-review-backups').glob('*/result.xlsx')))
 
 if __name__=='__main__':unittest.main()

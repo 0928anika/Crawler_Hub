@@ -91,6 +91,12 @@ def save(job,data):
             source=job.dir/name
             if source.is_file():shutil.copy2(source,backup/name)
         atomic_json(job.dir/'color_mapping.json',state)
+        # The validated output belongs to this exact durable mapping revision.
+        # Reuse it for workbook export, summary and review instead of rebuilding.
+        stamp=mapping.view_stamp(job)
+        if stamp is not None:
+            job._mapping_view_cache=(stamp,new_view)
+            job._mapping_result_cache=(stamp,rows)
         try:
             job.save();job.checkpoint()
         except Exception:

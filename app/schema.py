@@ -81,7 +81,7 @@ def sanitized_html(markup):
     from detail_store import registration_layout
     return registration_layout(str(soup))
 
-def preview(headers, row, selected=None, allow_empty_product_name=False):
+def preview(headers, row, selected=None, allow_empty_product_name=False, *, prepared_detail=None):
     selected = selection(selected)
     allowed = set(REQUIRED + selected)
     raw = dict(zip(headers,row))
@@ -99,7 +99,10 @@ def preview(headers, row, selected=None, allow_empty_product_name=False):
         elif f == 'additional_images': extra.extend(urls(value))
         elif f == 'detail_page': markup = str(value or '')
     missing = [FIELDS[k] for k in REQUIRED if not normalized.get(k) and not (k=='product_name' and allow_empty_product_name)]
-    compact,overflow=excel_detail(markup)
+    if prepared_detail is not None:
+        if not isinstance(prepared_detail,tuple) or len(prepared_detail)!=2 or prepared_detail[0]!=markup or type(prepared_detail[1]) is not bool:raise ValueError('정리된 상세 HTML과 결과 행이 일치하지 않습니다.')
+        compact,overflow=prepared_detail
+    else:compact,overflow=excel_detail(markup)
     return dict(code=normalized.get('product_code',''), name=normalized.get('product_name',''),
         color=normalized.get('color',''), normalized=normalized, fields=fields,
         extra_fields={str(k):v for k,v in raw.items() if field_for(k) is None},

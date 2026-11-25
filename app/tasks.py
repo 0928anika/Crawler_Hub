@@ -142,10 +142,13 @@ class Job:
             f.write(json.dumps(event,ensure_ascii=False,default=str)+'\n');f.flush();os.fsync(f.fileno())
     def save(self):
         with self.save_lock:
+            manual=color_mapping.is_manual(self)
             with self.data_lock:
-                sheets=copy.deepcopy(self.sheets)
-                events=copy.deepcopy(self.row_events)
+                # Manual exports are built from mapped rows, not raw event sheets.
+                sheets={} if manual else copy.deepcopy(self.sheets)
+                events=[] if manual else copy.deepcopy(self.row_events)
                 count=len(self.items)
+                mapped_detail=manual and color_mapping.snapshot(self)['finalized']
             if events:
                 sheets={}
                 sheet_headers={};sheet_records={}
@@ -173,7 +176,7 @@ class Job:
                             heads=output_headers(rows[0],self.selected)
                             output=[heads]+[[dict(zip(rows[0],r)).get(h) for h in heads] for r in rows[1:]]
                         for index,row in enumerate(output):
-                            ws.append([safe_cell(excel_detail(v)[0] if index and i<len(output[0]) and field_for(output[0][i])=='detail_page' else v) for i,v in enumerate(row)])
+                            ws.append([safe_cell(excel_detail(v)[0] if not mapped_detail and index and i<len(output[0]) and field_for(output[0][i])=='detail_page' else v) for i,v in enumerate(row)])
                     if '작업처리로그' not in book.sheetnames:
                         ws=book.create_sheet('작업처리로그');ws.append(['입력 행','품번','상태','처리 시간(초)','오류/주의'])
                         manual_state=('완료' if color_mapping.snapshot(self)['finalized'] else '대기') if color_mapping.is_manual(self) else None
