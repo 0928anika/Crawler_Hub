@@ -182,7 +182,7 @@ def registered_name(brand, name, code):
 
 def convert(files, fill_blank_price=True):
     """files: [{name, data(bytes), sheet, header_row, mapping{field: 머리글}, brand}] → (xlsx bytes, 요약)."""
-    rows, seen, summary = [], set(), []
+    rows, seen, summary, brands = [], set(), [], []
     for entry in files:
         name = entry['name']
         book = read_book(entry['data'], name)
@@ -210,6 +210,8 @@ def convert(files, fill_blank_price=True):
                     stats['품번 없음'] += 1
                     continue
                 brand = text(get('brand')) or text(entry.get('brand'))
+                if brand and brand not in brands:
+                    brands.append(brand)
                 name_value = text(get('name'))
                 title = name_value if direct else registered_name(brand, name_value, code)
                 color = text(get('color'))
@@ -240,7 +242,7 @@ def convert(files, fill_blank_price=True):
             book.close()
     if not rows:
         raise ValueError('요청 목록으로 옮길 행이 없습니다. 품번 열과 시트를 확인하세요.')
-    return write(rows), dict(files=summary, rows=len(rows))
+    return write(rows), dict(files=summary, rows=len(rows), brands=brands)
 
 
 def write(rows):
@@ -269,5 +271,26 @@ def decode(entry):
     return data
 
 
-def filename():
-    return '요청목록_' + datetime.now().strftime('%Y%m%d_%H%M') + '.xlsx'
+def safe_name(value):
+    """파일명에 못 쓰는 글자 제거."""
+    return re.sub(r'\s+', ' ', re.sub(r'[\\/:*?"<>|\x00-\x1f]', ' ', str(value or ''))).strip(' .')[:60]
+
+
+def brand_title(brands):
+    names = list(dict.fromkeys(n for n in (safe_name(b) for b in brands) if n))
+    if not names:
+        return ''
+    return names[0] + (f' 외 {len(names) - 1}' if len(names) > 1 else '')
+
+
+def filename(brands=()):
+    """브랜드_요청목록 변환_YYYYMMDD.xlsx (브랜드 여러 개면 '첫 브랜드 외 N')."""
+    title = brand_title(brands)
+    return (title + '_' if title else '') + '요청목록 변환_' + datetime.now().strftime('%Y%m%d') + '.xlsx'
+
+
+def result_filename(brand):
+    """작업 결과 엑셀: 브랜드명_RAW RESULT_YYYYMMDD.xlsx"""
+    title = safe_name(brand)
+    return (title + '_' if title else '') + 'RAW RESULT_' + datetime.now().strftime('%Y%m%d') + '.xlsx'
+

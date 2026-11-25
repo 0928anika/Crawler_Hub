@@ -10,7 +10,7 @@ import threading
 import webbrowser
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse,parse_qs
+from urllib.parse import urlparse,parse_qs,quote
 from registry import ROOT,brands,get_brand,brand_root
 from schema import preview,FIELDS,REQUIRED,OPTIONAL,review_result
 from storage import HOME,VERSION,validate_local,settings,save_settings,validate_input
@@ -89,6 +89,12 @@ def request_source(job):
     info.update(job=job.id,brand=info['brand'] or job.brand.get('name',''))
     return info
 
+def disposition(name):
+    """한글 파일명: ASCII 대체 이름 + RFC 5987 filename*."""
+    fallback=re.sub(r'[^A-Za-z0-9._-]+','_',name).strip('_') or 'download'
+    if fallback.startswith('.'):fallback='download'+fallback
+    return 'attachment; filename="'+fallback+'"; filename*=UTF-8\'\''+quote(name,safe='')
+
 def page_rows(rows,query):
     offset=max(0,int(query.get('offset',['0'])[0]));limit=min(300,max(1,int(query.get('limit',['100'])[0])))
     return dict(total=len(rows),rows=rows[offset:offset+limit],offset=offset,limit=limit)
@@ -116,7 +122,7 @@ class Handler(BaseHTTPRequestHandler):
         if not isinstance(body,bytes):body=json.dumps(body,ensure_ascii=False,default=str).encode('utf-8')
         self.send_response(status);self.send_header('Content-Type',mime);self.send_header('Content-Length',str(len(body)))
         self.send_header('Cache-Control','no-store');self.send_header('X-Content-Type-Options','nosniff');self.send_header('Referrer-Policy','no-referrer')
-        if attachment:self.send_header('Content-Disposition','attachment; filename="'+attachment+'"')
+        if attachment:self.send_header('Content-Disposition',disposition(attachment))
         self.end_headers()
         try:self.wfile.write(body)
         except (BrokenPipeError,ConnectionResetError):pass
@@ -146,7 +152,7 @@ class Handler(BaseHTTPRequestHandler):
         parts=path.strip('/').split('/')
         return len(parts)==4 and parts[:2]==['api','jobs'] and parts[3].startswith('open-')
     def send_file(self,file,mime,attachment):
-        self.send_response(200);self.send_header('Content-Type',mime);self.send_header('Content-Length',str(file.stat().st_size));self.send_header('Cache-Control','no-store');self.send_header('Content-Disposition','attachment; filename="'+attachment+'"');self.end_headers()
+        self.send_response(200);self.send_header('Content-Type',mime);self.send_header('Content-Length',str(file.stat().st_size));self.send_header('Cache-Control','no-store');self.send_header('Content-Disposition',disposition(attachment));self.end_headers()
         try:
             with file.open('rb') as source:
                 while chunk:=source.read(65536):self.wfile.write(chunk)
@@ -194,7 +200,7 @@ class Handler(BaseHTTPRequestHandler):
                     archive=job.dir/('images-export-'+uuid.uuid4().hex+'.zip')
                     try:
                         with zipfile.ZipFile(local_images.fs_path(archive),'w',zipfile.ZIP_STORED) as bundle:
-                            bundle.write(local_images.fs_path(job.dir/'result.xlsx'),'result.xlsx')
+                            bundle.write(local_images.fs_path(job.dir/'result.xlsx'),request_list.result_filename(job.brand.get('name','')))
                             for name in names:
                                 file=local_images.inside(folder,name)
                                 bundle.write(local_images.fs_path(file),'images/'+file.relative_to(folder).as_posix())
@@ -202,7 +208,7 @@ class Handler(BaseHTTPRequestHandler):
                     finally:local_images.fs_path(archive).unlink(missing_ok=True)
             if action in ('download','export','original'):
                 job.save();file=job.dir/'result.xlsx'
-                return self.send(file.read_bytes(),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',attachment='crawler-result.xlsx')
+                return self.send(file.read_bytes(),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',attachment=request_list.result_filename(job.brand.get('name','')))
             if action=='mapping':
                 with job.data_lock:
                     if len(parts)==5 and parts[4]=='detail':return self.send(color_mapping.detail_preview(job,query.get('group_id',[''])[0]))
@@ -295,7 +301,7 @@ class Handler(BaseHTTPRequestHandler):
                     entries.append(entry)
                 if not entries:raise ValueError('변환할 파일을 먼저 올려주세요.')
                 content,summary=request_list.convert(entries,fill_blank_price=bool(data.get('fill_blank_price',True)))
-                return self.send(dict(summary=summary,name=request_list.filename(),file=base64.b64encode(content).decode('ascii')))
+                return self.send(dict(summary=summary,name=request_list.filename([e.get('brand') for e in entries if e.get('brand')] or summary.get('brands') or []),file=base64.b64encode(content).decode('ascii')))
             if self.path=='/api/jobs':
                 with LOCK:
                     brand=get_brand(data['brand']);check_start(brand['execution_resources'])

@@ -14,7 +14,7 @@ function time(seconds){if(seconds===null||seconds===undefined)return '—';secon
 function date(value){if(!value)return '이전 버전 작업';return new Date(value).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}
 function brandLabel(b){if(!b)return '';const source=(b.crawl_source||'소스 미지정').replace(/\s*[·|]\s*수동 매핑 샘플/g,'').trim();return b.name+' ('+source+')'}
 function brand(){return S.brands.find(b=>b.id===S.brand)||S.brands[0]}
-function link(url,label,cls='secondary'){const a=el('a',label,cls);a.href=url;if(/^\/api\/jobs\/[a-f0-9]{32}\/(?:export|download|original)$/.test(url)){a.download='crawler-result.xlsx'}else{a.target='_blank';a.rel='noopener noreferrer'}return a}
+function link(url,label,cls='secondary'){const a=el('a',label,cls);a.href=url;if(/^\/api\/jobs\/[a-f0-9]{32}\/(?:export|download|original)$/.test(url)){a.download=''}else{a.target='_blank';a.rel='noopener noreferrer'}return a}
 function safeUrl(url){if(/^\/api\/jobs\/[a-f0-9]{32}\/image\?path=/.test(url))return true;return /^https?:\/\//i.test(url)||/^\/sample\/\d+\/\d+$/.test(url)}
 function button(text,fn,cls='secondary'){const b=el('button',text,cls);b.onclick=run(fn);return b}
 function metric(label,value,note='',cls=''){const d=el('div',undefined,'metric '+cls);d.append(el('span',label),el('strong',value),el('small',note));return d}

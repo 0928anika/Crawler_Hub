@@ -137,6 +137,27 @@ class RequestListTests(unittest.TestCase):
         self.assertEqual([r[2] for r in rows], ['S', 'M', 'L'])
         self.assertEqual(rows[0][1], '젠사이 PUFFER DOWN ZAD4JP403')
 
+    def test_download_filenames(self):
+        from datetime import datetime
+        today = datetime.now().strftime('%Y%m%d')
+        self.assertEqual(rl.result_filename('올리비아로렌'), f'올리비아로렌_RAW RESULT_{today}.xlsx')
+        self.assertEqual(rl.result_filename(''), f'RAW RESULT_{today}.xlsx')
+        self.assertEqual(rl.filename(['올리비아로렌']), f'올리비아로렌_요청목록 변환_{today}.xlsx')
+        self.assertEqual(rl.filename(['젠사이', '올포유', '젠사이']), f'젠사이 외 1_요청목록 변환_{today}.xlsx')
+        self.assertEqual(rl.filename([]), f'요청목록 변환_{today}.xlsx')
+        self.assertEqual(rl.result_filename('a/b:c*'), f'a b c_RAW RESULT_{today}.xlsx')
+        _, summary = rl.convert([dict(name='hub.xlsx', data=hub_file(), sheet='결과', header_row=1,
+                                      mapping=rl.inspect(hub_file(), 'hub.xlsx')['mapping'], brand='젠사이')])
+        self.assertEqual(summary['brands'], ['젠사이'])
+
+    def test_content_disposition_keeps_korean_name(self):
+        import server
+        from urllib.parse import unquote
+        header = server.disposition('올리비아로렌_RAW RESULT_20261126.xlsx')
+        self.assertTrue(header.startswith('attachment; filename="'))
+        header.encode('latin-1')                                                   # HTTP 헤더에 그대로 실림
+        self.assertEqual(unquote(header.split("UTF-8''")[1]), '올리비아로렌_RAW RESULT_20261126.xlsx')
+
 
 if __name__ == '__main__':
     unittest.main()
