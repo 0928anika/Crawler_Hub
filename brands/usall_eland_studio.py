@@ -178,9 +178,16 @@ def options(ctx, main, selected=None):
         raise CrawlError('옵션 JSON 구조 변경') from e
 
 
+def representative_color(option):
+    label = str(option.get('itemOptionName') or '').strip()
+    return bool(re.fullmatch(r'(?:[A-Z0-9]{2}\s*)?대표\s*(?:칼라|컬러|색상)(?:\s*AA)?', label, re.I))
+
+
 def color_rows(rows):
     result = []
     for o in rows:
+        if representative_color(o):
+            continue
         if str(o.get('itemOptionTcode')) not in ('10','99'):
             raise CrawlError('첫 옵션이 색상인 상품만 지원: 사이트 옵션 구조 확인 필요')
         label = str(o.get('itemOptionName') or '').strip()
@@ -534,7 +541,9 @@ def crawl(ctx):
                 rejected += 1
                 ctx.log('스튜디오컷 없음(상품 제외): '+code+' / '+final,'INFO')
                 continue
-            opts = options(ctx, main)
+            opts = [o for o in options(ctx, main) if not representative_color(o)]
+            if not opts:
+                raise CrawlError('대표칼라를 제외한 실제 색상 옵션 없음')
             cs = color_rows(opts)
             products.append((main, final))
             photos=gallery(ctx, main, cache)

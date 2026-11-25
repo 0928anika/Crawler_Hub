@@ -35,6 +35,14 @@ class Tests(unittest.TestCase):
   top=[dict(itemOptionTcode='10',itemOptionName='09 BLACK',itemOptionNo='1')]
   with self.assertRaisesRegex(c.CrawlError,'사이즈 옵션명 누락'):
    self.run_sizes(top,{'1':[dict(itemOptionTcode='20',itemOptionName='')]})
+ def test_representative_color_is_not_a_mapping_option_or_queried(self):
+  data=json.loads((ROOT/'tests/fixtures/usall/ULMS25N55-options.json').read_text(encoding='utf-8'))
+  self.assertEqual(c.color_rows(data['options']),[dict(color_name='BEIGE',color_code='34')])
+  children=dict(data['children']);children.pop('25102490555')
+  self.assertEqual(self.run_sizes(data['options'],children,'ULMS25N55',data['main']),'130호,140호,150호,160호,170호')
+  for label in ('AA 대표칼라','대표칼라','AA 대표컬러','대표칼라 AA'):
+   self.assertTrue(c.representative_color(dict(itemOptionName=label)))
+  self.assertFalse(c.representative_color(dict(itemOptionName='AA BLUE')))
  def setUp(self):
   primary=patch.object(c,'studio_product',return_value=True);primary.start();self.addCleanup(primary.stop)
   self.data=json.loads((ROOT/'tests/fixtures/usall/ULTM26N02.json').read_text(encoding='utf-8'))
