@@ -62,12 +62,24 @@ def source_groups(job):
         iid=key(raw['image_url'])
         if not any(image['id']==iid for image in group['images']):
             image=dict(id=iid,url=raw['image_url'],item_id=item['id'])
+            if raw.get('preassigned_color_id') and not raw.get('asset_path'):
+                suggested=next((c for c in raw['colors'] if c['id']==raw['preassigned_color_id']),None)
+                match=next((c for c in group['colors'] if suggested and same_color(c,suggested)),None)
+                image.update(preassigned_color_id=match['id'] if match else None,mapping_evidence=raw.get('mapping_evidence',''))
+            if raw.get('review_required'):group['review_required']=True
             if raw.get('asset_path'):
                 suggested=next((c for c in raw['colors'] if c['id']==raw.get('preassigned_color_id')),None)
                 match=next((c for c in group['colors'] if suggested and same_color(c,suggested)),None)
                 image.update(url=local_images.preview_url(job,raw['asset_path']),asset_path=raw['asset_path'],preassigned_color_id=match['id'] if match else None,mapping_evidence=raw.get('mapping_evidence',''))
                 if raw.get('detail_asset_path'):image['detail_asset_path']=raw['detail_asset_path']
             group['images'].append(image)
+        elif raw.get('preassigned_color_id') and raw.get('review_required'):
+            image=next(i for i in group['images'] if i['id']==iid)
+            suggested=next((c for c in raw['colors'] if c['id']==raw['preassigned_color_id']),None)
+            match=next((c for c in group['colors'] if suggested and same_color(c,suggested)),None)
+            ids=image.setdefault('preassigned_color_ids',[image['preassigned_color_id']] if image.get('preassigned_color_id') else [])
+            if match and match['id'] not in ids:ids.append(match['id'])
+            group['review_required']=True
     if is_hybrid(job):
         # Include existing official mappings only for product codes that need review.
         for item in successful_items(job):
@@ -311,6 +323,10 @@ def detail_preview(job,group_id):
     if group is None:raise ValueError('매핑할 품번을 찾을 수 없습니다.')
     markup='';notice=''
     if manual_detail(job):return dict(code=group['code'],name=group['name'],html=selected_detail(job,group),notice='선택한 순서대로 구성한 상세페이지입니다.' if group['detail']['selected'] else '상세페이지 옵션에서 사진을 선택하세요.',product_url=first_product_link(job,group['code']))
+    if job.brand.get('mapping_detail_mode')=='selected_images_with_tail' and job.brand.get('mapping_tail_scope')=='color' and 'detail_page' in job.selected:
+        rows=final_items(job,dict(view,groups=[group]))
+        markup=''.join(next((str(v or '') for h,v in row['raw'].items() if field_for(h)=='detail_page'),'') for row in rows)
+        return dict(code=group['code'],name=group['name'],html=markup,notice='현재 저장된 색상별 선택 사진과 사이즈표·고시입니다. 모델컷 선택을 해제하고 저장하면 상세에서도 제외됩니다.',product_url=first_product_link(job,group['code']))
     if 'detail_page' not in job.selected:notice='이 작업에서는 상세페이지 수집을 선택하지 않았습니다.'
     else:
         entry=local_images.detail_entry(job,group['code']) if local_images.enabled(job) else None
@@ -363,7 +379,11 @@ def final_items(job,view):
             if not images:continue  # Explicitly saved empty colors are omitted.
             if job.brand.get('mapping_detail_mode')=='selected_images_with_tail' and 'detail_page' in job.selected:
                 selected_urls=list(dict.fromkeys(i['url'] for i in images))
-                markup='<div style="width:100%;max-width:780px;margin:0 auto;text-align:center">'+''.join('<img src="'+html.escape(url,quote=True)+'" alt="상품 사진" style="display:block;width:100%;height:auto;margin:0 auto">' for url in selected_urls)+shared_detail(job,group)+'</div>'
+                tail_items=group_items
+                if job.brand.get('mapping_tail_scope')=='color':
+                    tail_items=[item for item in group_items if any(same_color(c,color) for c in (item.get('unmapped') or {}).get('colors',[]))]
+                    if not tail_items:tail_items=[by_id[i['item_id']] for i in images]
+                markup='<div style="width:100%;max-width:780px;margin:0 auto;text-align:center">'+''.join('<img src="'+html.escape(url,quote=True)+'" alt="상품 사진" style="display:block;width:100%;height:auto;margin:0 auto">' for url in selected_urls)+shared_detail(job,group,tail_items)+'</div>'
                 compact,overflow=excel_detail(markup)
                 if overflow:raise ValueError(group['code']+': 선택 사진 상세 HTML이 셀 한도를 초과합니다.')
 

@@ -58,7 +58,7 @@ class CrawlContext:
         if self.mapping_mode=='manual' and not self._unmapped_count and not (getattr(self,'allow_automatic_results',False) and self._automatic_count):self.fail_item('수동 매핑 후보가 수집되지 않았습니다.')
         if self._failures:
             raise RuntimeError('품번 수집 미완료: '+' / '.join(self._failures))
-    def emit_unmapped(self,record,colors,image_url,shared_detail_html=''):
+    def emit_unmapped(self,record,colors,image_url,shared_detail_html='',*,mapped_color=None,mapping_evidence=''):
         """One URL per raw row, with a real palette; no guessed color assignment."""
         if self.mapping_mode!='manual':raise ValueError('mapping_mode=manual 브랜드에서만 사용할 수 있습니다.')
         if self.image_mode=='local':raise ValueError('이미지 저장 유형은 ctx.emit_local_image를 사용하세요.')
@@ -70,6 +70,11 @@ class CrawlContext:
         if self.enabled('main_image'):record['main_image']=image_url
         elif self.enabled('additional_images'):record['additional_images']=image_url
         self._unmapped=dict(colors=colors,image_url=image_url,detail_mode='site_shared',shared_detail_html=shared_detail_html if self.enabled('detail_page') else '')
+        if mapped_color is not None:
+            normalized=normalize_palette([mapped_color])[0]
+            match=next((c for c in colors if (normalized['color_code'] and c['color_code']==normalized['color_code']) or (not normalized['color_code'] and c['color_name']==normalized['color_name'])),None)
+            if not match or not str(mapping_evidence).strip():raise ValueError('공식 색상과 일치하는 사전 매핑 및 근거가 필요합니다.')
+            self._unmapped.update(preassigned_color_id=match['id'],mapping_evidence=str(mapping_evidence),review_required=True)
         try:self.emit_result(record);self._unmapped_count+=1
         finally:self._unmapped=None
     def save_image(self,source,crop=None):

@@ -1,0 +1,176 @@
+{
+  "id": "phantom_official_no_model",
+  "name": "팬텀",
+  "category": "골프 의류",
+  "crawl_source": "공식 홈페이지 모델컷 제외",
+  "script": "phantom_official_no_model.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명",
+    "사이트 브랜드"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "verified",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "해당 색상 상품의 공식 optionList.option2List 사이즈 전체(품절 포함)."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 검색 API price.real(없으면 priceInfo.currentPrice)."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 검색 API price.tag(정가 필드). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 lambda API itemkind/category 경로."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 색상 연결을 미리 선택, 사용자 검수 후 첫 사진 채택."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "사용자가 남긴 사진, 최대 추가 9장."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "최종 선택 사진 나열 + 해당 색상 사이즈표·고시. 기존 본문과 제외 사진은 넣지 않음."
+    }
+  },
+  "guide": {
+    "pattern": "^[A-Za-z0-9]{6,20}(?:_[A-Za-z0-9]{1,4})?$",
+    "format": "기본 품번(예: 211F3CB201) 또는 품번_색상코드(예: 211F3CB201_TQ)",
+    "notes": "기존 공홈과 별도. 공식 색상별 전체 갤러리를 미리 선택해 보여주며 모델컷은 사용자가 해제하고 저장합니다. 최종 채택 사진 + 해당 색상의 사이즈표·고시로 상세를 재구성합니다. 기존 본문은 사용하지 않습니다.",
+    "method": "공식 검색 API의 상품코드를 품번_색상코드 구조로 정확히 대조.",
+    "example": "211F3CB201",
+    "examples": [
+      "211F3CB201"
+    ],
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "공백"
+    ],
+    "validation_note": "입력 형식 검사이며 실제 상품 존재 확인은 실행 시 수행"
+  },
+  "notes": "기존 공홈과 별도. 공식 색상별 전체 갤러리를 미리 선택해 보여주며 모델컷은 사용자가 해제하고 저장합니다. 최종 채택 사진 + 해당 색상의 사이즈표·고시로 상세를 재구성합니다. 기존 본문은 사용하지 않습니다.",
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "해당 색상 상품의 공식 optionList.option2List 사이즈 전체(품절 포함)."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 검색 API price.real(없으면 priceInfo.currentPrice)."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 검색 API price.tag(정가 필드). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 lambda API itemkind/category 경로."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 색상 연결을 미리 선택, 사용자 검수 후 첫 사진 채택."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "사용자가 남긴 사진, 최대 추가 9장."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "최종 선택 사진 나열 + 해당 색상 사이즈표·고시. 기존 본문과 제외 사진은 넣지 않음."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null,
+    "사이트 브랜드": null
+  },
+  "code_hash": "c4044325c0782607fcb2baef2abeffd9bd42f1342927664d56513f81448f33ea",
+  "mapping_detail_mode": "selected_images_with_tail",
+  "mapping_tail_scope": "color",
+  "mapping_image_order": "source",
+  "export_all_additional_images": true
+}
