@@ -256,5 +256,11 @@
     "profile": "halfclub",
     "supported": true,
     "reason": "독립 정상가 normPrc만. 없거나 0이면 빈칸(판매가로 대체 안 함)."
+  },
+  {
+    "id": "olivialauren_official",
+    "profile": "cafe24",
+    "supported": true,
+    "reason": "올리비아로렌 공식 소비자가 #span_product_price_custom 또는 product_custom(regular_price cafe24 프로필). 미표시·0·형식오류·링크별 불일치는 빈칸, 판매가로 대체하지 않음."
   }
 ]
