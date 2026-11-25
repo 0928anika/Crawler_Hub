@@ -95,6 +95,8 @@ class Net:
     def __init__(self, module, pages):
         self.pages, self.requested, self.checked, self.error = pages, [], [], module.CrawlError
         self.specs = set()                                                         # 있는 details/품번_details.jpg
+        self.api = {}                                                              # 세정 사이즈 API 응답(resultData)
+        module.fetch_json = self.json
         module.fetch_text = self.fetch
         module.check_public_image = self.check
 
@@ -110,6 +112,10 @@ class Net:
         if key not in self.pages:
             raise self.error('HTTP 404: ' + url)
         return self.pages[key], url
+
+    def json(self, ctx, url):
+        self.requested.append(url)
+        return self.api.get(url.split('/searchOnlineStyleInfo/')[1].split('?')[0])
 
     def check(self, url, **kw):
         self.checked.append(url)
@@ -294,7 +300,7 @@ class OliviaLaurenTest(unittest.TestCase):
         self.assertIn('플라워 원포인트 티셔츠', html)
         self.assertIn('사이즈 정보</h3>', html)
         self.assertNotIn('단독 손세탁', html)
-        self.assertTrue(any('#desctable' in m for m in logs))
+        self.assertTrue(any('상품정보고시' in m for m in logs))
 
     def test_spec_image_is_appended_when_it_exists(self):
         module = load()
@@ -309,6 +315,38 @@ class OliviaLaurenTest(unittest.TestCase):
         self.assertLess(html.index(spec), html.index('상품 상세정보'))
         self.assertIn('실측 사이즈를 확인', html)
         self.assertNotIn(spec, [r['대표이미지'] for r, _ in rows])                   # 매핑 후보 아님
+
+    def test_sejung_api_builds_info_and_measurement_tables(self):
+        module = load()
+        net = Net(module, site())
+        spec = SG + 'details/OLBAL26W9181_details.jpg'
+        net.specs.add(spec)
+        net.api = {
+            'getStyleInfo': {'style_nm': '플라워 원포인트 티셔츠', 'color': '챠콜 그레이(05)/와인(15)', 'size': '090/095',
+                             'material': '겉감:면 61.00%,폴리에스터 36.00%', 'sex': '여성', 'season': '겨울',
+                             'made_in': 'MADE IN VIETNAM', 'wash': '단독 손세탁', 'prod_date': '202607'},
+            'getSizeSpec1': [{'msmt_desc': '어깨', 'input_seq_num': '2'}, {'msmt_desc': '총기장', 'input_seq_num': '1'}],
+            'getSizeSpec2': [{'size_cd': '095', 'msmt_desc': '총기장', 'msmt_val': '64.2', 'input_seq_num': '1'},
+                             {'size_cd': '090', 'msmt_desc': '총기장', 'msmt_val': '63', 'input_seq_num': '1'},
+                             {'size_cd': '090', 'msmt_desc': '어깨', 'msmt_val': '40', 'input_seq_num': '2'},
+                             {'size_cd': '090', 'msmt_desc': '암홀', 'msmt_val': '20.5', 'input_seq_num': '8'}],
+        }
+        rows, failures, error, logs = execute(module, 'OLBAL26W9181')
+        self.assertIsNone(error, failures)
+        html = rows[0][0]['상세페이지 HTML']
+        self.assertTrue(any('getSizeSpec2?style_cd=OLBAL26W9181' in u for u in net.requested))
+        self.assertIn('겉감:면 61.00%,폴리에스터 36.00%', html)
+        self.assertIn('202607', html)
+        self.assertIn('[단위 : CM]', html)
+        self.assertNotIn('암홀', html)                                               # 헤더에 없는 항목은 화면처럼 제외
+        body = html[html.index('사이즈 정보'):]
+        self.assertLess(body.index('총기장'), body.index('어깨'))                     # input_seq_num 순
+        self.assertLess(body.index('>090<'), body.index('>095<'))
+        self.assertIn('>64.2<', body)
+        self.assertIn('>-<', body)                                                  # 095 어깨 없음
+        self.assertNotIn(spec, html)                                                 # API 실측이 있으면 details 이미지 생략
+        self.assertNotIn('옵션 사이즈만', html)
+        self.assertTrue(any('세정 사이즈 API 실측표 사용' in m for m in logs))
 
     def test_size_rows_by_color_when_sizes_differ(self):
         module = load()
