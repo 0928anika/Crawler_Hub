@@ -1,4 +1,5 @@
 """Local HTTP interface (PC only by default; optional PIN-protected phone access with --remote)."""
+import base64
 import json
 import os
 import re
@@ -17,6 +18,7 @@ from tasks import Job,ACTIVE,safe_cell,history
 from execution_limits import MAX_JOBS,resource_profile,blocked_reason
 import admin
 import color_mapping
+import request_list
 import local_images
 import zipfile
 import uuid
@@ -77,6 +79,15 @@ def job_for(jid):
             if not (path/'progress.json').is_file():raise ValueError('작업을 찾을 수 없습니다.')
             JOBS[jid]=Job.load(path)
         return JOBS[jid]
+
+def request_source(job):
+    """작업 이력의 결과 엑셀을 요청 목록 변환용으로 검사한다(브랜드명은 작업 브랜드로 미리 채움)."""
+    if job.state in ACTIVE:raise ValueError('수집이 끝난 뒤 변환하세요.')
+    if color_mapping.is_manual(job) and not color_mapping.snapshot(job)['finalized']:raise ValueError('색상 매핑을 완료한 뒤 요청 목록으로 변환하세요.')
+    job.save()
+    info=request_list.inspect((job.dir/'result.xlsx').read_bytes(),job.name+'.xlsx')
+    info.update(job=job.id,brand=info['brand'] or job.brand.get('name',''))
+    return info
 
 def page_rows(rows,query):
     offset=max(0,int(query.get('offset',['0'])[0]));limit=min(300,max(1,int(query.get('limit',['100'])[0])))
@@ -228,6 +239,7 @@ class Handler(BaseHTTPRequestHandler):
                         rows.append({k:item.get(k) for k in ('id','task_id','code','name','color','missing')}|dict(status=rs,image_count=len(item['images'])))
                 return self.send(page_rows(rows,query))
             if action=='targets':return self.send(dict(rows=job.target_rows(),job=job.summary(),headers=job.headers))
+            if action=='request-source':return self.send(request_source(job))
             if action=='logs':
                 with job.data_lock:rows=list(job.logs)
                 term=query.get('search',[''])[0].lower();level=query.get('level',[''])[0]
@@ -269,6 +281,21 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(deduplicate_input(data,get_brand(data['brand'])))
             if self.path=='/api/validate':
                 result,_,_=validate_input(data,get_brand(data['brand']));return self.send(result)
+            if self.path=='/api/request-list/inspect':
+                files=data.get('files') or []
+                if not 1<=len(files)<=20:raise ValueError('엑셀 파일을 1~20개 올려주세요.')
+                return self.send(dict(files=[request_list.inspect(request_list.decode(f),str(f.get('name') or '파일')) for f in files]))
+            if self.path=='/api/request-list/build':
+                entries=[]
+                for f in data.get('files') or []:
+                    if f.get('job'):
+                        job=job_for(str(f['job']));source=request_source(job)
+                        entry=dict(f,name=source['name'],data=(job.dir/'result.xlsx').read_bytes())
+                    else:entry=dict(f,name=str(f.get('name') or '파일'),data=request_list.decode(f))
+                    entries.append(entry)
+                if not entries:raise ValueError('변환할 파일을 먼저 올려주세요.')
+                content,summary=request_list.convert(entries,fill_blank_price=bool(data.get('fill_blank_price',True)))
+                return self.send(dict(summary=summary,name=request_list.filename(),file=base64.b64encode(content).decode('ascii')))
             if self.path=='/api/jobs':
                 with LOCK:
                     brand=get_brand(data['brand']);check_start(brand['execution_resources'])
