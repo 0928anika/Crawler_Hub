@@ -242,7 +242,25 @@ def content_signal(im):
         if 2 <= area <= 120 and x1-x0 < 32 and y1-y0 < 20:
             small_count += 1
             small_area += area
-    if small_count >= 150 and 0 < total_dark < w*h*.16 and small_area > total_dark*.35:
+    # Melange fabric also creates many small components. Require document-like
+    # wide text lines separated by blank rows before treating it as a label.
+    bands, start, gap = [], None, 0
+    for y in range(h):
+        xs = [x for x in range(w) if max(px[y*w+x]) < 170]
+        ink = len(xs) >= 3 and xs[-1]-xs[0] >= w*.65
+        if ink:
+            if start is None:
+                start = y
+            gap = 0
+        elif start is not None:
+            gap += 1
+            if gap >= 2:
+                bands.append(y-gap+1-start)
+                start, gap = None, 0
+    if start is not None:
+        bands.append(h-gap-start)
+    text_lines = sum(2 <= height <= 20 for height in bands)
+    if small_count >= 150 and 0 < total_dark < w*h*.16 and small_area > total_dark*.35 and text_lines >= 4:
         return '작은 글자 성분이 지배적인 라벨/고시/측정 안내 의심'
     # 밝은 배경 전체가 아닌 내부 구분선 양쪽에 독립 사진 영역이 있는지 확인.
     gray = im.convert('L')

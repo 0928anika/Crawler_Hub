@@ -15,6 +15,24 @@ class Context:
  def fail_item(self,m):self.errors.append(m)
  def emit_unmapped(self,r,colors,url,shared_detail_html=''):self.rows.append((r,colors,url))
 class Tests(unittest.TestCase):
+ def test_melange_fabric_is_not_a_text_label_and_primary_is_accepted(self):
+  from PIL import Image
+  raw=(ROOT/'tests/fixtures/usall/ULTM26N03_melange_studio.jpg').read_bytes()
+  with Image.open(ROOT/'tests/fixtures/usall/ULTM26N03_melange_studio.jpg') as im:
+   self.assertEqual(c.content_signal(im),'')
+   self.assertTrue(c.studio_background(im)[0])
+  main=dict(lowerVendNo='SELLER',itemImage=[dict(imageDcode='010',imagePath='melange.jpg')])
+  with patch.object(c,'fetch',return_value=(raw,'https://item.elandrs.com/melange.jpg','image/jpeg')):
+   self.assertTrue(STUDIO_PRODUCT(Context(),main,{}))
+   self.assertEqual(len(c.gallery(Context(),main,{})),1)
+ def test_repeated_wide_text_and_collage_are_still_rejected(self):
+  from PIL import Image,ImageDraw
+  im=Image.new('RGB',(480,480),'white');draw=ImageDraw.Draw(im)
+  for y in range(30,430,20):
+   for x in range(30,450,10):draw.rectangle((x,y,x+2,y+4),fill='black')
+  self.assertIn('작은 글자',c.content_signal(im))
+  collage=Image.new('RGB',(480,480),'gray');ImageDraw.Draw(collage).rectangle((0,230,479,250),fill='white')
+  self.assertIn('콜라주',c.content_signal(collage))
  def run_sizes(self,top,children,code='ULTM26N02',main=None):
   ctx=Context();ctx.product_code=code;ctx.enabled=lambda k:k in ('main_image','size')
   data=copy.deepcopy(self.data)
