@@ -33,4 +33,12 @@ class Tests(unittest.TestCase):
    ctx=CrawlContext('unused',Path(folder)/'out.xlsx',0,['size','price','regular_price','main_image','additional_images','detail_page'],meta['output_headers'],lambda:None,lambda k,**d:events.append((k,d)),input_item={'품번':'LCWD89I513'},mapping_mode='manual')
    with patch.object(c,'search',return_value=[c.SITE+'/shop/shopdetail.html?branduid=3365812']),patch.object(c,'fetch',return_value=self.source),patch.object(c,'gallery',return_value=['https://elcanto8.speedgabia.com/test.jpg']),patch.object(c,'checked'):c.crawl(ctx);ctx.finish()
    self.assertEqual(ctx._unmapped_count,1);data=next(d for k,d in events if k=='row' and not d.get('header'));self.assertEqual(data['unmapped']['colors'][0]['size'],'225,230,235,240,245,250')
+ def test_merged_select_preserves_real_color_size_combinations(self):
+  expected={'LCWA81U64C':{'블랙':['240'],'토프':['240','250']},'LCWL11U64C':{'블랙':['240'],'무광블랙':['230','240']}}
+  for code,colors in expected.items():
+   with self.subTest(code=code):
+    source=(ROOT/('tests/fixtures/elcanto/'+code+'.html')).read_text('utf-8')
+    result=c.palette(source)
+    self.assertEqual({r['color_name']:r['sizes'] for r in result},colors)
+    self.assertTrue(all(r['prices'] for r in result))
 if __name__=='__main__':unittest.main()

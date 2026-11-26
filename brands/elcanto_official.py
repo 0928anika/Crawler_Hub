@@ -13,7 +13,7 @@ from crawler_rules import check_public_image
 
 SITE='https://elcanto.co.kr'
 HOSTS=('elcanto.co.kr','www.elcanto.co.kr')
-REVISION='2026-11-19-elcanto-v1'
+REVISION='2026-11-26-elcanto-merged-options-2'
 IMAGE_HOSTS=('elcanto.co.kr','www.elcanto.co.kr','cafe24.poxo.com','cafe24img.poxo.com')
 
 class CrawlError(ValueError):pass
@@ -108,6 +108,22 @@ def palette(source):
     doc=soup(source);selects=doc.select('select.basic_option[opt_id]')
     labels={n['opt_id']:str(n.get('label') or '').strip() for n in selects}
     colors={};rows=stock_rows(source)
+    # Merged selects use label=옵션; stock objects retain original dimension names.
+    for row in rows:
+        key=row.get('opt_id','');label=row.get('opt_name','').strip()
+        if ',' not in key and label in ('색상','컬러','사이즈'):labels[key]=label
+    for select in selects:
+        ids=select['opt_id'].split(',')
+        if len(ids)!=2 or select.get('opt_mix')!='Y':continue
+        missing=[key for key in ids if key not in labels]
+        if len(missing)!=1 or not any(labels.get(key) in ('색상','컬러') for key in ids):continue
+        index=ids.index(missing[0]);sizes=[]
+        for row in rows:
+            if row.get('opt_ids','').split(',')!=ids:continue
+            values=row['opt_values'].split(',')
+            if len(values)==2:sizes.append(values[index].strip())
+        if sizes and all(re.fullmatch(r'\d{3}(?:\.\d+)?',size) and 150<=float(size)<=350 for size in sizes):
+            labels[missing[0]]='사이즈'
     for row in rows:
         ids=row.get('opt_ids','').split(',');values=row['opt_values'].split(',')
         if len(ids)!=len(values):raise CrawlError('공식 옵션 조합 ID/값 수 불일치')
