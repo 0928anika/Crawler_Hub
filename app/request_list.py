@@ -172,7 +172,7 @@ def sizes_of(value, header):
 def price_of(value):
     raw = text(value)
     digits = re.sub(r'[^\d]', '', raw)
-    return digits if digits else ''
+    return int(digits) if digits else ''                 # 숫자로 저장: 합계·XLOOKUP 비교가 바로 됨
 
 
 def urls_of(*values):
@@ -269,7 +269,9 @@ def write(rows):
             cell.value = '\'' + value if isinstance(value, str) and value.startswith(('=', '+', '-', '@')) else value
             source = styles[c - 1]
             cell.font, cell.fill, cell.border = copy(source.font), copy(source.fill), copy(source.border)
-            cell.alignment, cell.number_format = copy(source.alignment), '@'
+            # 텍스트(@) 서식을 깔지 않음: 사용자가 넣는 XLOOKUP 등 수식이 문자로 보이지 않게.
+            # '090' 같은 값은 문자열로 저장해서 서식 없이도 앞자리 0이 유지됨.
+            cell.alignment, cell.number_format = copy(source.alignment), source.number_format
     ws.auto_filter.ref = f'A4:K{FIRST_DATA_ROW + len(rows) - 1}'
     output = io.BytesIO()
     book.save(output)

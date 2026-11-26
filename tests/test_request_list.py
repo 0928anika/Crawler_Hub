@@ -66,7 +66,7 @@ class RequestListTests(unittest.TestCase):
         self.assertIn('필수 정보', ws['A1'].value)
         self.assertEqual([r[2] for r in rows], ['S', 'M', 'L', '090', '095'])       # 사이즈별 1행, 앞자리 0 보존
         first = rows[0]
-        self.assertEqual(first[:6], ['ZAD4JP403', '젠사이 PUFFER DOWN ZAD4JP403', 'S', 'IVORY(IV)', '199500', '950000'])
+        self.assertEqual(first[:6], ['ZAD4JP403', '젠사이 PUFFER DOWN ZAD4JP403', 'S', 'IVORY(IV)', 199500, 950000])
         self.assertEqual(first[6:], ['https://cdn/a.jpg', '<p>상세</p>', 'https://cdn/b.jpg,https://cdn/c.jpg', 'OUTER', 'https://z.kr/1'])
         self.assertEqual(rows[3][5], '공홈 조회')                                   # 빈 정상가
         self.assertEqual(summary['rows'], 5)
@@ -85,7 +85,7 @@ class RequestListTests(unittest.TestCase):
         ws, rows, _ = convert([('old.xlsx', standalone_file(), '')])
         self.assertEqual([r[2] for r in rows], ['090', '095', '100'])
         self.assertEqual(rows[0][1], '올포유 여성 패딩 점퍼 AWJU67301')
-        self.assertEqual(rows[0][4:6], ['59000', '129000'])
+        self.assertEqual(rows[0][4:6], [59000, 129000])
         self.assertEqual(rows[0][8], 'https://img/d1.jpg?RS=1,https://img/d2.jpg,https://img/d10.jpg')
 
     def test_option_info_column_when_no_size_column(self):
@@ -100,7 +100,7 @@ class RequestListTests(unittest.TestCase):
         self.assertEqual((info['header_row'], info['kind']), (3, '기타 양식'))
         self.assertEqual(info['mapping'], {'code': '상품코드', 'name': '상품명', 'size': 'SIZE', 'color': '컬러', 'price': '가격', 'main': '대표이미지', 'url': 'URL'})
         _, rows, _ = convert([('custom.xlsx', data, '브랜드A')])
-        self.assertEqual([r[:5] for r in rows], [['AB1234', '브랜드A 니트 AB1234', 'M', 'NAVY', '35000'], ['AB1234', '브랜드A 니트 AB1234', 'L', 'NAVY', '35000']])
+        self.assertEqual([r[:5] for r in rows], [['AB1234', '브랜드A 니트 AB1234', 'M', 'NAVY', 35000], ['AB1234', '브랜드A 니트 AB1234', 'L', 'NAVY', 35000]])
 
     def test_existing_request_list_keeps_registered_name(self):
         data = book({'요청 목록': [['안내'], ['안내'], ['필수'], rl.OUTPUT,
@@ -136,6 +136,13 @@ class RequestListTests(unittest.TestCase):
         _, rows, _ = convert([('crawler-result.xlsx', path.read_bytes(), '젠사이')])
         self.assertEqual([r[2] for r in rows], ['S', 'M', 'L'])
         self.assertEqual(rows[0][1], '젠사이 PUFFER DOWN ZAD4JP403')
+
+    def test_cells_are_not_text_formatted_so_formulas_work(self):
+        ws, rows, _ = convert([('hub.xlsx', hub_file(), '젠사이')])
+        for row in ws.iter_rows(min_row=5, max_row=6):
+            self.assertTrue(all(c.number_format != '@' for c in row))           # 텍스트 서식이면 수식이 문자로 보임
+        self.assertEqual(ws['C8'].value, '090')                                 # 앞자리 0은 문자열로 유지
+        self.assertIsInstance(ws['E5'].value, int)
 
     def test_color_label_name_with_code(self):
         self.assertEqual(rl.color_label('IVORY', 'IV'), 'IVORY(IV)')
