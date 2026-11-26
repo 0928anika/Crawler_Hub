@@ -1,6 +1,6 @@
 {
   "id": "hangten_official",
-  "name": "행텐틴즈",
+  "name": "행텐/행텐틴즈",
   "category": "아동복",
   "crawl_source": "공식 홈페이지",
   "script": "hangten_official.py",
