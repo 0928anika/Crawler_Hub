@@ -32,6 +32,7 @@ FIELDS = [
     ('brand', '브랜드', ['브랜드', '브랜드명', 'brand']),
     ('size', '사이즈', ['사이즈', 'size', '옵션사이즈', '사이즈별재고', '옵션정보']),
     ('color', '색상', ['색상명', '색상', '컬러', 'color', 'colorname']),
+    ('color_code', '색상코드', ['색상코드', '컬러코드', 'colorcode', 'colorcd']),
     ('price', '판매가', ['판매가', '할인가', '가격', 'price', 'saleprice']),
     ('regular', '정상가', ['정상가', '소비자가', '정가', 'regularprice']),
     ('main', '대표이미지', ['대표이미지url', '대표이미지', 'mainimage']),
@@ -49,6 +50,18 @@ BLANK_PRICE = '공홈 조회'
 
 def norm(value):
     return re.sub(r'[\s_()\-/·.]+', '', str(value or '')).lower()
+
+
+def color_label(name, code):
+    """요청 목록 색상: 색상명(색상코드). 코드가 없거나 이미 붙어 있으면 그대로."""
+    name, code = text(name), text(code)
+    if not code or norm(code) == norm(name):
+        return name or code
+    if not name:
+        return code
+    if re.search(r'\(\s*' + re.escape(code) + r'\s*\)\s*$', name, re.I):
+        return name
+    return f'{name}({code})'
 
 
 def text(value):
@@ -214,7 +227,7 @@ def convert(files, fill_blank_price=True):
                     brands.append(brand)
                 name_value = text(get('name'))
                 title = name_value if direct else registered_name(brand, name_value, code)
-                color = text(get('color'))
+                color = color_label(get('color'), get('color_code'))
                 sizes = sizes_of(get('size'), mapping.get('size')) or ['']
                 price = price_of(get('price'))
                 regular = price_of(get('regular'))

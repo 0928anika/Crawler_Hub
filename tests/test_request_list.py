@@ -66,7 +66,7 @@ class RequestListTests(unittest.TestCase):
         self.assertIn('필수 정보', ws['A1'].value)
         self.assertEqual([r[2] for r in rows], ['S', 'M', 'L', '090', '095'])       # 사이즈별 1행, 앞자리 0 보존
         first = rows[0]
-        self.assertEqual(first[:6], ['ZAD4JP403', '젠사이 PUFFER DOWN ZAD4JP403', 'S', 'IVORY', '199500', '950000'])
+        self.assertEqual(first[:6], ['ZAD4JP403', '젠사이 PUFFER DOWN ZAD4JP403', 'S', 'IVORY(IV)', '199500', '950000'])
         self.assertEqual(first[6:], ['https://cdn/a.jpg', '<p>상세</p>', 'https://cdn/b.jpg,https://cdn/c.jpg', 'OUTER', 'https://z.kr/1'])
         self.assertEqual(rows[3][5], '공홈 조회')                                   # 빈 정상가
         self.assertEqual(summary['rows'], 5)
@@ -136,6 +136,14 @@ class RequestListTests(unittest.TestCase):
         _, rows, _ = convert([('crawler-result.xlsx', path.read_bytes(), '젠사이')])
         self.assertEqual([r[2] for r in rows], ['S', 'M', 'L'])
         self.assertEqual(rows[0][1], '젠사이 PUFFER DOWN ZAD4JP403')
+
+    def test_color_label_name_with_code(self):
+        self.assertEqual(rl.color_label('IVORY', 'IV'), 'IVORY(IV)')
+        self.assertEqual(rl.color_label('챠콜 그레이(05)', '05'), '챠콜 그레이(05)')          # 이미 붙어 있으면 그대로
+        self.assertEqual(rl.color_label('블랙', None), '블랙')
+        self.assertEqual(rl.color_label('', 'BK'), 'BK')
+        self.assertEqual(rl.color_label('BLACK', 'black'), 'BLACK')                    # 코드=이름이면 한 번만
+        self.assertEqual(rl.color_label(None, None), '')
 
     def test_download_filenames(self):
         from datetime import datetime

@@ -264,7 +264,7 @@ $('editTargets').onclick=run(openTargets);$('targetsSave').onclick=run(saveTarge
 $('targetsSearch').oninput=renderTargets;$('targetsFilter').onchange=renderTargets;$('targetsAdd').oninput=renderTargetsSummary;
 
 /* 요청 목록 변환: 결과 엑셀(양식 달라도 머리글로 감지) → 3P Listing 요청 목록(사이즈별 1행) */
-const REQ_FIELDS=[['code','품번'],['name','상품명'],['brand','브랜드 열'],['size','사이즈'],['color','색상'],['price','판매가'],['regular','정상가'],['main','대표이미지'],['detail','상세페이지(HTML)'],['extra','추가이미지'],['extra2','추가이미지(2)'],['category','카테고리'],['url','상품 링크']];
+const REQ_FIELDS=[['code','품번'],['name','상품명'],['brand','브랜드 열'],['size','사이즈'],['color','색상'],['color_code','색상코드'],['price','판매가'],['regular','정상가'],['main','대표이미지'],['detail','상세페이지(HTML)'],['extra','추가이미지'],['extra2','추가이미지(2)'],['category','카테고리'],['url','상품 링크']];
 const R={files:[]};
 function readBase64(file){return new Promise((ok,fail)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(',')[1]||'');r.onerror=()=>fail(Error(file.name+' 파일을 읽을 수 없습니다.'));r.readAsDataURL(file)})}
 async function addRequestFiles(list){const files=[...list].filter(f=>/\.xlsx$/i.test(f.name));if(!files.length)throw Error('.xlsx 엑셀 파일을 올려주세요.');const payload=[];for(const f of files){if(f.size>10*1024*1024)throw Error(f.name+': 10MB 이하 파일만 올릴 수 있습니다.');payload.push({name:f.name,file:await readBase64(f)})}
