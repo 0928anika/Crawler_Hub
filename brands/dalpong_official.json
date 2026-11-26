@@ -1,0 +1,173 @@
+{
+  "id": "dalpong_official",
+  "name": "달퐁",
+  "category": "유아동복",
+  "crawl_source": "공식 홈페이지",
+  "script": "dalpong_official.py",
+  "execution_level": 1,
+  "interface": "portal_v1",
+  "mapping_mode": "manual",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명"
+  ],
+  "extensions": [],
+  "official_color_codes": false,
+  "image_color_mapping": "hybrid",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data의 색상별 사이즈 조합을 보존합니다."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션별 option_price의 판매가입니다."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 소비자가를 독립적으로 수집합니다."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 원문 수집"
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "단일 색상은 공식 갤러리 자동 연결, 여러 색상은 수동 매핑합니다."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 갤러리에서 대표 이후 사진을 사용합니다."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 상세 이미지와 존재하는 제품정보/실측 표를 보존하며 공통 배너를 제외합니다."
+    }
+  },
+  "guide": {
+    "pattern": "^(?:[A-Za-z0-9_-]+|https?://\\S+)$",
+    "example": "906822223083",
+    "examples": [
+      "906822223083",
+      "https://cubynmom.com/product/detail.html?product_no=5311"
+    ],
+    "format": "품번 또는 공식 상품번호/상품 링크",
+    "notes": "공식 검색에 노출되지 않는 품번은 상품 링크 또는 URL의 상품번호로 입력하세요. 상품번호/링크 입력 시 품번 컬럼에는 공식 상품번호가 기록됩니다. 단일 색상은 자동 매핑, 여러 색상은 수동 매핑합니다. 사이즈는 색상별 취합하고 상세 이미지와 공홈에 있는 실측/제품정보 표를 보존합니다.",
+    "method": "공식몰 품번 검색에 반환된 개별 상품 링크를 근거로 연결합니다. 상품명에 품번이 없어도 검색 결과를 보존합니다. 짧은 상품번호와 공식 링크 직접 입력도 지원하며 8자리 이상 숫자는 품번으로 검색합니다.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "공백"
+    ],
+    "validation_note": "실제 상품 존재는 공식몰 조회 시 확인"
+  },
+  "notes": "공식 검색에 노출되지 않는 품번은 상품 링크 또는 URL의 상품번호로 입력하세요. 상품번호/링크 입력 시 품번 컬럼에는 공식 상품번호가 기록됩니다. 단일 색상은 자동 매핑, 여러 색상은 수동 매핑합니다. 사이즈는 색상별 취합하고 상세 이미지와 공홈에 있는 실측/제품정보 표를 보존합니다.",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 원문 수집"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 원문 수집"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 원문 수집"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 원문 수집"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data의 색상별 사이즈 조합을 보존합니다."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 옵션별 option_price의 판매가입니다."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 소비자가를 독립적으로 수집합니다."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 원문 수집"
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "단일 색상은 공식 갤러리 자동 연결, 여러 색상은 수동 매핑합니다."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 갤러리에서 대표 이후 사진을 사용합니다."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품 상세 이미지와 존재하는 제품정보/실측 표를 보존하며 공통 배너를 제외합니다."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null
+  },
+  "code_hash": "22bf98828ea2e64b03d73e0d42cb74846a19d8a95823882d0dba35e040e598ec",
+  "hybrid_mapping": true,
+  "additional_image_count": 9
+}
