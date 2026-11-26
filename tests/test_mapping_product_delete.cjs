@@ -6,7 +6,7 @@ const s=fs.readFileSync('app/static/app.js','utf8');
  const ctx={S:{jobId:'job',mapping:{revision:1,groups:[before,after]},mappingDrafts:{'a:c':new Set(['delete']),'b:d':new Set(['keep'])},mappingDirty:new Set(['a:c','b:d']),mappingActive:{a:'c'},mappingAddOpen:{},mappingFocused:'a'},mappingKey:(g,c)=>g+':'+c,confirm:()=>false,renderMappingProgress(){},renderMapping(){},renderHeader(){},refreshMappingProduct(){},mappingFilterView:()=>[after],$:()=>target};
  ctx.mappingGroup=id=>ctx.S.mapping.groups.find(g=>g.id===id);
  ctx.api=async(path,body)=>{if(body){calls++;assert.equal(body.action,'delete-product');return {revision:2,groups:[after],deleted_groups:[before]}}return {}};
- vm.createContext(ctx);
+ ctx.flushMappingSelections=async()=>{};ctx.S.mappingPending={};vm.createContext(ctx);
  vm.runInContext(s.slice(s.indexOf('function mappingRequiredOptions('),s.indexOf('function mappingDraft(')),ctx);
  vm.runInContext(s.slice(s.indexOf('function nextMappingProductAfterDelete('),s.indexOf('async function changeMappingOptions(')),ctx);
  const start=s.indexOf('async function changeMappingOptions(');vm.runInContext(s.slice(start,start+s.slice(start).indexOf('\n')),ctx);

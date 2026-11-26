@@ -36,7 +36,7 @@ function renderAmPreview(){
 }
 function amCleanupDrafts(){const valid=new Set(S.mapping.groups.flatMap(g=>mappingRequiredOptions(g).map(c=>mappingKey(g.id,c.id))));for(const key of Object.keys(S.mappingDrafts))if(!S.mappingDirty.has(key)||!valid.has(key))delete S.mappingDrafts[key];for(const key of [...S.mappingDirty])if(!valid.has(key))S.mappingDirty.delete(key);}
 async function applyAmImport(){
- if(!AM.payload||AM.busy||S.mappingBusy)return;AM.busy=true;S.mappingBusy=true;renderMappingProgress();$('amApply').disabled=true;try{
+ if(!AM.payload||AM.busy||S.mappingBusy)return;await flushMappingSelections();AM.busy=true;S.mappingBusy=true;renderMappingProgress();$('amApply').disabled=true;try{
  S.mapping=await api('/api/jobs/'+S.jobId+'/mapping/am-import',{...AM.payload,columns:AM.preview.columns,expected_revision:S.mapping.revision});amCleanupDrafts();S.mappingActive={};$('amImportDialog').close();renderMapping();toast('AM 요청 옵션을 적용했습니다.');
  }finally{AM.busy=false;S.mappingBusy=false;renderMappingProgress();}
 }

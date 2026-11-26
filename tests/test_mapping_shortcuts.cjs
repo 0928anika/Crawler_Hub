@@ -3,7 +3,7 @@ const source=fs.readFileSync('app/static/app.js','utf8');
 const ctx={S:{page:'mapping',mapping:{},mappingDrafts:{},mappingDirty:new Set(),mappingActive:{g:'a'},mappingFocused:null,mappingBusy:false},document:{querySelector:()=>null},toast:()=>{},refreshMappingProduct:()=>{}};
 const group={id:'g',colors:[{id:'a',label:'red'},{id:'b',label:'blue'}],confirmed:[],images:[{id:'x',assigned_colors:[]},{id:'y',assigned_colors:['b']},{id:'z',assigned_colors:[]}]};
 ctx.mappingGroup=()=>group;ctx.mappingFilterView=()=>[group];
-vm.createContext(ctx);
+ctx.flushMappingSelections=async()=>{};ctx.S.mappingPending={};vm.createContext(ctx);
 vm.runInContext(source.slice(source.indexOf('const mappingKey='),source.indexOf('async function openMapping(')),ctx);
 vm.runInContext(source.slice(source.indexOf('async function saveMappingOption('),source.indexOf('function mappingPointerDown(')),ctx);
 let saves=0,complete;

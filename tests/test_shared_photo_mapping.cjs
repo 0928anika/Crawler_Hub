@@ -1,7 +1,7 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const s=fs.readFileSync('app/static/app.js','utf8');
 const part=s.slice(s.indexOf('const mappingKey='),s.indexOf('async function openMapping('));
-const context={S:{mappingDrafts:{},mappingDirty:new Set()}};vm.createContext(context);vm.runInContext(part,context);
+const context={S:{mappingBusy:false,mappingPending:{},mappingDrafts:{},mappingDirty:new Set()}};vm.createContext(context);vm.runInContext(part,context);
 const g={id:'g',colors:[{id:'a'},{id:'b'}],images:[{id:'x',assigned_to:'a',assigned_colors:['a']}]};
 context.toggleMappingPhoto(g,'b','x');assert(context.mappingDraft(g,'a').has('x'));assert(context.mappingDraft(g,'b').has('x'));
 context.toggleMappingPhoto(g,'a','x');assert(!context.mappingDraft(g,'a').has('x'));assert(context.mappingDraft(g,'b').has('x'));
@@ -16,7 +16,7 @@ let posts=0;context.mappingGroup=()=>g;context.renderMappingProgress=()=>{};cont
 (async()=>{await assert.rejects(context.saveMappingColor('g','a'),/최소 1장/);assert.equal(posts,0);assert.equal(context.S.mappingBusy,false);console.log('Empty option save blocked before API request');})().catch(e=>{console.error(e);process.exitCode=1});
 
 // Saving one option must leave every other product's image elements intact.
-const saveContext={mappingKey:(g,c)=>g+':'+c,S:{mappingActive:{},mappingDirty:new Set()},saveMappingColor:async()=>{},mappingGroup:()=>({...g,confirmed:['a']}),renderMapping:()=>{throw Error('Full image-grid rebuild on color save')},refreshMappingProduct:gid=>assert.equal(gid,'g'),toast:()=>{}};
+const saveContext={mappingKey:(g,c)=>g+':'+c,S:{mappingPending:{},mappingActive:{},mappingDirty:new Set()},saveMappingColor:async()=>{},mappingGroup:()=>({...g,confirmed:['a']}),renderMapping:()=>{throw Error('Full image-grid rebuild on color save')},refreshMappingProduct:gid=>assert.equal(gid,'g'),toast:()=>{}};
 vm.createContext(saveContext);vm.runInContext(s.slice(s.indexOf('function mappingRequiredOptions('),s.indexOf('function mappingDraft(')),saveContext);
 vm.runInContext(s.slice(s.indexOf('async function saveMappingOption('),s.indexOf('async function mappingEnter(')),saveContext);
 vm.runInContext('saveMappingOption("g","a")',saveContext).then(()=>{assert.equal(saveContext.S.mappingActive.g,'b');console.log('Color save refreshes only the saved product');}).catch(e=>{console.error(e);process.exitCode=1});
@@ -36,7 +36,7 @@ console.log('Select remaining uses current draft on the first click');
   saveMappingDrafts:()=>{throw Error('Deletion must not save empty photo drafts')},renderMappingProgress:()=>{},renderHeader:()=>{},renderMapping:()=>{},mappingKey:(g,c)=>g+':'+c};
  ctx.mappingGroup=id=>ctx.S.mapping.groups.find(g=>g.id===id);
  let calls=0;ctx.api=async(path,body)=>{calls++;if(body){assert.equal(body.action,'delete');assert.equal(body.expected_revision,4);return {revision:5,groups:[{id:'g',colors:[{id:'b'}]},groups[1]]}}return {}};
- vm.createContext(ctx);vm.runInContext(s.slice(s.indexOf('function mappingRequiredOptions('),s.indexOf('function mappingDraft(')),ctx);vm.runInContext(s.slice(s.indexOf('async function changeMappingOptions('),s.indexOf('async function changeMappingOptions(')+s.slice(s.indexOf('async function changeMappingOptions(')).indexOf('\n')),ctx);
+ ctx.flushMappingSelections=async()=>{};vm.createContext(ctx);vm.runInContext(s.slice(s.indexOf('function mappingRequiredOptions('),s.indexOf('function mappingDraft(')),ctx);vm.runInContext(s.slice(s.indexOf('async function changeMappingOptions('),s.indexOf('async function changeMappingOptions(')+s.slice(s.indexOf('async function changeMappingOptions(')).indexOf('\n')),ctx);
  await ctx.changeMappingOptions('g','delete',{color_id:'a'});
  assert.equal(calls,2);assert(!ctx.S.mappingDirty.has('g:a'));assert(ctx.S.mappingDirty.has('g:b'));assert(ctx.S.mappingDirty.has('other:a'));
  assert.deepEqual([...ctx.S.mappingDrafts['g:b']],['photo']);assert.equal(ctx.S.mappingDrafts['other:a'].size,0);assert.equal(ctx.S.mappingBusy,false);

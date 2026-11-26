@@ -214,47 +214,65 @@ def initial_saved(group):
 
 
 def save_color(job,data):
+    return save_colors(job,dict(data,entries=[data]),compact=False)
+
+
+def save_colors(job,data, *, compact=True):
+    """Validate a whole product first, then commit once; never write partial batches."""
     if job.state in ('running','pausing','paused','stopping','saving'):raise ValueError('수집을 완료하거나 중지한 뒤 매핑하세요.')
+    entries=data.get('entries')
+    if not isinstance(entries,list) or not entries or any(not isinstance(row,dict) for row in entries):raise ValueError('저장할 옵션 목록이 필요합니다.')
+    if len({(row.get('group_id'),row.get('color_id')) for row in entries})!=len(entries):raise ValueError('같은 옵션을 중복 저장할 수 없습니다.')
     with job.data_lock:
-        groups=source_groups(job);state=read_state(job)
-        view=snapshot(job,groups=deepcopy(groups),state=state)
-        if data.get('expected_revision')!=view['revision']:raise ValueError('다른 창에서 매핑이 변경되었습니다. 매핑 화면을 다시 열어주세요.')
-        group=next((g for g in view['groups'] if g['id']==data.get('group_id')),None)
-        if not group:raise ValueError('품번을 찾을 수 없습니다.')
-        color=data.get('color_id')
-        if color==DETAIL_OPTION_ID:
-            if not manual_detail(job):raise ValueError('상세페이지 수동 매핑 작업이 아닙니다.')
-            selected=data.get('image_ids');valid={i['id'] for i in group['images']}
-            if not isinstance(selected,list) or not selected or any(i not in valid for i in selected):raise ValueError('상세페이지에 넣을 현재 품번의 사진을 최소 1장 선택하세요.')
+        view=snapshot(job);state=read_state(job)
+        if data.get('expected_revision')!=view['revision'] or state.get('revision',0)!=view['revision']:raise ValueError('다른 창에서 매핑이 변경되었습니다. 매핑 화면을 다시 열어주세요.')
+        for data in entries:
+            group=next((g for g in view['groups'] if g['id']==data.get('group_id')),None)
+            if not group:raise ValueError('품번을 찾을 수 없습니다.')
+            color=data.get('color_id')
+            if color==DETAIL_OPTION_ID:
+                if not manual_detail(job):raise ValueError('상세페이지 수동 매핑 작업이 아닙니다.')
+                selected=data.get('image_ids');valid={i['id'] for i in group['images']}
+                if not isinstance(selected,list) or not selected or any(i not in valid for i in selected):raise ValueError('상세페이지에 넣을 현재 품번의 사진을 최소 1장 선택하세요.')
+                saved=state.setdefault('groups',{}).setdefault(group['id'],initial_saved(group))
+                saved.update(detail_selected=list(dict.fromkeys(selected)),detail_confirmed=True,image_signature=group['signature'])
+                continue
+            reference=next((c for c in group['original_colors'] if c['id']==color),None) if group.get('am_mode') else None
+            if color not in {c['id'] for c in group['colors']} and not reference:raise ValueError('잘못된 색상입니다.')
+            selected=data.get('image_ids')
+            valid_images={image['id'] for image in group['images']}
+            if not isinstance(selected,list) or any(i not in valid_images for i in selected):raise ValueError('현재 품번의 사진만 선택할 수 있습니다.')
+            if not selected:raise ValueError('사진을 최소 1장 선택한 뒤 저장하세요. 사용하지 않는 색상은 옵션을 삭제하세요.')
             saved=state.setdefault('groups',{}).setdefault(group['id'],initial_saved(group))
-            saved.update(detail_selected=list(dict.fromkeys(selected)),detail_confirmed=True,image_signature=group['signature'])
-            state.update(revision=view['revision']+1,finalized=False,fingerprint=view['fingerprint'])
-            atomic_json(job.dir/'color_mapping.json',state)
-            return snapshot(job,groups=groups,state=state)
-        reference=next((c for c in group['original_colors'] if c['id']==color),None) if group.get('am_mode') else None
-        if color not in {c['id'] for c in group['colors']} and not reference:raise ValueError('잘못된 색상입니다.')
-        selected=data.get('image_ids')
-        valid_images={image['id'] for image in group['images']}
-        if not isinstance(selected,list) or any(i not in valid_images for i in selected):raise ValueError('현재 품번의 사진만 선택할 수 있습니다.')
-        if not selected:raise ValueError('사진을 최소 1장 선택한 뒤 저장하세요. 사용하지 않는 색상은 옵션을 삭제하세요.')
-        saved=state.setdefault('groups',{}).setdefault(group['id'],initial_saved(group))
-        if group.get('review_required') and not saved.get('all_photos'):
-            saved.update(initial_saved(group))
-        if reference:
-            saved['hidden_colors']=[cid for cid in saved.get('hidden_colors',[]) if cid!=color]
-        saved['all_photos']=True
-        assignments=saved['assignments'];confirmed=set(saved['confirmed'])
-        # Each color owns its selection independently; legacy scalar values migrate here.
-        assignments={iid:[cid for cid in (value if isinstance(value,list) else [value]) if cid!=color] for iid,value in assignments.items()}
-        for iid in selected:assignments.setdefault(iid,[]).append(color)
-        saved['assignments']={iid:ids for iid,ids in assignments.items() if ids}
-        # Click order decides the final rows: 1st = main image, then additional images.
-        saved.setdefault('orders',{})[color]=list(dict.fromkeys(selected))
-        confirmed.add(color);saved['confirmed']=sorted(confirmed);saved['image_signature']=group['signature']
+            if group.get('review_required') and not saved.get('all_photos'):
+                saved.update(initial_saved(group))
+            if reference:
+                saved['hidden_colors']=[cid for cid in saved.get('hidden_colors',[]) if cid!=color]
+            saved['all_photos']=True
+            assignments=saved['assignments'];confirmed=set(saved['confirmed'])
+            # Each color owns its selection independently; legacy scalar values migrate here.
+            assignments={iid:[cid for cid in (value if isinstance(value,list) else [value]) if cid!=color] for iid,value in assignments.items()}
+            for iid in selected:assignments.setdefault(iid,[]).append(color)
+            saved['assignments']={iid:ids for iid,ids in assignments.items() if ids}
+            # Click order decides the final rows: 1st = main image, then additional images.
+            saved.setdefault('orders',{})[color]=list(dict.fromkeys(selected))
+            confirmed.add(color);saved['confirmed']=sorted(confirmed);saved['image_signature']=group['signature']
         state.update(revision=view['revision']+1,finalized=False,fingerprint=view['fingerprint'])
         atomic_json(job.dir/'color_mapping.json',state)
-        # Mapping has its own durable file; progress/queue did not change.
-        return snapshot(job,groups=groups,state=state)
+        # Reuse the cached raw palette/photo catalog, not all raw result HTML rows.
+        groups=[]
+        for group in view['groups']:
+            base={k:group[k] for k in ('id','code','name')}
+            base['colors']=group['original_colors']
+            base['images']=[{k:v for k,v in image.items() if k not in ('assigned_to','assigned_colors')} for image in group['images']]
+            if 'review_required' in group:base['review_required']=group['review_required']
+            groups.append(base)
+        result=snapshot(job,groups=groups,state=state)
+        stamp=view_stamp(job)
+        if stamp is not None:job._mapping_view_cache=(stamp,deepcopy(result))
+        if not compact:return result
+        changed={row['group_id'] for row in entries}
+        return {k:result[k] for k in ('revision','saved_colors','total_colors','finalized','unassigned','fingerprint')} | dict(groups=[g for g in result['groups'] if g['id'] in changed])
 
 
 def edit_options(job,data):

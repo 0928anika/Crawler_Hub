@@ -248,6 +248,7 @@ class Handler(BaseHTTPRequestHandler):
             if len(parts)==5 and parts[:2]==['api','jobs'] and parts[3]=='mapping':
                 job=job_for(parts[2])
                 if parts[4]=='color':return self.send(color_mapping.save_color(job,data))
+                if parts[4]=='colors':return self.send(color_mapping.save_colors(job,data))
                 if parts[4]=='finish':return self.send(color_mapping.finalize(job,data))
                 if parts[4]=='options':return self.send(color_mapping.edit_options(job,data))
                 if parts[4]=='am-preview':return self.send(color_mapping.preview_am(job,data))
