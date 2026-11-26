@@ -110,7 +110,28 @@ def read_state(job):
     except (ValueError,OSError):raise ValueError('색상 매핑 저장 파일을 읽을 수 없습니다. 파일을 확인하세요.')
 
 
+def view_stamp(job):
+    # Real jobs increment revision on row edits. File replacement captures
+    # mapping saves, option edits, resets, deletions and external reloads.
+    if not hasattr(job,'revision'):return None
+    path=job.dir/'color_mapping.json'
+    try:
+        stat=path.stat();mapping=(stat.st_mtime_ns,stat.st_ctime_ns,stat.st_size)
+    except FileNotFoundError:mapping=None
+    return (job.revision,len(job.items),tuple((q['id'],q['status']) for q in job.queue),
+            tuple(job.selected),mapping)
+
+
 def snapshot(job, *, groups=None, state=None):
+    if groups is not None or state is not None:return _snapshot(job,groups=groups,state=state)
+    stamp=view_stamp(job);cached=getattr(job,'_mapping_view_cache',None)
+    if stamp is not None and cached is not None and cached[0]==stamp:return deepcopy(cached[1])
+    result=_snapshot(job)
+    if stamp is not None:job._mapping_view_cache=(stamp,deepcopy(result))
+    return result
+
+
+def _snapshot(job, *, groups=None, state=None):
     if not is_manual(job):raise ValueError('색상 자동 매핑 작업에는 수동 매핑이 필요하지 않습니다.')
     groups=source_groups(job) if groups is None else groups
     state=read_state(job) if state is None else state
@@ -232,10 +253,10 @@ def edit_options(job,data):
     return result
 
 
-def shared_detail(job,group):
+def shared_detail(job,group,items=None):
     """The same collected site detail for every color, across all product links."""
     collected=[];legacy=[];seen=set();modern=False
-    for item in successful_items(job):
+    for item in successful_items(job) if items is None else items:
         if str(item.get('code','')).strip().upper()!=group['code']:continue
         info=item.get('unmapped') or {}
         if info.get('detail_mode')=='site_shared':
@@ -280,8 +301,8 @@ def result_headers(job):
     return prefix+[h for h in headers if h not in prefix]
 
 
-def first_product_link(job,code):
-    for item in successful_items(job):
+def first_product_link(job,code,items=None):
+    for item in successful_items(job) if items is None else items:
         if str(item.get('code','')).strip().upper()!=code:continue
         link=item.get('normalized',{}).get('product_url') or item.get('source_url')
         if not link:link=next((v for h,v in item['raw'].items() if field_for(h)=='product_url' and v),'')
@@ -295,10 +316,13 @@ def final_items(job,view):
     count=local_images.additional_count(job)
     local_plan=local_images.plan(view,job.selected,count) if local_images.enabled(job) else None
     state=read_state(job)
+    grouped={}
+    for item in successful_items(job):grouped.setdefault(str(item.get('code','')).strip().upper(),[]).append(item)
     for group in view['groups']:
-        first_link=first_product_link(job,group['code'])
+        group_items=grouped.get(group['code'],[])
+        first_link=first_product_link(job,group['code'],group_items)
         detail=local_images.detail_entry(job,group['code']) if local_images.enabled(job) else None
-        compact,overflow=(detail['filename'],False) if detail else excel_detail(shared_detail(job,group)) if 'detail_page' in job.selected else ('',False)
+        compact,overflow=(detail['filename'],False) if detail else excel_detail(shared_detail(job,group,group_items)) if 'detail_page' in job.selected else ('',False)
         if overflow:raise ValueError(group['code']+': 공통 상세 HTML이 셀 한도를 초과합니다.')
         for color in group['colors']:
             images=local_images.ordered_images(group,color['id'])
@@ -337,7 +361,7 @@ def final_items(job,view):
                 elif field=='detail_page':value=compact
                 elif field=='size' and 'size' in job.selected and 'size' in color:value=color['size']
                 values.append(value)
-            item=preview(headers,values,job.selected,allow_empty_product_name=bool(getattr(job,'brand',{}).get('allow_empty_product_name',False)))
+            item=preview(headers,values,job.selected,allow_empty_product_name=bool(getattr(job,'brand',{}).get('allow_empty_product_name',False)),prepared_detail=(compact,overflow))
             if entries is not None:
                 folder=state.get('file_export',{}).get('folder') if state.get('finalized') else None
                 role_layout=folder and state.get('file_export',{}).get('layout')=='roles-v1'
@@ -408,6 +432,14 @@ def finalize(job,data):
 
 
 def visible_items(job):
+    stamp=view_stamp(job);cached=getattr(job,'_mapping_result_cache',None)
+    if stamp is not None and cached is not None and cached[0]==stamp:return deepcopy(cached[1])
+    result=_visible_items(job)
+    if stamp is not None:job._mapping_result_cache=(stamp,deepcopy(result))
+    return result
+
+
+def _visible_items(job):
     if not is_manual(job):return job.items
     view=snapshot(job)
     if view['finalized']:return final_items(job,view)
@@ -443,7 +475,7 @@ def grouped_pending_items(job):
 def export_sheet(job):
     view=snapshot(job)
     if view['finalized']:
-        rows=final_items(job,view);headers=result_headers(job)
+        rows=visible_items(job);headers=result_headers(job)
         return [headers]+[[item['raw'].get(h) for h in headers] for item in rows]
     if job.brand.get('group_manual_pending'):
         headers=result_headers(job)

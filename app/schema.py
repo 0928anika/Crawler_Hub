@@ -81,7 +81,7 @@ def sanitized_html(markup):
     from detail_store import registration_layout
     return registration_layout(str(soup))
 
-def preview(headers, row, selected=None, allow_empty_product_name=False):
+def preview(headers, row, selected=None, allow_empty_product_name=False, *, prepared_detail=None):
     selected = selection(selected)
     allowed = set(REQUIRED + selected)
     raw = dict(zip(headers,row))
@@ -99,7 +99,10 @@ def preview(headers, row, selected=None, allow_empty_product_name=False):
         elif f == 'additional_images': extra.extend(urls(value))
         elif f == 'detail_page': markup = str(value or '')
     missing = [FIELDS[k] for k in REQUIRED if not normalized.get(k) and not (k=='product_name' and allow_empty_product_name)]
-    compact,overflow=excel_detail(markup)
+    # 매핑 결과처럼 이미 정리한 상세(compact, overflow)를 넘기면 같은 HTML일 때 재사용.
+    if isinstance(prepared_detail,tuple) and len(prepared_detail)==2 and prepared_detail[0]==markup and type(prepared_detail[1]) is bool:
+        compact,overflow=prepared_detail
+    else:compact,overflow=excel_detail(markup)
     return dict(code=normalized.get('product_code',''), name=normalized.get('product_name',''),
         color=normalized.get('color',''), normalized=normalized, fields=fields,
         extra_fields={str(k):v for k,v in raw.items() if field_for(k) is None},

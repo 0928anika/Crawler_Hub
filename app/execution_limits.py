@@ -37,13 +37,19 @@ def _profile(filename,modified,size):
         source=Path(filename).read_text('utf-8-sig');tree=ast.parse(source)
     except (OSError,ValueError,SyntaxError):return dict(sites=[],browser=True,known=False)
     hosts=set();browser=False
+    # Shared image storage is not the shop whose requests must be serialized.
+    image_nodes=set()
+    for assignment in ast.walk(tree):
+        if isinstance(assignment,ast.Assign) and any(isinstance(t,ast.Name) and re.search(r'IMAGE|IMG|ASSET|MEDIA|CDN',t.id,re.I) and re.search(r'HOSTS?|DOMAINS?|URLS?|BASE|ORIGIN|CDN',t.id,re.I) for t in assignment.targets):
+            image_nodes.update(id(value) for value in ast.walk(assignment.value))
+            image_nodes.add(id(assignment))
     for node in ast.walk(tree):
         if isinstance(node,(ast.Import,ast.ImportFrom)):
             modules=[node.module or ''] if isinstance(node,ast.ImportFrom) else [n.name for n in node.names]
             if any(re.match(r'playwright|selenium|pyppeteer|DrissionPage',m,re.I) for m in modules):browser=True
-        if isinstance(node,ast.Constant) and isinstance(node.value,str):
+        if id(node) not in image_nodes and isinstance(node,ast.Constant) and isinstance(node.value,str):
             hosts.update(re.findall(r'https?://([a-zA-Z0-9.-]+)',node.value))
-        if isinstance(node,ast.Assign) and any(isinstance(t,ast.Name) and re.search(r'(?:HOSTS?|DOMAINS?)$',t.id) for t in node.targets):
+        if id(node) not in image_nodes and isinstance(node,ast.Assign) and any(isinstance(t,ast.Name) and re.search(r'(?:HOSTS?|DOMAINS?)$',t.id) for t in node.targets):
             for value in ast.walk(node.value):
                 if isinstance(value,ast.Constant) and isinstance(value.value,str) and re.fullmatch(r'[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}',value.value):hosts.add(value.value)
     if re.search(r'\.(?:chromium|firefox|webkit|launch_persistent_context)\b|webdriver\.|(?:chrome|msedge)\.exe',source):browser=True

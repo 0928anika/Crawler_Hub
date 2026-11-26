@@ -56,7 +56,7 @@ def excel_detail(markup):
     return _cached_excel_detail(value) if len(value)<=65536 else _format_excel_detail(value)
 
 
-@lru_cache(maxsize=256)
+@lru_cache(maxsize=1024)
 def _cached_excel_detail(markup):
     return _format_excel_detail(markup)
 

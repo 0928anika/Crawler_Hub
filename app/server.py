@@ -120,12 +120,14 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self,*_):pass
     def send(self,body,mime='application/json',status=200,attachment=None):
         if not isinstance(body,bytes):body=json.dumps(body,ensure_ascii=False,default=str).encode('utf-8')
-        self.send_response(status);self.send_header('Content-Type',mime);self.send_header('Content-Length',str(len(body)))
-        self.send_header('Cache-Control','no-store');self.send_header('X-Content-Type-Options','nosniff');self.send_header('Referrer-Policy','no-referrer')
-        if attachment:self.send_header('Content-Disposition',disposition(attachment))
-        self.end_headers()
-        try:self.wfile.write(body)
-        except (BrokenPipeError,ConnectionResetError):pass
+        try:
+            self.send_response(status);self.send_header('Content-Type',mime);self.send_header('Content-Length',str(len(body)))
+            self.send_header('Cache-Control','no-store');self.send_header('X-Content-Type-Options','nosniff');self.send_header('Referrer-Policy','no-referrer')
+            if attachment:self.send_header('Content-Disposition',disposition(attachment))
+            self.end_headers()
+            self.wfile.write(body)
+        except (BrokenPipeError,ConnectionResetError,ConnectionAbortedError):
+            self.close_connection=True
     def is_local(self):
         return remote_access.is_local_request(self.client_address[0],self.headers.get('Host',''),self.server.server_port)
     def authorized(self):
@@ -152,11 +154,12 @@ class Handler(BaseHTTPRequestHandler):
         parts=path.strip('/').split('/')
         return len(parts)==4 and parts[:2]==['api','jobs'] and parts[3].startswith('open-')
     def send_file(self,file,mime,attachment):
-        self.send_response(200);self.send_header('Content-Type',mime);self.send_header('Content-Length',str(file.stat().st_size));self.send_header('Cache-Control','no-store');self.send_header('Content-Disposition',disposition(attachment));self.end_headers()
         try:
+            self.send_response(200);self.send_header('Content-Type',mime);self.send_header('Content-Length',str(file.stat().st_size));self.send_header('Cache-Control','no-store');self.send_header('Content-Disposition',disposition(attachment));self.end_headers()
             with file.open('rb') as source:
                 while chunk:=source.read(65536):self.wfile.write(chunk)
-        except (BrokenPipeError,ConnectionResetError):pass
+        except (BrokenPipeError,ConnectionResetError,ConnectionAbortedError):
+            self.close_connection=True
     def do_GET(self):
         path=urlparse(self.path).path
         if self.public_get(path):return
@@ -165,6 +168,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.send({'error':'접근 불가'},status=403)
         if self.remote_blocked(path):return self.send({'error':'휴대폰 접속에서는 사용할 수 없는 기능입니다. PC에서 진행하세요.'},status=403)
         try:self.get()
+        except (BrokenPipeError,ConnectionResetError,ConnectionAbortedError):self.close_connection=True
         except (ValueError,KeyError,IndexError) as e:self.send({'error':str(e)},status=400)
         except Exception as e:self.send({'error':'요청 처리 실패: '+str(e)},status=500)
     def get(self):

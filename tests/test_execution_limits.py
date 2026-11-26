@@ -60,4 +60,18 @@ class LimitsTests(unittest.TestCase):
         for name in ['benetton_official','tdg_eland_studio','leviskids_official','fashionplus_item']:
             self.assertFalse(catalog[name]['execution_resources']['browser'])
 
+    @unittest.skipUnless((ROOT/'brands/organicmom_official.py').exists(),'오가닉맘 크롤러는 develop에만 있음')
+    def test_separate_shops_sharing_image_cdn_can_run_together(self):
+        organic=resource_profile(ROOT/'brands/organicmom_official.py');elcanto=resource_profile(ROOT/'brands/elcanto_official.py')
+        self.assertEqual(organic['sites'],['organicmommall.co.kr']);self.assertEqual(elcanto['sites'],['elcanto.co.kr'])
+        self.assertEqual(blocked_reason(organic,[dict(id='one',name='엘칸토',resources=elcanto)]),'')
+        self.assertIn('같은 사이트',blocked_reason(organic,[dict(id='one',name='오가닉맘',resources=organic)]))
+    def test_shared_image_host_and_url_do_not_create_site_conflict(self):
+        with tempfile.TemporaryDirectory() as folder:
+            paths=[]
+            for name in ['first','second']:
+                path=Path(folder)/(name+'.py');path.write_text("SITE='https://"+name+".co.kr'\nHOSTS=('"+name+".co.kr',)\nIMAGE_HOSTS=('"+name+".co.kr','cafe24.poxo.com')\nDETAIL_CDN='https://images.shared-cdn.net/static/'\n",encoding='utf-8');paths.append(path)
+            first,second=[resource_profile(p) for p in paths]
+            self.assertEqual(first['sites'],['first.co.kr']);self.assertEqual(second['sites'],['second.co.kr']);self.assertEqual(blocked_reason(first,[dict(id='one',resources=second)]),'')
+
 if __name__=='__main__':unittest.main()

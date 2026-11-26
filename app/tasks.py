@@ -61,14 +61,14 @@ class Job:
             waiting=sum(x['status']=='WAITING' for x in self.queue)
             skipped=sum(x['status']=='SKIPPED' for x in self.queue)
             mapping=color_mapping.snapshot(self) if color_mapping.is_manual(self) else None
-            mapped_count=len(color_mapping.final_items(self,mapping)) if mapping and mapping['finalized'] else len(self.items)
+            mapped_count=len(color_mapping.visible_items(self)) if mapping and mapping['finalized'] else len(self.items)
             return dict(id=self.id,name=self.name,brand=brand_label(self.brand),brand_name=self.brand['name'],crawl_source=self.brand.get('crawl_source',''),brand_id=self.brand['id'],state=self.state,
                 total=len(self.rows)-skipped,skipped=skipped,done=self.done,failed=self.failed,success=success,waiting=waiting,editable_targets=bool(self.headers) and self.state not in ('stopping','saving'),
                 current=self.current,stage=self.stage,directory=str(self.dir),demo=self.demo,selected=self.selected,
                 created_at=self.created_at,elapsed=round(elapsed,1),average=round(elapsed/self.done,1) if self.done else None,
                 eta=round(elapsed/self.done*waiting) if self.done>=3 and self.state in ACTIVE else None,
                 pending=sum(q['status'] in ('WAITING','RUNNING','CANCELLED') for q in self.queue),can_retry=any(q['status']=='FAILED' for q in self.queue),can_continue=any(q['status'] in ('WAITING','RUNNING','CANCELLED') for q in self.queue) and bool(self.headers),count=mapped_count,raw_count=len(self.items),saved_at=self.saved_at,save_error=self.save_error,version=VERSION,
-                mapping_mode=self.brand.get('mapping_mode','automatic'),image_mode=self.brand.get('image_mode','url'),mapping_finalized=bool(mapping and mapping['finalized']),
+                mapping_revision=mapping['revision'] if mapping else 0,mapping_mode=self.brand.get('mapping_mode','automatic'),image_mode=self.brand.get('image_mode','url'),mapping_finalized=bool(mapping and mapping['finalized']),
                 detail_image_ready=bool(mapping and mapping['finalized'] and any(f.startswith('상세이미지/') for f in color_mapping.read_state(self).get('file_export',{}).get('files',[]))),
                 crawler_hash=self.crawler_hash,revision=self.revision,queue_revision=self.revision+sum(x['status']!='WAITING' for x in self.queue)+self.done)
     def snapshot(self):
@@ -225,10 +225,13 @@ class Job:
             f.write(json.dumps(event,ensure_ascii=False,default=str)+'\n');f.flush();os.fsync(f.fileno())
     def save(self):
         with self.save_lock:
+            manual=color_mapping.is_manual(self)
             with self.data_lock:
-                sheets=copy.deepcopy(self.sheets)
-                events=copy.deepcopy(self.row_events)
+                # Manual exports are built from mapped rows, not raw event sheets.
+                sheets={} if manual else copy.deepcopy(self.sheets)
+                events=[] if manual else copy.deepcopy(self.row_events)
                 count=len(self.items)
+                mapped_detail=manual and color_mapping.snapshot(self)['finalized']
             if events:
                 sheets={}
                 sheet_headers={};sheet_records={}
@@ -256,7 +259,7 @@ class Job:
                             heads=output_headers(rows[0],self.selected)
                             output=[heads]+[[dict(zip(rows[0],r)).get(h) for h in heads] for r in rows[1:]]
                         for index,row in enumerate(output):
-                            ws.append([safe_cell(excel_detail(v)[0] if index and i<len(output[0]) and field_for(output[0][i])=='detail_page' else v) for i,v in enumerate(row)])
+                            ws.append([safe_cell(excel_detail(v)[0] if not mapped_detail and index and i<len(output[0]) and field_for(output[0][i])=='detail_page' else v) for i,v in enumerate(row)])
                     if '작업처리로그' not in book.sheetnames:
                         ws=book.create_sheet('작업처리로그');ws.append(['입력 행','품번','상태','처리 시간(초)','오류/주의'])
                         manual_state=('완료' if color_mapping.snapshot(self)['finalized'] else '대기') if color_mapping.is_manual(self) else None
