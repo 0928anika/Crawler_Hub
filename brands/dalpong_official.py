@@ -14,7 +14,7 @@ from crawler_rules import check_public_image
 
 SITE='https://cubynmom.com'
 HOSTS=('dalpong.co.kr','www.dalpong.co.kr','cubynmom.com','www.cubynmom.com','dalpongcuby.cafe24.com')
-REVISION='2026-11-26-dalpong-v1'
+REVISION='2026-11-26-dalpong-compact-options-2'
 IMAGE_HOSTS=HOSTS+('cafe24.poxo.com','cafe24img.poxo.com','cubyndalpong.speedgabia.com','dalpong.speedgabia.com','cubynmom.speedgabia.com')
 
 class CrawlError(ValueError):pass
@@ -144,7 +144,14 @@ def palette(source, fallback_color=''):
             else:
                 reverse=re.fullmatch(r'(\d{2,3}(?:\s*\([^)]*\))?|FREE|ONE\s*SIZE)/(.+)',str(values[0]),re.I)
                 if reverse:size,color=reverse[1].strip(),reverse[2].strip()
-                elif re.fullmatch(r'블랙|화이트|아이보리|베이지|민트|핑크|블루|네이비|옐로우|그레이|브라운|레드|그린|퍼플|크림|black|white|ivory|beige|mint|pink|blue|navy|yellow|grey|gray|brown|red|green|purple|cream',str(values[0]),re.I):color=str(values[0]).strip()
+                else:
+                    # Official combined labels also omit '/' (화이트90 / 화이트 90).
+                    compact=re.fullmatch(r'([가-힣A-Za-z][가-힣A-Za-z\s]*(?:\([A-Z0-9]{2,4}\))?)\s*[-_]?\s*(\d{2,3}(?:\s*\([^)]*\))?)',str(values[0]),re.I)
+                    if compact:color,size=compact[1].strip(),compact[2].strip()
+                    else:
+                        compact=re.fullmatch(r'(\d{2,3}(?:\s*\([^)]*\))?)\s*[-_]?\s*([가-힣A-Za-z][가-힣A-Za-z\s]*(?:\([A-Z0-9]{2,4}\))?)',str(values[0]),re.I)
+                        if compact:size,color=compact[1].strip(),compact[2].strip()
+                        elif re.fullmatch(r'블랙|화이트|아이보리|베이지|민트|핑크|블루|네이비|옐로우|그레이|브라운|레드|그린|퍼플|크림|black|white|ivory|beige|mint|pink|blue|navy|yellow|grey|gray|brown|red|green|purple|cream',str(values[0]),re.I):color=str(values[0]).strip()
             if not color and names[0].strip() in ('옵션','선택') and re.fullmatch(r'\d{2,3}(?:\s*\([^)]*\))?|FREE|ONE\s*SIZE',str(values[0]),re.I):size=str(values[0]).strip()
         color=color or fallback_color
         if not color:raise CrawlError('공식 색상명 확인 실패: 옵션과 제품정보에 색상 원문 없음')

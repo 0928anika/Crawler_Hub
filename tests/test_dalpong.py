@@ -28,6 +28,14 @@ class Tests(unittest.TestCase):
    with self.subTest(name=name):
     p=c.palette(self.fixture(name));self.assertEqual(len(p),1);self.assertEqual(p[0]['color_name'],color);self.assertEqual(p[0]['sizes'],['90','100','110']);self.assertEqual(set(p[0]['prices']),{69000})
   p=c.palette(self.fixture('6475'))[0];self.assertEqual(p['color_name'],'베이지');self.assertIn('100 (2~3세)',p['sizes'])
+ def test_color_and_size_without_separator_and_with_spaces(self):
+  source=self.fixture('4936')
+  for variant in [source,source.replace('화이트90','화이트 90').replace('핑크100','핑크 100')]:
+   colors=c.palette(variant)
+   self.assertEqual({r['color_name']:r['sizes'] for r in colors},{'화이트':['90','100','110'],'핑크':['90','100','110']})
+  rows=[dict(option_name_original=['옵션'],option_value_orginal=[v],option_price=1000) for v in ['화이트 90','핑크100','90화이트','100 핑크','화이트(WH)110']]
+  with patch.object(c,'stock_rows',return_value=rows):colors=c.palette('<html></html>')
+  self.assertEqual([(r['color_name'],r['color_code'],r['sizes']) for r in colors],[('화이트','',['90']),('핑크','',['100']),('화이트','WH',['110'])])
  def test_color_only_options_keep_hidden_soldout_mint(self):
   colors=c.palette(self.fixture('5498'));self.assertEqual([p['color_name'] for p in colors],['민트','핑크']);self.assertTrue(all(p['color_code']=='' for p in colors))
  def test_detail_keeps_real_size_tables_and_excludes_delivery_images(self):
