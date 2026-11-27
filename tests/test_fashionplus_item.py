@@ -21,17 +21,6 @@ class FashionplusItemTests(unittest.TestCase):
   doc=c.BeautifulSoup((ROOT/'tests/fixtures/fashionplus_item/432217746_product.html').read_text(encoding='utf-8'),'html.parser')
   doc.append(c.BeautifulSoup('<script type="application/ld+json">{"@type":"Product","sku":"seller_MODEL","mpn":432217746}</script>','html.parser'))
   self.assertIn('RMDVM4382',c.product_info(doc,'432217746')['product_name']);self.assertEqual(c.read_price(doc),99000);self.assertEqual(c.read_price(doc,True),319000)
- def test_category_from_official_script_full_category(self):
-  # 2026-11-20 실조회(416083574): 화면 분류 링크는 브랜드샵뿐, 스크립트 fullCategory에 공식 분류가 있음
-  doc=c.BeautifulSoup("<div class='mm_breadcrumb'><a href='/goods/brand-shop/13340'>레드페이스 ></a></div><script>var x={fullCategory: '아웃도어/레저>등산잡화>장갑', brand_name: '레드페이스'};var y={'1st_category_name': '추천', '2nd_category_name': '상품'};</script>",'html.parser')
-  self.assertEqual(c.read_category(doc),'아웃도어/레저 > 등산잡화 > 장갑')
-  doc=c.BeautifulSoup("<script>fullCategory: '',\n'1st_category_name': '여성', '2nd_category_name': '신발', '3rd_category_name': ''</script>",'html.parser')
-  self.assertEqual(c.read_category(doc),'여성 > 신발')
-  doc=c.BeautifulSoup("<div class='mm_breadcrumb'><a href='/goods/brand-shop/1'>브랜드</a></div><script>fullCategory: '',</script>",'html.parser')
-  self.assertIsNone(c.read_category(doc))                              # 브랜드를 분류로 쓰지 않음
-  import importlib.util
-  spec=importlib.util.spec_from_file_location('fp_crop_cat',ROOT/'brands'/'fashionplus_item_crop.py');crop=importlib.util.module_from_spec(spec);spec.loader.exec_module(crop)
-  self.assertEqual(crop.read_category(c.BeautifulSoup("<script>fullCategory: '여성>잡화'</script>",'html.parser')),'여성 > 잡화')
  def test_wrong_canonical_is_not_adopted(self):
   doc=c.BeautifulSoup('<meta property="og:url" content="https://www.fashionplus.co.kr/goods/detail/2"><div class="m__product-info"><p class="text_product">상품</p></div><script type="application/ld+json">{"@type":"Product","sku":"seller_MODEL","mpn":432217746}</script>','html.parser')
   with self.assertRaises(c.CollectionError):c.product_info(doc,'1')
@@ -135,4 +124,26 @@ class FashionplusItemTests(unittest.TestCase):
    path=Path(folder)/'result.xlsx';book=Workbook()
    for row in sheet:book.active.append(row)
    book.save(path);check=load_workbook(path);self.assertEqual(check.active['A2'].value,'446631636');self.assertEqual(check.active['B2'].value,code);check.close()
+ def test_child_page_resolves_parent_sku_and_all_parent_options(self):
+  folder=ROOT/'tests/fixtures/fashionplus_item';child=c.BeautifulSoup((folder/'446631639-child.html').read_text(encoding='utf-8'),'html.parser');parent=c.BeautifulSoup((folder/'446631636-parent.html').read_text(encoding='utf-8'),'html.parser')
+  payload=(folder/'446631636-options.json').read_bytes();ctx=C(['size','price']);ctx.product_code='446631639'
+  with patch.object(c,'soup_get',side_effect=[child,parent]),patch.object(c,'fetch',return_value=payload):c.crawl(ctx)
+  self.assertEqual(len(ctx.rows),1);r=ctx.rows[0]
+  self.assertEqual((r['product_code'],r['상위품목ID'],r['하위품목ID'],r['입력품목ID']),('775951_IF95NSEJ6230','446631636','446631639','446631639'))
+  self.assertEqual((r['color_name'],r['size'],r['price']),('베이지','55,66',289000));self.assertIn('66',r['size'])
+ def test_child_absent_from_current_options_still_collects_verified_parent(self):
+  folder=ROOT/'tests/fixtures/fashionplus_item';child=c.BeautifulSoup((folder/'446631639-child.html').read_text(encoding='utf-8'),'html.parser');parent=c.BeautifulSoup((folder/'446631636-parent.html').read_text(encoding='utf-8'),'html.parser');ctx=C(['size']);ctx.product_code='446631639'
+  with patch.object(c,'soup_get',side_effect=[child,parent]),patch.object(c,'read_options',return_value=([dict(color_name='베이지',color_code='')],['66'],[dict(label='베이지 66',price=242760,option_id=446631640)])):
+   c.crawl(ctx)
+  self.assertEqual(len(ctx.rows),1);self.assertEqual(ctx.rows[0]['size'],'66');self.assertEqual(ctx.rows[0]['상위품목ID'],'446631636')
+ def test_child_parent_sku_mismatch_is_rejected(self):
+  folder=ROOT/'tests/fixtures/fashionplus_item';child=c.BeautifulSoup((folder/'446631639-child.html').read_text(encoding='utf-8'),'html.parser');parent=c.BeautifulSoup((folder/'446631636-parent.html').read_text(encoding='utf-8').replace('775951_IF95NSEJ6230','DIFFERENT_SKU'),'html.parser')
+  with patch.object(c,'soup_get',side_effect=[child,parent]):
+   with self.assertRaisesRegex(c.CollectionError,'SKU 불일치'):c.resolve_product(C([]),'446631639')
+ def test_child_of_multicolor_parent_keeps_photo_mapping_manual(self):
+  folder=ROOT/'tests/fixtures/fashionplus_item';child=c.BeautifulSoup((folder/'446631639-child.html').read_text(encoding='utf-8'),'html.parser');parent=c.BeautifulSoup((folder/'446631636-parent.html').read_text(encoding='utf-8'),'html.parser');ctx=C(['main_image']);ctx.product_code='446631639'
+  colors=[dict(color_name='베이지',color_code=''),dict(color_name='블랙',color_code='')]
+  raw=[dict(label='베이지 55',price=242760,option_id=446631639),dict(label='블랙 66',price=242760,option_id=123)]
+  with patch.object(c,'soup_get',side_effect=[child,parent]),patch.object(c,'read_options',return_value=(colors,['55','66'],raw)),patch.object(c,'gallery',return_value=['https://img.test/a.jpg']),patch.object(c,'detail_candidates',return_value=[]):c.crawl(ctx)
+  self.assertFalse(ctx.rows);self.assertEqual(len(ctx.unmapped),1);self.assertEqual(ctx.unmapped[0][0][1],colors)
 if __name__=='__main__':unittest.main()

@@ -178,9 +178,16 @@ def options(ctx, main, selected=None):
         raise CrawlError('옵션 JSON 구조 변경') from e
 
 
+def representative_color(option):
+    label = str(option.get('itemOptionName') or '').strip()
+    return bool(re.fullmatch(r'(?:[A-Z0-9]{2}\s*)?대표\s*(?:칼라|컬러|색상)(?:\s*AA)?', label, re.I))
+
+
 def color_rows(rows):
     result = []
     for o in rows:
+        if representative_color(o):
+            continue
         if str(o.get('itemOptionTcode')) not in ('10','99'):
             raise CrawlError('첫 옵션이 색상인 상품만 지원: 사이트 옵션 구조 확인 필요')
         label = str(o.get('itemOptionName') or '').strip()
@@ -235,7 +242,25 @@ def content_signal(im):
         if 2 <= area <= 120 and x1-x0 < 32 and y1-y0 < 20:
             small_count += 1
             small_area += area
-    if small_count >= 150 and 0 < total_dark < w*h*.16 and small_area > total_dark*.35:
+    # Melange fabric also creates many small components. Require document-like
+    # wide text lines separated by blank rows before treating it as a label.
+    bands, start, gap = [], None, 0
+    for y in range(h):
+        xs = [x for x in range(w) if max(px[y*w+x]) < 170]
+        ink = len(xs) >= 3 and xs[-1]-xs[0] >= w*.65
+        if ink:
+            if start is None:
+                start = y
+            gap = 0
+        elif start is not None:
+            gap += 1
+            if gap >= 2:
+                bands.append(y-gap+1-start)
+                start, gap = None, 0
+    if start is not None:
+        bands.append(h-gap-start)
+    text_lines = sum(2 <= height <= 20 for height in bands)
+    if small_count >= 150 and 0 < total_dark < w*h*.16 and small_area > total_dark*.35 and text_lines >= 4:
         return '작은 글자 성분이 지배적인 라벨/고시/측정 안내 의심'
     # 밝은 배경 전체가 아닌 내부 구분선 양쪽에 독립 사진 영역이 있는지 확인.
     gray = im.convert('L')
@@ -534,7 +559,9 @@ def crawl(ctx):
                 rejected += 1
                 ctx.log('스튜디오컷 없음(상품 제외): '+code+' / '+final,'INFO')
                 continue
-            opts = options(ctx, main)
+            opts = [o for o in options(ctx, main) if not representative_color(o)]
+            if not opts:
+                raise CrawlError('대표칼라를 제외한 실제 색상 옵션 없음')
             cs = color_rows(opts)
             products.append((main, final))
             photos=gallery(ctx, main, cache)
@@ -560,6 +587,8 @@ def crawl(ctx):
                         names = list(dict.fromkeys(str(o.get('itemOptionName') or '').strip() for o in child))
                         if not names or not all(names):
                             raise CrawlError('사이즈 옵션명 누락')
+                        # Representative placeholders are not garment sizes.
+                        names = [n for n in names if not re.fullmatch(r'(?:[A-Z0-9]+\s+)?대표\s*(?:사이즈|싸이즈)', n, re.I)]
                         sizes.append(names)
                     if ctx.enabled('price'):
                         values = [o.get('sellPrice') for o in child]
@@ -598,10 +627,12 @@ def crawl(ctx):
             regular_records.append(value)
         merge_regular_prices(ctx, record, regular_records)
         if ctx.enabled('size'):
-            same = bool(sizes) and all(v == sizes[0] for v in sizes)
-            record['size'] = ','.join(sizes[0]) if same else ''
-            if not same:
-                ctx.log('색상/상품 링크별 사이즈가 달라 공통 사이즈는 빈 값', 'WARNING')
+            merged_sizes = list(dict.fromkeys(name for group in sizes for name in group))
+            record['size'] = ','.join(merged_sizes)
+            if any(group != sizes[0] for group in sizes[1:]):
+                ctx.log('색상/상품 링크별 사이즈 합집합 저장(품절 포함): ' + record['size'], 'INFO')
+            if not merged_sizes:
+                ctx.log('대표싸이즈를 제외한 실제 사이즈 옵션 없음', 'WARNING')
         if ctx.enabled('price'):
             record['price'] = prices[0] if prices else None
             if len(set(prices)) > 1:

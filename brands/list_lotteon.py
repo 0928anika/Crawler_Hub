@@ -257,6 +257,13 @@ def ocr(ctx,pic,folder,cache):
 
 BANNER=re.compile(r'하프\s*클럽|half\s*club|브랜드\s*패션\s*전문몰|신세계\s*라이브\s*쇼[핑평]|내일\s*도착|오늘\s*23\s*시|주문상품.*내일|교환.{0,4}반품.{0,8}안내|배송.{0,4}안내|무단.{0,8}(?:사용|복제)|저작권|정품.{0,4}(?:안내|인증)|구매대행.{0,6}안내',re.I)
 
+SELLER_BANNER=re.compile(r'패세라|패션플러스|fashionplus|하프클럽|halfclub|롯데(?:백화점|아울렛|프리미엄아울렛)|신세계(?:백화점|라이브쇼핑)|현대(?:백화점|아울렛)|판매자(?:안내|공지|정보)|배송(?:안내|공지|기간|지연)|교환반품안내|구매전(?:필독|확인)|매장(?:안내|연락처)|고객센터|상담문의|구매대행|백화점정품',re.I)
+
+
+def banner_text(words):
+    compact=re.sub(r'[\s·ㆍ•/|,:：_\-]+','',words)
+    return bool(BANNER.search(words) or SELLER_BANNER.search(compact))
+
 
 def body_markup(ctx,data,cache,ocr_cache,folder):
     parts=[];digests=set();valid_images=0
@@ -286,10 +293,10 @@ def body_markup(ctx,data,cache,ocr_cache,folder):
                     ctx.log('원문에서 삭제된 상세 이미지 404 생략: '+imgurl,'WARNING');return ''
                 if info['digest'] in digests:return ''
                 words=ocr(ctx,info['image'],folder,ocr_cache)
-                if BANNER.search(words):
-                    notice_count=sum(bool(re.search(term,words)) for term in (r'배송\s*안내',r'교환.{0,4}반품.{0,4}안내',r'고객\s*(?:센터|서비스)',r'구매\s*전'))
-                    if info['image'].height>info['image'].width*3 and notice_count<2:raise CollectionError('본문과 안내 배너가 합쳐진 긴 이미지: 자동 전체 삭제 대신 확인 필요 '+imgurl)
-                    ctx.log('쇼핑/배송/저작권 배너 제외: '+words[:100],'INFO');return ''
+                if banner_text(words):
+                    if info['image'].height>info['image'].width*3:
+                        raise CollectionError('판매자/배송 배너가 본문에 합쳐진 긴 이미지 제외: '+imgurl)
+                    ctx.log('판매자/배송 안내 이미지 제외: '+words[:100],'INFO');return ''
                 digests.add(info['digest']);valid_images+=1
                 return '<img src="'+html.escape(imgurl,quote=True)+'" alt="상품 상세 본문" style="max-width:100%;height:auto">'
             content=''.join(render(n) for n in node.children)
@@ -297,7 +304,7 @@ def body_markup(ctx,data,cache,ocr_cache,folder):
             if node.name in ('p','div','center','span','b','strong','ul','ol','li','table','thead','tbody','tfoot','tr','th','td','h1','h2','h3','h4','br'):
                 if node.name=='br':return '<br>'
                 name='div' if node.name=='center' else node.name
-                if node.name not in ('table','thead','tbody','tfoot','tr','th','td') and BANNER.search(node.get_text(' ',strip=True)) and not node.find(['img','table']):return ''
+                if node.name not in ('table','thead','tbody','tfoot','tr','th','td') and banner_text(node.get_text(' ',strip=True)) and not node.find(['img','table']):return ''
                 attrs=''
                 if name in ('td','th'):
                     for k in ('rowspan','colspan'):
@@ -375,7 +382,12 @@ def crawl(ctx):
                     if not values:raise CollectionError('실제 사이즈 옵션 없음')
                     record['size']=','.join(values)
                 if ctx.enabled('category'):record['category']=' > '.join(str(main.get('stdCatLevel'+str(i)+'Nm') or '') for i in range(1,5)).strip(' >')
-                markup=body_markup(ctx,data,cache,ocr_cache,folder) if ctx.enabled('detail_page') else ''
+                markup=''
+                if ctx.enabled('detail_page') and not details:
+                    try:
+                        markup=body_markup(ctx,data,cache,ocr_cache,folder)
+                    except (CollectionError,OSError,ValueError,KeyError,subprocess.SubprocessError) as exc:
+                        ctx.log('상세 후보 제외: '+row['pdId']+' / '+str(exc)+' / 다른 판매처 상세 확인','WARNING')
                 records.append(record);photos.extend(p for p in accepted if p['digest'] not in {x['digest'] for x in photos})
                 if markup and markup not in details:details.append(markup)
                 for choice in choices:
@@ -390,7 +402,8 @@ def crawl(ctx):
             if ctx.enabled(field) and any(r.get(field)!=out.get(field) for r in records):out[field]=None;ctx.log('여러 판매자 공통 '+field+' 값 미확정: 빈칸','WARNING')
         if ctx.enabled('size') and any(r.get('size')!=out.get('size') for r in records):ctx.log('링크별 사이즈가 달라 첫 수집 성공 링크 기준으로 통일','WARNING')
         if ctx.enabled('detail_page'):
-            out['detail_page']=''.join(details)
+            out['detail_page']=details[0] if details else ''
+            if not details:ctx.log('배너 없는 상세 본문을 확인하지 못해 상세페이지는 제외합니다. 상품 사진과 옵션은 유지합니다.','WARNING')
             if len(out['detail_page'].encode('utf-16-le'))//2>32767:raise CollectionError('공통 상세 HTML 엑셀 셀 한도 초과')
         for photo in photos:ctx.emit_unmapped(dict(out),[dict(c) for c in colors],photo['url'],shared_detail_html=out.get('detail_page',''))
         if errors:raise CollectionError('일부 상품 수집 미완료: '+' / '.join(errors))

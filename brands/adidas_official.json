@@ -15,6 +15,7 @@
     "색상명",
     "색상코드",
     "사이즈",
+    "바코드",
     "판매가",
     "정상가",
     "카테고리",
@@ -61,12 +62,17 @@
       "supported": true,
       "status": "conditional",
       "reason": "공식 상품 사진 + product_certificates(소재·제조국·제조년월·제조자·수입자) 고시 표 + 공식 사이즈표 API가 읽히면 표. 설명·특징 문단은 제외."
+    },
+    "barcode": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 variation_list의 size와 gtin을 같은 행에서 연결. 선택하면 사이즈별 행으로 전개하며 GTIN은 문자열로 보존. 없는 값은 공백."
     }
   },
   "guide": {
     "pattern": "^[A-Za-z]{1,3}\\d{3,5}$",
     "format": "아디다스 상품코드(예: JZ3160). 색상마다 코드가 다릅니다.",
-    "notes": "코드 1개가 색상 1개입니다.",
+    "notes": "코드 1개가 색상 1개입니다. 바코드 선택 시 사이즈도 자동 선택되며 사이즈별로 한 행씩 출력합니다. 미선택 시 기존 사이즈 취합 유지.",
     "method": "공식 상품 API의 id와 입력 코드를 정확히 대조.",
     "example": "JZ3160",
     "examples": [
@@ -80,7 +86,7 @@
     ],
     "validation_note": "입력 형식 검사이며 실제 상품 존재 확인은 실행 시 수행"
   },
-  "notes": "아디다스 상품코드(article)는 색상마다 다르므로 상품코드 1개 = 색상 1개 자동 매핑. 공식 /api/products/{코드} 우선, 실패 시 상세페이지 __NEXT_DATA__. 이미지는 공식 CDN 변환 경로 w_1000(쉼표 없는 주소)으로 사용하고 동영상 제외. 색상명은 공식 color 값 그대로(번역하지 않음). 검증 범위: 사용자 단독 크롤러(adidas_crawler.py)에서 운영 확인된 URL·선택자·응답 키를 Crawler Hub SDK 규약으로 이식. 이 코드를 작성한 환경은 해당 사이트 접속이 차단되어 실사이트 실행은 미검증이며, SDK 계약·선택 항목 생략·표 재구성은 오프라인 fixture 테스트(tests/test_oberon_brands.py)로만 확인함.",
+  "notes": "아디다스 상품코드는 색상별로 구분되므로 품번 1개는 색상 1개로 자동 매핑. 일반 요청 403/429 시 사용 중인 Chrome의 공식 API로 전환하고, 필요하면 공홈 검색에서 전체 상품 주소를 확인. 정상가·판매가·갤러리·고시·사이즈표 지원. 2026-11-25 KS4159 실사이트 SDK 실행 및 XLSX 생성 확인. Chrome 최초 연결 승인은 사용자가 직접 해야 하며, 새 브라우저 창은 만들지 않음.",
   "interface": "portal_v1",
   "fields": {
     "product_code": {
@@ -148,6 +154,12 @@
       "supported": true,
       "status": "conditional",
       "reason": "공식 상품 사진 + product_certificates(소재·제조국·제조년월·제조자·수입자) 고시 표 + 공식 사이즈표 API가 읽히면 표. 설명·특징 문단은 제외."
+    },
+    "barcode": {
+      "label": "바코드",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 variation_list의 size와 gtin을 같은 행에서 연결. 선택하면 사이즈별 행으로 전개하며 GTIN은 문자열로 보존. 없는 값은 공백."
     }
   },
   "column_fields": {
@@ -164,7 +176,13 @@
     "대표이미지": "main_image",
     "추가이미지": "additional_images",
     "상세페이지 HTML": "detail_page",
-    "원본 상품명": null
+    "원본 상품명": null,
+    "바코드": "barcode"
   },
-  "code_hash": "8710f57bbf5dad1035a0de79614a30c8e97d0977de903336c0f035624a934c67"
+  "code_hash": "d3dd4e52667f3f372edc30aca342c7e52a602c14ff7731865ebdd14700deec66",
+  "field_dependencies": {
+    "barcode": [
+      "size"
+    ]
+  }
 }

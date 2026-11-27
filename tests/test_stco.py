@@ -25,6 +25,22 @@ class Context:
     def emit_result(self,row):self.rows.append(row)
 
 class StcoTests(unittest.TestCase):
+    def test_gif_urls_are_excluded_before_downloading(self):
+        doc=source();area=doc.select_one('#prodInfo');gallery=doc.select_one('.prodDetailTopWrap .swpMainVisual')
+        for url in ['https://image.codigallery.com/large.GIF?x=1','https://image.codigallery.com/main/DDSXD01CCD_99.gif']:
+            area.append(doc.new_tag('img',src=url));gallery.append(doc.new_tag('img',src=url))
+        self.assertFalse(any(c.is_gif(url) for url in c.body_urls(doc,c.SITE)))
+        self.assertFalse(any(c.is_gif(url) for url in c.gallery_urls(doc,c.SITE,'DDSXD01CCD')))
+        with patch.object(c,'fetch',side_effect=AssertionError('GIF downloaded')):
+            with self.assertRaises(c.ExcludedGif):c.image(Context(),'https://image.codigallery.com/a.GIF?x=1',{})
+
+    def test_gif_content_type_skips_body_before_size_limit(self):
+        opener=MagicMock();response=opener.open.return_value.__enter__.return_value
+        response.headers={'Content-Type':'image/gif','Content-Length':'999999999'}
+        with patch.object(c,'public_opener',return_value=opener):
+            with self.assertRaises(c.ExcludedGif):c.fetch(Context(),'https://image.codigallery.com/no-extension')
+        response.read1.assert_not_called()
+
     def test_empty_banner_directory_does_not_fail_real_body(self):
         doc=source('SEJXC01NSB');urls=c.body_urls(doc,c.SITE)
         self.assertEqual(len(urls),5)
@@ -70,6 +86,17 @@ class StcoTests(unittest.TestCase):
         doc=source();node=doc.select_one('.listOption input[data-prd_no="DDSXD01CCD"]')
         node['data-qty']='0';node['disabled']='disabled'
         self.assertEqual(c.sizes(doc,'DDSXD01CCD'),'95,100,105,110')
+
+    def test_missing_primary_sizes_still_collects_product(self):
+        doc=source()
+        for node in doc.select('.prodOptionBox .listOption input[data-name="사이즈"][data-prd_no="DDSXD01CCD"]'):node.decompose()
+        self.assertEqual(c.sizes(doc,'DDSXD01CCD'),'')
+        ctx=Context(['size','price'])
+        with patch.object(c,'search',return_value=[('DDSXD01CCD',c.SITE+'/detail/index/DDSXD01CCD')]),patch.object(c,'fetch',return_value=str(doc).encode('utf8')):
+            c.crawl(ctx)
+        self.assertFalse(ctx.failures);self.assertEqual(len(ctx.rows),1)
+        self.assertEqual(ctx.rows[0]['size'],'');self.assertEqual(ctx.rows[0]['price'],59900)
+        self.assertTrue(any('사이즈 빈칸' in log[0] for log in ctx.logs))
 
     def test_complete_body_includes_shared_size_image(self):
         doc=source();urls=c.body_urls(doc,c.SITE)

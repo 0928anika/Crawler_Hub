@@ -1,0 +1,367 @@
+{
+  "id": "KS4159",
+  "name": "코듀로이 푸퍼 재킷",
+  "product_type": "inline",
+  "meta_data": {
+    "canonical": "//www.adidas.co.kr/%EC%BD%94%EB%93%80%EB%A1%9C%EC%9D%B4-%ED%91%B8%ED%8D%BC-%EC%9E%AC%ED%82%B7/KS4159.html",
+    "description": "쇼핑하세요. 코듀로이 푸퍼 재킷 - Brown adidas.co.kr\t 다양한 컬러와 스타일을 코듀로이 푸퍼 재킷 - Brown 공식adidas 아디다스 코리아 온라인 스토어에서 만나세요.",
+    "keywords": "코듀로이 푸퍼 재킷",
+    "page_title": "아디다스 코듀로이 푸퍼 재킷 - Brown | adidas South Korea",
+    "site_name": "adidas 대한민국"
+  },
+  "attribute_list": {
+    "sale": false,
+    "brand": "Originals",
+    "color": "Aurora Coffee",
+    "colors": {
+      "color1code": "AE5S"
+    },
+    "gender": "M",
+    "outlet": false,
+    "sport": [
+      "Lifestyle"
+    ],
+    "weight": "1578.1",
+    "closure": [
+      "Zipper"
+    ],
+    "pattern": [
+      "Plain"
+    ],
+    "category": "Clothing",
+    "size_page": "60",
+    "sport_ids": [
+      "Lifestyle"
+    ],
+    "animal_type": null,
+    "category_id": [
+      "Clothing"
+    ],
+    "closure_ids": [
+      "Zipper"
+    ],
+    "productfit": [
+      "Regular Fit"
+    ],
+    "size_fit_bar": {
+      "value": "app_2",
+      "markerCount": 3,
+      "selectedMarkerIndex": 1
+    },
+    "weight_unit": "g",
+    "collection": [
+      "xcategory",
+      "restock"
+    ],
+    "search_color": "Brown",
+    "base_material": [
+      "Recycled Polyester"
+    ],
+    "edition_types": {},
+    "productType": [
+      "Jackets"
+    ],
+    "midsole_offset": "0.000",
+    "product_fit_ids": [
+      "Regular Fit"
+    ],
+    "personalizable": false,
+    "toe_stack_height": "0.00",
+    "base_material_ids": [
+      "Recycled Polyester"
+    ],
+    "heel_stack_height": "0.00",
+    "isCnCRestricted": false,
+    "key_category_code": "00009",
+    "product_features": [
+      "Pockets",
+      "Padded"
+    ],
+    "gift_wrapping_flag": null,
+    "genericProductType": [
+      "Jackets",
+      "Top"
+    ],
+    "on_model_measurement": {
+      "chest": "98 cm",
+      "waist": "80 cm",
+      "model_height": "188 cm",
+      "product_size": "L"
+    },
+    "exclusive_touchpoint_ids": [
+      "Web",
+      "Confirmed",
+      "AdidasApp"
+    ],
+    "mandatory_personalization": false,
+    "exclusive_touchpoint_values": [
+      "Web",
+      "Confirmed",
+      "AdidasApp"
+    ],
+    "product_type_generic_product_type": "Jackets",
+    "customizable": false,
+    "badge_style": "new",
+    "badge_text": "New",
+    "search_color_raw": "Brown",
+    "is_orderable": true,
+    "isWaitingRoomProduct": false,
+    "isInPreview": false,
+    "max_order_quantity": 12,
+    "specialLaunch": false,
+    "special_launch_type": "NONE",
+    "sizeTypes": {},
+    "is_flash": false,
+    "is_made_to_be_remade": false,
+    "coming_soon_signup": false,
+    "preview_to": "2026-11-15T15:00:00.000Z",
+    "product_sizing_category": "top",
+    "size_chart_id": "size-chart-size-m_tops_alpha_hype",
+    "size_chart_link": "/on/demandware.store/Sites-adidas-KR-Site/ko_KR/Page-Include?cid=size-chart-size-m_tops_alpha_hype"
+  },
+  "view_list": [
+    {
+      "type": "model",
+      "source": "CLOUDINARY",
+      "image_url": "https://assets.adidas.com/images/w_500,f_auto,q_auto/196fcb01dd7d49b4992b3e86c6e52df9_9366/Brown_KS4159_21_model.jpg",
+      "metadata": {
+        "asset_usage": [
+          "pdp"
+        ],
+        "asset_category": "Photography",
+        "imageStyle": "On Model",
+        "view": "Standard View",
+        "usageTerms": "eCommerce",
+        "sortOrder": "1",
+        "subjects": [
+          {
+            "modelHeight": "188 cm",
+            "modelChest": "98 cm",
+            "modelWaist": "80 cm",
+            "productSize": "L",
+            "gender": "male"
+          }
+        ]
+      },
+      "file_revision_date": "2026-04-21T10:25:54Z"
+    },
+    {
+      "type": "videoasset",
+      "image_url": "https://assets.adidas.com/videos/w_500,f_auto,q_auto/f2a065822f744024aa6d4199e3c75128_d98c/Brown_KS4159_video.jpg",
+      "video_url": "https://assets.adidas.com/videos/t_videomain/f2a065822f744024aa6d4199e3c75128_d98c/Brown_KS4159_video.mp4",
+      "source": "CLOUDINARY",
+      "metadata": {
+        "asset_usage": [
+          "pdp"
+        ],
+        "asset_category": "Video - AI",
+        "imageStyle": "On Model",
+        "view": "HeroMrktng View 2",
+        "usageTerms": "eCommerceMarketing",
+        "sortOrder": "2",
+        "subjects": [
+          {
+            "productSize": "L",
+            "gender": "male"
+          },
+          {
+            "productSize": "L",
+            "gender": "female"
+          }
+        ]
+      },
+      "file_revision_date": "2026-11-20T14:58:45Z"
+    },
+    {
+      "type": "model",
+      "source": "CLOUDINARY",
+      "image_url": "https://assets.adidas.com/images/w_500,f_auto,q_auto/5501243043cb4441925e2c08a168cc8e_9366/Brown_KS4159_23_hover_model.jpg",
+      "metadata": {
+        "asset_usage": [
+          "pdp",
+          "plp"
+        ],
+        "asset_category": "Photography",
+        "imageStyle": "On Model",
+        "view": "Back View",
+        "usageTerms": "eCommerce",
+        "sortOrder": "3",
+        "subjects": [
+          {
+            "modelHeight": "188 cm",
+            "modelChest": "98 cm",
+            "modelWaist": "80 cm",
+            "productSize": "L",
+            "gender": "male"
+          }
+        ]
+      },
+      "file_revision_date": "2026-04-21T10:27:52Z"
+    },
+    {
+      "type": "model",
+      "source": "CLOUDINARY",
+      "image_url": "https://assets.adidas.com/images/w_500,f_auto,q_auto/478790ea15c9472f8750b1945e892b1f_9366/Brown_KS4159_25_model.jpg",
+      "metadata": {
+        "asset_usage": [
+          "pdp"
+        ],
+        "asset_category": "Photography",
+        "imageStyle": "On Model",
+        "view": "Walking View",
+        "usageTerms": "eCommerce",
+        "sortOrder": "4",
+        "subjects": [
+          {
+            "modelHeight": "188 cm",
+            "modelChest": "98 cm",
+            "modelWaist": "80 cm",
+            "productSize": "L",
+            "gender": "male"
+          }
+        ]
+      },
+      "file_revision_date": "2026-04-21T10:30:30Z"
+    },
+    {
+      "type": "other",
+      "source": "CLOUDINARY",
+      "image_url": "https://assets.adidas.com/images/w_500,f_auto,q_auto/8002d8d3298042e89c36562630d19706_9366/Brown_KS4159_01_laydown.jpg",
+      "metadata": {
+        "asset_usage": [
+          "pdp"
+        ],
+        "asset_category": "Photography",
+        "imageStyle": "3D Torso",
+        "view": "Front Center View",
+        "usageTerms": "eCommerce",
+        "sortOrder": "5",
+        "subjects": [
+          {
+            "productSize": "L",
+            "gender": "male"
+          },
+          {
+            "productSize": "L",
+            "gender": "female"
+          }
+        ]
+      },
+      "file_revision_date": "2026-04-24T15:24:12Z"
+    },
+    {
+      "type": "detail",
+      "source": "CLOUDINARY",
+      "image_url": "https://assets.adidas.com/images/w_500,f_auto,q_auto/44e6189b5e62410a862f093d76c6a80b_9366/Brown_KS4159_41_detail.jpg",
+      "metadata": {
+        "asset_usage": [
+          "pdp"
+        ],
+        "asset_category": "Photography",
+        "imageStyle": "On Model",
+        "view": "Detail View 1",
+        "usageTerms": "eCommerce",
+        "sortOrder": "6",
+        "subjects": [
+          {
+            "modelHeight": "188 cm",
+            "modelChest": "98 cm",
+            "modelWaist": "80 cm",
+            "productSize": "L",
+            "gender": "male"
+          }
+        ]
+      },
+      "file_revision_date": "2026-04-21T10:28:59Z"
+    },
+    {
+      "type": "detail",
+      "source": "CLOUDINARY",
+      "image_url": "https://assets.adidas.com/images/w_500,f_auto,q_auto/cdb3c32dbb8c4e99beeae2ff4dfefd69_9366/Brown_KS4159_42_detail.jpg",
+      "metadata": {
+        "asset_usage": [
+          "pdp"
+        ],
+        "asset_category": "Photography",
+        "imageStyle": "On Model",
+        "view": "Detail View 2",
+        "usageTerms": "eCommerce",
+        "sortOrder": "7",
+        "subjects": [
+          {
+            "modelHeight": "188 cm",
+            "modelChest": "98 cm",
+            "modelWaist": "80 cm",
+            "productSize": "L",
+            "gender": "male"
+          }
+        ]
+      },
+      "file_revision_date": "2026-04-21T10:34:19Z"
+    }
+  ],
+  "variation_list": [
+    {
+      "sku": "KS4159_185",
+      "size": "XS",
+      "gtin": "4068817729862"
+    },
+    {
+      "sku": "KS4159_195",
+      "size": "S",
+      "gtin": "4068817729855"
+    },
+    {
+      "sku": "KS4159_200",
+      "size": "M",
+      "gtin": "4068817729893"
+    },
+    {
+      "sku": "KS4159_205",
+      "size": "L",
+      "gtin": "4068817729916"
+    },
+    {
+      "sku": "KS4159_210",
+      "size": "XL",
+      "gtin": "4068817729848"
+    },
+    {
+      "sku": "KS4159_215",
+      "size": "2XL",
+      "gtin": "4068817729787"
+    },
+    {
+      "sku": "KS4159_220",
+      "size": "3XL",
+      "gtin": "4068817729923"
+    },
+    {
+      "sku": "KS4159_225",
+      "size": "4XL",
+      "gtin": "4068817733548"
+    }
+  ],
+  "pricing_information": {
+    "currentPrice": 259000,
+    "standard_price": 259000,
+    "standard_price_no_vat": 235455
+  },
+  "breadcrumb_list": [
+    {
+      "text": "Men",
+      "link": "/men"
+    },
+    {
+      "text": "Clothing",
+      "link": "/men-clothing"
+    }
+  ],
+  "product_certificates": {
+    "legalManufName": "adidasAG",
+    "productionDate": "202609",
+    "legalImporterName": "(유)아디다스코리아",
+    "materialInformation": "겉감: 100%폴리에스터",
+    "legalCountryofOrigin": "Indonesia"
+  }
+}

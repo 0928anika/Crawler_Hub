@@ -1,925 +1,351 @@
 PORTAL_API_VERSION = 1
 
-from regular_price import collect_regular_price, merge_regular_prices
-from detail_store import excel_detail
-
-"""레드페이스 공식몰(theredface.com / Cafe24) -> Crawler Hub 로컬 JPEG 크롭 + 사람 색상 매핑.
-
-- 갤러리(대표·추가) 사진은 그대로, 상세 통이미지는 '전체 폭 배경 여백'과 '세로 여백' 경계로만 개별 컷을 자른다.
-- 사전 매핑 근거는 두 가지뿐이다.
-  ① Cafe24 색상 옵션의 공식 link_image(옵션 ↔ 이미지 DOM 연결)
-  ② 통이미지 안 '사진과 가장 가까운 글자 띠'(위·아래 중 가까운 쪽)를 Windows 기본 OCR(Windows.Media.Ocr, 추가 설치 없음)로 읽어
-     공식 색상 옵션 이름/코드와 정확히 하나만 일치할 때 그 컷. 가까운 글자가 색상과 무관하면 다음으로 가까운 글자(다른 사진의 1순위 글자 제외).
-  그 밖(맥, OCR 실패·불일치·여러 색 동시 일치)은 미매핑으로 보내 사람이 고른다. 색감·파일명으로 추측하지 않는다.
-- 상세 HTML은 전 색상 공통: 공식 상세 이미지 URL + 상품정보고시 2열 표 + 공식 사이즈표.
-"""
+import hashlib
 import ast
-import difflib
 import html
-import io
 import json
-import os
 import re
-import subprocess
-import tempfile
+import sys
 import time
-from pathlib import Path
-from urllib.error import HTTPError, URLError
-from urllib.parse import parse_qs, quote, urlencode, urljoin, urlsplit
+from io import BytesIO
+from concurrent.futures import ThreadPoolExecutor
+from urllib.parse import urljoin, urlsplit, urlunsplit, parse_qs, urlencode, quote
 from urllib.request import Request, build_opener
-
 from bs4 import BeautifulSoup
-from PIL import Image, ImageChops, ImageOps
+from PIL import Image
+from crawler_rules import check_public_image, validate_gallery_image, gallery_slots, clean_product_name
 
-REVISION = '2026-11-19-redface-5'
-ORIGIN = 'https://theredface.com'
-HOSTS = ('theredface.com', 'www.theredface.com', 'm.theredface.com')
-ALIASES = ('레드페이스', 'REDFACE', 'RED FACE', 'THE REDFACE')
-MAX_DOCUMENT = 3_000_000
-MAX_IMAGE = 10_000_000
-MAX_OCR_TILES = 40
-# 색상명 글자 위치: 레드페이스 상세는 상품에 따라 사진 위(REWFJKWBF560 COLOR 영역)·아래(REEGMKX24101 '네이비(NA)')가 섞여 있어
-# 사진마다 위·아래 중 가장 가까운 글자 띠를 먼저 대조한다(2026-11-19 사용자 확인).
-LABEL_POSITION = 'nearest'
-COLOR_TITLE = re.compile(r'색상|컬러|color|colour', re.I)
-SIZE_TITLE = re.compile(r'사이즈|size|치수|호수', re.I)
-SKIP_IMAGE = re.compile(r'/common/|/_d1/img/|/web/upload/icon|icon_|ico_|btn_|logo|banner|bn_|cashreceipt|escrow|allat|noimg|no_img|blank|'
-                        r'/_wg/|/skin/|echosting|notice|care_|delivery|shipping|cs_info|배송|교환|반품|event|coupon|gift|사은품', re.I)
-NOTICE_KEYS = re.compile(r'소재|제품소재|혼용|색상|치수|제조자|수입자|제조국|원산지|세탁|취급|제조연월|품질보증|A/S|책임자|종류|중량|사양')
+SITE = 'https://m.theredfacemall.co.kr'
+REVISION = '2026-11-16-redface-detail-retry'
+DETAIL_MAX_BYTES = 64 * 1024 * 1024
+POLICY = dict(checked_on='2026-11-10', source='https://marketplace.coupang.com/mba/listing', min_side=500, max_bytes=10000000, formats=['JPEG','PNG','WEBP'], max_aspect=1.8)
+# Official option links or an explicitly single-color product only.
+# JSON-LD images shared by multiple colors are never color evidence.
 
-POWERSHELL_OCR = r'''
-param([string]$Manifest)
-$ErrorActionPreference='Stop'
-[Console]::OutputEncoding=New-Object System.Text.UTF8Encoding($false)
-Add-Type -AssemblyName System.Runtime.WindowsRuntime
-$null=[Windows.Storage.StorageFile,Windows.Storage,ContentType=WindowsRuntime]
-$null=[Windows.Storage.Streams.IRandomAccessStream,Windows.Storage.Streams,ContentType=WindowsRuntime]
-$null=[Windows.Graphics.Imaging.BitmapDecoder,Windows.Graphics.Imaging,ContentType=WindowsRuntime]
-$null=[Windows.Graphics.Imaging.SoftwareBitmap,Windows.Graphics.Imaging,ContentType=WindowsRuntime]
-$null=[Windows.Media.Ocr.OcrEngine,Windows.Foundation,ContentType=WindowsRuntime]
-$null=[Windows.Media.Ocr.OcrResult,Windows.Foundation,ContentType=WindowsRuntime]
-$method=([System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object {$_.Name -eq 'AsTask' -and $_.IsGenericMethod -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType.Name -eq 'IAsyncOperation`1'})[0]
-function Await($operation,$type){$task=$method.MakeGenericMethod($type).Invoke($null,@($operation));$task.Wait();return $task.Result}
-$engine=[Windows.Media.Ocr.OcrEngine]::TryCreateFromUserProfileLanguages()
-if($null -eq $engine){throw 'Windows OCR language unavailable. Install Korean or English OCR language in Windows Settings.'}
-$items=Get-Content -LiteralPath $Manifest -Raw -Encoding UTF8|ConvertFrom-Json
-$results=@(foreach($item in $items){
-    $stream=$null;$bitmap=$null
-    try {
-        $file=Await ([Windows.Storage.StorageFile]::GetFileFromPathAsync([string]$item.path)) ([Windows.Storage.StorageFile])
-        $stream=Await ($file.OpenAsync([Windows.Storage.FileAccessMode]::Read)) ([Windows.Storage.Streams.IRandomAccessStream])
-        $decoder=Await ([Windows.Graphics.Imaging.BitmapDecoder]::CreateAsync($stream)) ([Windows.Graphics.Imaging.BitmapDecoder])
-        $bitmap=Await ($decoder.GetSoftwareBitmapAsync()) ([Windows.Graphics.Imaging.SoftwareBitmap])
-        $result=Await ($engine.RecognizeAsync($bitmap)) ([Windows.Media.Ocr.OcrResult])
-        @{index=$item.index;text=$result.Text;error=''}
-    } catch { @{index=$item.index;text='';error=$_.Exception.Message} }
-    finally {if($null -ne $stream){$stream.Dispose()};if($null -ne $bitmap){$bitmap.Dispose()}}
-})
-ConvertTo-Json -InputObject $results -Depth 5 -Compress
-'''
+def parse(source):
+    return BeautifulSoup(source, 'html.parser')
 
-# 옵션 이름이 한글이고 라벨이 영문일 때만 쓰는 고정 음역표(같은 단어의 표기 차이). 이 표 밖의 색은 매핑하지 않는다.
-TRANSLIT = {'블랙': 'BLACK', '화이트': 'WHITE', '아이보리': 'IVORY', '카키': 'KHAKI', '네이비': 'NAVY', '베이지': 'BEIGE', '그레이': 'GRAY',
-            '차콜': 'CHARCOAL', '브라운': 'BROWN', '레드': 'RED', '블루': 'BLUE', '그린': 'GREEN', '핑크': 'PINK', '퍼플': 'PURPLE',
-            '옐로우': 'YELLOW', '오렌지': 'ORANGE', '민트': 'MINT', '카멜': 'CAMEL', '와인': 'WINE', '올리브': 'OLIVE', '크림': 'CREAM'}
+def official(url):
+    p = urlsplit(url)
+    return p.scheme == 'https' and p.hostname in ('m.theredfacemall.co.kr','www.theredfacemall.co.kr','theredfacemall.co.kr') and not p.username and not p.password
+
+def image_url(raw, final=SITE):
+    url = urljoin(final, raw)
+    p = urlsplit(url)
+    allowed = (p.hostname in ('m.theredfacemall.co.kr','www.theredfacemall.co.kr','theredfacemall.co.kr') and p.path.startswith('/web/product/') or p.hostname == 'theredface.diskn.com' and p.path.startswith('/Online/'))
+    if p.scheme != 'https' or not allowed or p.username or p.password:
+        return ''
+    return urlunsplit((p.scheme,p.netloc,quote(p.path,safe="/%:@+=$,;~!*'()"),p.query,''))
+
+def field(doc, label):
+    for row in doc.select('.productInfo-item'):
+        title=row.select_one('.productInfo-title')
+        if title and title.get_text(' ',strip=True)==label:
+            value=row.select_one('.productInfo-content')
+            if value:return value.get_text(' ',strip=True)
+    for row in doc.select('tr'):
+        th,td=row.find('th'),row.find('td')
+        if th and td and th.get_text(' ',strip=True)==label:return td.get_text(' ',strip=True)
+    return ''
 
 
-class CrawlError(RuntimeError):
-    pass
+def price(ctx, doc, regular=False):
+    label = '소비자가' if regular else '판매가'
+    text = field(doc,label)
+    m = re.fullmatch(r'(\d{1,3}(?:,\d{3})+|\d+)\s*원?',text)
+    value = int(m[1].replace(',','')) if m else 0
+    if not value:
+        ctx.log('공식 '+label+' 없음/형식 미확인: 빈칸','WARNING')
+        return None
+    return value
 
-
-def unique(items):
-    return list(dict.fromkeys(x for x in items if x))
-
-
-def text(node):
-    return re.sub(r'\s+', ' ', node.get_text(' ', strip=True)) if node else ''
-
-
-def public_url(value, base=ORIGIN):
-    value = str(value or '').strip()
-    if value.startswith('//'):
-        value = 'https:' + value
-    parsed = urlsplit(urljoin(base, value))
-    if parsed.scheme not in ('http', 'https') or not parsed.hostname or parsed.username or parsed.password:
-        raise CrawlError('공개 URL이 아닙니다: ' + value[:120])
-    url = parsed._replace(scheme='https').geturl()
-    return quote(url, safe=":/?=&%+;,@!~*'()-._#")
-
-
-def request(ctx, url, limit=MAX_DOCUMENT, optional=False, site_only=True, timeout=25):
-    url = public_url(url)
-    if site_only and urlsplit(url).hostname not in HOSTS:
-        raise CrawlError('레드페이스 공식몰 밖 주소는 문서로 요청하지 않습니다: ' + url)
-    for attempt in range(2):
-        ctx.checkpoint()
-        ctx.log('GET ' + url, 'INFO')
-        failure, retry = None, False
+def variants(doc):
+    result = []
+    for script in doc.find_all('script',type='application/ld+json'):
         try:
-            req = Request(url, headers={'User-Agent': 'Mozilla/5.0 CrawlerHub', 'Accept': '*/*', 'Accept-Language': 'ko-KR,ko;q=0.9',
-                                        'Accept-Encoding': 'identity', 'Referer': ORIGIN + '/'})
-            with build_opener().open(req, timeout=timeout) as response:
-                data = bytearray()
-                while True:
-                    ctx.checkpoint()
-                    chunk = response.read(min(65536, limit + 1 - len(data)))
-                    if not chunk:
-                        break
-                    data.extend(chunk)
-                    if len(data) > limit:
-                        raise CrawlError('응답이 크기 제한을 넘었습니다: ' + url)
-            result = bytes(data)
-        except HTTPError as exc:
-            failure = 'HTTP ' + str(exc.code) + ': ' + url
-            if optional and 400 <= exc.code < 500 and exc.code not in (408, 429):
-                ctx.log(failure + ' → 이 자료만 제외', 'WARNING')
-                return None
-            retry = exc.code in (408, 429, 500, 502, 503, 504)
-        except (URLError, TimeoutError, OSError) as exc:
-            failure = '네트워크 오류 ' + str(exc) + ': ' + url
-            retry = True
-        ctx.checkpoint()
-        if failure is None:
-            return result
-        if not retry or attempt:
-            raise CrawlError(failure)
-        ctx.log(failure + ' → 1회 재시도', 'WARNING')
-        for _ in range(15):
-            ctx.checkpoint()
-            time.sleep(.1)
-    raise CrawlError('요청 미완료: ' + url)
-
-
-def decode(raw):
-    if isinstance(raw, str):
-        return raw
-    for enc in ('utf-8', 'cp949'):
-        try:
-            return raw.decode(enc)
-        except UnicodeDecodeError:
+            value=json.loads(script.get_text())
+        except json.JSONDecodeError:
             continue
-    return raw.decode('utf-8', errors='replace')
+        for entry in value if isinstance(value,list) else [value]:
+            if isinstance(entry,dict) and entry.get('@type')=='ProductGroup':
+                result.extend(entry.get('hasVariant',[]))
+    return result
 
-
-def code_token(code, value):
-    return re.search(r'(?<![A-Z0-9])' + re.escape(code) + r'(?![A-Z0-9])', str(value or '').upper().replace('-', '')) is not None
-
-
-# ───────────────────────── 검색 ─────────────────────────
-def find_products(ctx, code):
-    queue, seen, links = [ORIGIN + '/product/search.html?' + urlencode({'keyword': code})], set(), []
-    while queue:
-        ctx.checkpoint()
-        url = queue.pop(0)
-        if url in seen:
-            continue
-        if len(seen) >= 20:
-            raise CrawlError('검색 결과 페이지가 20쪽을 넘습니다')
-        seen.add(url)
-        soup = BeautifulSoup(decode(request(ctx, url)), 'html.parser')
-        for bad in soup.select('[class*="recent"], [class*="recommend"], [class*="related"], header, #header, footer, #footer'):
-            bad.decompose()
-        scope = soup.select_one('.xans-search-result') or soup.select_one('.prdList') or soup
-        for a in scope.select('a[href*="/product/"]'):
-            href = a.get('href', '')
-            box = a.find_parent('li') or a
-            label = text(box) + ' ' + ' '.join(i.get('alt', '') for i in box.select('img')) + ' ' + href
-            if not code_token(code, label):
-                continue  # 다른 품번(유사 품번 포함) 제외. 상세의 상품명·자체상품코드로 다시 확인한다.
-            target = public_url(href, url)
-            parsed = urlsplit(target)
-            if parsed.hostname not in HOSTS:
-                continue
-            match = re.search(r'/product/[^/]+/(\d+)/', parsed.path)
-            gid = match[1] if match else (parse_qs(parsed.query).get('product_no') or [''])[0]
-            if gid.isdigit() and gid not in [g for g, _ in links]:
-                links.append((gid, target))
-        for a in soup.select('.ec-base-paginate a[href], .xans-search-paging a[href]'):
-            href = a.get('href', '')
-            if href.startswith(('#', 'javascript:')):
-                continue
-            page = (parse_qs(urlsplit(public_url(href, url)).query).get('page') or [''])[0]
-            if page.isdigit():
-                target = ORIGIN + '/product/search.html?' + urlencode({'keyword': code, 'page': page})
-                if target not in seen:
-                    queue.append(target)
-    return links
-
-
-# ───────────────────────── 상품 상세 ─────────────────────────
-def js_string(raw, name):
-    match = re.search(r'\b' + name + r"""\s*=\s*(['"])(.*?)\1\s*;""", raw)
-    return match[2].strip() if match else ''
-
-
-def split_color(label):
-    label = re.sub(r'\s+', ' ', str(label or '')).strip()
-    label = re.sub(r'\s*\[?(품절|일시품절|sold\s*out)\]?\s*$', '', label, flags=re.I).strip()
-    for pattern, name_i, code_i in ((r'(.*?)\s*\(\s*([A-Za-z0-9]{1,6})\s*\)', 1, 2), (r'\(\s*([A-Za-z0-9]{1,6})\s*\)\s*(.+)', 2, 1),
-                                    (r'([0-9]{2,3})\s+([A-Za-z가-힣].*)', 2, 1)):
-        match = re.fullmatch(pattern, label)
-        if match:
-            return {'color_name': match[name_i].strip(), 'color_code': match[code_i].strip().upper()}
-    return {'color_name': label, 'color_code': ''} if label else None
-
-
-def option_rows(raw):
-    match = re.search(r"\bvar\s+option_stock_data\s*=\s*('(?:\\.|[^'\\])*'|\"(?:\\.|[^\"\\])*\")", raw)
-    if not match:
-        return []
-    try:
-        data = json.loads(ast.literal_eval(match[1]))
-    except (ValueError, SyntaxError):
-        return []
-    return [v for v in data.values() if isinstance(v, dict)] if isinstance(data, dict) else []
-
-
-def option_axes(row):
-    names = row.get('option_name_original') or []
-    values = row.get('option_value_orginal') or row.get('option_value_original') or []
-    if not isinstance(names, list) or not isinstance(values, list):
-        return None, None
-    ci = next((i for i, n in enumerate(names) if COLOR_TITLE.search(str(n))), None)
-    si = next((i for i, n in enumerate(names) if SIZE_TITLE.search(str(n))), None)
-    color = str(values[ci]).strip() if ci is not None and ci < len(values) else None
-    size = str(values[si]).strip() if si is not None and si < len(values) else None
-    if ci is not None and ci == si and color and '/' in color:
-        color, size = [p.strip() for p in color.split('/', 1)]
-    return color, size
-
-
-def info_rows(soup):
-    out = {}
-    for tr in soup.select('.infoArea tr, .xans-product-detaildesign tr'):
-        th, td = tr.select_one('th'), tr.select_one('td')
-        if th and td and text(th) and text(th) not in out:
-            out[text(th)] = text(td)
-    return out
-
-
-def big_variant(url):
-    return re.sub(r'/web/product/(extra/)?(medium|small|tiny|list)/', lambda m: '/web/product/' + (m[1] or '') + 'big/', url)
-
-
-def parse_product(ctx, raw, code, url):
-    soup = BeautifulSoup(raw, 'html.parser')
-    info = info_rows(soup)
-    original = (js_string(raw, 'product_name') or info.get('상품명', '') or text(soup.select_one('.headingArea h2'))
-                or text(soup.select_one('.infoArea h2')))
-    if not original:
-        meta = soup.find('meta', attrs={'property': 'og:title'})
-        original = meta.get('content', '') if meta else ''
-    custom = info.get('자체상품코드', '') or info.get('상품코드', '') or js_string(raw, 'product_code')
-    if not (code_token(code, original) or code_token(code, custom)):
-        return None  # 상품명·자체상품코드 어디에도 정확한 품번이 없음
-    name = re.sub(r'^\s*(\[[^\]]*\]\s*)+', '', original)
-    name = re.sub(r'[\s_/(\[-]*(?<![A-Z0-9])' + re.escape(code) + r'(?:[_-][A-Z0-9]{1,4})?(?![A-Z0-9])[)\]]?', ' ', name, flags=re.I)
-    for alias in ALIASES:
-        name = re.sub(r'^\s*' + re.escape(alias) + r'(?=\s|$)', '', name, flags=re.I)
-    name = re.sub(r'\s+', ' ', name).strip(' _-/')
-    if not name:
-        raise CrawlError('상품명이 비어 있습니다')
-    page = url
-    for tag in soup.select('link[rel="canonical"], meta[property="og:url"]'):
-        value = (tag.get('href') or tag.get('content') or '').strip()
-        gid = re.search(r'/product/[^/]+/(\d+)/|product_no=(\d+)', url)
-        if value and gid and (gid[1] or gid[2]) in value:
-            page = public_url(value)
-            break
-    colors, links = [], {}
-    for row in option_rows(raw):
-        color, _ = option_axes(row)
-        entry = split_color(color) if color else None
-        if entry and entry not in colors:
-            colors.append(entry)
-    for area in soup.select('[option_title]'):
-        if not COLOR_TITLE.search(area.get('option_title', '')):
-            continue
-        for option in area.select('option, li[option_value], a[option_value]'):
-            value = option.get('option_value') or option.get('value') or ''
-            if value in ('*', '**', '') and not option.get('option_value'):
-                continue
-            entry = split_color(option.get('option_value') or text(option))
-            if not entry:
-                continue
-            if entry not in colors:
-                colors.append(entry)
-            image = option.get('link_image') or ''
-            if image and '/web/product/' in image:
-                links.setdefault(public_url(image, page), []).append(entry)
-    if not colors:
-        raise CrawlError('공식 색상 옵션이 없어 색상 후보를 만들 수 없습니다(임의 색상 생성 안 함)')
-    gallery = []
-    for og in soup.select('meta[property="og:image"]'):
-        value = og.get('content', '')
-        if '/web/product/' in value:
-            gallery.append(public_url(value, page))
-    for img in soup.select('img.BigImage, .keyImg img, .xans-product-image img, .xans-product-addimage img, .listImg img'):
-        value = img.get('ec-data-src') or img.get('data-src') or img.get('src') or ''
-        if '/web/product/' in value and not value.lower().endswith('.gif'):
-            gallery.append(big_variant(public_url(value, page)))
-    detail = []
-    area = soup.select_one('#prdDetail') or soup.select_one('.xans-product-additional') or soup.select_one('.cont_detail')
-    if area is not None:
-        for img in area.select('img'):
-            value = img.get('ec-data-src') or img.get('data-src') or img.get('src') or ''
-            if value and not value.startswith('data:') and not SKIP_IMAGE.search(value):
-                detail.append(public_url(value, page))
-    return dict(product_url=page, product_name=name, original_name=original, colors=colors, links=links,
-                gallery=unique(gallery), detail=unique(detail), raw=raw, soup=soup, area=area)
-
-
-# ───────────────────────── 선택 항목 ─────────────────────────
-def color_key(entry):
-    return (entry['color_code'] or '', entry['color_name'] if not entry['color_code'] else '')
-
-
-def collect_optional(ctx, product):
-    result, raw = {}, product['raw']
-    if ctx.enabled('size') or ctx.enabled('price'):
-        by_color = {color_key(c): [] for c in product['colors']}
-        for row in option_rows(raw):
-            color, size = option_axes(row)
-            entry = split_color(color) if color else None
-            if entry and color_key(entry) in by_color:
-                by_color[color_key(entry)].append((row, size))
-        if ctx.enabled('size'):
-            sizes = [unique(s for _, s in rows if s) for rows in by_color.values()]
-            if sizes and sizes[0] and all(s == sizes[0] for s in sizes):
-                result['size'] = ','.join(sizes[0])  # 품절·비노출 포함, 앞자리 0 유지
-            else:
-                ctx.log('색상별 사이즈가 다르거나 옵션이 없어 공통 사이즈를 확정하지 않습니다(합집합 출력 안 함).', 'WARNING')
-        if ctx.enabled('price'):
-            node = product['soup'].select_one('#span_product_price_sale') or product['soup'].select_one('#span_product_price_text')
-            digits = re.sub(r'[^\d]', '', node.get_text()) if node else ''
-            if not digits:  # 이 스킨은 판매가 칸 대신 공식 메타(product:sale_price / price:amount)에 판매가를 둔다
-                meta = product['soup'].select_one('meta[property="product:sale_price:amount"]') or product['soup'].select_one('meta[property="product:price:amount"]')
-                digits = re.sub(r'\.0+$', '', (meta.get('content') or '').strip()) if meta else ''
-                digits = digits if digits.isdigit() else ''
-            extras = {str(row.get('option_price')) for rows in by_color.values() for row, _ in rows if row.get('option_price') not in (None, '')}
-            if digits and int(digits) > 0 and len(extras) <= 1:
-                result['price'] = int(digits)
-            else:
-                ctx.log('공식 판매가가 없거나 옵션별 가격이 달라 판매가를 빈칸으로 둡니다.', 'WARNING')
-    collect_regular_price(ctx, result, raw, 'cafe24')
-    if ctx.enabled('category'):
-        values = unique(text(li) for li in product['soup'].select('.xans-product-headcategory li')
-                        if text(li) not in ('', '홈', 'HOME', 'Home', '현재 위치', '>'))
-        if values:
-            result['category'] = ' > '.join(values)
-        else:
-            ctx.log('공식 상품 페이지의 카테고리 경로가 없습니다.', 'WARNING')
+def colors(doc, with_images=False):
+    result=[]
+    for node in doc.select('ul[option_title="색상"] li[option_value]'):
+        label=node['option_value'].strip()
+        if label and not any(c['label']==label for c in result):
+            result.append(dict(label=label,color_code='',color_name=label,color=label,image=image_url(node.get('link_image','')) if with_images else ''))
+    if not result:raise ValueError('공식 색상 옵션 없음')
     return result
 
 
-def table_html(table):
-    """원본 표의 머리글·rowspan/colspan·단위 텍스트를 보존해 속성을 정리한 표로 재구성."""
-    rows = []
-    for tr in table.select('tr'):
-        cells = []
-        for cell in tr.find_all(['th', 'td'], recursive=False):
-            span = ''.join(' %s="%s"' % (k, cell.get(k)) for k in ('rowspan', 'colspan') if str(cell.get(k) or '').isdigit() and int(cell.get(k)) > 1)
-            cells.append('<%s%s>%s</%s>' % (cell.name, span, html.escape(text(cell)), cell.name))
-        if cells and any(re.sub(r'<[^>]+>', '', c).strip() for c in cells):
-            rows.append('<tr>' + ''.join(cells) + '</tr>')
-    return '<table><tbody>' + ''.join(rows) + '</tbody></table>' if len(rows) >= 2 else ''
+def sizes(doc,label):
+    result=[]
+    for script in doc.find_all('script'):
+        match=re.search(r"var\s+option_stock_data\s*=\s*('(?:\\.|[^'\\])*')",script.get_text())
+        if not match:continue
+        try:stock=json.loads(ast.literal_eval(match[1]))
+        except (ValueError,SyntaxError,TypeError):continue
+        if not isinstance(stock,dict):continue
+        for row in stock.values():
+            if not isinstance(row,dict):continue
+            option=dict(zip(row.get('option_name_original',[]),row.get('option_value_orginal',[])))
+            if option.get('색상')==label and option.get('사이즈') and option['사이즈'] not in result:result.append(option['사이즈'])
+    if not result:
+        for variant in variants(doc):
+            if variant.get('color')==label and variant.get('size') and variant['size'] not in result:result.append(str(variant['size']))
+    if not result:
+        # A truly single-color page can safely use its own displayed Size list.
+        actual=doc.select('ul[option_title="색상"] li[option_value]')
+        if len(actual)==1 and actual[0].get('option_value')==label:
+            product=actual[0].find_parent('ul').get('option_product_no')
+            for group in doc.select('ul[option_title="사이즈"]'):
+                if not product or group.get('option_product_no')!=product:continue
+                for node in group.select('li[option_value]'):
+                    value=node.get('option_value','').strip()
+                    if value and value not in ('*','**') and value not in result:result.append(value)
+    if not result:
+        raise ValueError('해당 색상의 공식 사이즈 조합 확인 실패')
+    return ','.join(result)
+
+def details(doc,final):
+    urls=[]
+    for node in doc.select('#prdDetailContent img'):
+        raw=node.get('ec-data-src') or node.get('data-src') or node.get('src') or ''
+        url=image_url(raw,final)
+        if url and not re.search(r'banner|coupon|shipping|delivery|review|배송|반품|교환|쿠폰',url+' '+node.get('alt',''),re.I) and url not in urls:
+            urls.append(url)
+    return urls
+
+def search(ctx,base):
+    source,final=fetch(ctx,SITE+'/product/search.html?'+urlencode(dict(keyword=base)))
+    doc=parse(source);urls=[]
+    for node in doc.select('.prdList .name a[href]'):
+        url=urljoin(final,node['href'])
+        if official(url) and re.search(r'/product/[^/]+/\d+/',urlsplit(url).path) and url not in urls:
+            urls.append(url)
+    # 검색 결과 전체 범위 확인: 여러 페이지일 때는 실제 검색 페이지 링크를 따라간다.
+    for node in doc.select('.xans-search-paging a[href]'):
+        link=urljoin(final,node['href'])
+        if 'page=' in link and parse_qs(urlsplit(link).query).get('keyword')==[base]:
+            p=parse_qs(urlsplit(link).query).get('page',['1'])[0]
+            if p!='1':
+                extra,_=fetch(ctx,link)
+                for a in parse(extra).select('.prdList .name a[href]'):
+                    url=urljoin(link,a['href'])
+                    if official(url) and url not in urls:urls.append(url)
+    return sorted(urls,key=lambda u:int(re.search(r'/product/[^/]+/(\d+)/',urlsplit(u).path)[1]),reverse=True)
+
+def gallery(ctx,urls,code,cache):
+    accepted=[];seen=set()
+    for url in urls:
+        ctx.checkpoint();result=public_image(ctx,url,cache)
+        if not result:continue
+        validation=validate_gallery_image(result['data'],role='product_shot',mapping_verified=True,single_shot_verified=True,
+            mapping_evidence='공식 품번 검색 결과의 Color '+code+' option link_image',content_evidence='공식 색상 옵션의 개별 상품 원본; 본문/리뷰/작은썸네일 제외')
+        digest=hashlib.sha256(result['data']).hexdigest()
+        if validation['passed'] and digest not in seen:
+            seen.add(digest);accepted.append(dict(url=url,validation=validation))
+        elif not validation['passed']:ctx.log('갤러리 제외: '+', '.join(validation['reasons'])+' / '+url,'WARNING')
+    return gallery_slots(accepted)
 
 
-def detail_tables(area):
-    notice, sizes = [], []
-    if area is None:
-        return '', ''
-    for table in area.select('table'):
-        pairs = []
-        for tr in table.select('tr'):
-            th, td = tr.select_one('th'), tr.select_one('td')
-            if th is not None and td is not None and len(tr.find_all(['th', 'td'], recursive=False)) == 2 and text(th) and text(td):
-                pairs.append((text(th), text(td)))
-        head = text(table.select_one('tr'))
-        if len(pairs) >= 2 and sum(bool(NOTICE_KEYS.search(k)) for k, _ in pairs) >= 2:
-            notice = pairs
-        elif SIZE_TITLE.search(head):
-            grid = table_html(table)
-            if grid and grid not in sizes:
-                sizes.append(grid)
-    notice_html = ('<h3>상품정보고시</h3><table><tbody>' + ''.join('<tr><th>%s</th><td>%s</td></tr>' % (html.escape(k), html.escape(v)) for k, v in notice)
-                   + '</tbody></table>') if notice else ''
-    size_html = ('<h3>사이즈 정보</h3>' + ''.join(sizes)) if sizes else ''
-    return notice_html, size_html
+def gallery_urls(doc,final):
+    urls=[]
+    for node in doc.select('#prdDetailImg img, .xans-product-mobileimage img'):
+        url=image_url(node.get('ec-data-src') or node.get('data-src') or node.get('src') or '',final)
+        if url and re.search(r'/web/product/(?:big/|extra/big/)',urlsplit(url).path) and not re.search(r'review|banner|coupon|shipping|사이즈|고시|배송|쿠폰|콜라주',url+' '+node.get('alt',''),re.I) and url not in urls:
+            urls.append(url)
+    return urls
 
 
-def build_detail(ctx, products):
-    images, notice, sizes = [], '', []
-    for product in products:
-        images += [u for u in product['detail'] if u not in images]
-        n, s = detail_tables(product['area'])
-        notice = notice or n
-        if s and s not in sizes:
-            sizes.append(s)
-    markup = '<div>' + ''.join('<img src="%s" style="max-width:100%%;display:block;">' % html.escape(u, quote=True) for u in images) + notice + ''.join(sizes) + '</div>'
-    compact, overflow = excel_detail(markup)
-    if overflow:
-        raise CrawlError('상세 HTML이 엑셀 한 셀 한도를 넘습니다(임의로 자르지 않음)')
-    if not notice:
-        ctx.log('공식 상세에서 상품정보고시 표를 찾지 못했습니다. 상세는 고시 없이 완성합니다.', 'WARNING')
-    return compact
+def manual_photos(ctx,urls,linked,cache):
+    # 색상은 미정이므로 자동 매핑 검사를 통과했다고 표시하지 않는다.
+    # 개별 공식 갤러리의 실제 파일/규격만 검사하여 수동 후보로 전달한다.
+    linked_hashes={hashlib.sha256(cache[u]['data']).hexdigest() for u in linked if cache.get(u,{}).get('status')=='accessible'}
+    result=[];seen=set(linked_hashes)
+    for url in urls:
+        if url in linked:continue
+        ctx.checkpoint();image=public_image(ctx,url,cache)
+        if not image:continue
+        data=image['data'];digest=hashlib.sha256(data).hexdigest()
+        if digest in seen:continue
+        with Image.open(BytesIO(data)) as im:
+            animated=getattr(im,'is_animated',False)
+        if image['format'] not in ('JPEG','PNG','WEBP') or animated or len(data)>10000000 or min(image['width'],image['height'])<500 or max(image['width'],image['height'])/min(image['width'],image['height'])>1.8:
+            ctx.log('수동 후보 규격 제외: '+url,'WARNING');continue
+        seen.add(digest);result.append(url)
+    return result
 
 
-# ───────────────────────── 이미지: 다운로드·분할·크롭 ─────────────────────────
-def load_image(ctx, url, cache):
-    if url in cache:
-        return None if cache[url] is True else cache[url]  # True = 이미 잘라서 닫은 원본
-    try:
-        payload = request(ctx, url, MAX_IMAGE, optional=True, site_only=False, timeout=15)
-    except CrawlError as exc:
-        ctx.log('이미지 다운로드 실패로 이 사진만 제외: ' + str(exc), 'WARNING')
-        payload = None
-    image = None
-    if payload:
-        try:
-            with Image.open(io.BytesIO(payload)) as opened:
-                if opened.format not in ('JPEG', 'PNG', 'WEBP') or getattr(opened, 'is_animated', False) or getattr(opened, 'n_frames', 1) > 1:
-                    ctx.log('정지 JPEG/PNG/WebP가 아니어서 제외: ' + url, 'INFO')
-                elif opened.width * opened.height > 60_000_000:
-                    ctx.log('픽셀 수 초과로 제외: ' + url, 'INFO')
-                else:
-                    opened.load()
-                    image = ImageOps.exif_transpose(opened).convert('RGB')
-        except (OSError, ValueError) as exc:
-            ctx.log('이미지 해독 실패로 제외(' + str(exc)[:60] + '): ' + url, 'INFO')
-    cache[url] = image
-    return image
-
-
-def background(image):
-    """원본 맨 위 줄이 한 가지 색이면 그 색을 배경으로 본다. 아니면 흰색."""
-    row = image.crop((0, 0, image.width, 1)).resize((32, 1))
-    raw = row.tobytes()
-    pixels = [tuple(raw[i:i + 3]) for i in range(0, len(raw), 3)]
-    if max(max(p[i] for p in pixels) - min(p[i] for p in pixels) for i in range(3)) <= 8 and min(sum(p) for p in pixels) >= 600:
-        return tuple(sum(p[i] for p in pixels) // len(pixels) for i in range(3))
-    return (255, 255, 255)
-
-
-def runs_of(counts, threshold, gap):
-    out, start, last = [], None, None
-    for i, count in enumerate(counts):
-        if count > threshold:
-            if start is None:
-                start = i
-            last = i
-        elif start is not None and i - last > gap:
-            out.append((start, last + 1))
-            start = None
-    if start is not None:
-        out.append((start, last + 1))
-    return out
-
-
-def photo_like(mask, box):
-    """내용 밀도: 사진은 배경 아닌 화소가 촘촘하고, 글자·표·실측선 도식은 듬성하다(근사 판정)."""
-    counts = row_counts(mask, box)
-    return sum(counts) / max(1, (box[2] - box[0]) * (box[3] - box[1]))
-
-
-def row_counts(mask, box):
-    """box 영역의 행별 내용(배경 아닌) 화소 수. C 수준 bytes.count로 계산."""
-    piece = mask.crop(box)
-    w, h = piece.size
-    raw = piece.tobytes()
-    piece.close()
-    return [raw[y * w:(y + 1) * w].count(255) for y in range(h)]
-
-
-def col_counts(mask, box):
-    piece = mask.crop(box).transpose(Image.Transpose.TRANSPOSE)
-    w, h = piece.size
-    raw = piece.tobytes()
-    piece.close()
-    return [raw[y * w:(y + 1) * w].count(255) for y in range(h)]
-
-
-def split_seams(mask, box, s, depth=0):
-    """사진끼리 여백 없이 붙어 있어도 사이의 '거의 흰 가는 선'(행/열 전체가 배경)에서 나눈다. 원본 해상도 기준."""
-    l, t, r, b = box
-    if depth > 4:
-        return [box]
-    rows = row_counts(mask, box)
-    parts = [(t + a, t + z) for a, z in runs_of(rows, max(1, (r - l) * .03), 0) if z - a >= 60 * s]
-    if len(parts) > 1:
-        return [x for a, z in parts for x in split_seams(mask, (l, a, r, z), s, depth + 1)]
-    cols = col_counts(mask, box)
-    parts = [(l + a, l + z) for a, z in runs_of(cols, max(1, (b - t) * .03), 0) if z - a >= 60 * s]
-    if len(parts) > 1:
-        return [x for a, z in parts for x in split_seams(mask, (a, t, z, b), s, depth + 1)]
-    return [box]
-
-
-def white_extension(mask, inner, outer):
-    """outer로 넓힌 부분이 실제 배경(내용 2% 미만)인지. 이웃 사진을 끌어오지 않기 위한 검사."""
-    total = sum(row_counts(mask, outer))
-    own = sum(row_counts(mask, inner))
-    area = (outer[2] - outer[0]) * (outer[3] - outer[1]) - (inner[2] - inner[0]) * (inner[3] - inner[1])
-    return area <= 0 or (total - own) <= area * .02
-
-
-def fit_ratio(mask, box, size):
-    """비율 1.8 초과 컷은 실제 배경 화소로만 짧은 변을 넓힌다(가짜 여백·확대 없음). 불가능하면 None."""
-    width, height = size
-    l, t, r, b = box
-    bw, bh = r - l, b - t
-    if bh / bw > 1.8:
-        need = int(bh / 1.8) + 1
-        if need > width:
-            return None
-        nl = max(0, min(l - (need - bw) // 2, width - need))
-        out = (nl, t, nl + need, b)
-    elif bw / bh > 1.8:
-        need = int(bw / 1.8) + 1
-        if need > height:
-            return None
-        nt = max(0, min(t - (need - bh) // 2, height - need))
-        out = (l, nt, r, nt + need)
-    else:
-        return box
-    return out if white_extension(mask, box, out) else None
-
-
-def label_key(labels, label, box):
-    if label is None:
-        return None
-    words = labels[label][1]
-    if len(words) == 1:
-        return (label, 0)
-    overlaps = [max(0, min(box[2], w[2]) - max(box[0], w[0])) for w in words]
-    best = max(range(len(words)), key=lambda k: overlaps[k])
-    if overlaps[best] > 0 and sorted(overlaps)[-2:][0] < overlaps[best]:
-        return (label, best)
-    return None
-
-
-def nearest_labels(events, labels, i):
-    """i번째 사진 기준 위·아래로 가장 가까운 글자 띠(사진 아닌 큰 영역은 넘지 않음)를 세로 거리순으로. 같으면 위 먼저."""
-    box, found = events[i][1], []
-    for step in (-1, 1):
-        j = i + step
-        while 0 <= j < len(events) and events[j][0] != 'reset':
-            if events[j][0] == 'label':
-                band = labels[events[j][1]][0]
-                gap = box[1] - band[3] if step < 0 else band[1] - box[3]
-                found.append((max(0, gap), step, events[j][1]))
-                break
-            j += step
-    return [label for _, _, label in sorted(found)]
-
-
-def unclaimed(items, claimed=None):
-    """두 번째 후보(더 먼 글자)는 다른 사진의 1순위 글자가 아닐 때만 남긴다. 자기 색상명을 못 읽은 사진이 이웃 사진의 색상명을 빌려오지 않게."""
-    if claimed is None:
-        claimed = {near[0] for _, near in items if near}
-    return [(box, near[:1] + [k for k in near[1:] if k not in claimed]) for box, near in items]
-
-
-def segment(image):
-    """원본 해상도에서
-    ① 전체 폭 배경 여백(가로 띠)으로 블록을 나누고 ② 블록 안 세로 여백으로 나란한 사진을 나누고
-    ③ 여백 없이 붙은 사진은 사이의 가는 흰 선에서 다시 나눈다.
-    낮은 글자 띠는 색상명 후보로 모으고, 띠 안의 단어 덩어리(열)별로 위치를 기록한다.
-    반환: (photos=[(box, (띠번호, 단어번호)|None)], labels=[(띠 box, [단어 box...])])"""
-    width, height = image.size
-    s = width / 1000
-    bg = Image.new('RGB', image.size, background(image))
-    mask = ImageChops.difference(image, bg).convert('L').point(lambda p: 255 if p > 24 else 0)
-    bg.close()
-    events, labels = [], []
-    try:
-        rows = row_counts(mask, (0, 0, width, height))
-        for top, bottom in runs_of(rows, max(4, width * .01), int(10 * s)):
-            whole = mask.crop((0, top, width, bottom)).getbbox()
-            if not whole:
-                continue
-            if bottom - top < 120 * s:
-                if 8 * s <= bottom - top and width * .03 <= whole[2] - whole[0] <= width * .85:
-                    pad = int(12 * s)
-                    band = (0, max(0, top - pad), width, min(height, bottom + pad))
-                    words = [(max(0, a - pad), band[1], min(width, z + pad), band[3])
-                             for a, z in runs_of(col_counts(mask, (0, top, width, bottom)), 0, int(15 * s))]
-                    labels.append((band, words))
-                    events.append(('label', len(labels) - 1))
-                continue
-            found = False
-            for left, right in runs_of(col_counts(mask, (0, top, width, bottom)), 1, int(10 * s)):
-                if right - left < width * .2:
-                    continue
-                for piece in split_seams(mask, (left, top, right, bottom), s):
-                    inner = mask.crop(piece).getbbox()
-                    if not inner:
-                        continue
-                    box = (piece[0] + inner[0], piece[1] + inner[1], piece[0] + inner[2], piece[1] + inner[3])
-                    if box[3] - box[1] < 120 * s or photo_like(mask, box) < .22:
-                        continue  # 글자·표·실측선 도식처럼 듬성한 영역
-                    pad = int(8 * s)
-                    padded = (max(piece[0], box[0] - pad), max(piece[1], box[1] - pad), min(piece[2], box[2] + pad), min(piece[3], box[3] + pad))
-                    events.append(('photo', padded))
-                    found = True
-            if not found:
-                events.append(('reset', None))  # 사진이 아닌 큰 영역(실측표 등)에서 색상명의 범위를 끊는다
-        # 색상명 → 사진 연결: 사진마다 위·아래 중 가장 가까운 글자 띠부터 후보(레드페이스는 상품에 따라 위/아래 모두 있음)
-        photos = [(value, nearest_labels(events, labels, i)) for i, (kind, value) in enumerate(events) if kind == 'photo']
-        out = []
-        for box, near in photos:
-            fitted = fit_ratio(mask, box, image.size)
-            if fitted is None:
-                continue
-            bw, bh = fitted[2] - fitted[0], fitted[3] - fitted[1]
-            if min(bw, bh) < 500:
-                continue  # 500px 미만은 확대하지 않고 제외
-            # 한 줄에 색상명이 여러 개면 사진과 가로 위치가 겹치는 단어만
-            keys = [k for k in (label_key(labels, label, fitted) for label in near) if k is not None]
-            out.append((tuple(int(v) for v in fitted), keys))
-        return unclaimed(out), labels
-    finally:
-        mask.close()
-
-
-def ocr_tiles(ctx, tiles, work):
-    """Windows 기본 OCR로 글자 띠들을 한 번에 읽는다(상품당 PowerShell 1회). 윈도우가 아니거나 실패하면 빈 결과(→ 미매핑)."""
-    if not tiles:
-        return {}
-    if os.name != 'nt':
-        ctx.log('Windows가 아니어서 색상명 OCR을 건너뜁니다 → 사진은 수동 매핑', 'INFO')
-        return {}
-    if len(tiles) > MAX_OCR_TILES:
-        ctx.log('색상명 후보 띠가 ' + str(len(tiles)) + '개로 많아 앞 ' + str(MAX_OCR_TILES) + '개만 OCR합니다(나머지 컷은 수동 매핑)', 'WARNING')
-        tiles = tiles[:MAX_OCR_TILES]
-    work = Path(work)
-    work.mkdir(parents=True, exist_ok=True)
-    items = []
-    for i, tile in enumerate(tiles):
-        ctx.checkpoint()
-        factor = min(2.0, 2400 / tile.width, 3500 / max(1, tile.height))
-        big = tile.resize((max(1, round(tile.width * factor)), max(1, round(tile.height * factor))), Image.Resampling.LANCZOS)
-        path = work / ('label_' + str(i) + '.png')
-        big.save(path)
-        big.close()
-        items.append({'index': i, 'path': str(path.resolve())})
-    script = work / 'recognize.ps1'
-    script.write_text(POWERSHELL_OCR, encoding='utf-8-sig')
-    manifest = work / 'ocr_input.json'
-    manifest.write_text(json.dumps(items, ensure_ascii=False), encoding='utf-8')
-    command = ['powershell.exe', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', str(script.resolve()), '-Manifest', str(manifest.resolve())]
-    texts = {}
-    with tempfile.TemporaryFile() as stdout, tempfile.TemporaryFile() as stderr:
-        process = subprocess.Popen(command, stdout=stdout, stderr=stderr, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
-        deadline = time.monotonic() + min(120, 40 + len(items) * 2)
-        try:
-            while process.poll() is None:
+def detail_image(ctx,url,cache):
+    key=('detail',url)
+    if key not in cache:
+        prior=cache.get(url,{})
+        if prior.get('status')=='accessible':cache[key]=prior
+        else:
+            for attempt in range(3):
                 ctx.checkpoint()
-                if time.monotonic() > deadline:
-                    raise CrawlError('Windows OCR 시간 초과')
-                time.sleep(.1)
-            stdout.seek(0)
-            stderr.seek(0)
-            output = stdout.read().decode('utf-8-sig', errors='replace')
-            if process.returncode:
-                raise CrawlError('Windows OCR 실패: ' + stderr.read().decode('utf-8', errors='replace')[:300])
-            result = json.loads(output)
-            for item in result if isinstance(result, list) else [result]:
-                texts[int(item['index'])] = str(item.get('text') or '')
-                if item.get('error'):
-                    ctx.log('OCR 오류(해당 띠 미매핑): ' + str(item['error'])[:200], 'WARNING')
-        except (CrawlError, ValueError, OSError, KeyError) as exc:
-            ctx.log(str(exc) + ' → 사진은 수동 매핑', 'WARNING')
-            return {}
+                result=check_public_image(url,timeout=20,max_bytes=DETAIL_MAX_BYTES,retries=0,checkpoint=ctx.checkpoint)
+                cache[key]=result
+                if result['status']!='unknown' or attempt==2:break
+                delay=(1,3)[attempt]
+                ctx.log('상세 이미지 일시적 통신 실패: '+str(delay)+'초 후 재시도 / '+url+' / '+', '.join(result['reasons']),'WARNING')
+                for _ in range(delay*10):ctx.checkpoint();time.sleep(.1)
+    result=cache[key]
+    if result['status']!='accessible':
+        ctx.log('상세 원본 확인 불가: '+url+' / '+', '.join(result['reasons']),'WARNING')
+        return None
+    return result
+
+
+def fetch(ctx, url):
+    url=quote(url,safe=":/?#[]@!$&'()*+,;=%")
+    if not official(url):
+        raise ValueError('레드페이스 공식 홈페이지 외부 URL')
+    last = None
+    for attempt in range(2):
+        ctx.checkpoint()
+        try:
+            with build_opener().open(Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Accept': '*/*'}), timeout=20) as response:
+                final = response.geturl()
+                if not official(final):
+                    raise ValueError('공식 홈페이지 외부 이동')
+                data = response.read(8000001)
+                if len(data) > 8000000:
+                    raise ValueError('공식 응답 최대 용량 초과')
+                return data.decode(response.headers.get_content_charset() or 'utf-8-sig'), final
+        except Exception as exc:
+            last = exc
+            ctx.log('공식 조회 재시도: ' + str(exc), 'WARNING')
         finally:
-            if process.poll() is None:
-                process.terminate()
-                process.wait(timeout=5)
-    return texts
-
-
-def match_color(recognized, colors):
-    """OCR 글자를 공식 색상 옵션(정답지)과 대조. 정확 일치 우선, 없으면 오인식 1~2글자 수준의 유사 일치(0.8 이상).
-    정확히 한 색상만 남을 때만 그 색상, 아니면 (None, 사유)."""
-    upper = recognized.upper()
-    tokens = set(re.findall(r'[A-Z0-9]+', upper))
-    words = set(re.findall(r'[가-힣]+', recognized))
-    words |= {re.sub(r'(컬러|색상|색)$', '', w) for w in words}
-    exact, near = [], []
-    for color in colors:
-        name, code = color['color_name'].strip(), color['color_code'].strip().upper()
-        reasons = []
-        if code and code in tokens:
-            reasons.append('코드 ' + code)
-        if name and (name in words or name.upper() in tokens):
-            reasons.append('이름 ' + name)
-        elif name in TRANSLIT and TRANSLIT[name] in tokens:
-            reasons.append('영문 표기 ' + TRANSLIT[name] + '=' + name)
-        if reasons:
-            exact.append((color, ', '.join(reasons)))
-            continue
-        targets = [t for t in ([name.upper()] if re.fullmatch(r'[A-Z0-9 ]+', name.upper()) else []) + ([TRANSLIT[name]] if name in TRANSLIT else []) if len(t) >= 4]
-        best = (0.0, '')
-        for target in targets:
-            for token in tokens:
-                if len(token) >= 3:
-                    score = difflib.SequenceMatcher(None, token, target).ratio()
-                    best = max(best, (score, token + '≈' + target))
-        for word in words:
-            if len(name) >= 2 and re.fullmatch(r'[가-힣]+', name) and len(word) >= 2:
-                score = difflib.SequenceMatcher(None, word, name).ratio()
-                best = max(best, (score, word + '≈' + name))
-        if best[0] >= .8:
-            near.append((color, best))
-    if len(exact) == 1:
-        return exact[0][0], exact[0][1]
-    if exact:
-        return None, '여러 색상 동시 일치'
-    near.sort(key=lambda x: -x[1][0])
-    if len(near) == 1 or (len(near) > 1 and near[0][1][0] - near[1][1][0] >= .1):
-        color, (score, how) = near[0]
-        return color, '유사 일치 ' + how + ' (' + format(score, '.2f') + ')'
-    return None, ('유사 색상 여러 개' if near else '')
-
-
-def save_cut(ctx, image, box, seen):
-    try:
-        path = ctx.save_image(image, crop=box)
-    except ValueError as exc:
-        ctx.log('저장 규격 미달로 제외: ' + str(exc), 'INFO')
-        return None
-    if path.name in seen:
-        return None
-    seen.add(path.name)
-    return path
-
-
-def cuts_from(ctx, url, image, seen, tiles=None, split=False):
-    """한 원본에서 개별 컷 목록 [(path, box, 글자 타일 번호|None)].
-    갤러리 사진(split=False)은 통째로. 공식 상세 이미지(split=True)는 여백·가는 흰 선 경계로 나눠 2컷 이상이면 그 컷들,
-    아니면 원본이 개별 컷 규격일 때만 통째. 색상명 후보 글자는 tiles에 모아 나중에 한 번에 OCR."""
-    w, h = image.size
-    whole_ok = min(w, h) >= 500 and max(w, h) / min(w, h) <= 1.8
-    photos, labels = (segment(image) if split else ([], []))
-    if len(photos) < 2:
-        if whole_ok:
-            path = save_cut(ctx, image, None, seen)
-            return [(path, None, [])] if path else []
-        if split and not photos:
-            ctx.log('여백 경계로 안전하게 나눌 수 있는 개별 컷이 없어 제외: ' + url, 'INFO')
-        if not photos:
-            return []
-    keys = {}
-    if tiles is not None:
-        for key in sorted({key for _, near in photos for key in near}):
-            keys[key] = len(tiles)
-            label, word = key
-            tiles.append((image.crop(tuple(labels[label][1][word])), url, labels[label][1][word]))
-    out = []
-    for box, near in photos:
-        ctx.checkpoint()
-        path = save_cut(ctx, image, list(box), seen)
-        if path:
-            out.append((path, list(box), [keys[k] for k in near if k in keys]))
-    return out
-
-
-def release(cache, image):
-    for key, value in cache.items():
-        if value is image:
-            cache[key] = True
-    image.close()
-
-
-def nearest_decided(candidates, decided, conflict):
-    """가까운 글자 띠부터: 공식 색상 하나와 맞으면 그 띠, 여러 색과 겹치면 중단(None), 색상과 무관한 글자면 다음 후보."""
-    for key in candidates:
-        if key in decided:
-            return key
-        if key in conflict:
-            return None
-    return None
-
-
-# ───────────────────────── 진입점 ─────────────────────────
-def crawl(ctx):
-    code = re.sub(r'[\s-]+', '', str(ctx.product_code)).upper()
-    if not re.fullmatch(r'[A-Z0-9]{6,20}', code):
-        ctx.fail_item('품번 형식 오류: 색상코드 없는 기본 품번(예: REWFJKWBF560)')
-        raise CrawlError('품번 형식 오류')
-    if not (ctx.enabled('main_image') or ctx.enabled('additional_images')):
-        ctx.fail_item('이미지 저장 유형은 대표이미지 또는 추가이미지 선택이 필요합니다.')
-        raise CrawlError('이미지 항목 미선택')
-    ctx.log('레드페이스 코드 버전: ' + REVISION, 'INFO')
-    ctx.stage('레드페이스 공식 검색: ' + code)
-    try:
-        links = find_products(ctx, code)
-    except (CrawlError, OSError, ValueError) as exc:
-        ctx.fail_item('공식 검색 실패: ' + str(exc))
-        raise
-    if not links:
-        ctx.fail_item('공식 검색에 정확히 일치하는 품번이 없습니다: ' + code)
-        raise CrawlError('검색 결과 없음')
-    products, failures = [], []
-    for gid, href in links:
-        ctx.checkpoint()
-        try:
-            raw = request(ctx, href, optional=True) or request(ctx, ORIGIN + '/product/detail.html?product_no=' + gid)
-            raw = decode(raw)
-            product = parse_product(ctx, raw, code, href)
-            if product is None:
-                ctx.log('상세의 상품명·자체상품코드에 품번이 없어 제외: ' + href, 'INFO')
-                continue
-            product['optional'] = collect_optional(ctx, product)
-            products.append(product)
-        except (CrawlError, OSError, ValueError) as exc:
-            failures.append(href + ' / ' + str(exc))
-            ctx.log(href + ' 실패: ' + str(exc), 'ERROR')
-    if not products:
-        ctx.fail_item('정확한 공식 상품 정보를 확인할 수 없습니다' + (': ' + ' / '.join(failures[-2:]) if failures else ''))
-        raise CrawlError('정확한 상품 없음')
-    colors = []
-    for product in products:
-        colors += [c for c in product['colors'] if c not in colors]
-    common = {}
-    for field in ('size', 'price', 'category'):
-        if ctx.enabled(field):
-            values = [p['optional'].get(field) for p in products]
-            if values and values[0] not in (None, '') and all(v == values[0] for v in values):
-                common[field] = values[0]
-            else:
-                ctx.log('상품 링크 간 공통 ' + field + ' 값이 없거나 달라 빈칸으로 둡니다.', 'WARNING')
-    merge_regular_prices(ctx, common, [p['optional'] for p in products])
-    cache, seen, pending = {}, set(), []
-    work = Path(ctx.output_dir) / '_redface_ocr' / str(ctx.task_id)
-    ctx.stage('갤러리·상세 이미지 다운로드 및 개별 컷 저장')
-    # 1) 색상 옵션 link_image: 공식 옵션 ↔ 이미지 DOM 연결이 있는 사진만 사전 매핑
-    linked = set()
-    for product in products:
-        for url, entries in product['links'].items():
             ctx.checkpoint()
-            linked.add(url)
-            image = load_image(ctx, big_variant(url), cache) or load_image(ctx, url, cache)
-            if image is None:
-                continue
-            mapped = entries[0] if len({color_key(e) for e in entries}) == 1 else None
-            evidence = ('Cafe24 색상 옵션 "' + mapped['color_name'] + (' (' + mapped['color_code'] + ')' if mapped['color_code'] else '') +
-                        '"의 공식 link_image: ' + url) if mapped else ''
-            for path, box, _ in cuts_from(ctx, url, image, seen):
-                pending.append([path, mapped, evidence, url, box, []])
-            release(cache, image)
-    # 2) 갤러리(미매핑) + 상세 통이미지(색상명 띠 OCR 일치 시에만 사전 매핑). 색감·파일명으로 추측 안 함
-    sources = unique(u for product in products for u in product['gallery'] + product['detail'] if u not in linked)
-    detail_urls = {u for product in products for u in product['detail']}
-    tiles = []
-    for n, url in enumerate(sources, 1):
-        ctx.stage('이미지 ' + str(n) + '/' + str(len(sources)) + ' 다운로드·컷 저장')
-        image = load_image(ctx, url, cache)
-        if image is not None:
-            for path, box, key in cuts_from(ctx, url, image, seen, tiles, split=url in detail_urls):
-                pending.append([path, None, '', url, box, key])
-            release(cache, image)
-    if tiles:
-        ctx.stage('색상명 글자 띠 OCR (' + str(len(tiles)) + '개, 1회 실행)')
-        texts = ocr_tiles(ctx, [t for t, _, _ in tiles], work)
-        decided, conflict = {}, set()
-        for key, (tile, source, ybox) in enumerate(tiles):
-            tile.close()
-            if key not in texts:
-                continue
-            color, why = match_color(texts[key], colors)
-            if color:
-                decided[key] = (color, 'Windows OCR "' + re.sub(r'\s+', ' ', texts[key]).strip()[:60] + '" → ' + why +
-                                ' / 사진과 가장 가까운 글자 띠 y=' + str(ybox[1]) + '~' + str(ybox[3]) + ' / ' + source)
-            else:
-                if why:  # 여러 색이 동시에 맞은 글자: 더 먼 글자로 넘어가지 않고 미매핑
-                    conflict.add(key)
-                ctx.log('색상명 띠 OCR "' + texts[key].strip()[:40] + '" ' + (why or '공식 색상과 불일치') + ' → 아래 컷은 수동 매핑', 'INFO')
-        for entry in pending:
-            hit = nearest_decided(entry[5], decided, conflict)
-            if hit is not None:
-                entry[1], entry[2] = decided[hit]
-    if not pending:
-        ctx.fail_item('규격(양변 500px·비율 1.8 이하)을 통과한 개별 상품 컷이 없습니다.')
-        raise CrawlError('개별 컷 없음')
-    base = dict(product_code=code, product_name=products[0]['product_name'], product_url=products[0]['product_url'], **common)
-    base['원본 상품명'] = '\n'.join(unique(p['original_name'] for p in products))
-    if ctx.enabled('detail_page'):
-        for product in products:  # 실제로 열리지 않은 상세 이미지는 HTML에서 제외
-            product['detail'] = [u for u in product['detail'] if u not in cache or cache[u] is not None]
-        try:
-            base['detail_page'] = build_detail(ctx, products)
-        except CrawlError as exc:
-            ctx.fail_item(str(exc))
-            raise
-    for path, mapped, evidence, source, box, _ in pending:
+    raise RuntimeError('공식 조회 실패: ' + str(last))
+
+def public_image(ctx, url, cache):
+    if url not in cache:
+        cache[url] = check_public_image(url, timeout=10, retries=1, checkpoint=ctx.checkpoint)
+    result = cache[url]
+    if result['status'] != 'accessible':
+        ctx.log('이미지 확인 불가: ' + url + ' / ' + ', '.join(result['reasons']), 'WARNING')
+        return None
+    return result
+
+def prefetch(ctx, urls, cache):
+    missing = [u for u in dict.fromkeys(urls) if u not in cache]
+    if len(missing) < 2 or getattr(sys.modules.get('__main__'), 'EMIT_LOCK', None) is None:
+        return
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        futures = {u: pool.submit(check_public_image, u, timeout=10, retries=1) for u in missing}
+        for url, future in futures.items():
+            while not future.done():
+                ctx.checkpoint()
+                time.sleep(.1)
+            cache[url] = future.result()
+            ctx.checkpoint()
+
+def detail(ctx, urls, cache):
+    parts = []
+    for url in urls:
         ctx.checkpoint()
-        record = dict(base)
-        record['크롭 원본 이미지'] = source
-        record['크롭 좌표'] = json.dumps(box) if box else ''
-        record['OCR 근거'] = evidence if evidence.startswith('Windows OCR') else ''
-        ctx.emit_local_image(record, colors, path, mapped_color=mapped, mapping_evidence=evidence,
-                             shared_detail_html=base.get('detail_page', ''))
-    if failures:
-        ctx.fail_item('일부 공식 상품 링크 수집 실패: ' + ' / '.join(failures))
-    ctx.log(code + ': 개별 컷 ' + str(len(pending)) + '장 전달. 색상 매핑하기에서 사진을 분류하세요.', 'SUCCESS')
+        if not detail_image(ctx, url, cache):
+            if any(re.search(r'HTTP (404|410)\b', r) for r in cache.get(('detail',url), {}).get('reasons', [])):
+                ctx.log('없는 상세 원본 이미지 생략: ' + url, 'WARNING')
+                continue
+            reasons=', '.join(cache.get(('detail',url),{}).get('reasons',[]))
+            raise ValueError('상세 이미지 조회 미완료: ' + url + (' / '+reasons if reasons else ''))
+        parts.append('<p><img src="' + html.escape(url, quote=True) + '" alt="상품 상세정보"></p>')
+    if not parts:
+        ctx.log('상품 상세 이미지 없음: 고시/사이즈표를 임의 생성하지 않음', 'WARNING')
+        return ''
+    result = '<div>' + ''.join(parts) + '</div>'
+    if len(result.encode('utf-16-le')) // 2 > 32767:
+        raise ValueError('상세 HTML Excel 셀 한도 초과')
+    return result
+
+def crawl(ctx):
+    raw=str(ctx.product_code).strip().upper()
+    match=re.fullmatch(r'(RE[A-Z0-9]{10})',raw)
+    if not match:
+        ctx.fail_item('RE로 시작하는 기본 품번 12자리를 입력하세요.')
+        raise ValueError('입력 품번 형식 오류')
+    base,requested=match[1],None;ctx.log('레드페이스 코드 버전: '+REVISION,'INFO')
+    ctx.allow_automatic_results=True
+    wants_images=ctx.enabled('main_image') or ctx.enabled('additional_images')
+    cache={};pages=[];candidates={};failures=[];emitted=set();shots=[];all_linked=set()
+    try:
+        ctx.stage('레드페이스 공식 품번 검색: '+base)
+        links=search(ctx,base)
+        if not links:raise ValueError('공식 품번 검색 결과 없음: '+raw)
+        for link in links:
+            source,final=fetch(ctx,link);doc=parse(source);name=field(doc,'상품명')
+            if not name or not re.search(r'(?<![A-Z0-9])'+re.escape(base)+r'(?![A-Z0-9])',name,re.I):continue
+            page=dict(doc=doc,final=final,name=name);pages.append(page)
+            if wants_images:
+                shots.extend(u for u in gallery_urls(doc,final) if u not in shots)
+            for color in colors(doc,wants_images):
+                if color['image']:all_linked.add(color['image'])
+                if requested and color['color_code']!=requested:continue
+                # link_image 없는 색상은 다른 검색 결과 페이지에서 보완한다.
+                key=color['color_name'];item=candidates.setdefault(key,dict(color=color,page=page,urls=[]))
+                if color['image']:
+                    if not item['urls']:item['page']=page
+                    if color['image'] not in item['urls']:item['urls'].append(color['image'])
+        if not candidates:raise ValueError('공식 품번 검색/색상 결과 없음: '+raw)
+        if not pages:raise ValueError('정확한 공식 품번 일치 없음')
+        if wants_images and len(candidates)==1:
+            # A page explicitly offering one color has no ambiguous color assignment.
+            only=next(iter(candidates.values()))
+            only['urls']=list(dict.fromkeys(only['urls']+shots));all_linked.update(shots)
+        detail_urls=details(pages[0]['doc'],pages[0]['final']) if ctx.enabled('detail_page') else []
+        shared_detail=detail(ctx,detail_urls,cache) if ctx.enabled('detail_page') else ''
+        if wants_images:
+            prefetch(ctx,shots+list(all_linked),cache)
+        for code,item in candidates.items():
+            try:
+                if wants_images and not item['urls']:continue
+                ctx.checkpoint();ctx.stage('레드페이스 색상 '+code)
+                page=item['page'];doc=page['doc'];color=item['color']
+                record=dict(product_code=base,product_name=clean_product_name(page['name'],['레드페이스','THE REDFACE','REDFACE'],[base]),product_url=page['final'],color=color['color'],color_name=color['color_name'],color_code=color['color_code'],**{'원본 상품명':page['name']})
+                if ctx.enabled('size'):record['size']=sizes(doc,color['label'])
+                if ctx.enabled('price'):record['price']=price(ctx,doc)
+                if ctx.enabled('regular_price'):record['regular_price']=price(ctx,doc,True)
+                if ctx.enabled('category'):record['category']=' > '.join(n.get_text(' ',strip=True) for n in doc.select('.xans-product-headcategory ol li a') if n.get_text(strip=True) not in ('홈','Home'))
+                photos=item['urls'] if ctx.enabled('main_image') or ctx.enabled('additional_images') else []
+                if ctx.enabled('main_image') or ctx.enabled('additional_images'):
+                    main,extras,warning=gallery(ctx,photos,code,cache)
+                    if warning:ctx.log(warning,'WARNING')
+                    if ctx.enabled('main_image'):record['main_image']=main or ''
+                    if ctx.enabled('additional_images'):record['additional_images']=','.join(extras)
+                if ctx.enabled('detail_page'):record['detail_page']=shared_detail
+                ctx.emit_result(record);emitted.add(code)
+            except Exception as exc:
+                message=base+'_'+code+': '+str(exc);ctx.fail_item(message);failures.append(message)
+        if wants_images:
+            unknown=manual_photos(ctx,shots,all_linked,cache)
+            if unknown:
+                palette=[dict(color_name=item['color']['color_name'],color_code=item['color']['color_code'],**({'size':sizes(item['page']['doc'],item['color']['label'])} if ctx.enabled('size') else {})) for item in candidates.values()]
+                first=pages[0];doc=first['doc']
+                common=dict(product_code=base,product_name=clean_product_name(first['name'],['레드페이스','THE REDFACE','REDFACE'],[base]),product_url=first['final'],**{'원본 상품명':first['name']})
+                if ctx.enabled('size'):
+                    values=[sizes(item['page']['doc'],item['color']['label']) for item in candidates.values()]
+                    common['size']=','.join(dict.fromkeys(v for value in values for v in value.split(',')))
+                    # Palette retains each color's own sizes.
+                for key,regular in [('price',False),('regular_price',True)]:
+                    if ctx.enabled(key):
+                        values=[price(ctx,page['doc'],regular) for page in pages]
+                        common[key]=values[0] if len(set(values))==1 else None
+                        if common[key] is None:ctx.log('수동 후보 공통 '+key+' 미확정: 빈칸','WARNING')
+                if ctx.enabled('category'):common['category']=' > '.join(n.get_text(' ',strip=True) for n in doc.select('.xans-product-headcategory ol li a') if n.get_text(strip=True) not in ('홈','Home'))
+                if ctx.enabled('detail_page'):common['detail_page']=shared_detail
+                for url in unknown:
+                    ctx.emit_unmapped(dict(common),palette,url,shared_detail_html=shared_detail)
+                ctx.log('공식 연결 사진은 자동 수집, 미연결 사진 '+str(len(unknown))+'장만 수동 매핑으로 전달','SUCCESS')
+                emitted.add('manual')
+        if not emitted:raise ValueError('완성된 색상 결과 없음')
+    except Exception as exc:
+        if not failures:ctx.fail_item(str(exc))
+        raise
+    if failures:raise RuntimeError('일부 색상 미완료: '+' / '.join(failures))

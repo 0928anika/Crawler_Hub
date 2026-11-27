@@ -20,8 +20,7 @@
     "카테고리",
     "대표이미지",
     "추가이미지",
-    "상세페이지 HTML",
-    "원본 상품명"
+    "상세페이지 HTML"
   ],
   "extensions": [],
   "official_color_codes": true,
@@ -30,57 +29,58 @@
     "size": {
       "supported": true,
       "status": "conditional",
-      "reason": "해당 색상 페이지 .js-size-select 사이즈 전체(품절 disabled 포함, 길이 속성 제외)."
+      "reason": "공식 색상별 사이즈 옵션. 기장이 여러 개면 기장/사이즈로 구분하며 품절 표시 옵션도 포함."
     },
     "price": {
       "supported": true,
       "status": "conditional",
-      "reason": "공식 .b-price-value.m-actual(없으면 ld+json offers.price)."
+      "reason": "공식 price.sales.value. 쿠폰·회원 혜택 가격은 적용하지 않음."
     },
     "regular_price": {
       "supported": true,
       "status": "conditional",
-      "reason": "공식 .b-price-value.m-strikethrough. 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+      "reason": "독립적으로 제공되는 price.list.value. 없으면 빈칸."
     },
     "category": {
       "supported": true,
       "status": "conditional",
-      "reason": "공식 성별(audience) + BreadcrumbList."
+      "reason": "공식 상품 페이지 breadcrumb."
     },
     "main_image": {
       "supported": true,
       "status": "conditional",
-      "reason": "공식 ld+json 이미지 중 파일명에 해당 색상코드가 있는 컷. 공개 접근·규격 검사."
+      "reason": "공식 색상 응답 pdpMainDesktop 사진의 실제 접근·규격 확인."
     },
     "additional_images": {
       "supported": true,
       "status": "conditional",
-      "reason": "같은 색상 컷 검사 통과 5슬롯."
+      "reason": "같은 색상 공식 상품 사진을 순서대로 추가 슬롯에 배치."
     },
     "detail_page": {
       "supported": true,
       "status": "conditional",
-      "reason": "같은 색상 나머지 컷 + 공식 사이즈 & 핏 가이드 표. HTML 고시 없음."
+      "reason": "색상별 상품 사진과 공식 제품 설명, 상품에 연결된 사이즈 가이드 표. 없는 고시는 생략."
     }
   },
   "guide": {
-    "pattern": "^\\d{6,8}(?:[-_]\\d{3})?$",
-    "format": "스타일 번호(예: 1370494) 또는 스타일-색상코드(예: 1370494-001)",
-    "notes": "스타일 번호는 모든 색상, 색상코드까지 넣으면 그 색상만.",
-    "method": "공식 검색 결과 타일 data-pid가 스타일 번호와 정확히 같은 상품.",
-    "example": "1370494",
+    "pattern": "^[0-9]{7}(?:[-_][0-9]{3})?$",
+    "format": "7자리 품번 또는 품번-3자리 색상코드",
+    "notes": "기본 품번은 전체 색상, 색상코드를 붙이면 해당 색상만. Chrome 설치 필요.",
+    "method": "공식 상품 페이지와 색상별 JSON 대조",
+    "example": "1373882",
     "examples": [
-      "1370494"
+      "1373882",
+      "1373882-001"
     ],
     "required_columns": [
       "품번"
     ],
     "invalid_examples": [
-      "공백"
+      "137388"
     ],
-    "validation_note": "입력 형식 검사이며 실제 상품 존재 확인은 실행 시 수행"
+    "validation_note": "입력 형식 검사이며 실제 상품 존재는 수집 시 확인"
   },
-  "notes": "언더아머 코리아(Salesforce Commerce Cloud). 색상 스와치마다 같은 상품 페이지를 dwvar 색상 파라미터로 열어 사이즈·가격을 읽고, 공식 ld+json 이미지 중 파일명에 -{색상코드}_ 가 있는 것만 그 색상으로 자동 매핑. Scene7 이미지는 공식 변환 파라미터(wid=1000, fmt=jpg)로 JPEG 요청. 사이즈 & 핏 가이드 표(Product-SizeChart)는 상세 하단. DNA·제품 정보 설명 문단은 제외. 검증 범위: 사용자 단독 크롤러(ua_crawler.py)에서 운영 확인된 URL·선택자·응답 키를 Crawler Hub SDK 규약으로 이식. 이 코드를 작성한 환경은 해당 사이트 접속이 차단되어 실사이트 실행은 미검증이며, SDK 계약·선택 항목 생략·표 재구성은 오프라인 fixture 테스트(tests/test_oberon_brands.py)로만 확인함.",
+  "notes": "언더아머 코리아 공식몰을 격리된 headless Chrome으로 조회. 공식 Product-Variation 응답의 색상·사이즈·사진·판매가/별도 정상가 사용. 상품 사진과 제품 설명, 해당 상품에 연결된 사이즈 가이드 표로 상세 HTML 구성. 없는 고시는 임의 생성하지 않음.",
   "interface": "portal_v1",
   "fields": {
     "product_code": {
@@ -111,43 +111,43 @@
       "label": "사이즈",
       "supported": true,
       "status": "conditional",
-      "reason": "해당 색상 페이지 .js-size-select 사이즈 전체(품절 disabled 포함, 길이 속성 제외)."
+      "reason": "공식 색상별 사이즈 옵션. 기장이 여러 개면 기장/사이즈로 구분하며 품절 표시 옵션도 포함."
     },
     "price": {
       "label": "판매가",
       "supported": true,
       "status": "conditional",
-      "reason": "공식 .b-price-value.m-actual(없으면 ld+json offers.price)."
+      "reason": "공식 price.sales.value. 쿠폰·회원 혜택 가격은 적용하지 않음."
     },
     "regular_price": {
       "label": "정상가",
       "supported": true,
       "status": "conditional",
-      "reason": "공식 .b-price-value.m-strikethrough. 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+      "reason": "독립적으로 제공되는 price.list.value. 없으면 빈칸."
     },
     "category": {
       "label": "카테고리",
       "supported": true,
       "status": "conditional",
-      "reason": "공식 성별(audience) + BreadcrumbList."
+      "reason": "공식 상품 페이지 breadcrumb."
     },
     "main_image": {
       "label": "대표이미지",
       "supported": true,
       "status": "conditional",
-      "reason": "공식 ld+json 이미지 중 파일명에 해당 색상코드가 있는 컷. 공개 접근·규격 검사."
+      "reason": "공식 색상 응답 pdpMainDesktop 사진의 실제 접근·규격 확인."
     },
     "additional_images": {
       "label": "추가이미지",
       "supported": true,
       "status": "conditional",
-      "reason": "같은 색상 컷 검사 통과 5슬롯."
+      "reason": "같은 색상 공식 상품 사진을 순서대로 추가 슬롯에 배치."
     },
     "detail_page": {
       "label": "상세페이지",
       "supported": true,
       "status": "conditional",
-      "reason": "같은 색상 나머지 컷 + 공식 사이즈 & 핏 가이드 표. HTML 고시 없음."
+      "reason": "색상별 상품 사진과 공식 제품 설명, 상품에 연결된 사이즈 가이드 표. 없는 고시는 생략."
     }
   },
   "column_fields": {
@@ -163,8 +163,7 @@
     "카테고리": "category",
     "대표이미지": "main_image",
     "추가이미지": "additional_images",
-    "상세페이지 HTML": "detail_page",
-    "원본 상품명": null
+    "상세페이지 HTML": "detail_page"
   },
-  "code_hash": "ffff7b75eba38713eda7473874068754904e70f8c89f2ffa5050c89901aa0580"
+  "code_hash": "85a07b57ed0e014cf6c14290486c18676aa7cb283aae70820b9ba8815a84abbc"
 }

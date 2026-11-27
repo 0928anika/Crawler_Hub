@@ -98,6 +98,9 @@ def validate_input(data,brand):
     selected=selection(data.get('selected'))
     unsupported=[k for k in selected if not brand['fields'][k]['supported']]
     selected=[k for k in selected if brand['fields'][k]['supported']]
+    for key,dependencies in brand.get('field_dependencies',{}).items():
+        if key in selected:
+            selected=list(dict.fromkeys(selected+[dep for dep in dependencies if brand['fields'].get(dep,{}).get('supported')]))
     counts=Counter(r[0] for r in rows)
     result=dict(total=len(rows),duplicates=sum(v-1 for v in counts.values()),missing_columns=missing,
         errors=errors[:100],warnings=warnings[:100],invalid_count=len(errors),warning_count=len(warnings),

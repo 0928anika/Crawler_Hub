@@ -56,12 +56,12 @@
     "additional_images": {
       "supported": true,
       "status": "conditional",
-      "reason": "실제 유효 갤러리 컷. 부족하면 마지막 유효 컷을 반복해 5슬롯. 한 장뿐이면 대표 5회 반복."
+      "reason": "유효 갤러리 사진 최대 9장, 5장 미만이면 유효 사진을 반복해 최소 5슬롯."
     },
     "detail_page": {
       "supported": true,
       "status": "conditional",
-      "reason": "images.sejungglobal.com/sejung의 해당 모델 상세/고시/사이즈 원본 이미지와 HTML 고시. 공통 banner/notice/배송/교환 안내 제외."
+      "reason": "공식 갤러리 전체 사진을 먼저 넣고 해당 모델 원본 고시/사이즈 이미지와 HTML 고시를 이어 붙임. 공통 안내/배송 배너 제외."
     }
   },
   "guide": {
@@ -80,7 +80,7 @@
     ],
     "validation_note": "빈 입력 외에 품번 형식으로 사전 거절하지 않음. 실제 상품코드 일치는 조회 후 확인."
   },
-  "notes": "2026-11-18 세정몰 INTKA26WA406 실사이트 검증. 공식 브랜드 인디안 및 모델명 정확 일치. 공식 숫자 색상코드(54) 수집. 품절 포함 사이즈 전체. 한 색상 자동, 다색상 수동 매핑. 추가이미지 5슬롯. 모델별 원본 INFO/사이즈 이미지 및 HTML 고시 유지, 공통 notice/브랜드/배송 배너 제외.",
+  "notes": "2026-11-18 세정몰 INTKA26WA406 실사이트 검증. 공식 브랜드 인디안 및 모델명 정확 일치. 공식 숫자 색상코드(54) 수집. 품절 포함 사이즈 전체. 한 색상 자동, 다색상 수동 매핑. 추가이미지 5슬롯. 모델별 원본 INFO/사이즈 이미지 및 HTML 고시 유지, 공통 notice/브랜드/배송 배너 제외. 2026-11-19 v2: 검증된 갤러리 전체 사진을 상세 맨 앞에 삽입 후 기존 사이즈/고시 유지. 추가이미지 최대 9장(최소 5슬롯 반복).",
   "fields": {
     "product_code": {
       "label": "품번",
@@ -140,13 +140,13 @@
       "label": "추가이미지",
       "supported": true,
       "status": "conditional",
-      "reason": "실제 유효 갤러리 컷. 부족하면 마지막 유효 컷을 반복해 5슬롯. 한 장뿐이면 대표 5회 반복."
+      "reason": "유효 갤러리 사진 최대 9장, 5장 미만이면 유효 사진을 반복해 최소 5슬롯."
     },
     "detail_page": {
       "label": "상세페이지",
       "supported": true,
       "status": "conditional",
-      "reason": "images.sejungglobal.com/sejung의 해당 모델 상세/고시/사이즈 원본 이미지와 HTML 고시. 공통 banner/notice/배송/교환 안내 제외."
+      "reason": "공식 갤러리 전체 사진을 먼저 넣고 해당 모델 원본 고시/사이즈 이미지와 HTML 고시를 이어 붙임. 공통 안내/배송 배너 제외."
     }
   },
   "column_fields": {
@@ -165,7 +165,7 @@
     "상세페이지 HTML": "detail_page",
     "원본 상품명": null
   },
-  "code_hash": "226882b2d94aad07a8af6b5c70f7e8750388c3f08cae74d7c647a631c6411f29",
+  "code_hash": "90cc58de5a3230e1b3925356a23a545c76862d12e31e451090e420ba9aadc4c4",
   "hybrid_mapping": true,
-  "additional_image_count": 5
+  "additional_image_count": 9
 }

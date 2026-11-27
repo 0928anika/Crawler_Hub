@@ -5,6 +5,7 @@
   "crawl_source": "공식 홈페이지",
   "script": "elcanto_official.py",
   "execution_level": 1,
+  "interface": "portal_v1",
   "mapping_mode": "manual",
   "image_mode": "url",
   "output_headers": [
@@ -21,8 +22,7 @@
     "대표이미지",
     "추가이미지",
     "상세페이지 HTML",
-    "원본 상품명",
-    "사이트 브랜드"
+    "원본 상품명"
   ],
   "extensions": [],
   "official_color_codes": false,
@@ -31,126 +31,122 @@
     "size": {
       "supported": true,
       "status": "conditional",
-      "reason": "공식 optionJsonData의 색상별 사이즈 전체(품절 포함). 수동 후보는 색상 공통일 때만."
+      "reason": "공식 optionJsonData 색상별 조합의 전체 사이즈. 품절/HIDE 포함."
     },
     "price": {
       "supported": true,
       "status": "conditional",
-      "reason": "공식 .thumb-info .price(없으면 ld+json offers.price)."
+      "reason": "공식 Product offers KRW 가격과 옵션 조합 sto_price 추가금. 색상별 모든 사이즈 가격 동일 시 출력."
     },
     "regular_price": {
       "supported": true,
       "status": "conditional",
-      "reason": "공식 취소선 가격(.strike/del). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+      "reason": "공식 .price_wrap strike 가격. 판매가를 대신 넣지 않음."
     },
     "category": {
       "supported": true,
       "status": "conditional",
-      "reason": "공식 ld+json category 경로."
+      "reason": "공식 xans-product-headcategory의 분류 경로."
     },
     "main_image": {
       "supported": true,
       "status": "conditional",
-      "reason": "공식 .originImgArea/.multi_list/.swiper-slide 상품 사진. 색상 1개 상품은 자동, 다색상은 수동 매핑 후보."
+      "reason": "공식 갤러리에 명시된 실제 URL만 사용. 공개 바이트·형식·픽셀·비율 검사. 한 색상은 자동, 여러 색상은 수동 연결."
     },
     "additional_images": {
       "supported": true,
       "status": "conditional",
-      "reason": "수동 후보는 자르지 않고 전달, 최종 5슬롯은 Hub가 구성."
+      "reason": "유효 갤러리 사진 최대 9장, 5장 미만이면 유효 사진을 반복해 최소 5슬롯."
     },
     "detail_page": {
       "supported": true,
       "status": "conditional",
-      "reason": "공식 .prd-detail 이미지 + 상세 표의 항목-값 2열 고시 표."
+      "reason": "해당 품번 speedgabia 폴더의 원본 상품/치수 이미지 및 #productWrap HTML 고시. 공통 상단/배송/교환 배너와 GIF 제외."
     }
   },
   "guide": {
-    "pattern": "^[A-Za-z0-9]{4,20}$",
-    "format": "기본 품번(예: LCMC93)",
-    "notes": "공식 mpn이 품번 또는 품번+영문 1~3자리인 상품을 모읍니다.",
-    "method": "공식 검색(shopbrand.html?search=) 후 상세 ld+json mpn으로 대조.",
-    "example": "LCMC93",
+    "example": "LCWD89I513",
     "examples": [
-      "LCMC93"
+      "LCWD89I513"
     ],
+    "format": "기본 품번 전체 입력",
+    "notes": "사진 색상 수동 매핑. 품절 포함 전체 사이즈.",
+    "method": "공식 검색 후 Product MPN 정확 대조와 공식 옵션 조합 확인.",
     "required_columns": [
       "품번"
     ],
     "invalid_examples": [
-      "공백"
+      ""
     ],
-    "validation_note": "입력 형식 검사이며 실제 상품 존재 확인은 실행 시 수행"
+    "validation_note": "빈 입력 외 품번 형식 사전 거절 없음."
   },
-  "notes": "엘칸토몰(메이크샵). 공식 ld+json mpn으로 품번 확인(기본 품번 또는 뒤 영문 1~3자리까지). 한 상품에 색상 옵션이 여러 개이고 색상별 사진 연결이 없어 색상 1개 상품만 자동, 다색상 갤러리는 수동 매핑. 상세 표(.prd-detail table)는 고시 2열 표로 재구성. speedgabia 상세 이미지는 해당 품번 파일만, 상단·CS·이벤트·리뷰 공통 이미지 요청 제외. 검증 범위: 사용자 단독 크롤러(elcanto_crawler.py)에서 운영 확인된 URL·선택자·응답 키를 Crawler Hub SDK 규약으로 이식. 이 코드를 작성한 환경은 해당 사이트 접속이 차단되어 실사이트 실행은 미검증이며, SDK 계약·선택 항목 생략·표 재구성은 오프라인 fixture 테스트(tests/test_oberon_brands.py)로만 확인함.",
-  "hybrid_mapping": true,
-  "additional_image_count": 5,
-  "interface": "portal_v1",
+  "notes": "엘칸토 공식 elcanto.co.kr. 공식 Product MPN 정확 대조. Makeshop optionJsonData 조합의 색상/사이즈/추가금 확인, 품절/HIDE 포함 전체 옵션. 실제 색상코드 미표시는 추정하지 않음. 한 색상 자동/다색상 수동 매핑. 상품별 speedgabia 품번 폴더 상세 원본과 HTML 고시 유지. 공통 상단/배송/교환 배너와 GIF 제외. 추가이미지 최대9장, 최소5슬롯 반복.",
   "fields": {
     "product_code": {
       "label": "품번",
       "supported": true,
       "status": "conditional",
-      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+      "reason": "엘칸토 공식 Product/옵션 원문 확인"
     },
     "product_name": {
       "label": "상품명",
       "supported": true,
       "status": "conditional",
-      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+      "reason": "엘칸토 공식 Product/옵션 원문 확인"
     },
     "color": {
       "label": "색상",
       "supported": true,
       "status": "conditional",
-      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+      "reason": "엘칸토 공식 Product/옵션 원문 확인"
     },
     "product_url": {
       "label": "상품 링크",
       "supported": true,
       "status": "conditional",
-      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+      "reason": "엘칸토 공식 Product/옵션 원문 확인"
     },
     "size": {
       "label": "사이즈",
       "supported": true,
       "status": "conditional",
-      "reason": "공식 optionJsonData의 색상별 사이즈 전체(품절 포함). 수동 후보는 색상 공통일 때만."
+      "reason": "공식 optionJsonData 색상별 조합의 전체 사이즈. 품절/HIDE 포함."
     },
     "price": {
       "label": "판매가",
       "supported": true,
       "status": "conditional",
-      "reason": "공식 .thumb-info .price(없으면 ld+json offers.price)."
+      "reason": "공식 Product offers KRW 가격과 옵션 조합 sto_price 추가금. 색상별 모든 사이즈 가격 동일 시 출력."
     },
     "regular_price": {
       "label": "정상가",
       "supported": true,
       "status": "conditional",
-      "reason": "공식 취소선 가격(.strike/del). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+      "reason": "공식 .price_wrap strike 가격. 판매가를 대신 넣지 않음."
     },
     "category": {
       "label": "카테고리",
       "supported": true,
       "status": "conditional",
-      "reason": "공식 ld+json category 경로."
+      "reason": "공식 xans-product-headcategory의 분류 경로."
     },
     "main_image": {
       "label": "대표이미지",
       "supported": true,
       "status": "conditional",
-      "reason": "공식 .originImgArea/.multi_list/.swiper-slide 상품 사진. 색상 1개 상품은 자동, 다색상은 수동 매핑 후보."
+      "reason": "공식 갤러리에 명시된 실제 URL만 사용. 공개 바이트·형식·픽셀·비율 검사. 한 색상은 자동, 여러 색상은 수동 연결."
     },
     "additional_images": {
       "label": "추가이미지",
       "supported": true,
       "status": "conditional",
-      "reason": "수동 후보는 자르지 않고 전달, 최종 5슬롯은 Hub가 구성."
+      "reason": "유효 갤러리 사진 최대 9장, 5장 미만이면 유효 사진을 반복해 최소 5슬롯."
     },
     "detail_page": {
       "label": "상세페이지",
       "supported": true,
       "status": "conditional",
-      "reason": "공식 .prd-detail 이미지 + 상세 표의 항목-값 2열 고시 표."
+      "reason": "해당 품번 speedgabia 폴더의 원본 상품/치수 이미지 및 #productWrap HTML 고시. 공통 상단/배송/교환 배너와 GIF 제외."
     }
   },
   "column_fields": {
@@ -167,8 +163,9 @@
     "대표이미지": "main_image",
     "추가이미지": "additional_images",
     "상세페이지 HTML": "detail_page",
-    "원본 상품명": null,
-    "사이트 브랜드": null
+    "원본 상품명": null
   },
-  "code_hash": "0207443a9cfaee4ead533567d0efa14a4cdc1eea889d5b4f10b23d46fe0ce19f"
+  "code_hash": "7c0da2afbb33f81fbd0b92a0ef06d55e7a83e320a7b851fa2950ff7f0ca2158f",
+  "hybrid_mapping": true,
+  "additional_image_count": 9
 }

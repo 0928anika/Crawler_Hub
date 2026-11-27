@@ -39,6 +39,13 @@ class Tests(unittest.TestCase):
   self.assertEqual(links,[c.SITE+'/product/detail.html?product_no=26940'])
   self.assertEqual(fetch.call_count,2)
   self.assertTrue(all('/product/search.html?' in call.args[1] for call in fetch.call_args_list))
+ def test_full_gallery_precedes_tail_and_extra_limit(self):
+  photos=['https://sejungmall.com/photo'+str(i)+'.jpg' for i in range(14)]
+  with patch.object(c,'checked'):markup=c.detail(None,self.doc,c.SITE,'INTKA26WA406',{},photos+[photos[0]])
+  for url in photos:self.assertEqual(markup.count('src="'+url+'"'),1)
+  self.assertLess(markup.index(photos[-1]),markup.index('INTKA26WA406_INFO.jpg'))
+  self.assertLess(markup.index(photos[-1]),markup.index('INTKA26WA406_S.jpg'))
+  self.assertEqual(len(c.extra_slots(photos).split(',')),9)
  def test_registration(self):
   from registry import get_brand
   self.assertTrue(get_brand('indian_official')['available'])

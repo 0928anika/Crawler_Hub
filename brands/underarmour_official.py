@@ -1,531 +1,230 @@
 PORTAL_API_VERSION = 1
-"""언더아머 (공식 홈페이지) — 자동 색상 매핑 크롤러
-
-검증 범위: 사용자 단독 크롤러(ua_crawler.py)에서 운영 확인된 URL·선택자·응답 키를 Crawler Hub SDK 규약으로 이식. 이 코드를 작성한 환경은 해당 사이트 접속이 차단되어 실사이트 실행은 미검증이며, SDK 계약·선택 항목 생략·표 재구성은 오프라인 fixture 테스트(tests/test_oberon_brands.py)로만 확인함.
-"""
-REVISION = '2026-11-18-oberon-2'
-
-# ───────────────────────── 공통 도우미 (브랜드 파일마다 동일하게 포함) ─────────────────────────
-import hashlib
+"""Under Armour Korea official SFCC product/variation data, isolated Chrome."""
 import html
 import io
 import json
 import re
-from urllib.error import HTTPError, URLError
-from urllib.parse import quote, urlencode, urljoin, urlsplit, parse_qs, unquote
-from urllib.request import Request, build_opener
-
+from urllib.parse import urljoin, urlsplit, parse_qsl, urlencode
 from bs4 import BeautifulSoup
-from PIL import Image, UnidentifiedImageError
-from crawler_rules import check_public_image, validate_gallery_image, gallery_slots
+from PIL import Image
+from crawler_rules import check_public_image, gallery_slots
 from detail_store import excel_detail
-from regular_price import amount, collect_regular_price, merge_regular_prices
+from regular_price import amount
 
-POLICY = {'checked_on': '2026-11-12', 'source': 'https://marketplace.coupang.com/mba/listing',
-          'route': 'WING 웹/엑셀', 'min_side': 500, 'max_bytes': 10000000,
-          'formats': ('JPEG', 'PNG', 'WEBP'), 'max_aspect': 1.8,
-          'note': '정지 WebP·비율 1.8은 프로젝트 보수적 정책이며 WING 공식 비율 제한이 아님. 등록 승인 전체는 보장하지 않음.'}
-DETAIL_MAX_BYTES = 30000000
-UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
-# 대표·추가 후보에서 빼는 구체적 신호(파일 경로·alt). 일반 순번 _01/_02는 신호가 아님.
-SHOT_NEGATIVE = re.compile(r'size[_-]?(?:guide|chart|info)|sizechart|measure|사이즈|실측|측정|고시|notice|banner|'
-                           r'collage|swatch|colorchip|color_chip|logo|icon|cs_info|delivery|shipping|배송|교환|반품|'
-                           r'event|coupon|review', re.I)
-
-
-class CrawlError(Exception):
-    """현재 입력 행의 수집 실패."""
-
-
-def fetch(ctx, url, hosts, *, data=None, headers=None, limit=8000000, timeout=20, method=None):
-    """제한된 시간·용량·재시도로 공식 출처만 조회. 4xx는 재시도하지 않는다."""
-    url = quote(url, safe=':/?&=%+#,;@!$*()~[]')
-    parts = urlsplit(url)
-    if parts.scheme not in ('http', 'https') or (hosts and parts.hostname not in hosts):
-        raise CrawlError('허용되지 않은 조회 주소: ' + url)
-    head = {'User-Agent': UA, 'Accept-Language': 'ko-KR,ko;q=0.9', 'Accept': '*/*'}
-    head.update(headers or {})
-    failure = ''
-    for attempt in range(3):
-        ctx.checkpoint()
-        try:
-            req = Request(url, data=data, headers=head, method=method)
-            with build_opener().open(req, timeout=timeout) as response:
-                final = response.geturl()
-                if hosts and urlsplit(final).hostname not in hosts:
-                    raise CrawlError('공식 출처 밖으로 이동: ' + final)
-                body = response.read(limit + 1)
-                if len(body) > limit:
-                    raise CrawlError('응답 최대 용량 초과: ' + url)
-                return body, final, response.headers.get('Content-Type', '')
-        except HTTPError as exc:
-            code = exc.code
-            exc.close()
-            failure = 'HTTP ' + str(code) + ': ' + url
-            if code in (400, 401, 403, 404, 410):
-                raise CrawlError(failure) from None
-        except (URLError, TimeoutError, OSError) as exc:
-            failure = '통신 오류: ' + url + ': ' + str(exc)
-        finally:
-            ctx.checkpoint()
-        if attempt < 2:
-            ctx.log(str(attempt + 1) + '/2 재시도: ' + failure, 'WARNING')
-    raise CrawlError(failure or ('요청 실패: ' + url))
-
-
-def decode(body, content_type=''):
-    match = re.search(r'charset=([\w-]+)', content_type or '', re.I)
-    for encoding in ([match[1]] if match else []) + ['utf-8-sig', 'cp949']:
-        try:
-            return body.decode(encoding)
-        except (UnicodeDecodeError, LookupError):
-            continue
-    return body.decode('utf-8', errors='replace')
-
-
-def soup(text):
-    return BeautifulSoup(text, 'html.parser')
-
-
-def get_html(ctx, url, hosts, **kw):
-    body, final, ctype = fetch(ctx, url, hosts, **kw)
-    return decode(body, ctype), final
-
-
-def get_json(ctx, url, hosts, **kw):
-    headers = dict({'Accept': 'application/json, text/plain, */*'}, **kw.pop('headers', {}))
-    body, final, ctype = fetch(ctx, url, hosts, headers=headers, **kw)
-    try:
-        return json.loads(decode(body, ctype))
-    except ValueError as exc:
-        raise CrawlError('JSON 응답 해석 실패: ' + url) from exc
-
-
-def absolute(base, src):
-    src = (src or '').strip()
-    if not src or src.startswith('data:') or src.startswith('javascript'):
-        return ''
-    if src.startswith('//'):
-        src = 'https:' + src
-    url = urljoin(base, src)
-    if url.startswith('http://'):
-        url = 'https://' + url[7:]
-    return url.split('#')[0]
-
-
-def img_src(tag):
-    for key in ('ec-data-src', 'data-src', 'data-original', 'data-lazy', 'src'):
-        value = (tag.get(key) or '').strip()
-        if value and not value.startswith('data:'):
-            return value
-    return ''
-
-
-def esc(value):
-    return html.escape(re.sub(r'\s+', ' ', str(value or '')).strip(), quote=True)
-
-
-def bounded(pattern, text):
-    return re.search(r'(?<![A-Za-z0-9])' + re.escape(pattern) + r'(?![A-Za-z0-9])', text or '', re.I) is not None
-
-
-def clean_name(raw, aliases, codes, drop_tags=True):
-    """브랜드명·공식 품번이 실제로 들어 있을 때만 제거. 앞쪽 [행사/브랜드] 태그는 출력 정리로 제거."""
-    name = str(raw or '')
-    if drop_tags:
-        name = re.sub(r'^\s*(?:\[[^\]]*\]\s*)+', '', name)
-    for token in sorted({t for t in list(aliases) + list(codes) if t}, key=len, reverse=True):
-        name = re.sub(r'[\(\[]\s*' + re.escape(token) + r'(?:[_\-][A-Za-z0-9]{1,4})?\s*[\)\]]', ' ', name, flags=re.I)
-        name = re.sub(r'(?<![A-Za-z0-9가-힣])' + re.escape(token) + r'(?:_[A-Za-z0-9]{1,4})?(?![A-Za-z0-9가-힣])', ' ', name, flags=re.I)
-    name = re.sub(r'\(\s*\)|\[\s*\]', ' ', name)
-    name = re.sub(r'\s+', ' ', name).strip(' -_/|·')
-    if not name:
-        raise CrawlError('정리 후 실제 상품명이 비었습니다: ' + str(raw))
-    return name
-
-
-def split_color(text):
-    """'블랙(BK)'·'(39)Ivory'·'39 Ivory'·'BK_블랙' → (이름, 코드). 근거 없는 숫자는 코드로 보지 않는다."""
-    value = re.sub(r'\s+', ' ', str(text or '')).strip()
-    for pattern, ni, ci in ((r'^(.+?)\s*\(\s*([A-Za-z0-9]{1,4})\s*\)$', 1, 2),
-                            (r'^\(\s*([A-Za-z0-9]{1,4})\s*\)\s*(.+)$', 2, 1),
-                            (r'^(\d{2,3})\s+([A-Za-z가-힣].*)$', 2, 1),
-                            (r'^([A-Z0-9]{1,4})_(.+)$', 2, 1)):
-        match = re.match(pattern, value)
-        if match:
-            return match[ni].strip(), match[ci].strip().upper()
-    return value, ''
-
-
-def color_entry(name, code=''):
-    name, code = str(name or '').strip(), str(code or '').strip()
-    if not name and not code:
-        raise CrawlError('실제 색상명 또는 색상코드가 없습니다.')
-    label = name + ' (' + code + ')' if name and code else name or code
-    return {'color_name': name, 'color_code': code, 'label': label}
-
-
-def palette_of(colors):
-    result = []
-    for color in colors:
-        entry = {'color_name': color['color_name'], 'color_code': color['color_code']}
-        if entry not in result:
-            result.append(entry)
-    if not result:
-        raise CrawlError('공식 색상 후보가 없어 수집할 수 없습니다.')
-    return result
-
-
-def joined(values):
-    return ','.join(dict.fromkeys(str(v).strip() for v in values if str(v).strip()))
-
-
-# ── 이미지 검사 ──
-def inspect(ctx, url, cache, max_bytes=None):
-    """공개 GET(쿠키·Referer 없음) + 실제 바이트 해독. 결과는 URL별 캐시."""
-    key = (url, max_bytes or POLICY['max_bytes'])
-    if key not in cache:
-        ctx.checkpoint()
-        result = check_public_image(url, timeout=12, max_bytes=max_bytes or POLICY['max_bytes'], retries=1, checkpoint=ctx.checkpoint)
-        if result['status'] == 'accessible':
-            try:
-                with Image.open(io.BytesIO(result['data'])) as im:
-                    result['animated'] = bool(getattr(im, 'is_animated', False))
-            except (UnidentifiedImageError, OSError, ValueError):
-                result['animated'] = False
-            result['digest'] = hashlib.sha256(result['data']).hexdigest()
-        cache[key] = result
-        ctx.checkpoint()
-    return cache[key]
-
-
-def shot_problem(result, url, context=''):
-    """대표·추가 후보 규칙. 빈 문자열이면 통과."""
-    if result['status'] != 'accessible':
-        return '공개 접근/해독 불가(' + result['status'] + '): ' + ', '.join(result.get('reasons') or [])
-    width, height, fmt = result.get('width') or 0, result.get('height') or 0, result.get('format')
-    if fmt not in POLICY['formats']:
-        return '정책 외 형식 ' + str(fmt)
-    if result.get('animated'):
-        return '애니메이션 이미지'
-    if len(result['data']) > POLICY['max_bytes']:
-        return '10,000,000바이트 초과'
-    if min(width, height) < POLICY['min_side']:
-        return '짧은 변 500px 미만 ' + str(width) + 'x' + str(height)
-    if max(width, height) / min(width, height) > POLICY['max_aspect']:
-        return '통짜·배너 의심 비율 ' + str(width) + 'x' + str(height)
-    if SHOT_NEGATIVE.search(unquote(urlsplit(url).path) + ' ' + str(context or '')):
-        return '사이즈표·고시·배너 등 제외 신호'
-    return ''
-
-
-def screen_shots(ctx, urls, cache, seen=None, contexts=None):
-    """규칙을 통과한 개별 컷 URL 목록(원래 순서). 같은 바이트는 1장만."""
-    seen = set() if seen is None else seen
-    accepted = []
-    for url in urls:
-        ctx.checkpoint()
-        result = inspect(ctx, url, cache)
-        problem = shot_problem(result, url, (contexts or {}).get(url, ''))
-        if problem:
-            ctx.log('사진 후보 제외: ' + problem + ' / ' + url, 'WARNING')
-            continue
-        if result['digest'] in seen:
-            continue
-        seen.add(result['digest'])
-        accepted.append(url)
-        ctx.log('사진 후보 채택: ' + str(result['format']) + ' ' + str(result['width']) + 'x' + str(result['height']) + ' / ' + url, 'INFO')
-    return accepted
-
-
-def first_open(ctx, variants, cache):
-    """같은 사진의 big→medium→small 등 후보 중 실제 열리는 첫 주소."""
-    for url in variants:
-        if inspect(ctx, url, cache)['status'] == 'accessible':
-            return url
-    return ''
-
-
-def auto_slots(ctx, urls, cache, mapping_evidence):
-    """공식 색상 연결이 확인된 사진만 자동 채택. 대표 1 + 추가 5슬롯."""
-    candidates = []
-    for url in urls:
-        result = inspect(ctx, url, cache)
-        if result['status'] != 'accessible':
-            continue
-        validation = validate_gallery_image(result['data'], role='product_shot', mapping_verified=True,
-            single_shot_verified=True, mapping_evidence=mapping_evidence,
-            content_evidence='공식 상품 갤러리 영역; 형식·픽셀·비율·제외 신호 검사 통과 ' + str(result['width']) + 'x' + str(result['height']))
-        candidates.append({'url': url, 'validation': validation})
-    main, extras, warning = gallery_slots(candidates)
-    if warning:
-        ctx.log(warning, 'WARNING')
-    return main or '', extras
-
-
-def apply_images(ctx, record, main, extras):
-    if ctx.enabled('main_image'):
-        record['main_image'] = main
-    if ctx.enabled('additional_images'):
-        record['additional_images'] = ','.join(extras)
-
-
-# ── 상세 HTML: 상품 이미지 + 상품정보고시 + 사이즈표(그림→표→주석) ──
-TH = '<th style="border:1px solid #ddd;padding:6px 10px;background:#f6f6f6;text-align:left">'
-TD = '<td style="border:1px solid #ddd;padding:6px 10px">'
-TABLE = '<table style="width:100%;border-collapse:collapse;font-size:13px"><tbody>'
-
-
-def notice_table(pairs):
-    rows = [(k, v) for k, v in pairs if str(k or '').strip() and str(v or '').strip()]
-    if not rows:
-        return ''
-    body = ''.join('<tr>' + TH + esc(k) + '</th>' + TD + esc(v) + '</td></tr>' for k, v in rows)
-    return '<h3>상품정보고시</h3>' + TABLE + body + '</tbody></table>'
-
-
-def grid_table(rows, header_rows=1):
-    """[[셀,...]] 또는 [[(텍스트,colspan,rowspan),...]] → 실제 표."""
-    out = []
-    for index, row in enumerate(rows):
-        cells = []
-        for cell in row:
-            text, colspan, rowspan = cell if isinstance(cell, tuple) else (cell, 1, 1)
-            tag = 'th' if index < header_rows else 'td'
-            attrs = (' colspan="' + str(colspan) + '"' if colspan > 1 else '') + (' rowspan="' + str(rowspan) + '"' if rowspan > 1 else '')
-            style = TH if tag == 'th' else TD
-            cells.append(style.replace('<' + tag, '<' + tag + attrs, 1) + esc(text) + '</' + tag + '>')
-        out.append('<tr>' + ''.join(cells) + '</tr>')
-    return TABLE + ''.join(out) + '</tbody></table>' if out else ''
-
-
-def copy_table(node):
-    """원본 table의 머리글·단위·rowspan/colspan을 보존해 깨끗한 표로 재구성."""
-    rows = []
-    header_rows = 0
-    for tr in node.select('tr'):
-        cells = []
-        for cell in tr.find_all(['th', 'td'], recursive=False):
-            span = lambda k: int(cell.get(k)) if str(cell.get(k, '')).isdigit() and 1 < int(cell.get(k)) <= 100 else 1
-            cells.append((cell.get_text(' ', strip=True), span('colspan'), span('rowspan')))
-        if cells and any(c[0] for c in cells):
-            if all(c.name == 'th' for c in tr.find_all(['th', 'td'], recursive=False)) and header_rows == len(rows):
-                header_rows += 1
-            rows.append(cells)
-    if len(rows) < 2:
-        return ''
-    return grid_table(rows, header_rows or 1)
-
-
-def size_section(blocks):
-    """blocks: [(그림URL 목록, 표HTML, 주석 목록)] — 각 묶음에서 그림 먼저, 표, 주석 순."""
-    parts = []
-    for figures, table, notes in blocks:
-        chunk = ''.join('<p><img src="' + html.escape(u, quote=True) + '" alt="사이즈 측정 안내"></p>' for u in figures)
-        chunk += table or ''
-        chunk += ''.join('<p style="font-size:12px;color:#666">' + esc(n) + '</p>' for n in notes if str(n).strip())
-        if chunk:
-            parts.append(chunk)
-    return '<h3>사이즈 정보</h3>' + ''.join(parts) if parts else ''
-
-
-def detail_images(ctx, urls, cache):
-    """상세 이미지: 공개 접근 확인. 거부(403/404/HTML)는 해당 파일만 경고 후 생략, 일시 오류는 실패."""
-    kept = []
-    for url in dict.fromkeys(urls):
-        ctx.checkpoint()
-        result = inspect(ctx, url, cache, DETAIL_MAX_BYTES)
-        if result['status'] == 'accessible':
-            kept.append(url)
-        elif result['status'] == 'inaccessible':
-            ctx.log('상세 이미지 공개 접근 거부/없음 → 해당 파일만 생략: ' + url + ' / ' + ', '.join(result['reasons']), 'WARNING')
-        else:
-            raise CrawlError('선택한 상세 이미지 확인 미완료(일시 오류): ' + url)
-    return kept
-
-
-def build_detail(ctx, images, notice='', sizes=''):
-    markup = ''.join('<p><img src="' + html.escape(u, quote=True) + '" alt="상품 상세"></p>' for u in images)
-    markup = '<div>' + markup + notice + sizes + '</div>'
-    if not images and not notice and not sizes:
-        ctx.log('공식 상세 이미지·고시·사이즈표를 찾지 못했습니다. 없는 자료는 만들지 않습니다.', 'WARNING')
-        return ''
-    if not notice:
-        ctx.log('HTML 상품정보고시 표 없음(상세 이미지 안에 포함됐을 수 있음): 생략', 'INFO')
-    compact, overflow = excel_detail(markup)
-    if overflow:
-        raise CrawlError('상세 HTML을 정리해도 Excel 셀 한도(32,767자) 초과')
-    return compact
-
-
-def finish_failures(ctx, failures, emitted, raw):
-    if failures:
-        raise RuntimeError('일부 상품/색상 수집 미완료: ' + ' / '.join(failures))
-    if not emitted:
-        raise CrawlError('정확히 일치하는 공식 상품을 찾지 못했습니다: ' + raw)
-# ───────────────────────── 언더아머 코리아 (Salesforce Commerce Cloud, 자동 매핑) ─────────────────────────
-# 색상 스와치마다 같은 상품 페이지를 dwvar_{품번}_color={색상코드}로 열면 그 색상의 사이즈·가격과
-# ld+json 이미지(파일명 V5-{품번}-{색상코드}_FC 등)가 나온다 → 공식 색상코드 파일명으로 자동 매핑.
 SITE = 'https://www.underarmour.co.kr'
 HOSTS = ('www.underarmour.co.kr', 'underarmour.co.kr')
 IMAGE_HOSTS = ('underarmour.scene7.com',)
-ALIASES = ['언더아머', 'UNDER ARMOUR', 'UNDERARMOUR', 'UA']
-SCENE7 = '?wid=1000&hei=1250&fmt=jpg&qlt=90'  # 확장자 없는 Scene7 주소 → 공식 변환 파라미터로 JPEG 요청
+API = SITE + '/on/demandware.store/Sites-KR-Site/ko_KR/'
 
 
-def scene7(url):
-    url = str(url or '').strip()
-    if url.startswith('//'):
-        url = 'https:' + url
-    return url.split('?')[0] + SCENE7 if url else ''
+def input_code(value):
+    match = re.fullmatch(r'([0-9]{7})(?:[-_]([0-9]{3}))?', str(value).strip())
+    if not match:
+        raise ValueError('품번 형식: 1373882 또는 1373882-001')
+    return match[1], match[2]
 
 
-def ld_all(doc):
-    out = []
-    for script in doc.select('script[type="application/ld+json"]'):
-        try:
-            data = json.loads(script.string or script.get_text())
-        except ValueError:
-            continue
-        out += data if isinstance(data, list) else [data]
-    return [d for d in out if isinstance(d, dict)]
+def public_url(value, images=False):
+    url = urljoin(SITE, str(value or ''))
+    parsed = urlsplit(url)
+    if parsed.scheme != 'https' or parsed.hostname not in (IMAGE_HOSTS if images else HOSTS) or parsed.username or parsed.password:
+        raise ValueError('공식 출처가 아닌 주소: ' + url)
+    return url
 
 
-def search(ctx, pid):
-    text, final = get_html(ctx, SITE + '/ko-kr/search/?' + urlencode({'q': pid, 'lang': 'ko_KR'}), HOSTS)
-    for tile in soup(text).select('section.b-products_grid-tile, .js-products_grid-tile, [data-pid]'):
-        found = (tile.get('data-pid') or '').strip()
-        anchor = tile.select_one('a[href*=".html"]')
-        href = anchor.get('href', '') if anchor else ''
-        if not found and href:
-            m = re.search(r'/(\d{6,8})\.html', href)
-            found = m[1] if m else ''
-        if found == pid and href:
-            return absolute(final, href.split('?')[0])
-    return ''
-
-
-def parse(ctx, url):
-    text, final = get_html(ctx, url, HOSTS)
-    doc = soup(text)
-    lds = ld_all(doc)
-    prod = next((x for x in lds if x.get('@type') == 'Product'), {})
-    crumbs = next((x for x in lds if x.get('@type') == 'BreadcrumbList'), {})
-    swatches = {}
-    for a in doc.select('a.js-swatch-link[data-attr-value]'):
-        code = a.get('data-attr-value', '').strip()
-        name = re.sub(r'\s*컬러\s*선택\s*$', '', a.get('title') or '').strip()
-        if code and code not in swatches:
-            swatches[code] = dict(name=name, active='m-active' in (a.get('class') or []))
-    sizes = []
-    for b in doc.select('.js-size-select[data-attr-value]'):
-        if (b.get('aria-label') or '').lower() not in ('size', '사이즈', ''):
-            continue  # 길이(R/T) 등 다른 속성 제외
-        value = (b.get('data-attr-value') or b.get_text(strip=True)).strip()
-        if value and value not in sizes:
-            sizes.append(value)  # disabled(품절) 포함
-    chart = doc.select_one('a[href*="Product-SizeChart"]')
-    cid = re.search(r'cid=([\w\-]+)', chart.get('href', '')) if chart else None
-    return dict(doc=doc, final=final, prod=prod, crumbs=crumbs, swatches=swatches, sizes=sizes,
-                chart=cid[1] if cid else '')
-
-
-def price_of(node):
-    if node is None:
-        return None
-    return amount(node.get('content') or re.sub(r'[^\d]', '', node.get_text()))
-
-
-def size_chart(ctx, cid):
-    if not cid:
-        return ''
-    raw, _ = get_html(ctx, SITE + '/on/demandware.store/Sites-KR-Site/ko_KR/Product-SizeChart?' + urlencode({'cid': cid}), HOSTS,
-                      headers={'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json, text/html, */*'})
-    texts = []
+def fetch_json(ctx, page, url):
+    ctx.checkpoint()
+    url = public_url(url)
+    data = page.evaluate("""async url => {
+        const controller = new AbortController();const timer = setTimeout(()=>controller.abort(),20000);
+        try {const r=await fetch(url,{signal:controller.signal});
+            const text=await r.text();return {status:r.status,text:text};}
+        finally {clearTimeout(timer);}
+    }""", url)
+    ctx.checkpoint()
+    if data['status'] != 200:
+        raise ValueError('공식 상품 응답 HTTP ' + str(data['status']) + ': ' + url)
+    if len(data['text']) > 8000000:
+        raise ValueError('공식 상품 응답 용량 초과')
     try:
-        def walk(node):
-            if isinstance(node, dict):
-                for v in node.values():
-                    walk(v)
-            elif isinstance(node, list):
-                for v in node:
-                    walk(v)
-            elif isinstance(node, str) and '<table' in node.lower():
-                texts.append(node)
-        walk(json.loads(raw))
+        return json.loads(data['text'])
     except ValueError:
-        texts = [raw]
-    tables = [copy_table(t) for chunk in texts for t in soup(chunk).select('table')]
-    return size_section([([], t, []) for t in tables if t])
+        raise ValueError('공식 JSON 응답이 아닙니다: 접근 제한 또는 로딩 오류') from None
+
+
+def variation_url(url, style, color, length=None):
+    parsed = urlsplit(public_url(url))
+    values = dict(parse_qsl(parsed.query, keep_blank_values=True))
+    values.update(pid=style, quantity='1')
+    values['dwvar_' + style + '_color'] = color
+    values.pop('dwvar_' + style + '_size', None)
+    if length is not None:
+        values['dwvar_' + style + '_length'] = length
+    return parsed._replace(query=urlencode(values)).geturl()
+
+
+def attributes(product, key):
+    return next((a.get('values') or [] for a in product.get('variationAttributes') or []
+                 if a.get('id') == key or a.get('attributeId') == key), [])
+
+
+def verify_product(product, style, color):
+    custom = product.get('custom') or {}
+    if str(custom.get('style') or custom.get('masterID') or product.get('id')) != style:
+        raise ValueError('요청 품번과 공식 상품 응답 불일치')
+    if str(custom.get('color') or '') != color:
+        raise ValueError('요청 색상과 공식 상품 응답 불일치')
+    if not str(product.get('productName') or '').strip():
+        raise ValueError('공식 상품명 없음')
+
+
+def sizes(product):
+    return list(dict.fromkeys(str(v.get('displayValue') or v.get('value') or '').strip()
+                              for v in attributes(product, 'size') if v.get('displayValue') or v.get('value')))
+
+
+def product_images(product):
+    groups = product.get('images') or {}
+    rows = groups.get('pdpMainDesktop') or groups.get('pdpZoomDesktop') or []
+    return list(dict.fromkeys(public_url(r.get('url') or r.get('absURL'), images=True)
+                              for r in rows if r.get('url') or r.get('absURL')))
+
+
+def checked_images(ctx, urls, cache):
+    accepted = []
+    for url in urls:
+        ctx.checkpoint()
+        if url not in cache:
+            cache[url] = check_public_image(url, timeout=12, retries=1, max_bytes=10000000, checkpoint=ctx.checkpoint)
+        result = cache[url]
+        if result['status'] == 'unknown':
+            raise ValueError('상품 이미지 조회 미완료: ' + url)
+        if result['status'] != 'accessible':
+            ctx.log('상품 이미지 접근 불가: ' + url, 'WARNING');continue
+        with Image.open(io.BytesIO(result['data'])) as im:
+            valid = (im.format in ('JPEG','PNG','WEBP') and not getattr(im,'is_animated',False)
+                     and min(im.size)>=500 and max(im.size)/min(im.size)<=1.8)
+        if not valid:
+            ctx.log('상품 이미지 규격 미달: ' + url, 'WARNING');continue
+        accepted.append(url)
+    return accepted
+
+
+def size_markup(data):
+    # Use the chart linked by this exact product, never guess by category.
+    doc = BeautifulSoup(str(data.get('sizechartTable') or ''), 'html.parser')
+    tables = ''.join(str(t) for t in doc.select('table'))
+    if not tables:
+        return ''
+    notes = [n.get_text(' ',strip=True) for n in doc.select('p') if n.get_text(' ',strip=True)]
+    return '<h3>사이즈 가이드</h3>' + tables + ''.join('<p>'+html.escape(n)+'</p>' for n in notes)
+
+
+def detail_markup(product, photos, chart, description_html=''):
+    custom = product.get('custom') or {}
+    parts = ['<img src="' + html.escape(u,quote=True) + '">' for u in photos]
+    doc = BeautifulSoup(description_html, 'html.parser')
+    lead = doc.select_one('.b-product_description-content')
+    if lead and lead.get_text(' ',strip=True):
+        parts.append('<p>'+html.escape(lead.get_text(' ',strip=True))+'</p>')
+    if not lead:
+        for field in ('shortDescription', 'longDescription'):
+            value = product.get(field)
+            if isinstance(value, str) and value.strip():
+                text = BeautifulSoup(value, 'html.parser').get_text(' ', strip=True)
+                if text:parts.append('<p>'+html.escape(text)+'</p>')
+    for key, label in [('dna','기능 소개'),('specs','제품 정보'),('fitCare','핏 및 관리 방법')]:
+        rows = [str(v).strip() for v in custom.get(key) or [] if str(v).strip()]
+        if rows:
+            parts.append('<h3>'+label+'</h3><ul>'+''.join('<li>'+html.escape(v)+'</li>' for v in rows)+'</ul>')
+    # Preserve actual disclosure tables when supplied; do not invent absent notices.
+    parts.extend(str(t) for t in doc.select('table'))
+    if chart:
+        parts.append(chart)
+    value, overflow = excel_detail(''.join(parts))
+    if overflow:
+        raise ValueError('상세 HTML이 엑셀 셀 한도를 초과했습니다.')
+    return value
 
 
 def crawl(ctx):
-    raw_input = re.sub(r'\s+', '', str(ctx.product_code)).upper()
-    match = re.fullmatch(r'(\d{6,8})(?:[-_](\d{3}))?', raw_input)
-    if not match:
-        ctx.fail_item('품번 형식 오류: 스타일 번호(예: 1370494) 또는 스타일-색상코드(예: 1370494-001)')
-        raise CrawlError('품번 형식 오류')
-    pid, wanted = match[1], match[2]
-    ctx.log('언더아머 코드 버전: ' + REVISION, 'INFO')
-    cache, failures, emitted = {}, [], set()
+    from playwright.sync_api import sync_playwright
     try:
-        ctx.stage('언더아머 공식 검색: ' + pid)
-        url = search(ctx, pid)
-        if not url:
-            raise CrawlError('공식 검색 결과에 같은 스타일 번호 상품이 없습니다: ' + pid)
-        first = parse(ctx, url)
-        current = next((c for c, s in first['swatches'].items() if s['active']), '')
-        codes = list(first['swatches']) or ([current] if current else [])
-        if wanted:
-            codes = [c for c in codes if c == wanted]
-        if not codes:
-            raise CrawlError('공식 색상 스와치가 없습니다' + (': ' + wanted if wanted else ''))
-        chart_html = size_chart(ctx, first['chart']) if ctx.enabled('detail_page') else ''
-        for code in codes:
-            ctx.checkpoint()
-            page_url = url + '?' + urlencode({'dwvar_' + pid + '_color': code})
+        style, requested = input_code(ctx.product_code)
+        with sync_playwright() as runtime:
+            browser = runtime.chromium.launch(channel='chrome',headless=True)
             try:
-                page = first if code == current else parse(ctx, page_url)
-                prod = page['prod']
-                color = color_entry(first['swatches'].get(code, {}).get('name', ''), code)
-                if color['label'] in emitted:
-                    continue
-                full = str(prod.get('name') or '').strip()
-                record = dict(product_code=pid, product_name=clean_name(full, ALIASES, [pid]), product_url=page_url,
-                              color=color['label'], color_name=color['color_name'], color_code=color['color_code'], **{'원본 상품명': full})
-                if ctx.enabled('size'):
-                    record['size'] = joined(page['sizes'])
-                if ctx.enabled('price'):
-                    record['price'] = price_of(page['doc'].select_one('.b-price-value.m-actual')) or amount((prod.get('offers') or {}).get('price') if isinstance(prod.get('offers'), dict) else None)
-                if ctx.enabled('regular_price'):
-                    ctx.checkpoint()
-                    record['regular_price'] = price_of(page['doc'].select_one('.b-price-value.m-strikethrough'))
-                    if record['regular_price'] is None:
-                        ctx.log('독립 정상가(.b-price-value.m-strikethrough) 없음/0/형식 오류: 빈칸, 나머지 수집 계속', 'WARNING')
-                if ctx.enabled('category'):
-                    gender = {'male': '남성', 'female': '여성', 'unisex': '공용'}.get(str((prod.get('audience') or {}).get('GenderType') or '').lower(), '')
-                    names = [(i.get('name') or (i.get('item') or {}).get('name')) for i in page['crumbs'].get('itemListElement') or [] if isinstance(i, dict)]
-                    record['category'] = ' > '.join(dict.fromkeys(c for c in [gender] + names if c and c not in ('홈', 'Home', full)))
-                images = prod.get('image') or []
-                images = images if isinstance(images, list) else [images]
-                mine = [scene7(u) for u in images if ('-' + code + '_') in str(u)]
-                if not mine:
-                    raise CrawlError('공식 ld+json 이미지에 색상코드 ' + code + ' 파일이 없습니다')
-                main = ''
-                if ctx.enabled('main_image') or ctx.enabled('additional_images'):
-                    accepted = screen_shots(ctx, list(dict.fromkeys(mine)), cache)
-                    main, extras = auto_slots(ctx, accepted, cache, '공식 ld+json 이미지 파일명의 색상코드 -' + code + '_') if accepted else ('', [])
-                    apply_images(ctx, record, main, extras)
-                if ctx.enabled('detail_page'):
-                    body = [u for u in dict.fromkeys(mine) if u != main] or mine[:1]
-                    record['detail_page'] = build_detail(ctx, detail_images(ctx, body, cache), '', chart_html)
-                ctx.emit_result(record)
-                emitted.add(color['label'])
-            except CrawlError as exc:
-                failures.append(page_url + ': ' + str(exc))
-                ctx.fail_item(page_url + ': ' + str(exc))
-        finish_failures(ctx, failures, emitted, raw_input)
+                page = browser.new_page(locale='ko-KR')
+                ctx.stage('언더아머 공식 상품 조회: ' + style)
+                response = page.goto(SITE+'/ko-kr/p/'+style+'.html',wait_until='domcontentloaded',timeout=30000)
+                doc = BeautifulSoup(page.content(),'html.parser')
+                root = doc.select_one('.product-detail[data-pid]')
+                if not response or response.status >= 400 or not root or root.get('data-pid') != style:
+                    raise ValueError('공식 상품 페이지 확인 실패: '+style+' / HTTP '+str(response.status if response else '응답 없음'))
+                canonical = public_url(page.url)
+                colors = {}
+                for node in root.select('[data-attr="color"] a[data-attr-value]'):
+                    code = str(node.get('data-attr-value') or '')
+                    if re.fullmatch(r'[0-9]{3}',code):
+                        colors.setdefault(code,dict(url=node.get('data-attr-url'),name=re.sub(r'\s*컬러 선택$','',node.get('title') or '').strip()))
+                if requested:
+                    colors = {k:v for k,v in colors.items() if k==requested}
+                if not colors:
+                    raise ValueError('공식 색상 옵션 없음: '+str(requested or style))
+                crumbs = list(dict.fromkeys(n.get_text(' ',strip=True) for n in root.select('.b-breadcrumbs-link') if n.get_text(' ',strip=True)))
+                chart_cache, cache, failures = {}, {}, []
+                for color, item in colors.items():
+                    ctx.checkpoint();ctx.stage('언더아머 색상 수집: '+style+'-'+color)
+                    try:
+                        if not item['url']:
+                            raise ValueError('공식 색상 조회 주소 없음')
+                        url = variation_url(item['url'],style,color)
+                        data = fetch_json(ctx,page,url);product = data.get('product') or {};verify_product(product,style,color)
+                        size_values = sizes(product)
+                        lengths = attributes(product,'length')
+                        if ctx.enabled('size') and len(lengths)>1:
+                            size_values = []
+                            for length in lengths:
+                                length_id = str(length.get('value') or length.get('id') or '')
+                                varied = fetch_json(ctx,page,variation_url(url,style,color,length_id)).get('product') or {}
+                                verify_product(varied,style,color)
+                                size_values.extend(str(length.get('displayValue') or length_id)+'/'+s for s in sizes(varied))
+                        custom = product.get('custom') or {}
+                        name = re.sub(r'^(?:언더아머|UNDER ARMOUR)\s*','',product['productName'],flags=re.I).strip()
+                        subheader = str(custom.get('subHeader') or '').strip()
+                        if subheader and subheader not in name:
+                            name += ' '+subheader
+                        name = re.sub(r'(?<![0-9])'+re.escape(style)+r'(?:[-_][0-9]{3})?(?![0-9])','',name).strip()
+                        record = dict(product_code=style,product_name=name,color=item['name'] or custom.get('colorway') or color,
+                            color_name=item['name'] or custom.get('colorway') or '',color_code=color,
+                            product_url=canonical.split('?')[0]+'?'+urlencode({'dwvar_'+style+'_color':color}))
+                        if ctx.enabled('size'):record['size']=','.join(dict.fromkeys(size_values))
+                        prices = product.get('price') or {}
+                        if ctx.enabled('price'):record['price']=amount((prices.get('sales') or {}).get('value'))
+                        if ctx.enabled('regular_price'):record['regular_price']=amount((prices.get('list') or {}).get('value'))
+                        if ctx.enabled('category'):record['category']=' > '.join(crumbs)
+                        photos = []
+                        if any(ctx.enabled(k) for k in ('main_image','additional_images','detail_page')):
+                            photos=checked_images(ctx,product_images(product),cache)
+                        if ctx.enabled('main_image') or ctx.enabled('additional_images'):
+                            if not photos:raise ValueError('규격을 통과한 공식 상품 사진 없음')
+                            main,extra,_=gallery_slots([dict(url=u,validation=dict(passed=True)) for u in photos])
+                            if ctx.enabled('main_image'):record['main_image']=main
+                            if ctx.enabled('additional_images'):record['additional_images']=','.join(extra)
+                        if ctx.enabled('detail_page'):
+                            chart_id = product.get('sizeChartId');chart = ''
+                            if chart_id:
+                                if chart_id not in chart_cache:
+                                    chart_cache[chart_id]=size_markup(fetch_json(ctx,page,API+'Product-SizeChart?'+urlencode({'cid':chart_id})))
+                                chart=chart_cache[chart_id]
+                            record['detail_page']=detail_markup(product,photos,chart,data.get('productCustomDescriptionHtml') or '')
+                        ctx.emit_result(record)
+                    except Exception as exc:
+                        failures.append(style+'-'+color+': '+str(exc));ctx.fail_item(failures[-1])
+                if failures:
+                    raise RuntimeError('일부 색상 수집 미완료: '+' / '.join(failures))
+            finally:
+                browser.close()
     except Exception as exc:
-        if not failures:
-            ctx.fail_item(str(exc))
+        if not locals().get('failures'):ctx.fail_item(str(exc))
         raise

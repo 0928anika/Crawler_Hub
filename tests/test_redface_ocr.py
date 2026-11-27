@@ -11,7 +11,12 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from test_oberon_brands import ALL, ROOT, CrawlContext, load, plain_html  # noqa: E402
+from test_oberon_brands import ALL, ROOT, CrawlContext, load  # noqa: E402
+try:
+    from test_oberon_brands import plain_html  # noqa: E402
+except ImportError:  # develop의 테스트 도우미에는 없음 — 이 검사는 상세 HTML 문자열을 비교하지 않는다
+    def plain_html(record):
+        return record
 from PIL import Image, ImageDraw  # noqa: E402
 
 BLACK, GRAY, IVORY = (25, 25, 25), (110, 110, 110), (226, 214, 198)
@@ -185,11 +190,11 @@ class RedfaceOcrRecommend(unittest.TestCase):
         self.assertEqual([self.chosen(r) for r in gallery], ['네이비', '그레이'])  # 색상명 붙은 컷을 기준으로 추천
         self.assertIn('색상명 붙은 컷', gallery[0]['OCR 근거'])
 
-    def test_original_brand_has_no_color_recommendation(self):
-        module = load('redface_official')
+    def test_separate_from_other_redface_brands(self):
+        module = load('redface_official_ocr')
         self.assertEqual(module.LABEL_POSITION, 'nearest')
-        self.assertFalse(hasattr(module, 'recommend'))
-
+        meta = json.loads((ROOT / 'brands' / 'redface_official_ocr.json').read_text(encoding='utf-8'))
+        self.assertEqual((meta['id'], meta['script']), ('redface_official_ocr', 'redface_official_ocr.py'))
 
 if __name__ == '__main__':
     unittest.main()

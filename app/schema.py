@@ -7,7 +7,7 @@ from detail_store import excel_detail
 
 FIELDS = {
     'product_code':'품번', 'product_name':'상품명', 'color':'색상', 'product_url':'상품 링크',
-    'size':'사이즈', 'price':'판매가', 'regular_price':'정상가', 'category':'카테고리',
+    'size':'사이즈', 'barcode':'바코드', 'price':'판매가', 'regular_price':'정상가', 'category':'카테고리',
     'main_image':'대표이미지', 'additional_images':'추가이미지', 'detail_page':'상세페이지',
 }
 REQUIRED = ['product_code','product_name','color','product_url']
@@ -25,6 +25,7 @@ def field_for(header):
     if h == '상품명': return 'product_name'
     if h in ('색상','색상명','색상코드'): return 'color'
     if h == '사이즈': return 'size'
+    if h in ('바코드','barcode','gtin','ean','ean13'):return 'barcode'
     if h in ('가격','판매가','price','sale_price'): return 'price'
     if h in ('정상가','소비자가','정가','regular_price'): return 'regular_price'
     if h == '카테고리': return 'category'
@@ -118,7 +119,7 @@ def review_result(item, selected):
     if item.get('missing'):messages.append('필수 항목 미수집: '+', '.join(item['missing']))
     if 'main_image' in selected and not item.get('main_images'):messages.append('대표이미지 미수집')
     if 'additional_images' in selected and len(item.get('additional_images',[]))<5:messages.append('추가이미지 5슬롯 미완성')
-    for key in ('size','price','category'):
+    for key in ('size','barcode','price','category'):
         if key in selected and not item.get('normalized',{}).get(key):messages.append(FIELDS[key]+' 미수집')
     if 'detail_page' in selected:
         if item.get('detail_overflow'):messages.append('상세 HTML 정리 후에도 Excel 셀 한도(32,767자) 초과 · 등록용 상세 생성 실패')

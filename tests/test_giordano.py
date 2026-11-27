@@ -22,6 +22,63 @@ class Context:
 
 
 class GiordanoTests(unittest.TestCase):
+    def test_missing_body_inserts_unique_color_photos_before_size(self):
+        doc = c.parse(str(self.doc))
+        for node in doc.select('#detail .detail_info .wing-detail-more-contents img'):
+            node.decompose()
+        size = c.SITE + '/_gio_on/2026/size.jpg'
+        ctx = Context(('detail_page',))
+        original = '<div><p><img src="' + size + '"></p></div>'
+        with patch.object(c, 'detail', return_value=original), \
+             patch.object(c, 'prefetch'), \
+             patch.object(c, 'gallery_urls', return_value=['source']), \
+             patch.object(c, 'gallery', side_effect=[('main1', ['extra1', 'main1'] * 2, ''),
+                                                     ('main2', ['extra2'] * 5, '')]):
+            options = c.colors(doc, '05586901')[:2]
+            with patch.object(c, 'colors', return_value=options):
+                self.assertFalse(c.collect(ctx, doc, c.SITE, '05586901', None, set(), {}))
+        for index, row in enumerate(ctx.rows, 1):
+            urls = [n['src'] for n in c.parse(row['detail_page']).select('img')]
+            self.assertEqual(urls, ['main' + str(index), 'extra' + str(index), size])
+            self.assertNotIn('main_image', row)
+
+    def test_existing_body_never_gets_gallery_appended(self):
+        body = c.SITE + '/_gio_on/2026/05326930.jpg'
+        original = '<div><img src="' + body + '"><img src="size"></div>'
+        self.assertEqual(c.detail_with_gallery(Context(), original, [body], 'main', ['extra']), original)
+
+    def test_missing_body_and_no_valid_gallery_preserves_size(self):
+        original = '<div><img src="size"></div>'
+        self.assertEqual(c.detail_with_gallery(Context(), original, [], '', []), original)
+        with self.assertRaises(ValueError):
+            c.detail_with_gallery(Context(), original, [], 'x' * 32767, [])
+
+    def test_large_detail_original_uses_separate_bounded_limit_and_cache(self):
+        url = c.SITE + '/_gio_on/2026/05326930.jpg'
+        ctx, cache = Context(), {}
+        result = dict(status='accessible', data=b'validated', reasons=[])
+        with patch.object(c, 'check_public_image', return_value=result) as check:
+            self.assertIn(url, c.detail(ctx, [url], cache))
+            self.assertIn(url, c.detail(ctx, [url], cache))
+        check.assert_called_once_with(url, timeout=30, max_bytes=64_000_000,
+                                      retries=1, checkpoint=ctx.checkpoint)
+        self.assertGreater(c.DETAIL_MAX_BYTES, 52_382_085)
+        for other in (c.SITE + '/_data/attach/photo.jpg',
+                      'https://outside.example/_gio_on/body.jpg'):
+            self.assertEqual(c.image_check_options(other)['max_bytes'], 10_000_000)
+
+    def test_prefetch_applies_same_detail_limit_as_direct_checks(self):
+        detail = c.SITE + '/_gio_on/2026/05326930.jpg'
+        photo = c.SITE + '/_data/attach/photo.jpg'
+        cache = {}
+        with patch.object(sys.modules['__main__'], 'EMIT_LOCK', object(), create=True), \
+             patch.object(c, 'check_public_image', return_value={'status': 'accessible'}) as check:
+            c.prefetch(Context(), [detail, photo], cache)
+        calls = {call.args[0]: call.kwargs for call in check.call_args_list}
+        self.assertEqual(calls[detail]['max_bytes'], 64_000_000)
+        self.assertEqual(calls[photo]['max_bytes'], 10_000_000)
+        self.assertEqual(set(cache), {detail, photo})
+
     def setUp(self):
         self.doc = c.parse((ROOT / 'tests/fixtures/giordano/05586901.html').read_text(encoding='utf-8'))
 

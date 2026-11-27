@@ -1,9 +1,9 @@
 PORTAL_API_VERSION = 1
 """아디다스 (공식 홈페이지) — 자동 색상 매핑 크롤러
 
-검증 범위: 사용자 단독 크롤러(adidas_crawler.py)에서 운영 확인된 URL·선택자·응답 키를 Crawler Hub SDK 규약으로 이식. 이 코드를 작성한 환경은 해당 사이트 접속이 차단되어 실사이트 실행은 미검증이며, SDK 계약·선택 항목 생략·표 재구성은 오프라인 fixture 테스트(tests/test_oberon_brands.py)로만 확인함.
+2026-11-25 KS4159 실사이트 SDK 실행 확인. 일반 요청 403 시 기존 Chrome 세션의 공식 API와 전체 상품 주소를 사용한다. 수집 연결만 유지하며 Chrome과 로그인 세션은 닫지 않는다.
 """
-REVISION = '2026-11-12-oberon-1'
+REVISION = '2026-11-25-adidas-browser-1'
 
 # ───────────────────────── 공통 도우미 (브랜드 파일마다 동일하게 포함) ─────────────────────────
 import hashlib
@@ -11,6 +11,9 @@ import html
 import io
 import json
 import re
+import os, sys, time, subprocess
+from pathlib import Path
+from contextlib import contextmanager
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlencode, urljoin, urlsplit, parse_qs, unquote
 from urllib.request import Request, build_opener
@@ -374,17 +377,24 @@ NOTICE_FIELDS = [('소재', 'materialInformation'), ('제조국', 'legalCountryo
 
 
 def next_product(text, pid):
-    match = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', text, re.S)
-    if not match:
+    """Find the exact article in current or legacy embedded official data."""
+    def find(node):
+        if isinstance(node,dict):
+            if str(node.get('id') or '').upper()==pid and isinstance(node.get('view_list'),list):return node
+            for value in node.values():
+                found=find(value)
+                if found:return found
+        elif isinstance(node,list):
+            for value in node:
+                found=find(value)
+                if found:return found
         return None
-    try:
-        data = json.loads(match[1])
-    except ValueError:
-        return None
-    for query in data.get('props', {}).get('pageProps', {}).get('dehydratedState', {}).get('queries', []):
-        value = (query.get('state') or {}).get('data')
-        if isinstance(value, dict) and str(value.get('id', '')).upper() == pid and value.get('view_list') is not None:
-            return value
+    for script in soup(text).find_all('script'):
+        if script.get('id') not in ('__NEXT_DATA__','__INITIAL_STATE__') and script.get('type')!='application/json':continue
+        try:data=json.loads(script.get_text())
+        except (ValueError,TypeError):continue
+        found=find(data)
+        if found:return found
     return None
 
 
@@ -407,6 +417,13 @@ def fetch_product(ctx, pid):
         errors.append('page: ' + str(exc))
     if all('HTTP 404' in e for e in errors):
         raise CrawlError('아디다스 공식몰에 없는 상품코드: ' + pid)
+    if any('HTTP 403' in e or 'HTTP 429' in e for e in errors):
+        ctx.log('일반 요청 접근 제한: 기존 Chrome의 공식 상품 탭으로 전환합니다.','WARNING')
+        try:
+            data=browser_request(ctx,'/json',dict(path='/api/products/'+pid))
+            if isinstance(data,dict) and str(data.get('id') or '').upper()==pid:return data
+        except CrawlError as exc:ctx.log('기존 Chrome API 조회 후 상품 화면 확인: '+str(exc),'WARNING')
+        return browser_request(ctx,'/product',dict(article=pid))
     raise CrawlError('아디다스 상품 조회 실패: ' + ' / '.join(errors))
 
 
@@ -437,7 +454,13 @@ def size_chart(ctx, product):
         if 'HTTP 404' in str(exc):
             ctx.log('공식 사이즈표 없음(404): 생략', 'WARNING')
             return ''
-        raise
+        if 'HTTP 403' in str(exc) or 'HTTP 429' in str(exc):
+            try:data=browser_request(ctx,'/json',dict(path='/size-chart/api/size-chart/'+quote(str(chart))+'?'+urlencode({'locale':'ko_KR','productId':product['id']})))
+            except CrawlError as browser_error:
+                if 'HTTP 404' in str(browser_error):
+                    ctx.log('공식 사이즈표 없음(Chrome 404): 생략','WARNING');return ''
+                raise
+        else:raise
     found = []
 
     def cell(value):
@@ -483,6 +506,7 @@ def crawl(ctx):
     if not re.fullmatch(r'[A-Z]{1,3}\d{3,5}', raw):
         ctx.fail_item('아디다스 상품코드 형식 오류(예: JZ3160)')
         raise CrawlError('품번 형식 오류')
+    if ctx.enabled('barcode') and not ctx.enabled('size'):ctx.selected=ctx.selected|{'size'}
     ctx.log('아디다스 코드 버전: ' + REVISION, 'INFO')
     cache = {}
     try:
@@ -523,7 +547,245 @@ def crawl(ctx):
             certificate = product.get('product_certificates') or {}
             notice = notice_table([(label, certificate.get(key)) for label, key in NOTICE_FIELDS])
             record['detail_page'] = build_detail(ctx, detail_images(ctx, photos, cache), notice, size_chart(ctx, product))
-        ctx.emit_result(record)
+        if ctx.enabled('barcode'):
+            variations=product.get('variation_list') or []
+            if not variations:
+                ctx.log('공식 사이즈별 GTIN 목록 없음: 바코드는 공백으로 수집합니다.','WARNING')
+                ctx.emit_result(dict(record,barcode=''))
+            seen=set()
+            for variant in variations:
+                size=str(variant.get('size') or '').strip()
+                value=variant.get('gtin')
+                barcode='' if value is None or isinstance(value,bool) else str(value).strip()
+                if barcode and not re.fullmatch(r'[0-9]{8}|[0-9]{12,14}',barcode):
+                    ctx.log('공식 GTIN 형식 확인 불가: '+size+' / '+barcode+' → 공백','WARNING');barcode=''
+                key=(size,barcode)
+                if key in seen:continue
+                seen.add(key)
+                if not barcode:ctx.log('공식 GTIN 없음: '+raw+' / '+(size or '사이즈 미표시')+' → 해당 행 바코드 공백','WARNING')
+                ctx.emit_result(dict(record,size=size,barcode=barcode))
+            ctx.log('바코드 선택: 공식 사이즈별 '+str(len(seen) or 1)+'행 전개','INFO')
+        else:ctx.emit_result(record)
     except Exception as exc:
         ctx.fail_item(str(exc))
         raise
+
+
+def existing_chrome_profile():
+    if sys.platform=='win32':return Path(os.environ.get('LOCALAPPDATA',str(Path.home()))) / 'Google/Chrome/User Data'
+    if sys.platform=='darwin':return Path.home()/'Library/Application Support/Google/Chrome'
+    return Path.home()/'.config/google-chrome'
+
+
+def chrome_endpoint_once(profile):
+    # Only Chrome's documented opt-in discovery file. Never copy cookies/profiles.
+    try:
+        lines=(profile/'DevToolsActivePort').read_text('utf-8').splitlines()
+        port=int(lines[0]);path=lines[1].strip()
+        if not 1<=port<=65535 or not re.fullmatch(r'/devtools/browser/[A-Za-z0-9-]+',path):return None
+        return 'ws://127.0.0.1:'+str(port)+path
+    except (OSError,ValueError,IndexError):return None
+
+
+def chrome_endpoint(profile):
+    for attempt in range(3):
+        endpoint=chrome_endpoint_once(profile)
+        if endpoint:return endpoint
+        if attempt<2:time.sleep(.15)
+    return None
+
+
+@contextmanager
+def existing_browser_session(ctx):
+    from playwright.sync_api import sync_playwright
+    ctx.checkpoint();endpoint=chrome_endpoint(existing_chrome_profile())
+    if not endpoint:
+        raise RuntimeError('[기존 Chrome 연결 설정 필요] 새 창은 열지 않습니다. 로그인한 Chrome에서 chrome://inspect/#remote-debugging 연결 허용을 켠 뒤 실행하세요.')
+    ctx.stage('로그인한 기존 Chrome 연결 · Chrome에 연결 허용 창이 뜨면 직접 허용하세요')
+    with sync_playwright() as runtime:
+        import inspect
+        kwargs={'timeout':getattr(ctx,'connection_timeout',300000)}
+        if 'no_defaults' in inspect.signature(runtime.chromium.connect_over_cdp).parameters:kwargs['no_defaults']=True
+        browser=runtime.chromium.connect_over_cdp(endpoint,**kwargs)
+        session=browser.new_browser_cdp_session()
+        try:session.send('Browser.setDownloadBehavior',{'behavior':'default'})
+        finally:session.detach()
+        if not browser.contexts:raise RuntimeError('기존 Chrome 기본 세션을 찾지 못했습니다.')
+        browser.contexts[0].set_default_timeout(10000)
+        browser.contexts[0].set_default_navigation_timeout(30000)
+        ctx.log('기존 Chrome 로그인 세션에 연결했습니다. 새 브라우저/프로필을 만들지 않습니다.','SUCCESS')
+        try:yield browser.contexts[0]
+        finally:ctx.log('수집 연결만 해제했습니다. 기존 Chrome과 로그인 세션은 유지합니다.','INFO')
+
+
+
+def browser_json(page,path):
+    if not path.startswith(('/api/products/','/size-chart/api/size-chart/')) or '..' in path:raise CrawlError('허용되지 않은 공식 API 경로')
+    result=page.evaluate("""async(path)=>{const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),15000);try{const r=await fetch(path,{credentials:'same-origin',signal:controller.signal});const text=await r.text();return {status:r.status,text:text.length<8000000?text:''}}finally{clearTimeout(timer)}}""",path)
+    if result['status'] in (403,429):raise CrawlError('[접근 제한] 기존 Chrome에서도 공식 API HTTP '+str(result['status'])+' / 상품 없음이 아닙니다.')
+    if result['status']==404:raise CrawlError('[공식 API 상품 없음] HTTP 404: '+path)
+    if result['status']!=200:raise CrawlError('공식 API HTTP '+str(result['status']))
+    try:return json.loads(result['text'])
+    except ValueError:raise CrawlError('공식 API가 상품 JSON 대신 다른 내용을 반환했습니다.') from None
+
+
+def adidas_tab(context,pid=None):
+    if pid:
+        for page in context.pages:
+            if urlsplit(page.url).hostname in HOSTS and urlsplit(page.url).path.upper().endswith('/'+pid+'.HTML'):return page
+    for page in context.pages:
+        if urlsplit(page.url).hostname in HOSTS:return page
+    raise CrawlError('[상품 탭 필요] 기존 Chrome에서 아디다스 공식 상품 페이지를 열어주세요. 다른 사이트 탭이나 새 창은 사용하지 않습니다.')
+
+
+def browser_product(context,pid):
+    page=adidas_tab(context,pid)
+    if not urlsplit(page.url).path.upper().endswith('/'+pid+'.HTML'):
+        response=page.goto(SITE+'/search?'+urlencode({'q':pid}),wait_until='domcontentloaded',timeout=30000)
+        if response and response.status in (403,429):raise CrawlError('[접근 제한] 기존 Chrome의 공식 검색 HTTP '+str(response.status)+' / 상품 없음이 아닙니다.')
+        try:page.wait_for_function("id=>Array.from(document.links).some(a=>{try{return new URL(a.href).pathname.toUpperCase().endsWith('/'+id+'.HTML')}catch{return false}})",arg=pid,timeout=10000)
+        except Exception:pass
+        links=page.locator('a[href]').evaluate_all('(nodes)=>nodes.map(n=>n.href)')
+        matches=[u for u in links if urlsplit(u).hostname in HOSTS and urlsplit(u).path.upper().endswith('/'+pid+'.HTML')]
+        if not matches:raise CrawlError('[공식 상품 링크 미확인] 공홈 검색에서 '+pid+'의 전체 상품 주소를 찾지 못했습니다. 해당 상품 탭을 직접 열어두고 다시 실행해주세요.')
+        response=page.goto(matches[0],wait_until='domcontentloaded',timeout=30000)
+        if response and response.status in (403,429):raise CrawlError('[접근 제한] 기존 Chrome의 상품 페이지 HTTP '+str(response.status))
+    if urlsplit(page.url).hostname not in HOSTS or not urlsplit(page.url).path.upper().endswith('/'+pid+'.HTML'):raise CrawlError('요청 상품과 현재 공식 페이지 주소가 다릅니다.')
+    product=next_product(page.content(),pid)
+    if not product:product=browser_json(page,'/api/products/'+pid)
+    if not isinstance(product,dict) or str(product.get('id') or '').upper()!=pid:raise CrawlError('공식 응답의 상품코드가 요청 품번과 다릅니다.')
+    product.setdefault('meta_data',{}).setdefault('canonical',page.url)
+    return product
+
+
+def connection_folder():
+    home=Path(os.environ.get('CRAWLER_HUB_HOME') or Path(os.environ.get('LOCALAPPDATA',str(Path.home())))/'CrawlerHub')
+    return home/'browser-profiles/adidas_official/existing-connection'
+
+
+def connection_info():
+    try:
+        data=json.loads((connection_folder()/'connection.json').read_text('utf-8'))
+        if not isinstance(data.get('port'),int) or not 1<=data['port']<=65535 or not re.fullmatch(r'[A-Za-z0-9_-]{30,100}',str(data.get('token') or '')):return None
+        return data
+    except (OSError,ValueError,TypeError):return None
+
+
+def connection_call(info,path,data=None,timeout=5):
+    from urllib.request import ProxyHandler
+    request=Request('http://127.0.0.1:'+str(info['port'])+path,data=json.dumps(data).encode() if data is not None else None,headers={'X-Crawler-Connection':info['token'],'Content-Type':'application/json'})
+    with build_opener(ProxyHandler({})).open(request,timeout=timeout) as response:return json.loads(response.read(10000000))
+
+
+def connection_alive(info):
+    pid=info.get('pid')
+    if not isinstance(pid,int) or pid<=0:return False
+    try:
+        if os.name=='nt':
+            import ctypes
+            kernel=ctypes.windll.kernel32;kernel.OpenProcess.restype=ctypes.c_void_p
+            handle=kernel.OpenProcess(0x1000,False,pid)
+            if not handle:return False
+            try:
+                code=ctypes.c_ulong()
+                return bool(kernel.GetExitCodeProcess(ctypes.c_void_p(handle),ctypes.byref(code))) and code.value==259
+            finally:kernel.CloseHandle(ctypes.c_void_p(handle))
+        os.kill(pid,0);return True
+    except (OSError,ValueError):return False
+
+
+
+def ensure_connection(ctx):
+    folder=connection_folder();folder.mkdir(parents=True,exist_ok=True);info=connection_info()
+    if info and info.get('ready'):
+        try:
+            if connection_call(info,'/health').get('ok'):return info
+            connection_call(info,'/stop',{})
+            info=None
+        except Exception:
+            if connection_alive(info):raise CrawlError('기존 아디다스 Chrome 연결이 응답 대기 중입니다. 잠시 후 다시 실행해주세요.') from None
+            info=None
+    launched_at=None
+    if not info or info.get('error') or not connection_alive(info):
+        launched_at=time.time()
+        flags=getattr(subprocess,'DETACHED_PROCESS',0)|getattr(subprocess,'CREATE_NEW_PROCESS_GROUP',0)
+        env=dict(os.environ);env['PYTHONPATH']=str(Path(sys.modules['crawler_rules'].__file__).resolve().parent)
+        subprocess.Popen([sys.executable,'-B',str(Path(__file__).resolve()),'--existing-adidas-browser'],stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,creationflags=flags,start_new_session=os.name!='nt',env=env)
+    ctx.stage('기존 Chrome 연결 승인 대기 · Chrome의 연결 허용 창에서 직접 허용하세요')
+    deadline=time.monotonic()+310
+    while time.monotonic()<deadline:
+        ctx.checkpoint();info=connection_info()
+        if info and launched_at is not None and info.get('started',0)<launched_at:time.sleep(.1);continue
+        if info and info.get('error'):raise CrawlError('기존 Chrome 연결 실패: '+info['error'])
+        if info and info.get('ready'):return info
+        time.sleep(.2)
+    raise CrawlError('기존 Chrome 연결 승인 시간이 지났습니다. Chrome의 연결 허용 창을 확인해주세요.')
+
+
+def browser_request(ctx,path,data):
+    from concurrent.futures import ThreadPoolExecutor
+    info=ensure_connection(ctx);pool=ThreadPoolExecutor(max_workers=1);future=pool.submit(connection_call,info,path,data,100)
+    try:
+        while not future.done():ctx.checkpoint();time.sleep(.1)
+        result=future.result()
+    finally:pool.shutdown(wait=False,cancel_futures=True)
+    if not result.get('ok'):raise CrawlError(result.get('error') or '기존 Chrome 상품 수집 실패')
+    return result['data']
+
+
+def run_existing_adidas_browser():
+    import secrets
+    from http.server import HTTPServer,BaseHTTPRequestHandler
+    folder=connection_folder();folder.mkdir(parents=True,exist_ok=True);token=secrets.token_urlsafe(32)
+    class Control:
+        connection_timeout=300000
+        def checkpoint(self):pass
+        def stage(self,*args):pass
+        def log(self,*args):pass
+    class Handler(BaseHTTPRequestHandler):
+        context=None;stop=False
+        def log_message(self,*args):pass
+        def send_json(self,value,status=200):
+            payload=json.dumps(value,ensure_ascii=False).encode();self.send_response(status);self.send_header('Content-Type','application/json');self.send_header('Content-Length',str(len(payload)));self.end_headers()
+            try:self.wfile.write(payload)
+            except (BrokenPipeError,ConnectionResetError,ConnectionAbortedError):pass
+        def allowed(self):return self.headers.get('X-Crawler-Connection')==token and self.headers.get('Host')=='127.0.0.1:'+str(self.server.server_port)
+        def do_GET(self):
+            if not self.allowed():return self.send_json({'error':'접근 불가'},403)
+            return self.send_json({'ok':bool(Handler.context and Handler.context.browser.is_connected())})
+        def do_POST(self):
+            if not self.allowed():return self.send_json({'error':'접근 불가'},403)
+            try:
+                length=int(self.headers.get('Content-Length','0'))
+                if not 0<length<10000:raise CrawlError('잘못된 요청 크기')
+                data=json.loads(self.rfile.read(length))
+                if self.path=='/product':
+                    pid=str(data.get('article') or '').upper()
+                    if not re.fullmatch(r'[A-Z]{1,3}[0-9]{3,5}',pid):raise CrawlError('상품코드 형식 오류')
+                    result=browser_product(Handler.context,pid)
+                elif self.path=='/json':result=browser_json(adidas_tab(Handler.context),str(data.get('path') or ''))
+                elif self.path=='/inspect':
+                    page=adidas_tab(Handler.context);result={'url':page.url,'title':page.title(),'source':page.content()}
+                elif self.path=='/stop':Handler.stop=True;result={}
+                else:raise CrawlError('지원하지 않는 요청')
+                self.send_json({'ok':True,'data':result})
+            except Exception as exc:self.send_json({'ok':False,'error':str(exc)})
+    server=HTTPServer(('127.0.0.1',0),Handler);server.timeout=.2
+    info={'port':server.server_port,'token':token,'ready':False,'pid':os.getpid(),'started':time.time()}
+    def save():
+        target=folder/'connection.json';temporary=target.with_suffix('.tmp');temporary.write_text(json.dumps(info),encoding='utf-8');temporary.replace(target)
+    save()
+    try:
+        with existing_browser_session(Control()) as context:
+            Handler.context=context;info['ready']=True;save()
+            while not Handler.stop:
+                server.handle_request()
+                if context.pages:
+                    try:context.pages[0].wait_for_timeout(10)
+                    except Exception:pass
+    except Exception as exc:info.update(ready=False,error=str(exc));save()
+    finally:server.server_close()
+
+
+if __name__=='__main__' and sys.argv[1:]==['--existing-adidas-browser']:
+    run_existing_adidas_browser()

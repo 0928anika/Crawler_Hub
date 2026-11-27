@@ -13,7 +13,7 @@ from crawler_rules import check_public_image
 
 SITE='https://sejungmall.com'
 HOSTS=('sejungmall.com','www.sejungmall.com')
-REVISION='2026-11-18-indian-v1'
+REVISION='2026-11-19-indian-v2'
 IMAGE_HOSTS=('sejungmall.com','www.sejungmall.com','cafe24.poxo.com','cafe24img.poxo.com')
 
 class CrawlError(ValueError):pass
@@ -156,8 +156,8 @@ def gallery(ctx,doc,final,cache):
     if not photos:raise CrawlError('유효 공식 갤러리 이미지 없음')
     return photos
 
-def detail(ctx,doc,final,code,cache):
-    parts=[]
+def detail(ctx,doc,final,code,cache,photos=()):
+    parts=['<p><img src="'+html.escape(url,quote=True)+'" alt="상품 사진" style="display:block;width:100%;height:auto"></p>' for url in dict.fromkeys(photos)]
     for url in detail_urls(doc,final,code):
         checked(ctx,url,cache,True)
         parts.append('<p><img src="'+html.escape(url,quote=True)+'" alt="상품 상세정보"></p>')
@@ -175,7 +175,7 @@ def detail(ctx,doc,final,code,cache):
     return markup
 
 def extra_slots(photos):
-    extras=list(photos[1:6] or photos[:1])
+    extras=list(photos[1:10] or photos[:1])
     while len(extras)<5:extras.append(extras[-1])
     return ','.join(extras)
 
@@ -195,8 +195,9 @@ def _crawl(ctx):
         record=dict(product_code=code,product_name=info[0],product_url=link,**{'원본 상품명':info[1]})
         if ctx.enabled('regular_price'):record['regular_price']=amount(field(doc,'소비자가'))
         if ctx.enabled('category'):record['category']=' > '.join(n.get_text(' ',strip=True) for n in doc.select('.xans-product-headcategory li') if n.get_text(' ',strip=True) not in ('홈','현재 위치'))
-        if ctx.enabled('detail_page'):record['detail_page']=detail(ctx,doc,link,code,cache)
-        wants=ctx.enabled('main_image') or ctx.enabled('additional_images');photos=gallery(ctx,doc,link,cache) if wants else []
+        wants=ctx.enabled('main_image') or ctx.enabled('additional_images')
+        photos=gallery(ctx,doc,link,cache) if wants or ctx.enabled('detail_page') else []
+        if ctx.enabled('detail_page'):record['detail_page']=detail(ctx,doc,link,code,cache,photos)
         if len(colors)==1 or not wants:
             for color in colors:
                 row=dict(record,color=color['color_name'],color_name=color['color_name'],color_code=color['color_code'])

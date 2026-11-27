@@ -246,7 +246,7 @@ class Handler(BaseHTTPRequestHandler):
                         task=tasks.get(item['task_id']);rs='error' if task and task['status']=='FAILED' else review_result(item,job.selected)[0]
                         if rs!='error' and manual_pending:rs='mapping'
                         if search not in (item['code']+' '+item['name']).lower() or status and rs!=status:continue
-                        rows.append({k:item.get(k) for k in ('id','task_id','code','name','color','missing')}|dict(status=rs,image_count=len(item['images'])))
+                        rows.append({k:item.get(k) for k in ('id','task_id','code','name','color','missing')}|dict(status=rs,image_count=len(item['images']),**({k:item.get('normalized',{}).get(k,'') for k in ('size','barcode')} if 'barcode' in job.selected else {})))
                 return self.send(page_rows(rows,query))
             if action=='targets':return self.send(dict(rows=job.target_rows(),job=job.summary(),headers=job.headers))
             if action=='request-source':return self.send(request_source(job))

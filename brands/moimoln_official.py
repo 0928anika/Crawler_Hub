@@ -302,6 +302,25 @@ def image_role(url, base, color):
     return stem_role(url, base + '_' + color)
 
 
+def photo_asset(url):
+    address=urlsplit(url)
+    return (address.hostname,unquote(address.path).split('/gio/',1)[0])
+
+
+def assigned_photo_assets(doc,link,base,color):
+    mapped={}
+    for anchor in doc.select('.option_box .opt_color a[href]'):
+        params=parse_qs(urlsplit(urljoin(link,anchor['href'])).query)
+        if params.get('goodsCd')!=[base] or not params.get('colorCd'):continue
+        code=params['colorCd'][0]
+        for node in anchor.select('img[data-thumbnail="goodsDetailOptionWeb"]'):
+            url=image_url(node,link);address=urlsplit(url)
+            if address.hostname=='image.style24.com' and address.path.startswith('/Upload/ProductImage/'):
+                mapped.setdefault(code,set()).add(photo_asset(url))
+    others=set().union(*(values for code,values in mapped.items() if code!=color)) if mapped else set()
+    return mapped.get(color,set())-others
+
+
 def gallery_stem(ctx, doc, link, base, color):
     # Product identity comes from verified goodsCd/ProductGroup. File names
     # are not product IDs: use the actual photo assigned to each option.
@@ -322,6 +341,22 @@ def gallery_stem(ctx, doc, link, base, color):
     if len(stems) > 1:
         raise CrawlError('공식 색상 옵션의 사진 파일명 연결이 서로 다름: ' + color)
     if not stems:
+        # Some one-color pages use a generic option photo (22.jpg) and an older
+        # color suffix on product shots. The official single-color gallery is
+        # the evidence; do not infer color from pixels or relax multi-color rules.
+        if not assigned_photo_assets(doc,link,base,color):return base+'_'+color
+        choices=palette(doc,base,link)
+        if len(choices)==1 and choices[0]['code']==color and assigned_photo_assets(doc,link,base,color):
+            gallery_stems=set()
+            for node in doc.select('img[data-thumbnail="goodsDetailImageWeb"],img[data-thumbnail="goodsDetailImageMob"]'):
+                address=urlsplit(image_url(node,link))
+                if address.hostname!='image.style24.com' or not address.path.startswith('/Upload/ProductImage/'):continue
+                match=re.search(r'/('+re.escape(base)+r'_[A-Z0-9]+)_[A-Z]*[0-9]+(?:\[[0-9]+\])?\.(?:jpg|jpeg|png|webp)(?:/|$)',unquote(address.path),re.I)
+                if match:gallery_stems.add(match[1])
+            if len(gallery_stems)==1:
+                stem=next(iter(gallery_stems))
+                ctx.log('공식 단일 색상 페이지의 갤러리 연결: '+base+'/'+color+' -> '+stem,'INFO')
+                return stem
         return base + '_' + color
     stem = next(iter(stems))
     if any(stem in values for code, values in mapped.items() if code != color):
@@ -339,6 +374,7 @@ def gallery_color(ctx, doc, link, base, color):
 
 def gallery(ctx, doc, link, base, color, cache):
     photo_stem = gallery_stem(ctx, doc, link, base, color)
+    directly_assigned=assigned_photo_assets(doc,link,base,color)
     # 원문에 실제 제공되는 원본 및 갤러리 URL만 사용. CDN 주소를 변조하지 않는다.
     nodes = doc.select('.pd-core__color-item img[data-thumbnail="goodsDetailOptionWeb"]')
     nodes += doc.select('img[data-thumbnail="goodsDetailImageWeb"], img[data-thumbnail="goodsDetailImageMob"]')
@@ -347,6 +383,7 @@ def gallery(ctx, doc, link, base, color, cache):
         ctx.checkpoint()
         url = image_url(node, link)
         cut = stem_role(url, photo_stem)
+        if not cut and photo_asset(url) in directly_assigned and not re.search(r'_[A-Z]*[0-9]+(?:\[[0-9]+\])?\.(?:jpg|jpeg|png|webp)(?:/|$)',unquote(urlsplit(url).path),re.I):cut='DIRECT:'+str(photo_asset(url))
         if not cut or cut.startswith('I') or cut in seen_cuts:
             continue
         info = image_info(ctx, url, cache, gallery=True)
