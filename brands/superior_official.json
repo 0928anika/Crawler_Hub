@@ -1,0 +1,174 @@
+{
+  "id": "superior_official",
+  "name": "슈페리어",
+  "category": "골프웨어",
+  "crawl_source": "공식 홈페이지",
+  "script": "superior_official.py",
+  "execution_level": 1,
+  "interface": "portal_v1",
+  "mapping_mode": "automatic",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "verified",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data의 사이즈 원문을 품절 포함 취합합니다."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "화면 판매가 원문. 쿠폰적용가/최적할인가와 구분합니다."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "화면 소비자가를 독립적으로 수집합니다."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 원문 수집"
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "브랜드/품번/색상이 확인된 공식 페이지의 원본 갤러리 및 /P/ 개별 상품컷."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "같은 색상의 확인된 개별 상품 사진. 부족한 경우 검증된 사진을 반복해 5슬롯을 채웁니다."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품별 본문·원본 SZIF 사이즈표 이미지·상품고시를 포함하고 공통 배너를 제외합니다."
+    }
+  },
+  "guide": {
+    "pattern": "^[A-Za-z0-9]+$",
+    "example": "IMGGBPS202",
+    "examples": [
+      "IMGGBPS202",
+      "IMGGBPS20248"
+    ],
+    "format": "기본 품번(전체 색상) 또는 색상 포함 전체 품번",
+    "notes": "기본 품번은 색상별 공식 페이지를 모두 수집하고 전체 품번은 해당 색상만 수집합니다. 사이즈는 품절 포함 취합합니다. 판매가/소비자가는 독립 수집하며 쿠폰가를 판매가로 사용하지 않습니다. 상세에는 실제 본문·사이즈표 이미지·상품고시를 포함하고 공통 브랜드/배송 배너는 제외합니다.",
+    "method": "공식 Cafe24 검색 결과에서 브랜드 및 상품명/고시의 전체 품번을 확인합니다. SZIF 사이즈표 파일의 기본 품번과 색상별 전체 품번을 연결하고 해당 페이지의 갤러리 및 /P/ 개별컷만 자동 매핑합니다.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "공백",
+      "IMGGBPS202_UNKNOWN"
+    ],
+    "validation_note": "실제 상품 존재는 공식몰 조회 시 확인"
+  },
+  "notes": "기본 품번은 색상별 공식 페이지를 모두 수집하고 전체 품번은 해당 색상만 수집합니다. 사이즈는 품절 포함 취합합니다. 판매가/소비자가는 독립 수집하며 쿠폰가를 판매가로 사용하지 않습니다. 상세에는 실제 본문·사이즈표 이미지·상품고시를 포함하고 공통 브랜드/배송 배너는 제외합니다.",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 원문 수집"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 원문 수집"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 원문 수집"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 원문 수집"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data의 사이즈 원문을 품절 포함 취합합니다."
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "화면 판매가 원문. 쿠폰적용가/최적할인가와 구분합니다."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "화면 소비자가를 독립적으로 수집합니다."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 원문 수집"
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "브랜드/품번/색상이 확인된 공식 페이지의 원본 갤러리 및 /P/ 개별 상품컷."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "같은 색상의 확인된 개별 상품 사진. 부족한 경우 검증된 사진을 반복해 5슬롯을 채웁니다."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품별 본문·원본 SZIF 사이즈표 이미지·상품고시를 포함하고 공통 배너를 제외합니다."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null
+  },
+  "code_hash": "ab721924981bcd8704b1a674e4511bd6ff96cf7d829a04340cad30f2ed82b45a",
+  "hybrid_mapping": false,
+  "additional_image_count": 5
+}
