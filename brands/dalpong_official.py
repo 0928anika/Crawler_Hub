@@ -14,7 +14,7 @@ from crawler_rules import check_public_image
 
 SITE='https://cubynmom.com'
 HOSTS=('dalpong.co.kr','www.dalpong.co.kr','cubynmom.com','www.cubynmom.com','dalpongcuby.cafe24.com')
-REVISION='2026-11-27-dalpong-empty-slots-3'
+REVISION='2026-11-27-dalpong-option-parser-4'
 IMAGE_HOSTS=HOSTS+('cafe24.poxo.com','cafe24img.poxo.com','cubyndalpong.speedgabia.com','dalpong.speedgabia.com','cubynmom.speedgabia.com')
 
 class CrawlError(ValueError):pass
@@ -126,41 +126,89 @@ def color_label(label):
     if match:return dict(color_name=match[2].strip(),color_code=match[1].upper())
     return dict(color_name=label,color_code='')
 
+def size_token(value):
+    text=str(value).strip()
+    text=re.sub(r'\s*\([^)]*\)\s*$','',text).strip()
+    number=r'\d+(?:\.\d+)?'
+    if re.fullmatch(number+r'\s*(?:cm|mm)?(?:\s*[x×*]\s*'+number+r'\s*(?:cm|mm)?){1,2}',text,re.I):return True
+    if re.fullmatch(r'\d{1,4}(?:\.\d+)?\s*(?:cm|mm|호)?',text,re.I):return True
+    if re.fullmatch(r'\d+(?:\s*[-~–]\s*\d+)?\s*(?:m|개월|세|살|months?|years?)',text,re.I):return True
+    return bool(re.fullmatch(r'new\s*born|신생아|NB|FREE(?:\s*SIZE)?|ONE\s*SIZE|F|[2-6]?X{0,3}[SML](?:\s*/\s*[2-6]?X{0,3}[SML])?|[2-6]T',text,re.I))
+
+
+def split_option(value):
+    """Read real option text without requiring a fixed list of color names."""
+    text=str(value).strip();parts=[part.strip() for part in text.split('/')]
+    if size_token(text):return '',text
+    if text.startswith('m/') and len(parts)==2:return text,''
+    if len(parts)>1:
+        first,last=size_token(parts[0]),size_token(parts[-1])
+        if first and not last:return '/'.join(parts[1:]),parts[0]
+        if last and not first:return '/'.join(parts[:-1]),parts[-1]
+    # Compact color+numeric size, including a published optional color code.
+    color=r'[가-힣A-Za-z][가-힣A-Za-z\s]*(?:\([A-Z0-9]{2,4}\))?'
+    size=r'\d{2,3}(?:\s*\([^)]*\))?'
+    match=re.fullmatch('('+color+r')\s*[-_]?\s*('+size+')',text,re.I)
+    if match:return match[1].strip(),match[2].strip()
+    match=re.fullmatch('('+size+r')\s*[-_]?\s*('+color+')',text,re.I)
+    if match:return match[2].strip(),match[1].strip()
+    # Textual sizes separated by whitespace; do not split words such as cream.
+    for match in re.finditer(r'\s+',text):
+        left,right=text[:match.start()].strip(),text[match.end():].strip()
+        if size_token(right) and not size_token(left):return left,right
+        if size_token(left) and not size_token(right):return right,left
+    if size_token(text):return '',text
+    # A generic Cafe24 choice can be a pattern/product label, not a color.
+    # Preserve its exact text rather than rejecting or inventing a color name.
+    return text,''
+
+
 def palette(source, fallback_color=''):
-    colors={};doc=soup(source)
-    spec={}
-    for row in doc.select('#prdDetail .cm-spec tr'):
+    colors={};doc=soup(source);spec={}
+    for row in doc.select('#prdDetail tr'):
         cells=row.find_all(['th','td'],recursive=False)
-        if len(cells)==2:spec[cells[0].get_text(strip=True)]=cells[1].get_text(' ',strip=True)
-    fallback_color=fallback_color or spec.get('색상','')
-    for row in stock_rows(source):
+        if len(cells)==2:
+            label=cells[0].get_text(strip=True)
+            if label in ('색상','컬러','color'):spec[label]=cells[1].get_text(' ',strip=True)
+    fallback_color=fallback_color or spec.get('색상') or spec.get('컬러') or spec.get('color') or ''
+    try:rows=stock_rows(source)
+    except CrawlError:
+        if bundle_page(source,doc) or not re.search(r"\bvar\s+has_option\s*=\s*'F'",source):raise
+        # Official no-option product, not a failed or half-loaded option response.
+        price=amount(field(doc,'판매가'))
+        return [dict(**color_label(fallback_color),sizes=[],prices=[price],option_labels=[],color_missing=not bool(fallback_color))]
+    for row in rows:
         names=row.get('option_name_original');values=row.get('option_value_orginal') or row.get('option_value_original')
         if not isinstance(names,list) or not isinstance(values,list) or len(names)!=len(values):raise CrawlError('공식 옵션 이름/값 구조 변경')
-        # Deleted Cafe24 slots can remain in stock JSON with no option values.
         if all(not str(v or '').strip() for v in values) and not str(row.get('option_value') or '').strip():continue
         opts={str(k).strip().casefold():str(v).strip() for k,v in zip(names,values)}
-        color=opts.get('색상') or opts.get('컬러') or opts.get('color') or '';size=opts.get('사이즈') or opts.get('size') or ''
-        if not color and len(values)==1:
-            match=re.fullmatch(r'(.+?)/\s*(\d{2,3}(?:\s*\([^)]*\))?|FREE|ONE\s*SIZE)',str(values[0]),re.I)
-            if match:color,size=match[1].strip(),match[2].strip()
-            else:
-                reverse=re.fullmatch(r'(\d{2,3}(?:\s*\([^)]*\))?|FREE|ONE\s*SIZE)/(.+)',str(values[0]),re.I)
-                if reverse:size,color=reverse[1].strip(),reverse[2].strip()
-                else:
-                    # Official combined labels also omit '/' (화이트90 / 화이트 90).
-                    compact=re.fullmatch(r'([가-힣A-Za-z][가-힣A-Za-z\s]*(?:\([A-Z0-9]{2,4}\))?)\s*[-_]?\s*(\d{2,3}(?:\s*\([^)]*\))?)',str(values[0]),re.I)
-                    if compact:color,size=compact[1].strip(),compact[2].strip()
-                    else:
-                        compact=re.fullmatch(r'(\d{2,3}(?:\s*\([^)]*\))?)\s*[-_]?\s*([가-힣A-Za-z][가-힣A-Za-z\s]*(?:\([A-Z0-9]{2,4}\))?)',str(values[0]),re.I)
-                        if compact:size,color=compact[1].strip(),compact[2].strip()
-                        elif re.fullmatch(r'블랙|화이트|아이보리|베이지|민트|핑크|블루|네이비|옐로우|그레이|브라운|레드|그린|퍼플|크림|black|white|ivory|beige|mint|pink|blue|navy|yellow|grey|gray|brown|red|green|purple|cream',str(values[0]),re.I):color=str(values[0]).strip()
-            if not color and names[0].strip() in ('옵션','선택') and re.fullmatch(r'\d{2,3}(?:\s*\([^)]*\))?|FREE|ONE\s*SIZE',str(values[0]),re.I):size=str(values[0]).strip()
+        color=size='';size_keys=set()
+        for label,value in opts.items():
+            is_color=bool(re.search(r'색상|컬러|colou?r',label,re.I));is_size=bool(re.search(r'사이즈|규격|크기|size',label,re.I))
+            if is_color and not is_size:color=value
+            if is_size and not is_color:size=value;size_keys.add(label)
+        if len(values)==1:
+            parsed_color,parsed_size=split_option(values[0])
+            if parsed_color and parsed_size:color,size=parsed_color,parsed_size
+            elif not color and not size:color,size=parsed_color,parsed_size
+        elif not color:
+            remaining=[v for k,v in opts.items() if v and k not in size_keys]
+            if not size:
+                candidates=[v for v in remaining if size_token(v)]
+                if len(candidates)==1:
+                    size=candidates[0];remaining=[v for v in remaining if v!=size]
+            if remaining:color=' / '.join(remaining)
         color=color or fallback_color
-        if not color:raise CrawlError('공식 색상명 확인 실패: 옵션과 제품정보에 색상 원문 없음')
-        entry=colors.setdefault(color,dict(**color_label(color),sizes=[],prices=[]))
+        # Bed-size qualifiers belong to dimensions, keeping their source text.
+        qualifier=re.fullmatch(r'(.+?)\s*\((미니|슈퍼싱글|싱글|퀸|킹|라지킹|소형|중형|대형|mini|super\s*single|single|queen|king)\)',color,re.I)
+        if qualifier and size and re.search(r'[x×*]',size,re.I):
+            color=qualifier[1].strip();size+=' ('+qualifier[2]+')'
+        entry=colors.setdefault(color,dict(**color_label(color),sizes=[],prices=[],option_labels=[],color_missing=not bool(color)))
         if size and size not in entry['sizes']:entry['sizes'].append(size)
+        label=' / '.join(str(v).strip() for v in values)
+        if label not in entry['option_labels']:entry['option_labels'].append(label)
         price=row.get('option_price')
-        if not isinstance(price,(int,float)) or price<=0:raise CrawlError('옵션 판매가 형식 확인 필요')
+        if not isinstance(price,(int,float)) or isinstance(price,bool) or price<0:price=None
         entry['prices'].append(price)
     if not colors:raise CrawlError('유효한 공식 옵션 없음: 옵션 값이 전부 비어 있습니다.')
     return list(colors.values())
@@ -222,8 +270,18 @@ def gallery(ctx,doc,final,cache):
 def detail(ctx,doc,final,code,cache,photos=()):
     parts=[]
     for url in detail_urls(doc,final,code):
-        checked(ctx,url,cache,True)
+        try:checked(ctx,url,cache,True)
+        except CrawlError as exc:
+            if not re.search(r'HTTP (?:404|410)\b',str(exc)):raise
+            ctx.log('공홈 상세 원본 링크가 삭제되어 제외합니다: '+str(exc),'WARNING');continue
         parts.append('<p><img src="'+html.escape(url,quote=True)+'" alt="상품 상세정보"></p>')
+    if not parts:
+        ctx.log('사용 가능한 상세 본문 이미지 없음: 검증된 공식 상품컷으로 대체합니다.','WARNING')
+        fallback=list(photos)
+        if not fallback:
+            try:fallback=gallery(ctx,doc,final,cache)
+            except CrawlError as exc:ctx.log('대체 상품컷 없음: '+str(exc),'WARNING')
+        parts=['<p><img src="'+html.escape(url,quote=True)+'" alt="공식 상품 이미지"></p>' for url in fallback]
     area=doc.select_one('#prdDetail')
     if area:
         for table in area.select('table'):
@@ -265,7 +323,10 @@ def crawl(ctx):
             if info is None:continue
             if bundle_page(source,doc):ctx.log('자식 상품 옵션이 별도인 코디 세트 페이지 제외: '+link,'WARNING');continue
             ctx.stage('달퐁 공식 옵션·사진 확인: '+link)
-            colors=palette(source);record=dict(product_code=product_number(code) or code,product_name=info[0],product_url=link,**{'원본 상품명':info[1]})
+            colors=palette(source)
+            if any(c.get('color_missing') for c in colors):
+                ctx.allow_empty_color=True;ctx.log('공식 옵션에 색상 없음: 색상은 공백으로 두고 실제 사이즈만 수집합니다.','WARNING')
+            record=dict(product_code=product_number(code) or code,product_name=info[0],product_url=link,**{'원본 상품명':info[1]})
             if not product_number(code):ctx.log('공식 품번 검색 결과 연결 확인: '+code+' → 상품번호 '+number,'INFO')
             if ctx.enabled('regular_price'):record['regular_price']=amount(field(doc,'소비자가'))
             if ctx.enabled('category'):record['category']=' > '.join(n.get_text(' ',strip=True) for n in doc.select('.xans-product-headcategory li') if n.get_text(' ',strip=True) not in ('홈','현재 위치'))
@@ -276,7 +337,9 @@ def crawl(ctx):
                 for color in colors:
                     row=dict(record,color=color['color_name'],color_name=color['color_name'],color_code=color['color_code'])
                     if ctx.enabled('size'):row['size']=','.join(color['sizes'])
-                    if ctx.enabled('price'):row['price']=color['prices'][0] if len(set(color['prices']))==1 else None
+                    if ctx.enabled('price'):
+                        row['price']=color['prices'][0] if len(set(color['prices']))==1 else None
+                        if row['price'] is None:ctx.log('동일 색상의 사이즈별 판매가가 다르거나 누락되어 공통 판매가는 공백으로 보존합니다.','WARNING')
                     if ctx.enabled('main_image'):row['main_image']=photos[0]
                     if ctx.enabled('additional_images'):row['additional_images']=extra_slots(photos)
                     ctx.emit_result(row)

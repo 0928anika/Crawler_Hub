@@ -43,6 +43,33 @@ class Tests(unittest.TestCase):
    with self.assertRaisesRegex(c.CrawlError,'전부 비어'):c.palette('<html></html>')
  def test_slash_in_color_name_is_not_split_as_another_dimension(self):
   colors=c.palette(self.fixture('5063'));self.assertEqual([r['color_name'] for r in colors],['m/gray','green']);self.assertEqual(set(colors[0]['sizes']),{'90','100','110','120'})
+ def test_general_size_and_color_formats(self):
+  cases=[('FREE SIZE/white','white','FREE SIZE'),('m/gray','m/gray',''),('S/M','','S/M'),('newborn/white','white','newborn'),('화이트/newborn','화이트','newborn'),('옐로우/newborn (0~3개월)','옐로우','newborn (0~3개월)'),('블루/S','블루','S'),('M/핑크','핑크','M'),('블루/85X85','블루','85X85'),('65*85/cream (미니)','cream (미니)','65*85'),('크림/110*200','크림','110*200'),('옐로우/1-2세','옐로우','1-2세'),('3~4세/블루','블루','3~4세'),('화이트90','화이트','90'),('100핑크','핑크','100'),('90/m/gray','m/gray','90'),('화이트 2XL','화이트','2XL'),('달퐁허니엠보손수건 플라워_10매입','달퐁허니엠보손수건 플라워_10매입',''),('여우나염방수요','여우나염방수요','')]
+  for raw,color,size in cases:
+   with self.subTest(value=raw):self.assertEqual(c.split_option(raw),(color,size))
+  for size in ['newborn','FREE','NB','S','M','2XL','85X85','65*85','110×200cm','1~2세','5~6m']:
+   with self.subTest(size=size):self.assertTrue(c.size_token(size))
+  for color in ['white','cream','m/gray','mint','pink']:self.assertFalse(c.size_token(color))
+ def test_supplied_newborn_and_dimensions_products(self):
+  p=c.palette(self.fixture('6458'))[0];self.assertEqual((p['color_name'],p['sizes']),('white',['newborn']))
+  p=c.palette(self.fixture('5361'))[0];self.assertEqual((p['color_name'],p['sizes']),('cream',['65*85 (미니)','110*200 (슈퍼싱글)']));self.assertEqual(p['prices'],[29000,99000])
+ def test_size_only_does_not_invent_a_color(self):
+  p=c.palette(self.fixture('6484'))[0];self.assertEqual(p['color_name'],'');self.assertTrue(p['color_missing']);self.assertEqual(p['sizes'],['5~6m','1~2세','3~4세'])
+ def test_named_dimensions_are_used_before_text_shape(self):
+  rows=[dict(option_name_original=['컬러 선택','크기'],option_value_orginal=['블루','S'],option_price=100),dict(option_name_original=['Colour','규격'],option_value_orginal=['핑크','newborn'],option_price=100),dict(option_name_original=['색상'],option_value_orginal=['M'],option_price=100)]
+  with patch.object(c,'stock_rows',return_value=rows):p=c.palette('<html/>')
+  self.assertEqual([(v['color_name'],v['sizes']) for v in p],[('블루',['S']),('핑크',['newborn']),('M',[])])
+ def test_no_option_is_different_from_missing_option_response(self):
+  source="<script>var has_option = 'F';</script>"
+  self.assertTrue(c.palette(source)[0]['color_missing'])
+  with self.assertRaises(c.CrawlError):c.palette('<html>incomplete</html>')
+ def test_permanently_broken_detail_uses_verified_gallery_without_hiding_access_errors(self):
+  doc=c.soup(self.fixture('5311'));cover='https://cubynmom.com/cover.jpg'
+  with patch.object(c,'checked',side_effect=c.CrawlError('공개 GET 거부: HTTP 404')):
+   body=c.detail(Context(),doc,c.SITE,'STYLE',{},[cover])
+  self.assertIn(cover,body);self.assertEqual(len(c.soup(body).select('table')),2)
+  with patch.object(c,'checked',side_effect=c.CrawlError('공개 GET 거부: HTTP 403')):
+   with self.assertRaises(c.CrawlError):c.detail(Context(),doc,c.SITE,'STYLE',{},[cover])
  def test_color_only_options_keep_hidden_soldout_mint(self):
   colors=c.palette(self.fixture('5498'));self.assertEqual([p['color_name'] for p in colors],['민트','핑크']);self.assertTrue(all(p['color_code']=='' for p in colors))
  def test_detail_keeps_real_size_tables_and_excludes_delivery_images(self):
