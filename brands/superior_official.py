@@ -9,7 +9,7 @@ from crawler_rules import check_public_image
 SITE='https://theshops.co.kr'
 HOSTS=('theshops.co.kr','www.theshops.co.kr')
 IMAGE_HOSTS=HOSTS+('spholdings.diskn.com','cafe24.poxo.com','cafe24img.poxo.com')
-REVISION='2026-11-27-superior-multibrand-sku-3'
+REVISION='2026-11-27-superior-search-results-4'
 class CrawlError(ValueError):pass
 
 def fetch(ctx,url):
@@ -112,41 +112,42 @@ def product_notice(doc):
 
 
 def identity(doc,wanted):
-    # THE SHOPS is Superior's multi-brand official shop. A brand-label gate
-    # rejected valid Martine Golf and other own-store products before SKU checks.
+    # Official search results decide eligibility. SKU/color extraction enriches
+    # columns and image association; it must not reject a returned product.
     heading=doc.select_one('.infoArea h1,.infoArea h2,.headingArea h1,.headingArea h2')
     raw=heading.get_text(' ',strip=True) if heading else field(doc,'상품명')
-    match=re.search(r'\(([A-Z0-9]+)\)\s*$',raw,re.I)
-    sku=match[1].upper() if match else '';color=''
+    if not raw:raise CrawlError('공식 상품 페이지 로딩 확인 실패: 상품명 영역 없음')
+    tokens=re.findall(r'\(([A-Z0-9]+)\)',raw,re.I)
+    sku=next((token.upper() for token in reversed(tokens) if re.search(r'\d',token)),'')
+    color='';warnings=[]
     for table in product_notice(doc):
         for row in table.select('tr'):
             cells=row.find_all(['th','td'],recursive=False)
             if len(cells)!=2 or cells[0].get_text(strip=True)!='색상':continue
             value=cells[1].get_text(' ',strip=True);evidence=re.fullmatch(r'(.+?)\.\s*([A-Z0-9]+)',value,re.I)
             if evidence:
-                if sku and sku!=evidence[2].upper():raise CrawlError('상품명과 상품고시의 품번 불일치')
-                sku=evidence[2].upper();color=evidence[1].strip()
+                if sku and sku!=evidence[2].upper():warnings.append('상품명/고시 품번이 달라 실제 상품명 품번을 우선 사용합니다.')
+                sku=sku or evidence[2].upper();color=evidence[1].strip()
             elif value:color=value
-    if not sku:raise CrawlError('공식 상품 품번 확인 실패')
-    base=''
-    for node in doc.select('#prdDetail img'):
-        path=unquote(urlsplit(node.get('ec-data-src') or node.get('data-src') or node.get('src') or '').path)
-        guide=re.search(r'/SZIF_([A-Z0-9]+)\.',path,re.I)
-        if guide and sku.startswith(guide[1].upper()):base=guide[1].upper();break
-    if not base:base=sku[:-2] if re.fullmatch(r'[A-Z0-9]{7}\d{5}',sku) else sku
-    if wanted and wanted not in (sku,base):return None
-    suffix=sku[len(base):];color_code=suffix if re.fullmatch(r'\d{2}',suffix) else ''
-    name=re.sub(r'\(\s*'+re.escape(sku)+r'\s*\)\s*$','',raw,flags=re.I).strip()
+    paths=[unquote(urlsplit(node.get('ec-data-src') or node.get('data-src') or node.get('src') or '').path) for node in doc.select('#prdDetail img')]
+    if not sku:
+        candidates=list(dict.fromkeys(match[1].upper() for path in paths if (match:=re.search(r'/([A-Z0-9]+)_(?:detail\d+|page\d+|SIZE|CO)\.',path,re.I))))
+        if len(candidates)==1:sku=candidates[0]
+    guide_base=next((match[1].upper() for path in paths if (match:=re.search(r'/SZIF_([A-Z0-9]+)\.',path,re.I)) and sku.startswith(match[1].upper())),'')
+    # No fixed model length. E.g. QW0EVT30149 and QW0FTTE30136 both work.
+    base=wanted if wanted and wanted!=sku else guide_base or (sku[:-2] if re.search(r'\d{2}$',sku) else sku)
+    base=base or wanted
+    suffix=sku[len(base):] if base and sku.startswith(base) else ''
+    color_code=suffix if re.fullmatch(r'\d{2}',suffix) else ''
+    name=re.sub(r'\(\s*'+re.escape(sku)+r'\s*\)','',raw,flags=re.I).strip() if sku else raw
     if color and name.endswith(color):name=name[:-len(color)].strip()
     if not color:
-        tail=re.search(r'\s+([A-Z]/[^\s]+)\s*$',name,re.I)
+        tail=re.search(r'[_\s]([A-Z]/[^\s]+|[^_\s]+)\s*$',name,re.I) if '_' in name else re.search(r'\s+([A-Z]/[^\s]+)\s*$',name,re.I)
         if tail:color=tail[1];name=name[:tail.start()].strip()
-    if not color:color=field(doc,'색상')
-    if not color:raise CrawlError('공식 상품 색상명 확인 실패: '+sku)
+    color=color or field(doc,'색상')
     name=re.sub(r'(?<![A-Za-z0-9가-힣])(?:슈페리어|SUPERIOR)(?![A-Za-z0-9가-힣])','',name,flags=re.I)
-    name=re.sub(r'\s+',' ',name).strip(' -_/')
-    if not name:raise CrawlError('정리 후 상품명 없음')
-    return dict(sku=sku,base=base,color_name=color,color_code=color_code,name=name,raw_name=raw)
+    name=re.sub(r'\s+',' ',name).strip(' -_/') or raw
+    return dict(sku=sku,base=base,guide_base=guide_base,color_name=color,color_code=color_code,name=name,raw_name=raw,warnings=warnings)
 
 
 def body_urls(doc,final,info):
@@ -160,7 +161,7 @@ def body_urls(doc,final,info):
         if parsed.hostname not in IMAGE_HOSTS or not re.search(r'\.(?:jpe?g|png|webp)$',path,re.I):continue
         # Product-identified body and exact family size guide only. Excludes IP/ banners.
         product=bool(re.search(r'/'+re.escape(info['sku'])+r'(?:[_\.]|$)',path,re.I))
-        size=bool(re.search(r'/SZIF_'+re.escape(info['base'])+r'\.',path,re.I))
+        size=bool(re.search(r'/SZIF_'+re.escape(info.get('guide_base') or info['base'])+r'\.',path,re.I))
         if not (product or size) or re.search(r'banner|delivery|shipping|coupon|brand_top|IP_INFO|배송|반품|교환',path,re.I):continue
         if url not in urls:urls.append(url)
     return urls
@@ -225,8 +226,13 @@ def crawl(ctx):
         count=0;cache={};seen=set()
         for link in links:
             source=fetch(ctx,link);doc=soup(source);info=identity(doc,wanted)
-            if info is None or info['sku'] in seen:continue
-            seen.add(info['sku']);ctx.stage('슈페리어 색상 상품 확인: '+info['sku'])
+            source_key=product_number(link)
+            if source_key in seen:continue
+            seen.add(source_key);info['base']=info['base'] or wanted or product_number(link)
+            for warning in info.get('warnings',[]):ctx.log(warning,'WARNING')
+            if not info['color_name']:
+                ctx.allow_empty_color=True;ctx.log('공식 상품에 색상명 없음: 공백으로 보존하고 상품은 수집합니다.','WARNING')
+            ctx.stage('슈페리어 공식 검색 상품 수집: '+source_key)
             record=dict(product_code=info['base'],product_name=info['name'],color=info['color_name'],color_name=info['color_name'],color_code=info['color_code'],product_url=link,**{'원본 상품명':info['raw_name']})
             if ctx.enabled('size'):
                 sizes=[]
@@ -250,6 +256,6 @@ def crawl(ctx):
             if ctx.enabled('additional_images'):record['additional_images']=extra_slots(photos)
             if ctx.enabled('detail_page'):record['detail_page']=detail(ctx,doc,link,info,cache,photos)
             ctx.emit_result(record);count+=1
-        if not count:raise CrawlError('검색 결과는 있으나 정확한 슈페리어 품번/색상 상품 없음: '+value)
+        if not count:raise CrawlError('공식 검색 상품 수집 결과 없음: '+value)
         ctx.log('슈페리어 수집 완료: '+str(count)+'색상','SUCCESS')
     except Exception as exc:ctx.fail_item(str(exc));raise
