@@ -1,0 +1,189 @@
+{
+  "id": "crocodile_official_crop",
+  "name": "크로커다일 크롭",
+  "category": "남성 의류",
+  "crawl_source": "던필드몰",
+  "script": "crocodile_official_crop.py",
+  "execution_level": 1,
+  "mapping_mode": "manual",
+  "image_mode": "local",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "원본 상품명",
+    "사이트 브랜드",
+    "OCR 근거",
+    "크롭 원본 이미지",
+    "크롭 좌표",
+    "흰 여백 보충"
+  ],
+  "extensions": [],
+  "official_color_codes": false,
+  "image_color_mapping": "manual",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data 사이즈(품절 포함, 숨김 제외). 모든 색상의 사이즈가 같을 때만 공통값, 다르면 빈칸."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data 색상별 option_price, 없으면 #span_product_price_sale/text·메타. 색상별로 다르면 빈칸."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 소비자가 #span_product_price_custom 또는 product_custom(regular_price cafe24 프로필). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 .xans-product-headcategory 경로."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "던필드몰 갤러리 사진은 통째로, 상세 통이미지(COLOR VIEW·색상별 앞/뒤 컷 등)는 흰 여백·가는 흰 선 경계로만 개별 컷을 잘라 로컬 JPEG 저장(고정 좌표·등분·확대 없음, 사이즈표·공통 배너 제외). 사전 매핑: 색상 옵션 1개 페이지의 갤러리, 공식 link_image, (Windows) 사진에 붙은 색상명 글자 OCR이 공식 색상 하나와만 일치할 때. 나머지는 사용자가 색상 매핑."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "모든 개별 컷을 자르지 않고 매핑 후보로 전달. 최종 대표 1 + 추가 5는 Hub가 적용."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상세 영역 이미지(공통 배너·배송·로고 경로는 요청 제외)와 HTML 고시/사이즈표가 있으면 표로 재구성. 이미지 안 고시·사이즈표는 원본 유지."
+    }
+  },
+  "guide": {
+    "example": "CDAACJP3202",
+    "examples": [
+      "CDAACJP3202",
+      "CDAACTP3703"
+    ],
+    "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{2,24}(?:_[A-Za-z0-9]{1,4})?$",
+    "format": "색상코드를 제외한 기본 품번(영문 대문자·숫자). 자체상품코드에 색상코드가 있는 상품만 품번_색상코드 지정 가능",
+    "notes": "갤러리에 일부 색상만 있고 나머지 색상 사진이 상세 통이미지 안에 있는 상품용. 수집 후 색상 매핑하기에서 컷을 분류합니다. 일반 크롤러(크로커다일)는 그대로 유지.",
+    "method": "공식 검색(/product/search.html) 후 상세페이지의 자체상품코드·모델명·상품명 끝 품번을 경계 일치로 대조. 상품명에 브랜드명이 없어도 수집.",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "공백",
+      "PRTS2410_"
+    ],
+    "validation_note": "입력 형식 검사이며 실제 상품 존재 확인은 실행 시 수행"
+  },
+  "notes": "crocodile_official(던필드몰 URL 버전) 조회·옵션·가격·상세 로직 + 패션플러스 크롭필요건 분할/OCR 엔진. 2026-11-27 실조회: CDAACJP3202(8686) 갤러리 5장 모두 카키, 다크그레이는 상세 d_02 COLOR VIEW(333x350 두 장 나란히 + 아래 색상명)와 d_04(앞/뒤 700x728)에만 있음. CDAACTP3703(8672) 5색 중 갤러리는 1색. 상세 이미지는 dfamall1.openhost.cafe24.com.",
+  "additional_image_count": 5,
+  "interface": "portal_v1",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data 사이즈(품절 포함, 숨김 제외). 모든 색상의 사이즈가 같을 때만 공통값, 다르면 빈칸."
+    },
+    "barcode": {
+      "label": "바코드",
+      "supported": false,
+      "status": "unsupported",
+      "reason": "독립 결과 컬럼 없음"
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 option_stock_data 색상별 option_price, 없으면 #span_product_price_sale/text·메타. 색상별로 다르면 빈칸."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 소비자가 #span_product_price_custom 또는 product_custom(regular_price cafe24 프로필). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상품 페이지 .xans-product-headcategory 경로."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "던필드몰 갤러리 사진은 통째로, 상세 통이미지(COLOR VIEW·색상별 앞/뒤 컷 등)는 흰 여백·가는 흰 선 경계로만 개별 컷을 잘라 로컬 JPEG 저장(고정 좌표·등분·확대 없음, 사이즈표·공통 배너 제외). 사전 매핑: 색상 옵션 1개 페이지의 갤러리, 공식 link_image, (Windows) 사진에 붙은 색상명 글자 OCR이 공식 색상 하나와만 일치할 때. 나머지는 사용자가 색상 매핑."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "모든 개별 컷을 자르지 않고 매핑 후보로 전달. 최종 대표 1 + 추가 5는 Hub가 적용."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "공식 상세 영역 이미지(공통 배너·배송·로고 경로는 요청 제외)와 HTML 고시/사이즈표가 있으면 표로 재구성. 이미지 안 고시·사이즈표는 원본 유지."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "원본 상품명": null,
+    "사이트 브랜드": null,
+    "OCR 근거": null,
+    "크롭 원본 이미지": null,
+    "크롭 좌표": null,
+    "흰 여백 보충": null
+  },
+  "code_hash": "2cef6729655867739659bef7bb0eafa1f75772f64d8c2bd8b24c6d3b70500cb0"
+}

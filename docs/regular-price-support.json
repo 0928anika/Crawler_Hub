@@ -376,5 +376,11 @@
     "profile": "coupang",
     "supported": true,
     "reason": "쿠팡 attributeVendorItemMap에서 해당 vendorItemId의 price.originPrice(정가). 판매 중일 때만 판매가·쿠폰가 기록, 판매 종료·품절은 가격 빈칸."
+  },
+  {
+    "id": "crocodile_official_crop",
+    "profile": "cafe24",
+    "supported": true,
+    "reason": "crocodile_official과 같음: 공식 소비자가 #span_product_price_custom 또는 product_custom(regular_price cafe24 프로필). 미표시·0·형식오류는 빈칸, 판매가로 대체하지 않음."
   }
 ]
