@@ -9,7 +9,7 @@ from crawler_rules import check_public_image
 SITE='https://theshops.co.kr'
 HOSTS=('theshops.co.kr','www.theshops.co.kr')
 IMAGE_HOSTS=HOSTS+('spholdings.diskn.com','cafe24.poxo.com','cafe24img.poxo.com')
-REVISION='2026-11-27-superior-search-results-4'
+REVISION='2026-11-27-superior-related-filter-5'
 class CrawlError(ValueError):pass
 
 def fetch(ctx,url):
@@ -112,8 +112,8 @@ def product_notice(doc):
 
 
 def identity(doc,wanted):
-    # Official search results decide eligibility. SKU/color extraction enriches
-    # columns and image association; it must not reject a returned product.
+    # Extract source metadata without brand or fixed-length gates.
+    # requested_product separately excludes recommendations using actual codes.
     heading=doc.select_one('.infoArea h1,.infoArea h2,.headingArea h1,.headingArea h2')
     raw=heading.get_text(' ',strip=True) if heading else field(doc,'상품명')
     if not raw:raise CrawlError('공식 상품 페이지 로딩 확인 실패: 상품명 영역 없음')
@@ -148,6 +148,14 @@ def identity(doc,wanted):
     name=re.sub(r'(?<![A-Za-z0-9가-힣])(?:슈페리어|SUPERIOR)(?![A-Za-z0-9가-힣])','',name,flags=re.I)
     name=re.sub(r'\s+',' ',name).strip(' -_/') or raw
     return dict(sku=sku,base=base,guide_base=guide_base,color_name=color,color_code=color_code,name=name,raw_name=raw,warnings=warnings)
+
+
+def requested_product(info,wanted):
+    """Reject recommendations using actual source codes, never derived input base."""
+    if not wanted:return True  # User explicitly supplied this official product URL.
+    sku=str(info.get('sku') or '').upper();wanted=wanted.upper()
+    return bool(sku and (sku==wanted or re.fullmatch(re.escape(wanted)+r'\d{2}',sku)
+                        or wanted==str(info.get('guide_base') or '').upper()))
 
 
 def body_urls(doc,final,info):
@@ -223,9 +231,15 @@ def crawl(ctx):
         if wanted and not re.fullmatch(r'[A-Z0-9]+',wanted):raise CrawlError('슈페리어 기본 품번 또는 전체 색상 품번을 입력하세요.')
         ctx.stage('슈페리어 공식 검색: '+value);links=search(ctx,wanted or value)
         if not links:raise CrawlError('슈페리어 공식 검색 0건: '+value)
-        count=0;cache={};seen=set()
+        count=0;cache={};seen=set();related=[];unconfirmed=[]
         for link in links:
             source=fetch(ctx,link);doc=soup(source);info=identity(doc,wanted)
+            if not requested_product(info,wanted):
+                if info['sku']:
+                    related.append(info['sku']);ctx.log('연관 상품 제외: 입력 '+wanted+' / 실제 '+info['sku']+' / '+link,'INFO')
+                else:
+                    unconfirmed.append(link);ctx.log('실제 품번 근거가 없는 검색 상품 제외: '+link,'WARNING')
+                continue
             source_key=product_number(link)
             if source_key in seen:continue
             seen.add(source_key);info['base']=info['base'] or wanted or product_number(link)
@@ -256,6 +270,9 @@ def crawl(ctx):
             if ctx.enabled('additional_images'):record['additional_images']=extra_slots(photos)
             if ctx.enabled('detail_page'):record['detail_page']=detail(ctx,doc,link,info,cache,photos)
             ctx.emit_result(record);count+=1
-        if not count:raise CrawlError('공식 검색 상품 수집 결과 없음: '+value)
+        if not count:
+            if related and not unconfirmed:raise CrawlError('입력 품번 상품 없음: 공홈 검색에 연관 상품만 노출됩니다. 입력='+value+' / 제외 품번='+', '.join(dict.fromkeys(related)))
+            if unconfirmed:raise CrawlError('검색 상품의 실제 품번 미확인: '+value+' / '+', '.join(unconfirmed))
+            raise CrawlError('공식 검색 상품 수집 결과 없음: '+value)
         ctx.log('슈페리어 수집 완료: '+str(count)+'색상','SUCCESS')
     except Exception as exc:ctx.fail_item(str(exc));raise

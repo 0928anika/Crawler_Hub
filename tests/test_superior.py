@@ -59,7 +59,7 @@ class Tests(unittest.TestCase):
  def test_numeric_prefix_and_other_official_brand_preserve_metadata(self):
   rows=self.run_sdk('QW0FTTE301',['size','price','regular_price'],numbers=('7504','7503'))
   self.assertEqual(len(rows),2);self.assertEqual([r['색상코드'] for r in rows],['36','42']);self.assertEqual([r['색상'] for r in rows],['M/GRAY','S/BLUE']);self.assertTrue(all(r['상품명']=='Symbol Hooded Sweatshirts' and r['사이즈']=='S,M,L' for r in rows))
-  rows=self.run_sdk('QW0FTTE30136',['size'],numbers=('7504','7503'));self.assertEqual(len(rows),2);self.assertEqual(rows[0]['색상코드'],'36')
+  rows=self.run_sdk('QW0FTTE30136',['size'],numbers=('7504','7503'));self.assertEqual(len(rows),1);self.assertEqual(rows[0]['색상코드'],'36')
   self.assertIsNotNone(c.identity(c.soup(self.fixture('7504')),'QW0FTTE30'))
  def test_martine_body_keeps_own_size_chart_without_common_brand_or_influencer_images(self):
   d=c.soup(self.fixture('7504'));info=c.identity(d,'QW0FTTE301');urls=c.body_urls(d,c.SITE,info)
@@ -70,9 +70,19 @@ class Tests(unittest.TestCase):
  def test_missing_code_or_color_in_metadata_is_not_a_product_gate(self):
   info=c.identity(c.soup('<div class="infoArea"><h1>공식 상품</h1></div>'),'SEARCH123')
   self.assertEqual(info['name'],'공식 상품');self.assertEqual(info['base'],'SEARCH123');self.assertEqual(info['color_name'],'')
+ def test_recommendation_gate_uses_actual_sku_not_input_derived_base(self):
+  for n,code in [('9203','IMGGBPS202'),('7504','QW0FTTE301'),('5294','QW0EVT301')]:
+   info=c.identity(c.soup(self.fixture(n)),code);self.assertTrue(c.requested_product(info,code));self.assertTrue(c.requested_product(info,info['sku']))
+   self.assertFalse(c.requested_product(info,'MISSING123'));self.assertFalse(c.requested_product(info,code[:-1]))
+  self.assertFalse(c.requested_product(dict(sku='',base='MISSING123',guide_base=''),'MISSING123'))
+ def test_related_results_cannot_become_successful_rows(self):
+  with self.assertRaisesRegex(c.CrawlError,'연관 상품만'):self.run_sdk('MISSING123',['size'])
+ def test_related_and_matching_results_can_coexist_without_dropping_valid_model(self):
+  rows=self.run_sdk('QW0EVT301',['size'],numbers=('9203','7504','5294','5293'))
+  self.assertEqual(len(rows),2);self.assertEqual({r['색상코드'] for r in rows},{'49','60'})
  def test_prices_are_independent_and_sizes_keep_leading_zero(self):
   rows=self.run_sdk('IMGGBPS202',['price','regular_price','size']);self.assertEqual(len(rows),2)
   for r in rows:self.assertEqual(r['판매가'],49000);self.assertEqual(r['정상가'],218000);self.assertEqual(r['사이즈'],'082,085,088,092,096')
- def test_official_search_results_are_not_filtered_again_by_input_sku(self):
-  rows=self.run_sdk('IMGGBPS20248',['size']);self.assertEqual(len(rows),2);self.assertEqual(rows[1]['색상코드'],'48')
+ def test_full_sku_does_not_collect_related_sibling_colors(self):
+  rows=self.run_sdk('IMGGBPS20248',['size']);self.assertEqual(len(rows),1);self.assertEqual(rows[0]['색상코드'],'48')
 if __name__=='__main__':unittest.main()
