@@ -74,4 +74,10 @@ class LimitsTests(unittest.TestCase):
             first,second=[resource_profile(p) for p in paths]
             self.assertEqual(first['sites'],['first.co.kr']);self.assertEqual(second['sites'],['second.co.kr']);self.assertEqual(blocked_reason(first,[dict(id='one',resources=second)]),'')
 
+    def test_own_site_counts_even_if_other_crawlers_only_mention_it(self):
+        with tempfile.TemporaryDirectory() as folder:
+            own=Path(folder)/'own.py';own.write_text("SITE='https://www.coupang.com'\nIMAGE_HOSTS=('image.coupangcdn.com',)\n",encoding='utf-8')
+            other=Path(folder)/'other.py';other.write_text("SITE='https://shop.co.kr'\nSPEC='https://www.coupang.com/guide'\n",encoding='utf-8')
+            self.assertEqual(resource_profile(own)['sites'],['coupang.com']);self.assertEqual(resource_profile(other)['sites'],['shop.co.kr'])
+
 if __name__=='__main__':unittest.main()

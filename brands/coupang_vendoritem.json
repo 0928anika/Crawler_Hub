@@ -1,0 +1,190 @@
+{
+  "id": "coupang_vendoritem",
+  "name": "쿠팡",
+  "category": "마켓플레이스",
+  "crawl_source": "쿠팡 vendorItemId",
+  "script": "coupang_vendoritem.py",
+  "execution_level": 1,
+  "interface": "portal_v1",
+  "mapping_mode": "automatic",
+  "image_mode": "url",
+  "output_headers": [
+    "품번",
+    "상품명",
+    "색상",
+    "상품 링크",
+    "색상명",
+    "색상코드",
+    "사이즈",
+    "판매가",
+    "정상가",
+    "카테고리",
+    "대표이미지",
+    "추가이미지",
+    "상세페이지 HTML",
+    "브랜드",
+    "쿠팡 상품번호",
+    "itemId",
+    "모델번호",
+    "판매 상태",
+    "기타 옵션",
+    "쿠폰 적용가"
+  ],
+  "extensions": [],
+  "official_color_codes": true,
+  "image_color_mapping": "verified",
+  "capabilities": {
+    "size": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "viid에 연결된 옵션 중 사이즈(옵션명에 사이즈/크기/치수)."
+    },
+    "price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "viid의 판매가(salePrice). 판매 종료·품절이면 빈칸, 쿠폰가는 별도 열."
+    },
+    "regular_price": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "viid의 정가(originPrice). 없으면 빈칸."
+    },
+    "category": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "페이지 경로(BreadcrumbList), 없으면 leafCategoryInfo."
+    },
+    "main_image": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "viid의 공식 상품 이미지(옵션 지도 images.origin) 중 규격 통과 컷."
+    },
+    "additional_images": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "viid의 공식 상품 이미지 나머지."
+    },
+    "detail_page": {
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품상세 이미지(.product-detail-content) + 필수 표기 정보 표. 판매자 연락처·반품 주소 글 제외."
+    }
+  },
+  "guide": {
+    "example": "96402909989",
+    "examples": [
+      "96402909989",
+      "https://www.coupang.com/vp/products/7921593691?vendorItemId=96402909989"
+    ],
+    "pattern": "^(?:[0-9]{6,15}|https?://(?:www\\.|m\\.)?coupang\\.com/\\S*vendorItemId=[0-9]{6,15}\\S*)$",
+    "format": "쿠팡 vendorItemId(viid) 숫자 또는 vendorItemId가 들어 있는 쿠팡 상품 주소",
+    "notes": "평소 쓰는 Chrome에 연결해서 수집합니다(쿠팡은 일반 요청 차단). Chrome에서 chrome://inspect/#remote-debugging 연결 허용을 켜고 Chrome을 켜 둔 채 실행하세요. viid 하나 = 결과 1행(그 viid의 색상·사이즈).",
+    "method": "Chrome 새 탭에서 /vp/products/0?vendorItemId=VIID 를 열어 상품 데이터(atfData)의 옵션 지도에서 viid를 찾고, 필수 표기 정보·상세 이미지를 읽은 뒤 탭을 닫음",
+    "required_columns": [
+      "품번"
+    ],
+    "invalid_examples": [
+      "7921593691-21763689954",
+      "https://www.coupang.com/vp/products/7921593691"
+    ],
+    "validation_note": "입력 형식 검사. 실제 viid 존재·판매 여부는 실행 시 확인."
+  },
+  "notes": "쿠팡 viid(vendorItemId) 기준. 2026-11-27 사용자 Chrome에서 실사이트 구조 확인(버커루 B241KT550P, productId 7921593691). 쿠팡은 urllib·앱 내장 브라우저를 403으로 막아 기존 Chrome CDP 연결(아디다스와 같은 방식)로만 수집. 상품명·옵션(색상/사이즈)·가격·이미지는 atfData, 필수 표기 정보는 #itemBrief, 상세는 .product-detail-content 이미지(판매자 연락처 글 제외). 판매 종료 viid는 판매 상태 열에 표시.",
+  "fields": {
+    "product_code": {
+      "label": "품번",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_name": {
+      "label": "상품명",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "color": {
+      "label": "색상",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "product_url": {
+      "label": "상품 링크",
+      "supported": true,
+      "status": "conditional",
+      "reason": "출력 컬럼 지원 · 상품별 누락 가능"
+    },
+    "size": {
+      "label": "사이즈",
+      "supported": true,
+      "status": "conditional",
+      "reason": "viid에 연결된 옵션 중 사이즈(옵션명에 사이즈/크기/치수)."
+    },
+    "barcode": {
+      "label": "바코드",
+      "supported": false,
+      "status": "unsupported",
+      "reason": "독립 결과 컬럼 없음"
+    },
+    "price": {
+      "label": "판매가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "viid의 판매가(salePrice). 판매 종료·품절이면 빈칸, 쿠폰가는 별도 열."
+    },
+    "regular_price": {
+      "label": "정상가",
+      "supported": true,
+      "status": "conditional",
+      "reason": "viid의 정가(originPrice). 없으면 빈칸."
+    },
+    "category": {
+      "label": "카테고리",
+      "supported": true,
+      "status": "conditional",
+      "reason": "페이지 경로(BreadcrumbList), 없으면 leafCategoryInfo."
+    },
+    "main_image": {
+      "label": "대표이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "viid의 공식 상품 이미지(옵션 지도 images.origin) 중 규격 통과 컷."
+    },
+    "additional_images": {
+      "label": "추가이미지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "viid의 공식 상품 이미지 나머지."
+    },
+    "detail_page": {
+      "label": "상세페이지",
+      "supported": true,
+      "status": "conditional",
+      "reason": "상품상세 이미지(.product-detail-content) + 필수 표기 정보 표. 판매자 연락처·반품 주소 글 제외."
+    }
+  },
+  "column_fields": {
+    "품번": "product_code",
+    "상품명": "product_name",
+    "색상": "color",
+    "상품 링크": "product_url",
+    "색상명": "color",
+    "색상코드": "color",
+    "사이즈": "size",
+    "판매가": "price",
+    "정상가": "regular_price",
+    "카테고리": "category",
+    "대표이미지": "main_image",
+    "추가이미지": "additional_images",
+    "상세페이지 HTML": "detail_page",
+    "브랜드": null,
+    "쿠팡 상품번호": null,
+    "itemId": null,
+    "모델번호": null,
+    "판매 상태": null,
+    "기타 옵션": null,
+    "쿠폰 적용가": null
+  },
+  "code_hash": "7e297b7b4f64754c9529447402934c7183e9091870ff7c7830ad1833aabeb636"
+}

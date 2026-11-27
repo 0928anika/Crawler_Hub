@@ -370,5 +370,11 @@
     "profile": "goodwearmall",
     "supported": true,
     "reason": "굿웨어몰 상품 API god.cvrPrc(정가). 없으면 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "coupang_vendoritem",
+    "profile": "coupang",
+    "supported": true,
+    "reason": "쿠팡 attributeVendorItemMap에서 해당 vendorItemId의 price.originPrice(정가). 판매 중일 때만 판매가·쿠폰가 기록, 판매 종료·품절은 가격 빈칸."
   }
 ]

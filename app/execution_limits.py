@@ -52,8 +52,12 @@ def _profile(filename,modified,size):
         if id(node) not in image_nodes and isinstance(node,ast.Assign) and any(isinstance(t,ast.Name) and re.search(r'(?:HOSTS?|DOMAINS?)$',t.id) for t in node.targets):
             for value in ast.walk(node.value):
                 if isinstance(value,ast.Constant) and isinstance(value.value,str) and re.fullmatch(r'[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}',value.value):hosts.add(value.value)
+        # A crawler's own SITE wins even for hosts other crawlers only mention (e.g. coupang.com image specs).
+        if isinstance(node,ast.Assign) and any(isinstance(t,ast.Name) and t.id=='SITE' for t in node.targets) and isinstance(node.value,ast.Constant) and isinstance(node.value.value,str):
+            own=urlsplit(node.value.value).hostname or ''
+            if own and not site_key(own):hosts.add('own:'+own.removeprefix('www.'))
     if re.search(r'\.(?:chromium|firefox|webkit|launch_persistent_context)\b|webdriver\.|(?:chrome|msedge)\.exe',source):browser=True
-    sites=sorted({key for h in hosts if (key:=site_key(h))})
+    sites=sorted({key for h in hosts if (key:=(h[4:] if h.startswith('own:') else site_key(h)))})
     return dict(sites=sites,browser=browser,known=bool(sites))
 
 
