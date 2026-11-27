@@ -14,7 +14,7 @@ from crawler_rules import check_public_image
 
 SITE='https://cubynmom.com'
 HOSTS=('dalpong.co.kr','www.dalpong.co.kr','cubynmom.com','www.cubynmom.com','dalpongcuby.cafe24.com')
-REVISION='2026-11-26-dalpong-compact-options-2'
+REVISION='2026-11-27-dalpong-empty-slots-3'
 IMAGE_HOSTS=HOSTS+('cafe24.poxo.com','cafe24img.poxo.com','cubyndalpong.speedgabia.com','dalpong.speedgabia.com','cubynmom.speedgabia.com')
 
 class CrawlError(ValueError):pass
@@ -136,6 +136,8 @@ def palette(source, fallback_color=''):
     for row in stock_rows(source):
         names=row.get('option_name_original');values=row.get('option_value_orginal') or row.get('option_value_original')
         if not isinstance(names,list) or not isinstance(values,list) or len(names)!=len(values):raise CrawlError('공식 옵션 이름/값 구조 변경')
+        # Deleted Cafe24 slots can remain in stock JSON with no option values.
+        if all(not str(v or '').strip() for v in values) and not str(row.get('option_value') or '').strip():continue
         opts={str(k).strip().casefold():str(v).strip() for k,v in zip(names,values)}
         color=opts.get('색상') or opts.get('컬러') or opts.get('color') or '';size=opts.get('사이즈') or opts.get('size') or ''
         if not color and len(values)==1:
@@ -160,6 +162,7 @@ def palette(source, fallback_color=''):
         price=row.get('option_price')
         if not isinstance(price,(int,float)) or price<=0:raise CrawlError('옵션 판매가 형식 확인 필요')
         entry['prices'].append(price)
+    if not colors:raise CrawlError('유효한 공식 옵션 없음: 옵션 값이 전부 비어 있습니다.')
     return list(colors.values())
 
 

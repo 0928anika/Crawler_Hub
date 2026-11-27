@@ -36,6 +36,13 @@ class Tests(unittest.TestCase):
   rows=[dict(option_name_original=['옵션'],option_value_orginal=[v],option_price=1000) for v in ['화이트 90','핑크100','90화이트','100 핑크','화이트(WH)110']]
   with patch.object(c,'stock_rows',return_value=rows):colors=c.palette('<html></html>')
   self.assertEqual([(r['color_name'],r['color_code'],r['sizes']) for r in colors],[('화이트','',['90']),('핑크','',['100']),('화이트','WH',['110'])])
+ def test_empty_deleted_slots_do_not_discard_real_options(self):
+  colors=c.palette(self.fixture('5938'));self.assertEqual(len(colors),1);self.assertEqual(colors[0]['color_name'],'green');self.assertEqual(colors[0]['sizes'],['90'])
+  rows=c.stock_rows(self.fixture('5938'));self.assertEqual(len(rows),8)
+  with patch.object(c,'stock_rows',return_value=rows[1:]):
+   with self.assertRaisesRegex(c.CrawlError,'전부 비어'):c.palette('<html></html>')
+ def test_slash_in_color_name_is_not_split_as_another_dimension(self):
+  colors=c.palette(self.fixture('5063'));self.assertEqual([r['color_name'] for r in colors],['m/gray','green']);self.assertEqual(set(colors[0]['sizes']),{'90','100','110','120'})
  def test_color_only_options_keep_hidden_soldout_mint(self):
   colors=c.palette(self.fixture('5498'));self.assertEqual([p['color_name'] for p in colors],['민트','핑크']);self.assertTrue(all(p['color_code']=='' for p in colors))
  def test_detail_keeps_real_size_tables_and_excludes_delivery_images(self):
