@@ -9,7 +9,7 @@ from crawler_rules import check_public_image
 SITE='https://theshops.co.kr'
 HOSTS=('theshops.co.kr','www.theshops.co.kr')
 IMAGE_HOSTS=HOSTS+('spholdings.diskn.com','cafe24.poxo.com','cafe24img.poxo.com')
-REVISION='2026-11-27-superior-search-zero-2'
+REVISION='2026-11-27-superior-multibrand-sku-3'
 class CrawlError(ValueError):pass
 
 def fetch(ctx,url):
@@ -112,8 +112,8 @@ def product_notice(doc):
 
 
 def identity(doc,wanted):
-    brand=field(doc,'브랜드')
-    if brand.strip().casefold() not in ('슈페리어','superior'):return None
+    # THE SHOPS is Superior's multi-brand official shop. A brand-label gate
+    # rejected valid Martine Golf and other own-store products before SKU checks.
     heading=doc.select_one('.infoArea h1,.infoArea h2,.headingArea h1,.headingArea h2')
     raw=heading.get_text(' ',strip=True) if heading else field(doc,'상품명')
     match=re.search(r'\(([A-Z0-9]+)\)\s*$',raw,re.I)
@@ -133,7 +133,7 @@ def identity(doc,wanted):
         path=unquote(urlsplit(node.get('ec-data-src') or node.get('data-src') or node.get('src') or '').path)
         guide=re.search(r'/SZIF_([A-Z0-9]+)\.',path,re.I)
         if guide and sku.startswith(guide[1].upper()):base=guide[1].upper();break
-    if not base:base=sku[:-2] if re.fullmatch(r'[A-Z]{7}\d{5}',sku) else sku
+    if not base:base=sku[:-2] if re.fullmatch(r'[A-Z0-9]{7}\d{5}',sku) else sku
     if wanted and wanted not in (sku,base):return None
     suffix=sku[len(base):];color_code=suffix if re.fullmatch(r'\d{2}',suffix) else ''
     name=re.sub(r'\(\s*'+re.escape(sku)+r'\s*\)\s*$','',raw,flags=re.I).strip()

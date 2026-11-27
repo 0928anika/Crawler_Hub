@@ -13,11 +13,11 @@ class Tests(unittest.TestCase):
  def test_base_and_full_sku_match_exactly_and_clean_name(self):
   for n,color,code in [('9202','T/블루','47'),('9203','D/네이비','48')]:
    d=c.soup(self.fixture(n));p=c.identity(d,'IMGGBPS202');self.assertEqual((p['name'],p['color_name'],p['color_code']),('남성 모던 컴포트 팬츠',color,code));self.assertIsNone(c.identity(d,'IMGGBPS20'));self.assertIsNone(c.identity(d,'IMGGBPS20299'))
- def test_other_brand_cannot_enter_same_search(self):
+ def test_official_store_brand_label_does_not_override_exact_sku(self):
   d=c.soup(self.fixture('9203'))
   for row in d.select('.infoArea tr'):
    if row.find('th') and row.find('th').get_text(strip=True)=='브랜드':row.find('td').string='다른브랜드'
-  self.assertIsNone(c.identity(d,'IMGGBPS202'))
+  self.assertIsNotNone(c.identity(d,'IMGGBPS202'));self.assertIsNone(c.identity(d,'OTHER999'))
  def test_notice_and_title_sku_must_agree(self):
   d=c.soup(self.fixture('9203'))
   for row in c.product_notice(d)[0].select('tr'):
@@ -49,13 +49,21 @@ class Tests(unittest.TestCase):
   with patch.object(c,'fetch',return_value=self.fixture('search-zero')):
    with self.assertRaisesRegex(c.CrawlError,'슈페리어 공식 검색 0건'):c.crawl(ctx)
   self.assertIn('검색 0건',ctx.message)
- def run_sdk(self,code,selected):
+ def run_sdk(self,code,selected,numbers=('9202','9203')):
   meta=json.loads((ROOT/'brands/superior_official.json').read_text('utf-8'));events=[]
   with tempfile.TemporaryDirectory() as f:
    ctx=CrawlContext('unused',Path(f)/'out.xlsx',0,selected,meta['output_headers'],lambda:None,lambda k,**d:events.append((k,d)),input_item={'품번':code})
-   links=[c.SITE+'/product/detail.html?product_no='+n for n in ['9202','9203']]
+   links=[c.SITE+'/product/detail.html?product_no='+n for n in numbers]
    with patch.object(c,'search',return_value=links),patch.object(c,'fetch',side_effect=lambda ctx,url:self.fixture(c.product_number(url))),patch.object(c,'gallery',side_effect=AssertionError('Unselected image fetch')),patch.object(c,'detail',side_effect=AssertionError('Unselected detail fetch')):c.crawl(ctx);ctx.finish()
   return [dict(zip(meta['output_headers'],d['row'])) for k,d in events if k=='row' and not d.get('header')]
+ def test_numeric_prefix_and_other_official_brand_are_verified_by_exact_model(self):
+  rows=self.run_sdk('QW0FTTE301',['size','price','regular_price'],numbers=('7504','7503'))
+  self.assertEqual(len(rows),2);self.assertEqual([r['색상코드'] for r in rows],['36','42']);self.assertEqual([r['색상'] for r in rows],['M/GRAY','S/BLUE']);self.assertTrue(all(r['상품명']=='Symbol Hooded Sweatshirts' and r['사이즈']=='S,M,L' for r in rows))
+  rows=self.run_sdk('QW0FTTE30136',['size'],numbers=('7504','7503'));self.assertEqual(len(rows),1);self.assertEqual(rows[0]['색상코드'],'36')
+  self.assertIsNone(c.identity(c.soup(self.fixture('7504')),'QW0FTTE30'))
+ def test_martine_body_keeps_own_size_chart_without_common_brand_or_influencer_images(self):
+  d=c.soup(self.fixture('7504'));info=c.identity(d,'QW0FTTE301');urls=c.body_urls(d,c.SITE,info)
+  self.assertEqual(len(urls),5);self.assertTrue(any(u.endswith('_SIZE.jpg') for u in urls));self.assertTrue(all('QW0FTTE30136_' in u for u in urls));self.assertFalse(any('influencer' in u or 'martine_top' in u or 'delivery' in u for u in urls))
  def test_prices_are_independent_and_sizes_keep_leading_zero(self):
   rows=self.run_sdk('IMGGBPS202',['price','regular_price','size']);self.assertEqual(len(rows),2)
   for r in rows:self.assertEqual(r['판매가'],49000);self.assertEqual(r['정상가'],218000);self.assertEqual(r['사이즈'],'082,085,088,092,096')
