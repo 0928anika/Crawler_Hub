@@ -364,5 +364,11 @@
     "profile": "cafe24",
     "supported": true,
     "reason": "콜핑몰 정가 #span_product_price_custom(취소선). 없으면 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "polhamkids_official",
+    "profile": "goodwearmall",
+    "supported": true,
+    "reason": "굿웨어몰 상품 API god.cvrPrc(정가). 없으면 빈칸, 판매가로 대체하지 않음."
   }
 ]
