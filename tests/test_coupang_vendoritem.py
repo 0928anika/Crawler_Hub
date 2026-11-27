@@ -83,13 +83,7 @@ class CoupangTest(unittest.TestCase):
         self.opened = []
 
     def run_with(self, code, data):
-        from contextlib import contextmanager
-
-        @contextmanager
-        def browser(ctx):
-            yield 'context'
-        self.m.existing_browser = browser
-        self.m.read_page = lambda ctx, context, viid: (self.opened.append(viid), data)[1]
+        self.m.read_viid = lambda ctx, viid: (self.opened.append(viid), data)[1]
         ctx = Ctx(code)
         self.m.crawl(ctx)
         return ctx
@@ -145,6 +139,87 @@ class CoupangTest(unittest.TestCase):
     def test_extract_script_is_present(self):
         for token in ('__next_f', 'atfData', '#itemBrief', '.product-detail-content', 'attributeVendorItemMap'):
             self.assertIn(token, self.m.EXTRACT_JS)
+
+
+FAKE_PLAYWRIGHT = """
+import json, os
+from pathlib import Path
+COUNT = Path(os.environ['FAKE_CDP_COUNT'])
+
+class Response:
+    status = 200
+
+class Page:
+    def goto(self, url, **kw):
+        self.url = url
+        return Response()
+    def wait_for_function(self, *a, **kw):
+        pass
+    def evaluate(self, script):
+        return {'url': self.url, 'script': 'attributeVendorItemMap' in script}
+    def close(self):
+        pass
+
+class Context:
+    def set_default_timeout(self, v): pass
+    def set_default_navigation_timeout(self, v): pass
+    def new_page(self): return Page()
+
+class Browser:
+    contexts = [Context()]
+    def is_connected(self): return True
+
+class Chromium:
+    def connect_over_cdp(self, endpoint, timeout=0, no_defaults=False):
+        COUNT.write_text(str(int(COUNT.read_text() or 0) + 1) if COUNT.exists() else '1')
+        return Browser()
+
+class Runtime:
+    chromium = Chromium()
+    def start(self): return self
+    def stop(self): pass
+
+def sync_playwright():
+    return Runtime()
+"""
+
+
+class KeeperTest(unittest.TestCase):
+    """viid마다 Chrome에 새로 붙지 않고(허용 창 반복 방지) 도우미 연결 하나로 여러 행을 읽는지."""
+
+    def test_one_chrome_connection_for_many_viids(self):
+        import os
+        import tempfile
+        m = load()
+        with tempfile.TemporaryDirectory() as folder:
+            folder = Path(folder)
+            (folder / 'fake' / 'playwright').mkdir(parents=True)
+            (folder / 'fake' / 'playwright' / '__init__.py').write_text('', 'utf-8')
+            (folder / 'fake' / 'playwright' / 'sync_api.py').write_text(FAKE_PLAYWRIGHT, 'utf-8')
+            (folder / 'keeper').mkdir()
+            old = {k: os.environ.get(k) for k in ('PYTHONPATH', 'FAKE_CDP_COUNT')}
+            os.environ['PYTHONPATH'] = str(folder / 'fake')
+            os.environ['FAKE_CDP_COUNT'] = str(folder / 'count.txt')
+            m.chrome_endpoint = lambda profile: 'ws://127.0.0.1:9222/devtools/browser/abc'
+            m.keeper_dir = lambda: folder / 'keeper'
+            state = folder / 'keeper' / 'state.json'
+            try:
+                ctx = Ctx('1')
+                first = m.read_viid(ctx, '92971716055')
+                second = m.read_viid(Ctx('2'), '91753983125')
+                self.assertEqual(first['url'], 'https://www.coupang.com/vp/products/0?vendorItemId=92971716055')
+                self.assertTrue(first['script'])
+                self.assertEqual(second['url'][-11:], '91753983125')
+                self.assertEqual((folder / 'count.txt').read_text(), '1')
+                self.assertTrue(any('한 번' in message for message in ctx.logs))
+            finally:
+                if state.exists():
+                    m.keeper_call(__import__('json').loads(state.read_text('utf-8')), '/quit')
+                for key, value in old.items():
+                    if value is None:
+                        os.environ.pop(key, None)
+                    else:
+                        os.environ[key] = value
 
 
 if __name__ == '__main__':

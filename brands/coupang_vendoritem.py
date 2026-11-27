@@ -23,13 +23,12 @@ import os
 import re
 import sys
 import time
-from contextlib import contextmanager
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 from crawler_rules import check_public_image, validate_gallery_image, gallery_slots
 
-REVISION = '2026-11-27-coupang-viid-1'
+REVISION = '2026-11-27-coupang-viid-2-keeper'
 SITE = 'https://www.coupang.com'
 HOSTS = {'www.coupang.com', 'coupang.com', 'm.coupang.com'}
 IMAGE_HOSTS = {'image.coupangcdn.com', 'image1.coupangcdn.com', 'image2.coupangcdn.com', 'image3.coupangcdn.com',
@@ -121,54 +120,222 @@ def chrome_endpoint(profile):
     return None
 
 
-@contextmanager
-def existing_browser(ctx):
-    from playwright.sync_api import sync_playwright
-    endpoint = chrome_endpoint(existing_chrome_profile())
-    if not endpoint:
-        raise CrawlError('[기존 Chrome 연결 설정 필요] 쿠팡은 일반 요청을 차단합니다. 평소 쓰는 Chrome에서 '
-                         'chrome://inspect/#remote-debugging 연결 허용을 켜고 Chrome을 켜 둔 채 다시 실행하세요.')
-    ctx.stage('기존 Chrome 연결 · Chrome에 연결 허용 창이 뜨면 직접 허용하세요')
-    with sync_playwright() as runtime:
-        import inspect
-        kwargs = {'timeout': getattr(ctx, 'connection_timeout', 300000)}
-        if 'no_defaults' in inspect.signature(runtime.chromium.connect_over_cdp).parameters:
-            kwargs['no_defaults'] = True
-        browser = runtime.chromium.connect_over_cdp(endpoint, **kwargs)
-        if not browser.contexts:
-            raise CrawlError('기존 Chrome 기본 세션을 찾지 못했습니다.')
-        context = browser.contexts[0]
-        context.set_default_timeout(15000)
-        context.set_default_navigation_timeout(40000)
-        ctx.log('기존 Chrome에 연결했습니다(새 브라우저·프로필 없음).', 'SUCCESS')
-        try:
-            yield context
-        finally:
-            ctx.log('수집 연결만 해제했습니다. Chrome과 로그인 상태는 그대로입니다.', 'INFO')
+# ── Chrome 연결 유지 도우미 ──
+# 허브는 입력 행(viid)마다 새 작업 프로세스를 띄우므로, 행마다 Chrome에 새로 붙으면 Chrome이 매번
+# '원격 디버깅 허용' 창을 띄운다. 그래서 첫 행에서 작은 도우미 프로세스를 하나 띄워 Chrome에 한 번만 연결하고
+# (허용 창 1번), 이후 행은 이 도우미(127.0.0.1, 임의 토큰)에게 viid만 넘겨 결과를 받는다.
+# 도우미는 마지막 요청 뒤 KEEPER_IDLE초 동안 요청이 없거나 Chrome 연결이 끊기면 스스로 연결을 풀고 끝난다.
+KEEPER_IDLE = 15 * 60
+KEEPER_CONNECT_WAIT = 300
+KEEPER_SOURCE = r"""
+import json, secrets, sys, time, traceback
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from pathlib import Path
+
+state_path, endpoint, idle, revision = Path(sys.argv[1]), sys.argv[2], int(sys.argv[3]), sys.argv[4]
+EXTRACT_JS = json.loads(EXTRACT_JSON)
+SITE = 'https://www.coupang.com'
+token = secrets.token_hex(16)
+
+from playwright.sync_api import sync_playwright
+runtime = sync_playwright().start()
+import inspect as _inspect
+kwargs = {'timeout': CONNECT_WAIT * 1000}
+if 'no_defaults' in _inspect.signature(runtime.chromium.connect_over_cdp).parameters:
+    kwargs['no_defaults'] = True
+browser = runtime.chromium.connect_over_cdp(endpoint, **kwargs)
+if not browser.contexts:
+    raise SystemExit('기존 Chrome 기본 세션을 찾지 못했습니다.')
+context = browser.contexts[0]
+context.set_default_timeout(15000)
+context.set_default_navigation_timeout(40000)
+last = [time.monotonic()]
+stop = [False]
 
 
-def read_page(ctx, context, viid):
-    """새 탭에서 viid 상품을 열어 EXTRACT_JS 결과를 받고 탭은 닫음."""
+def read(viid):
     page = context.new_page()
     try:
-        ctx.checkpoint()
         response = page.goto(SITE + '/vp/products/0?vendorItemId=' + viid, wait_until='domcontentloaded')
-        if response is not None and response.status in (403, 429):
-            raise CrawlError(f'[접근 제한] 쿠팡 HTTP {response.status}: 잠시 후 다시 실행하세요(상품 없음이 아님).')
-        if response is not None and response.status == 404:
-            raise CrawlError('[상품 없음] 쿠팡 HTTP 404: ' + viid)
+        status = response.status if response is not None else 0
+        if status in (403, 429):
+            return dict(ok=False, error='[접근 제한] 쿠팡 HTTP ' + str(status) + ': 잠시 후 다시 실행하세요(상품 없음이 아님).')
+        if status == 404:
+            return dict(ok=False, error='[상품 없음] 쿠팡 HTTP 404: ' + viid)
         try:
             page.wait_for_function('() => (self.__next_f || []).length > 0', timeout=15000)
         except Exception:
             pass
-        data = page.evaluate(EXTRACT_JS)
-        ctx.checkpoint()
-        return data
+        return dict(ok=True, data=page.evaluate(EXTRACT_JS))
     finally:
         try:
             page.close()
         except Exception:
             pass
+
+
+class Handler(BaseHTTPRequestHandler):
+    def log_message(self, *args):
+        pass
+
+    def reply(self, body, status=200):
+        raw = json.dumps(body, ensure_ascii=False).encode('utf-8')
+        self.send_response(status)
+        self.send_header('Content-Type', 'application/json; charset=utf-8')
+        self.send_header('Content-Length', str(len(raw)))
+        self.end_headers()
+        self.wfile.write(raw)
+
+    def do_POST(self):
+        if self.headers.get('X-Keeper-Token') != token:
+            return self.reply(dict(ok=False, error='토큰 불일치'), 403)
+        length = int(self.headers.get('Content-Length') or 0)
+        request = json.loads(self.rfile.read(min(length, 10000)) or b'{}')
+        last[0] = time.monotonic()
+        if self.path == '/ping':
+            return self.reply(dict(ok=browser.is_connected(), revision=revision))
+        if self.path == '/quit':
+            stop[0] = True
+            return self.reply(dict(ok=True))
+        if self.path == '/read':
+            viid = str(request.get('viid') or '')
+            if not viid.isdigit():
+                return self.reply(dict(ok=False, error='viid 형식 오류'), 400)
+            try:
+                result = read(viid)
+            except Exception as exc:
+                result = dict(ok=False, error='쿠팡 페이지 읽기 오류(' + type(exc).__name__ + '): ' + str(exc)[:300])
+                if not browser.is_connected():
+                    stop[0] = True  # Chrome이 닫힘 → 도우미 종료, 다음 행에서 새로 연결
+                    result['reconnect'] = True
+            last[0] = time.monotonic()
+            return self.reply(result)
+        return self.reply(dict(ok=False, error='알 수 없는 요청'), 404)
+
+
+server = HTTPServer(('127.0.0.1', 0), Handler)
+server.timeout = 2
+temp = state_path.with_suffix('.tmp')
+temp.write_text(json.dumps(dict(port=server.server_address[1], token=token, revision=revision, endpoint=endpoint)), 'utf-8')
+temp.replace(state_path)
+try:
+    while not stop[0] and browser.is_connected() and time.monotonic() - last[0] < idle:
+        server.handle_request()
+finally:
+    try:
+        current = json.loads(state_path.read_text('utf-8'))
+        if current.get('token') == token:
+            state_path.unlink()
+    except Exception:
+        pass
+    server.server_close()
+    try:
+        runtime.stop()  # 연결만 풀고 사용자 Chrome은 그대로
+    except Exception:
+        pass
+"""
+
+
+def keeper_dir():
+    folder = Path(os.environ.get('LOCALAPPDATA') or os.environ.get('XDG_CACHE_HOME') or (Path.home() / '.cache')) / 'CrawlerHub' / 'coupang_keeper'
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder
+
+
+def keeper_call(state, path, body=None, timeout=10):
+    import urllib.request
+    request = urllib.request.Request('http://127.0.0.1:' + str(int(state['port'])) + path, data=json.dumps(body or {}).encode('utf-8'),
+                                     headers={'X-Keeper-Token': state['token'], 'Content-Type': 'application/json'}, method='POST')
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))  # 127.0.0.1은 프록시를 거치지 않음
+    with opener.open(request, timeout=timeout) as response:
+        return json.loads(response.read().decode('utf-8'))
+
+
+def live_keeper(state_path, endpoint):
+    """살아 있고 같은 버전·같은 Chrome에 붙은 도우미 정보, 아니면 None(오래된 도우미는 종료 요청)."""
+    try:
+        state = json.loads(state_path.read_text('utf-8'))
+    except (OSError, ValueError):
+        return None
+    try:
+        answer = keeper_call(state, '/ping', timeout=5)
+    except Exception:
+        state_path.unlink(missing_ok=True)
+        return None
+    if answer.get('ok') and state.get('revision') == REVISION and state.get('endpoint') == endpoint:
+        return state
+    try:
+        keeper_call(state, '/quit', timeout=5)
+    except Exception:
+        pass
+    state_path.unlink(missing_ok=True)
+    return None
+
+
+def start_keeper(ctx, state_path, endpoint):
+    import subprocess
+    folder = state_path.parent
+    script = folder / 'keeper.py'
+    script.write_text(KEEPER_SOURCE.replace('CONNECT_WAIT', str(KEEPER_CONNECT_WAIT))
+                      .replace('EXTRACT_JSON', repr(json.dumps(EXTRACT_JS))), 'utf-8')
+    log = folder / 'keeper.log'
+    flags = 0
+    extra = {}
+    if os.name == 'nt':
+        flags = getattr(subprocess, 'DETACHED_PROCESS', 0x8) | getattr(subprocess, 'CREATE_NEW_PROCESS_GROUP', 0x200)
+    else:
+        extra['start_new_session'] = True
+    with open(log, 'w', encoding='utf-8') as output:
+        # 허브 작업 창의 출력과 분리(작업이 끝나도 허브가 도우미 출력을 기다리지 않게)
+        process = subprocess.Popen([sys.executable, '-B', str(script), str(state_path), endpoint, str(KEEPER_IDLE), REVISION],
+                                   stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT, close_fds=True,
+                                   creationflags=flags, cwd=str(folder), **extra)
+    ctx.stage('기존 Chrome 연결 · Chrome에 "원격 디버깅 허용" 창이 뜨면 한 번만 허용하세요')
+    ctx.log('Chrome 연결 도우미를 시작했습니다. 허용은 이번 한 번이면 되고, 이후 viid는 같은 연결로 읽습니다(' + str(KEEPER_IDLE // 60) + '분 동안 요청이 없으면 연결 해제).', 'INFO')
+    deadline = time.monotonic() + KEEPER_CONNECT_WAIT + 15
+    while time.monotonic() < deadline:
+        ctx.checkpoint()
+        if state_path.exists():
+            state = live_keeper(state_path, endpoint)
+            if state:
+                ctx.log('기존 Chrome에 연결했습니다(새 브라우저·프로필 없음).', 'SUCCESS')
+                return state
+        if process.poll() is not None:
+            detail = ''
+            try:
+                detail = log.read_text('utf-8', errors='replace').strip().splitlines()[-1][:300]
+            except (OSError, IndexError):
+                pass
+            raise CrawlError('[기존 Chrome 연결 실패] Chrome의 원격 디버깅 허용 창을 허용했는지 확인하세요. ' + detail)
+        time.sleep(.5)
+    try:
+        process.kill()
+    except OSError:
+        pass
+    raise CrawlError('[기존 Chrome 연결 시간 초과] Chrome에 뜬 원격 디버깅 허용 창을 허용한 뒤 다시 실행하세요.')
+
+
+def read_viid(ctx, viid):
+    """도우미를 통해 viid 페이지를 읽음(없으면 도우미 시작 → Chrome 허용 1회)."""
+    endpoint = chrome_endpoint(existing_chrome_profile())
+    if not endpoint:
+        raise CrawlError('[기존 Chrome 연결 설정 필요] 쿠팡은 일반 요청을 차단합니다. 평소 쓰는 Chrome에서 '
+                         'chrome://inspect/#remote-debugging 연결 허용을 켜고 Chrome을 켜 둔 채 다시 실행하세요.')
+    state_path = keeper_dir() / 'state.json'
+    state = live_keeper(state_path, endpoint) or start_keeper(ctx, state_path, endpoint)
+    ctx.stage('쿠팡 상품 열기: ' + viid)
+    ctx.checkpoint()
+    try:
+        answer = keeper_call(state, '/read', {'viid': viid}, timeout=120)
+    except Exception as exc:
+        state_path.unlink(missing_ok=True)
+        raise CrawlError('Chrome 연결 도우미 응답 없음(' + type(exc).__name__ + '): 다시 실행하면 새로 연결합니다.') from exc
+    ctx.checkpoint()
+    if not answer.get('ok'):
+        if answer.get('reconnect'):
+            state_path.unlink(missing_ok=True)
+        raise CrawlError(str(answer.get('error') or '쿠팡 페이지를 읽지 못했습니다.'))
+    return answer.get('data') or {}
 
 
 # ───────────────────────── 해석(브라우저 없이 테스트 가능) ─────────────────────────
@@ -370,9 +537,7 @@ def crawl(ctx):
         ctx.fail_item(str(exc))
         raise
     try:
-        with existing_browser(ctx) as context:
-            ctx.stage('쿠팡 상품 열기: ' + viid)
-            data = read_page(ctx, context, viid)
+        data = read_viid(ctx, viid)
         record = build_record(ctx, data, viid)
     except CrawlError as exc:
         ctx.fail_item(str(exc))
