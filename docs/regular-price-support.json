@@ -358,5 +358,11 @@
     "profile": "style24",
     "supported": true,
     "reason": "STYLE24 독립 정상가 .desc_info .price_blk .org_price em. 할인 없음·미표기는 빈칸, 판매가로 대체하지 않음."
+  },
+  {
+    "id": "kolping_official",
+    "profile": "cafe24",
+    "supported": true,
+    "reason": "콜핑몰 정가 #span_product_price_custom(취소선). 없으면 빈칸, 판매가로 대체하지 않음."
   }
 ]
