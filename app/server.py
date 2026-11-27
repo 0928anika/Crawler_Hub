@@ -202,13 +202,14 @@ class Handler(BaseHTTPRequestHandler):
                 with job.save_lock,job.data_lock:
                     folder,names=local_images.export_folder(job);job.save()
                     archive=job.dir/('images-export-'+uuid.uuid4().hex+'.zip')
+                    result_name=request_list.result_filename(job.brand.get('name',''))
                     try:
                         with zipfile.ZipFile(local_images.fs_path(archive),'w',zipfile.ZIP_STORED) as bundle:
-                            bundle.write(local_images.fs_path(job.dir/'result.xlsx'),request_list.result_filename(job.brand.get('name','')))
+                            bundle.write(local_images.fs_path(job.dir/'result.xlsx'),result_name)
                             for name in names:
                                 file=local_images.inside(folder,name)
                                 bundle.write(local_images.fs_path(file),'images/'+file.relative_to(folder).as_posix())
-                        return self.send_file(local_images.fs_path(archive),'application/zip','crawler-images-and-result.zip')
+                        return self.send_file(local_images.fs_path(archive),'application/zip',result_name[:-5]+'_이미지.zip')
                     finally:local_images.fs_path(archive).unlink(missing_ok=True)
             if action in ('download','export','original'):
                 job.save();file=job.dir/'result.xlsx'

@@ -298,14 +298,19 @@ def brand_title(brands):
     return names[0] + (f' 외 {len(names) - 1}' if len(names) > 1 else '')
 
 
-def filename(brands=()):
-    """3P_Listing_표준양식_브랜드_YYYYMMDD.xlsx (브랜드 여러 개면 '첫 브랜드 외 N')."""
+def stamp(now=None):
+    """파일명 날짜+시간: YYYYMMDD_HHMMSS (같은 날 같은 브랜드 여러 건 구분)."""
+    return (now or datetime.now()).strftime('%Y%m%d_%H%M%S')
+
+
+def filename(brands=(), now=None):
+    """3P_Listing_표준양식_브랜드_YYYYMMDD_HHMMSS.xlsx (브랜드 여러 개면 '첫 브랜드 외 N')."""
     title = brand_title(brands)
-    return '3P_Listing_표준양식_' + (title + '_' if title else '') + datetime.now().strftime('%Y%m%d') + '.xlsx'
+    return '3P_Listing_표준양식_' + (title + '_' if title else '') + stamp(now) + '.xlsx'
 
 
-def result_filename(brand):
-    """작업 결과 엑셀: 브랜드명_RAW RESULT_YYYYMMDD.xlsx"""
+def result_filename(brand, now=None):
+    """작업 결과 엑셀: 브랜드명_RAW RESULT_YYYYMMDD_HHMMSS.xlsx"""
     title = safe_name(brand)
-    return (title + '_' if title else '') + 'RAW RESULT_' + datetime.now().strftime('%Y%m%d') + '.xlsx'
+    return (title + '_' if title else '') + 'RAW RESULT_' + stamp(now) + '.xlsx'
 

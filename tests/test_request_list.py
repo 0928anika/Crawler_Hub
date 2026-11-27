@@ -154,13 +154,15 @@ class RequestListTests(unittest.TestCase):
 
     def test_download_filenames(self):
         from datetime import datetime
-        today = datetime.now().strftime('%Y%m%d')
-        self.assertEqual(rl.result_filename('올리비아로렌'), f'올리비아로렌_RAW RESULT_{today}.xlsx')
-        self.assertEqual(rl.result_filename(''), f'RAW RESULT_{today}.xlsx')
-        self.assertEqual(rl.filename(['올리비아로렌']), f'3P_Listing_표준양식_올리비아로렌_{today}.xlsx')
-        self.assertEqual(rl.filename(['젠사이', '올포유', '젠사이']), f'3P_Listing_표준양식_젠사이 외 1_{today}.xlsx')
-        self.assertEqual(rl.filename([]), f'3P_Listing_표준양식_{today}.xlsx')
-        self.assertEqual(rl.result_filename('a/b:c*'), f'a b c_RAW RESULT_{today}.xlsx')
+        at = datetime(2026, 11, 27, 17, 25, 9)
+        today = '20261127_172509'
+        self.assertEqual(rl.result_filename('올리비아로렌', at), f'올리비아로렌_RAW RESULT_{today}.xlsx')
+        self.assertEqual(rl.result_filename('', at), f'RAW RESULT_{today}.xlsx')
+        self.assertEqual(rl.filename(['올리비아로렌'], at), f'3P_Listing_표준양식_올리비아로렌_{today}.xlsx')
+        self.assertEqual(rl.filename(['젠사이', '올포유', '젠사이'], at), f'3P_Listing_표준양식_젠사이 외 1_{today}.xlsx')
+        self.assertEqual(rl.filename([], at), f'3P_Listing_표준양식_{today}.xlsx')
+        self.assertEqual(rl.result_filename('a/b:c*', at), f'a b c_RAW RESULT_{today}.xlsx')
+        self.assertRegex(rl.result_filename('젠사이'), r'^젠사이_RAW RESULT_\d{8}_\d{6}\.xlsx$')
         _, summary = rl.convert([dict(name='hub.xlsx', data=hub_file(), sheet='결과', header_row=1,
                                       mapping=rl.inspect(hub_file(), 'hub.xlsx')['mapping'], brand='젠사이')])
         self.assertEqual(summary['brands'], ['젠사이'])
