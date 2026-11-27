@@ -478,7 +478,7 @@ def detail(ctx,d,code,cache):
     for notice in desc.get('itemAnnounceList') or []:
         fragment=BeautifulSoup(html.unescape(notice.get('itemAnnounceCon') or ''),'html.parser')
         for node in fragment.select('img[src]'):announced.add(image_key(urljoin(SITE,node['src'])))
-    trusted=[];other=[]
+    trusted=[];other=[];source_order=[]
     for node in doc.select('img'):
         raw=node.get('ec-data-src') or node.get('data-src') or node.get('src') or ''
         if not raw or raw.startswith('data:'):continue
@@ -493,15 +493,18 @@ def detail(ctx,d,code,cache):
         elif p.hostname in ('item.elandrs.com','item-imghub.eland.co.kr'):
             if url not in other:other.append(url)
         else:ctx.log('본문 이미지 출처 확인 불가: '+url,'WARNING')
-    # Prefer the actual brand product/size originals and omit seller-added assets.
-    if trusted:
-        parts=[]
-        for url in trusted:
-            ctx.checkpoint()
-            if image_info(ctx,url,cache):parts.append(('photo','<img src="'+html.escape(url,quote=True)+'">'))
-        return parts
+        if (url in trusted or url in other) and url not in source_order:source_order.append(url)
+    # A trusted size chart is not a product body. Continue inspecting UUID body
+    # images when it is the only trusted asset, instead of ending at the chart.
+    is_size=lambda url:bool(re.search(r'SIZE',unquote(urlsplit(url).path.rsplit('/',1)[-1]),re.I))
+    accepted={}
+    for url in trusted:
+        ctx.checkpoint()
+        if image_info(ctx,url,cache):accepted[url]=('photo','<img src="'+html.escape(url,quote=True)+'">')
+    if any(not is_size(url) for url in accepted):
+        return [accepted[url] for url in source_order if url in accepted]
+    if accepted and other:ctx.log('공식 사이즈표만 확인됨: 다른 상품 본문 이미지도 검사합니다.','INFO')
     # UUID files have no meaningful filename: inspect all image tiles before use.
-    parts=[]
     for offset in range(0,len(other),4):
         batch=[]
         for url in other[offset:offset+4]:
@@ -520,8 +523,11 @@ def detail(ctx,d,code,cache):
         for (url,_),text in zip(batch,texts):
             if isinstance(text,Exception) or BANNER.search(re.sub(r'\s+','',text)):
                 ctx.log('셀러 안내/검사 실패 상세 이미지 제외: '+url,'INFO');continue
-            parts.append(('photo','<img src="'+html.escape(url,quote=True)+'">'))
-    return parts
+            accepted[url]=('photo','<img src="'+html.escape(url,quote=True)+'">')
+    if not any(not is_size(url) for url in accepted):
+        ctx.log('검사 통과한 상품 본문 없음: 사이즈표만 있는 상세는 사용하지 않고 다른 상품 상세를 확인합니다.','WARNING')
+        return []
+    return [accepted[url] for url in source_order if url in accepted]
 
 
 def crawl(ctx):

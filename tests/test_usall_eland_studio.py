@@ -144,6 +144,26 @@ class Tests(unittest.TestCase):
   with patch.object(c,'image_info',return_value=True),patch.object(c,'ocr_many') as ocr:
    parts=c.detail(Context(),self.data,'ULTM26N02',{})
   self.assertEqual(len(parts),2);self.assertTrue(all('BANNER' not in html for _,html in parts));ocr.assert_not_called()
+ def test_size_chart_does_not_short_circuit_real_uuid_body(self):
+  import io
+  from PIL import Image
+  data=json.loads((ROOT/'tests/fixtures/usall/ULTJ26FZ2.json').read_text('utf-8'))
+  stream=io.BytesIO();Image.new('RGB',(600,800),'white').save(stream,format='JPEG')
+  with patch.object(c,'image_info',return_value=True),patch.object(c,'fetch',return_value=(stream.getvalue(),'https://item.elandrs.com/body.jpg','image/jpeg')),patch.object(c,'ocr_many',return_value=['밑단 스냅 와이드 데님 ULTJ26FZ2 제품 소재 치수 세탁방법']) as ocr:
+   parts=c.detail(Context(),data,'ULTJ26FZ2',{})
+  ocr.assert_called_once();self.assertEqual(len(parts),2);self.assertIn('36fd1d65-1404-4490-9139-a638c930f2ff',parts[0][1]);self.assertIn('UL25-SIZE-2',parts[1][1]);self.assertTrue(all('BANNER' not in markup for _,markup in parts))
+ def test_mixed_size_and_uuid_still_rejects_embedded_seller_banner(self):
+  import io
+  from PIL import Image
+  chart='https://img-studio.elandmall.com/Winstudio/UL25-SIZE-2.jpg';first='https://item.elandrs.com/r/image/item/uuid-a.jpg';second='https://item.elandrs.com/r/image/item/uuid-b.jpg'
+  data=dict(itemDesc=dict(itemDescdocumentCon='<img src="'+first+'"><img src="'+second+'"><img src="'+chart+'">'))
+  stream=io.BytesIO();Image.new('RGB',(600,800),'white').save(stream,format='JPEG')
+  with patch.object(c,'image_info',return_value=True),patch.object(c,'fetch',return_value=(stream.getvalue(),first,'image/jpeg')),patch.object(c,'ocr_many',return_value=['판매처 고객센터 배송비 교환 반품 안내','ULTJ26FZ2 제품 소재 치수 세탁방법']):parts=c.detail(Context(),data,'ULTJ26FZ2',{})
+  self.assertEqual(len(parts),2);self.assertIn(second,parts[0][1]);self.assertIn(chart,parts[1][1]);self.assertTrue(all(first not in markup for _,markup in parts))
+ def test_chart_only_does_not_claim_product_detail_success(self):
+  data=dict(itemDesc=dict(itemDescdocumentCon='<img src="https://img-studio.elandmall.com/Winstudio/UL25-SIZE-2.jpg">'));ctx=Context()
+  with patch.object(c,'image_info',return_value=True):self.assertEqual(c.detail(ctx,data,'ULTJ26FZ2',{}),[])
+  self.assertTrue(any('사이즈표만' in message for message,*_ in ctx.logs))
  def test_uuid_seller_banner_is_checked_and_excluded(self):
   import io
   from PIL import Image
