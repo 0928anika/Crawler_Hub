@@ -9,7 +9,7 @@ from crawler_rules import check_public_image
 SITE='https://theshops.co.kr'
 HOSTS=('theshops.co.kr','www.theshops.co.kr')
 IMAGE_HOSTS=HOSTS+('spholdings.diskn.com','cafe24.poxo.com','cafe24img.poxo.com')
-REVISION='2026-11-27-superior-v1'
+REVISION='2026-11-27-superior-search-zero-2'
 class CrawlError(ValueError):pass
 
 def fetch(ctx,url):
@@ -83,7 +83,13 @@ def search(ctx,value):
         if len(seen)>=30:raise CrawlError('공식 검색 30페이지 한도 초과')
         seen.add(url);doc=soup(fetch(ctx,url));area=doc.select_one('.xans-search-result')
         summary=doc.select_one('.searchResult,.prdCount');text=summary.get_text(' ',strip=True) if summary else ''
-        if area is None and not re.search(r'\b0\s*(?:items|개|건)',text,re.I):raise CrawlError('공식 검색 화면 접근/구조 확인 실패 (검색 0건 아님)')
+        empty=doc.select_one('.noData')
+        count=summary.select_one('.record strong,.total_count') if summary else None
+        zero=bool((count and count.get_text(strip=True)=='0') or re.search(r'상품\s*검색\s*결과\s*0(?:\s|$)|\b0\s*(?:items|개|건)',text,re.I))
+        confirmed_empty=bool(summary and zero and empty and re.search(r'검색\s*결과가\s*없습니다',empty.get_text(' ',strip=True)))
+        if area is None:
+            if confirmed_empty:continue
+            raise CrawlError('공식 검색 화면 접근/구조 확인 실패 (검색 0건 아님)')
         for node in area.select('.name a[href]') if area else []:
             link=urljoin(SITE,node['href']);number=product_number(link)
             if number:links[number]=SITE+'/product/detail.html?product_no='+number

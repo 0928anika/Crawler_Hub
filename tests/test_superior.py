@@ -35,6 +35,20 @@ class Tests(unittest.TestCase):
  def test_pagination_does_not_follow_disabled_fragment_links(self):
   with patch.object(c,'fetch',return_value=self.fixture('search')) as fetch:links=c.search(Context(),'IMGGBPS202')
   self.assertEqual(len(links),2);self.assertEqual(fetch.call_count,1)
+ def test_actual_zero_search_without_counter_unit_is_not_an_access_error(self):
+  with patch.object(c,'fetch',return_value=self.fixture('search-zero')):self.assertEqual(c.search(Context(),'IM0GBPD401'),[])
+ def test_empty_hint_alone_does_not_hide_access_or_structure_errors(self):
+  for source in ['<html>Access denied</html>','<p class="noData">검색결과가 없습니다</p>','<div class="searchResult">상품 검색 결과 10</div><p class="noData">검색결과가 없습니다</p>']:
+   with self.subTest(source=source),patch.object(c,'fetch',return_value=source):
+    with self.assertRaisesRegex(c.CrawlError,'검색 0건 아님'):c.search(Context(),'IM0GBPD401')
+ def test_real_zero_has_clear_crawl_failure(self):
+  class C(Context):
+   product_code='IM0GBPD401'
+   def fail_item(self,message):self.message=message
+  ctx=C()
+  with patch.object(c,'fetch',return_value=self.fixture('search-zero')):
+   with self.assertRaisesRegex(c.CrawlError,'슈페리어 공식 검색 0건'):c.crawl(ctx)
+  self.assertIn('검색 0건',ctx.message)
  def run_sdk(self,code,selected):
   meta=json.loads((ROOT/'brands/superior_official.json').read_text('utf-8'));events=[]
   with tempfile.TemporaryDirectory() as f:
